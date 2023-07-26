@@ -7,10 +7,9 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
     $ bash Anaconda3-2023.03-1-Linux-x86_64.sh
     $ conda list
     ```
-- Download `propius` package
-- Navigate into `propius`, install and activate `propius` conda environment
+- Navigate into `Propius` package, install and activate `propius` conda environment
     ```bash
-    $ cd propius
+    $ cd Propius
     $ conda env create -f environment.yml
     $ conda activate propius
     ```
@@ -19,14 +18,13 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
     - [docker compose](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)
 - Launch `redis-stack-search` docker image
     ```bash
-    $ cd propius
     $ docker compose up -d
     ```
 - Additionally, check redis server is running
     - [Install redis-cli](https://stackoverflow.com/questions/21795340/linux-install-redis-cli-only)
     - ```$ redis-cli```
 ## Usage
-- Config `global_config.yml`
+- Make changes to `global_config.yml`
 - Scheduler:
 ```bash
 $ python src/scheduler/scheduler.py
