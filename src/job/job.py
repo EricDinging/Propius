@@ -14,11 +14,8 @@ class Job(propius_pb2_grpc.JobServicer):
     def __init__(self, id, jm_ip, jm_port, ip, port, config):
         self.id = id
         self.demand = int(config['demand'])
-        self.metrics = [
-            int(config['constraint']['cpu']),
-            int(config['constraint']['memory']),
-            int(config['constraint']['os'])
-        ]
+        self.public_constraint = config['public_constraint']
+        self.private_constraint = config['private_constraint']
         self.total_round = int(config['total_round'])
         self.total_demand = self.demand * self.total_round
         self.workload = int(config['workload'])

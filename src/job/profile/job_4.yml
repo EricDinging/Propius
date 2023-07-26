@@ -1,9 +1,11 @@
 # Recom
 demand: 20
-constraint:
-  cpu: 35
-  memory: 55
-  os: 55
+public_constraint:
+  - 35
+  - 55
+  - 55
+private_constraint:
+  - 50
 total_round: 10
 #type: Googlejob
 workload: 3
