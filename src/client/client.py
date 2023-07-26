@@ -3,8 +3,8 @@ import yaml
 import random
 import math
 import asyncio
-from propius.src.channels import propius_pb2
-from propius.src.channels import propius_pb2_grpc
+from src.channels import propius_pb2
+from src.channels import propius_pb2_grpc
 
 class Client:
     def __init__(self, id:int, cpu:int, memory:int, os:int,

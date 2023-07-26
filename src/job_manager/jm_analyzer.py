@@ -1,4 +1,4 @@
-from propius.src.util.analyzer import *
+from src.util.analyzer import *
 import asyncio
 import time
 

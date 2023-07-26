@@ -1,4 +1,5 @@
 //  python -m grpc_tools.protoc --proto_path=. ./propius.proto --python_out=. --grpc_python_out=. 
+//  import propius.src.channels.propius_pb2 as propius__pb2
 
 syntax = "proto3";
 

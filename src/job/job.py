@@ -2,8 +2,8 @@ import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
 import grpc
 import yaml
-from propius.src.channels import propius_pb2
-from propius.src.channels import propius_pb2_grpc
+from src.channels import propius_pb2
+from src.channels import propius_pb2_grpc
 import asyncio
 import sys
 import logging

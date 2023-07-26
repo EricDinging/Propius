@@ -4,8 +4,8 @@ import asyncio
 import logging
 import grpc
 import yaml
-from propius.src.channels import propius_pb2
-from propius.src.channels import propius_pb2_grpc
+from src.channels import propius_pb2
+from src.channels import propius_pb2_grpc
 from db_stub import *
 from cm_analyzer import *
 
