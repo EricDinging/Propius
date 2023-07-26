@@ -1,0 +1,9 @@
+# cv1
+demand: 10
+constraint:
+  cpu: 28
+  memory: 28
+  os: 28
+total_round: 10
+#type: Googlejob
+workload: 3

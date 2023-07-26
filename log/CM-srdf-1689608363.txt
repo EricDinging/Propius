@@ -1,0 +1,2 @@
+Client manager: avg request per second: 63.492, max request per second: 148
+Client manager: client num: 60000, util rate: 0.292, not elig num: 41534, over-assign num: 0

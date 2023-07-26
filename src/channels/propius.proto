@@ -1,0 +1,89 @@
+//  python -m grpc_tools.protoc --proto_path=. ./propius.proto --python_out=. --grpc_python_out=. 
+
+syntax = "proto3";
+
+package propius;
+
+service Job {
+    rpc CLIENT_REQUEST (client_id) returns (plan) {}
+    rpc CLIENT_REPORT (client_report) returns (empty) {}
+}
+
+service Job_manager {
+    rpc JOB_REGIST (job_info) returns (ack) {}
+    rpc JOB_REQUEST (job_round_info) returns (ack) {}
+    rpc JOB_FINISH (job_id) returns (empty) {}
+}
+
+service Scheduler {
+    rpc JOB_SCORE_UPDATE (job_id) returns (ack) {}
+}
+
+service Client_manager {
+    rpc CLIENT_CHECKIN (client_checkin) returns (cm_offer) {}
+    rpc CLIENT_ACCEPT (client_accept) returns (cm_ack) {}
+}
+
+message client_checkin {
+    int32 client_id = 1;
+    metrics cmetrics = 2;
+}
+
+message cm_offer {
+    string task_offer = 1; // <job_id>, <job_id>, <job_id>
+}
+
+message client_accept {
+    int32 client_id = 1;
+    int32 task_id = 2;
+}
+
+message cm_ack {
+    bool ack = 1;
+    string job_ip = 2;
+    int32 job_port = 3;
+}
+
+message plan {
+    int32 workload = 1;
+}
+
+message client_id {
+    int32 id = 1;
+}
+
+message job_id {
+    int32 id = 1;
+}
+
+message job_info {
+    int32 id = 1;
+    int32 total_demand = 2;
+    int32 total_round = 3;
+    metrics constraints = 4;
+    string ip = 5;
+    int32 port = 6;
+}
+
+message job_round_info {
+    int32 id = 1;
+    int32 demand = 2;
+}
+
+message client_report {
+    int32 client_id = 1;
+    float result = 2;
+}
+
+message metrics {
+    int32 cpu = 1;
+    int32 memory = 2;
+    int32 os = 3;
+}
+
+message empty {
+}
+
+message ack {
+    bool ack = 1;
+}

@@ -1,0 +1,19 @@
+Scheduler: avg request per second: 0.167, max request per second: 3
+Job size: 1, latency: 0.0011487007141113281
+Job size: 2, latency: 0.0013561844825744629
+Job size: 3, latency: 0.0014757156372070313
+Job size: 4, latency: 0.0015676388373741736
+Job size: 5, latency: 0.0016710216348821466
+Job size: 6, latency: 0.0017756982283158736
+Job size: 7, latency: 0.0019758887912916102
+Job size: 8, latency: 0.0021099502390081234
+Job size: 9, latency: 0.0022209930419921876
+Job size: 10, latency: 0.0023730234666304154
+Job size: 11, latency: 0.002390476373525766
+Job size: 12, latency: 0.002347891147320087
+Job size: 13, latency: 0.002390993965996636
+Job size: 14, latency: 0.002321958541870117
+Job size: 15, latency: 0.0025587081909179688
+Job size: 16, latency: 0.0023758411407470703
+Job size: 17, latency: 0.0021638870239257812
+Job size: 18, latency: 0.0024526119232177734

@@ -1,0 +1,12 @@
+name: propius
+channels:
+  - main
+dependencies:
+  - python=3.9
+  - pip
+  - grpcio
+  - grpcio-tools
+  - pyyaml
+  - numpy
+  - matplotlib
+  - redis-py

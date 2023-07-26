@@ -1,0 +1,9 @@
+# SPEECH
+demand: 10
+constraint:
+  cpu: 75
+  memory: 75
+  os: 75
+total_round: 10
+#type: Googlejob
+workload: 3

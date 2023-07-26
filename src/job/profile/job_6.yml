@@ -1,0 +1,10 @@
+# NLP3
+demand: 20
+constraint:
+  cpu: 55
+  memory: 55
+  os: 35
+total_round: 5
+#type: Googlejob
+workload: 3
+

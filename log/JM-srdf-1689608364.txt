@@ -1,0 +1,12 @@
+Job manager: avg request per second: 1.442, max request per second: 9
+Job manager: total job: 200, total round: 1330
+Job group: ((28, 28, 28), 5, 5), num: 23, avg JCT: 21.887, avg sched latency: 0.464
+Job group: ((28, 28, 28), 10, 5), num: 23, avg JCT: 24.167, avg sched latency: 0.566
+Job group: ((55, 55, 35), 10, 5), num: 22, avg JCT: 23.783, avg sched latency: 0.706
+Job group: ((35, 55, 55), 20, 5), num: 22, avg JCT: 29.470, avg sched latency: 1.661
+Job group: ((28, 28, 28), 10, 10), num: 22, avg JCT: 49.905, avg sched latency: 0.746
+Job group: ((75, 75, 75), 10, 5), num: 22, avg JCT: 29.328, avg sched latency: 2.503
+Job group: ((55, 55, 35), 20, 5), num: 22, avg JCT: 30.242, avg sched latency: 1.818
+Job group: ((75, 75, 75), 10, 10), num: 22, avg JCT: 74.434, avg sched latency: 3.985
+Job group: ((35, 55, 55), 20, 10), num: 22, avg JCT: 73.549, avg sched latency: 3.043
+Total avg JCT: 39.474, avg sched latency: 1.709
