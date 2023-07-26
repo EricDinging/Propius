@@ -12,27 +12,40 @@ class Job_db_stub(Job_db):
     def __init__(self, gconfig):
         super().__init__(gconfig)
 
-    def register(self, job_id:int, constraints:tuple[int, int, int], job_ip:str
-                 , job_port:int, total_demand:int, total_round:int)->bool:
+    def register(self, job_id:int, public_constraint:tuple, private_constraint: tuple, 
+                 job_ip:str, job_port:int, 
+                 total_demand:int, total_round:int)->bool:
+        if len(public_constraint) != len(self.public_constraint_name):
+            raise ValueError("Public constraint len does not match required")
+        if len(private_constraint) != len(self.private_constraint_name):
+            raise ValueError("Private constraint len does not match required")
+        
+        job_dict = {
+            "timestamp": time.time(),
+            "total_sched": 0,
+            "start_sched": 0,
+            "ip": job_ip,
+            "port": job_port,
+            "total_demand": total_demand,
+            "total_round": total_round,
+            "round": 0,
+            "demand": 0,
+            "amount": 0,
+            "score": 0,
+        }
+        constraint_dict = {"public_constraint":
+                                  {
+                                    self.public_constraint_name[i]:public_constraint[i]
+                                    for i in range(len(public_constraint))    
+                                  },
+                            "private_constraint":
+                                  {
+                                    self.private_constraint_name[i]:private_constraint[i]
+                                    for i in range(len(private_constraint))    
+                                  },
+                        }
         job = {
-            "job":{
-                "timestamp": time.time(),
-                "total_sched": 0,
-                "start_sched": 0,
-                "constraints": {
-                    "cpu": constraints[0],
-                    "memory": constraints[1],
-                    "os": constraints[2]
-                },
-                "ip": job_ip,
-                "port": job_port,
-                "total_demand": total_demand,
-                "total_round": total_round,
-                "round": 0,
-                "demand": 0,
-                "amount": 0,
-                "score": 0,
-            }
+            "job": job_dict.update(constraint_dict)
         }
 
         with self.r.json().pipeline() as pipe:
@@ -68,7 +81,7 @@ class Job_db_stub(Job_db):
                 except redis.WatchError:
                     pass
         
-    def finish(self, job_id:int)->tuple[tuple[int, int, int], int, int, float, float]:
+    def finish(self, job_id:int)->tuple[tuple, int, int, float, float]:
         with self.r.json().pipeline() as pipe:
             while True:
                 try:
@@ -77,16 +90,20 @@ class Job_db_stub(Job_db):
                     start_time = float(self.r.json().get(id, "$.job.timestamp")[0])
                     total_sched = float(self.r.json().get(id, "$.job.total_sched")[0])
                     round = float(self.r.json().get(id, "$.job.round")[0])
-                    cpu = int(self.r.json().get(id, "$.job.constraints.cpu")[0])
-                    memory = int(self.r.json().get(id, "$.job.constraints.memory")[0])
-                    os = int(self.r.json().get(id, "$.job.constraints.os")[0])
                     demand = int(self.r.json().get(id, "$.job.demand")[0])
                     total_round = int(self.r.json().get(id, "$.job.total_round")[0])
+                    
+                    constraint_list = []
+                    for name in self.public_constraint_name:
+                        constraint_list.append(int(self.r.json().get(id, f"$.job.public_constraint.{name}")[0]))
+                    for name in self.private_constraint_name:
+                        constraint_list.append(int(self.r.json().get(id, f"$.job.private_constraint.{name}")[0]))
+
                     runtime = time.time() - start_time
                     sched_latency = total_sched / round if round > 0 else -1
                     pipe.delete(id)
                     pipe.unwatch()
-                    return ((cpu, memory, os), demand, total_round, runtime, sched_latency)
+                    return (tuple(constraint_list), demand, total_round, runtime, sched_latency)
                 except redis.WatchError:
                     pass
 

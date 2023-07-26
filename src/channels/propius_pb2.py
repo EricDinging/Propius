@@ -3,7 +3,6 @@
 # source: propius.proto
 """Generated protocol buffer code."""
 from google.protobuf import descriptor as _descriptor
-from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
@@ -14,22 +13,499 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rpropius.proto\x12\x07propius\"A\n\x0e\x63lient_checkin\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x1c\n\x14public_specification\x18\x02 \x01(\x0c\":\n\x08\x63m_offer\x12\x12\n\ntask_offer\x18\x01 \x01(\x0c\x12\x1a\n\x12private_constraint\x18\x02 \x01(\x0c\"3\n\rclient_accept\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x0f\n\x07task_id\x18\x02 \x01(\x05\"7\n\x06\x63m_ack\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x12\x0e\n\x06job_ip\x18\x02 \x01(\x0c\x12\x10\n\x08job_port\x18\x03 \x01(\x05\"\x18\n\x04plan\x12\x10\n\x08workload\x18\x01 \x01(\x05\"\x17\n\tclient_id\x12\n\n\x02id\x18\x01 \x01(\x05\"\x14\n\x06job_id\x12\n\n\x02id\x18\x01 \x01(\x05\"o\n\x08job_info\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x14\n\x0ctotal_demand\x18\x02 \x01(\x05\x12\x13\n\x0btotal_round\x18\x03 \x01(\x05\x12\x12\n\nconstraint\x18\x04 \x01(\x0c\x12\n\n\x02ip\x18\x05 \x01(\x0c\x12\x0c\n\x04port\x18\x06 \x01(\x05\",\n\x0ejob_round_info\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0e\n\x06\x64\x65mand\x18\x02 \x01(\x05\"2\n\rclient_report\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x0e\n\x06result\x18\x02 \x01(\x02\"\x07\n\x05\x65mpty\"\x12\n\x03\x61\x63k\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x32w\n\x03Job\x12\x35\n\x0e\x43LIENT_REQUEST\x12\x12.propius.client_id\x1a\r.propius.plan\"\x00\x12\x39\n\rCLIENT_REPORT\x12\x16.propius.client_report\x1a\x0e.propius.empty\"\x00\x32\xa7\x01\n\x0bJob_manager\x12/\n\nJOB_REGIST\x12\x11.propius.job_info\x1a\x0c.propius.ack\"\x00\x12\x36\n\x0bJOB_REQUEST\x12\x17.propius.job_round_info\x1a\x0c.propius.ack\"\x00\x12/\n\nJOB_FINISH\x12\x0f.propius.job_id\x1a\x0e.propius.empty\"\x00\x32@\n\tScheduler\x12\x33\n\x10JOB_SCORE_UPDATE\x12\x0f.propius.job_id\x1a\x0c.propius.ack\"\x00\x32\x8c\x01\n\x0e\x43lient_manager\x12>\n\x0e\x43LIENT_CHECKIN\x12\x17.propius.client_checkin\x1a\x11.propius.cm_offer\"\x00\x12:\n\rCLIENT_ACCEPT\x12\x16.propius.client_accept\x1a\x0f.propius.cm_ack\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor.FileDescriptor(
+  name='propius.proto',
+  package='propius',
+  syntax='proto3',
+  serialized_options=None,
+  create_key=_descriptor._internal_create_key,
+  serialized_pb=b'\n\rpropius.proto\x12\x07propius\"A\n\x0e\x63lient_checkin\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x1c\n\x14public_specification\x18\x02 \x01(\x0c\":\n\x08\x63m_offer\x12\x12\n\ntask_offer\x18\x01 \x01(\x0c\x12\x1a\n\x12private_constraint\x18\x02 \x01(\x0c\"3\n\rclient_accept\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x0f\n\x07task_id\x18\x02 \x01(\x05\"7\n\x06\x63m_ack\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x12\x0e\n\x06job_ip\x18\x02 \x01(\x0c\x12\x10\n\x08job_port\x18\x03 \x01(\x05\"\x18\n\x04plan\x12\x10\n\x08workload\x18\x01 \x01(\x05\"\x17\n\tclient_id\x12\n\n\x02id\x18\x01 \x01(\x05\"\x14\n\x06job_id\x12\n\n\x02id\x18\x01 \x01(\x05\"\x92\x01\n\x08job_info\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x14\n\x0ctotal_demand\x18\x02 \x01(\x05\x12\x13\n\x0btotal_round\x18\x03 \x01(\x05\x12\x19\n\x11public_constraint\x18\x04 \x01(\x0c\x12\x1a\n\x12private_constraint\x18\x05 \x01(\x0c\x12\n\n\x02ip\x18\x06 \x01(\x0c\x12\x0c\n\x04port\x18\x07 \x01(\x05\",\n\x0ejob_round_info\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0e\n\x06\x64\x65mand\x18\x02 \x01(\x05\"2\n\rclient_report\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x0e\n\x06result\x18\x02 \x01(\x02\"\x07\n\x05\x65mpty\"\x12\n\x03\x61\x63k\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x32w\n\x03Job\x12\x35\n\x0e\x43LIENT_REQUEST\x12\x12.propius.client_id\x1a\r.propius.plan\"\x00\x12\x39\n\rCLIENT_REPORT\x12\x16.propius.client_report\x1a\x0e.propius.empty\"\x00\x32\xa7\x01\n\x0bJob_manager\x12/\n\nJOB_REGIST\x12\x11.propius.job_info\x1a\x0c.propius.ack\"\x00\x12\x36\n\x0bJOB_REQUEST\x12\x17.propius.job_round_info\x1a\x0c.propius.ack\"\x00\x12/\n\nJOB_FINISH\x12\x0f.propius.job_id\x1a\x0e.propius.empty\"\x00\x32@\n\tScheduler\x12\x33\n\x10JOB_SCORE_UPDATE\x12\x0f.propius.job_id\x1a\x0c.propius.ack\"\x00\x32\x8c\x01\n\x0e\x43lient_manager\x12>\n\x0e\x43LIENT_CHECKIN\x12\x17.propius.client_checkin\x1a\x11.propius.cm_offer\"\x00\x12:\n\rCLIENT_ACCEPT\x12\x16.propius.client_accept\x1a\x0f.propius.cm_ack\"\x00\x62\x06proto3'
+)
 
 
 
-_CLIENT_CHECKIN = DESCRIPTOR.message_types_by_name['client_checkin']
-_CM_OFFER = DESCRIPTOR.message_types_by_name['cm_offer']
-_CLIENT_ACCEPT = DESCRIPTOR.message_types_by_name['client_accept']
-_CM_ACK = DESCRIPTOR.message_types_by_name['cm_ack']
-_PLAN = DESCRIPTOR.message_types_by_name['plan']
-_CLIENT_ID = DESCRIPTOR.message_types_by_name['client_id']
-_JOB_ID = DESCRIPTOR.message_types_by_name['job_id']
-_JOB_INFO = DESCRIPTOR.message_types_by_name['job_info']
-_JOB_ROUND_INFO = DESCRIPTOR.message_types_by_name['job_round_info']
-_CLIENT_REPORT = DESCRIPTOR.message_types_by_name['client_report']
-_EMPTY = DESCRIPTOR.message_types_by_name['empty']
-_ACK = DESCRIPTOR.message_types_by_name['ack']
+
+_CLIENT_CHECKIN = _descriptor.Descriptor(
+  name='client_checkin',
+  full_name='propius.client_checkin',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='client_id', full_name='propius.client_checkin.client_id', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='public_specification', full_name='propius.client_checkin.public_specification', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=26,
+  serialized_end=91,
+)
+
+
+_CM_OFFER = _descriptor.Descriptor(
+  name='cm_offer',
+  full_name='propius.cm_offer',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='task_offer', full_name='propius.cm_offer.task_offer', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='private_constraint', full_name='propius.cm_offer.private_constraint', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=93,
+  serialized_end=151,
+)
+
+
+_CLIENT_ACCEPT = _descriptor.Descriptor(
+  name='client_accept',
+  full_name='propius.client_accept',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='client_id', full_name='propius.client_accept.client_id', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='task_id', full_name='propius.client_accept.task_id', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=153,
+  serialized_end=204,
+)
+
+
+_CM_ACK = _descriptor.Descriptor(
+  name='cm_ack',
+  full_name='propius.cm_ack',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='ack', full_name='propius.cm_ack.ack', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='job_ip', full_name='propius.cm_ack.job_ip', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='job_port', full_name='propius.cm_ack.job_port', index=2,
+      number=3, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=206,
+  serialized_end=261,
+)
+
+
+_PLAN = _descriptor.Descriptor(
+  name='plan',
+  full_name='propius.plan',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='workload', full_name='propius.plan.workload', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=263,
+  serialized_end=287,
+)
+
+
+_CLIENT_ID = _descriptor.Descriptor(
+  name='client_id',
+  full_name='propius.client_id',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='propius.client_id.id', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=289,
+  serialized_end=312,
+)
+
+
+_JOB_ID = _descriptor.Descriptor(
+  name='job_id',
+  full_name='propius.job_id',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='propius.job_id.id', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=314,
+  serialized_end=334,
+)
+
+
+_JOB_INFO = _descriptor.Descriptor(
+  name='job_info',
+  full_name='propius.job_info',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='propius.job_info.id', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='total_demand', full_name='propius.job_info.total_demand', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='total_round', full_name='propius.job_info.total_round', index=2,
+      number=3, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='public_constraint', full_name='propius.job_info.public_constraint', index=3,
+      number=4, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='private_constraint', full_name='propius.job_info.private_constraint', index=4,
+      number=5, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='ip', full_name='propius.job_info.ip', index=5,
+      number=6, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='port', full_name='propius.job_info.port', index=6,
+      number=7, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=337,
+  serialized_end=483,
+)
+
+
+_JOB_ROUND_INFO = _descriptor.Descriptor(
+  name='job_round_info',
+  full_name='propius.job_round_info',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='propius.job_round_info.id', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='demand', full_name='propius.job_round_info.demand', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=485,
+  serialized_end=529,
+)
+
+
+_CLIENT_REPORT = _descriptor.Descriptor(
+  name='client_report',
+  full_name='propius.client_report',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='client_id', full_name='propius.client_report.client_id', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='result', full_name='propius.client_report.result', index=1,
+      number=2, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=531,
+  serialized_end=581,
+)
+
+
+_EMPTY = _descriptor.Descriptor(
+  name='empty',
+  full_name='propius.empty',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=583,
+  serialized_end=590,
+)
+
+
+_ACK = _descriptor.Descriptor(
+  name='ack',
+  full_name='propius.ack',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='ack', full_name='propius.ack.ack', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=592,
+  serialized_end=610,
+)
+
+DESCRIPTOR.message_types_by_name['client_checkin'] = _CLIENT_CHECKIN
+DESCRIPTOR.message_types_by_name['cm_offer'] = _CM_OFFER
+DESCRIPTOR.message_types_by_name['client_accept'] = _CLIENT_ACCEPT
+DESCRIPTOR.message_types_by_name['cm_ack'] = _CM_ACK
+DESCRIPTOR.message_types_by_name['plan'] = _PLAN
+DESCRIPTOR.message_types_by_name['client_id'] = _CLIENT_ID
+DESCRIPTOR.message_types_by_name['job_id'] = _JOB_ID
+DESCRIPTOR.message_types_by_name['job_info'] = _JOB_INFO
+DESCRIPTOR.message_types_by_name['job_round_info'] = _JOB_ROUND_INFO
+DESCRIPTOR.message_types_by_name['client_report'] = _CLIENT_REPORT
+DESCRIPTOR.message_types_by_name['empty'] = _EMPTY
+DESCRIPTOR.message_types_by_name['ack'] = _ACK
+_sym_db.RegisterFileDescriptor(DESCRIPTOR)
+
 client_checkin = _reflection.GeneratedProtocolMessageType('client_checkin', (_message.Message,), {
   'DESCRIPTOR' : _CLIENT_CHECKIN,
   '__module__' : 'propius_pb2'
@@ -114,43 +590,149 @@ ack = _reflection.GeneratedProtocolMessageType('ack', (_message.Message,), {
   })
 _sym_db.RegisterMessage(ack)
 
-_JOB = DESCRIPTOR.services_by_name['Job']
-_JOB_MANAGER = DESCRIPTOR.services_by_name['Job_manager']
-_SCHEDULER = DESCRIPTOR.services_by_name['Scheduler']
-_CLIENT_MANAGER = DESCRIPTOR.services_by_name['Client_manager']
-if _descriptor._USE_C_DESCRIPTORS == False:
 
-  DESCRIPTOR._options = None
-  _CLIENT_CHECKIN._serialized_start=26
-  _CLIENT_CHECKIN._serialized_end=91
-  _CM_OFFER._serialized_start=93
-  _CM_OFFER._serialized_end=151
-  _CLIENT_ACCEPT._serialized_start=153
-  _CLIENT_ACCEPT._serialized_end=204
-  _CM_ACK._serialized_start=206
-  _CM_ACK._serialized_end=261
-  _PLAN._serialized_start=263
-  _PLAN._serialized_end=287
-  _CLIENT_ID._serialized_start=289
-  _CLIENT_ID._serialized_end=312
-  _JOB_ID._serialized_start=314
-  _JOB_ID._serialized_end=334
-  _JOB_INFO._serialized_start=336
-  _JOB_INFO._serialized_end=447
-  _JOB_ROUND_INFO._serialized_start=449
-  _JOB_ROUND_INFO._serialized_end=493
-  _CLIENT_REPORT._serialized_start=495
-  _CLIENT_REPORT._serialized_end=545
-  _EMPTY._serialized_start=547
-  _EMPTY._serialized_end=554
-  _ACK._serialized_start=556
-  _ACK._serialized_end=574
-  _JOB._serialized_start=576
-  _JOB._serialized_end=695
-  _JOB_MANAGER._serialized_start=698
-  _JOB_MANAGER._serialized_end=865
-  _SCHEDULER._serialized_start=867
-  _SCHEDULER._serialized_end=931
-  _CLIENT_MANAGER._serialized_start=934
-  _CLIENT_MANAGER._serialized_end=1074
+
+_JOB = _descriptor.ServiceDescriptor(
+  name='Job',
+  full_name='propius.Job',
+  file=DESCRIPTOR,
+  index=0,
+  serialized_options=None,
+  create_key=_descriptor._internal_create_key,
+  serialized_start=612,
+  serialized_end=731,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='CLIENT_REQUEST',
+    full_name='propius.Job.CLIENT_REQUEST',
+    index=0,
+    containing_service=None,
+    input_type=_CLIENT_ID,
+    output_type=_PLAN,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='CLIENT_REPORT',
+    full_name='propius.Job.CLIENT_REPORT',
+    index=1,
+    containing_service=None,
+    input_type=_CLIENT_REPORT,
+    output_type=_EMPTY,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_JOB)
+
+DESCRIPTOR.services_by_name['Job'] = _JOB
+
+
+_JOB_MANAGER = _descriptor.ServiceDescriptor(
+  name='Job_manager',
+  full_name='propius.Job_manager',
+  file=DESCRIPTOR,
+  index=1,
+  serialized_options=None,
+  create_key=_descriptor._internal_create_key,
+  serialized_start=734,
+  serialized_end=901,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='JOB_REGIST',
+    full_name='propius.Job_manager.JOB_REGIST',
+    index=0,
+    containing_service=None,
+    input_type=_JOB_INFO,
+    output_type=_ACK,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='JOB_REQUEST',
+    full_name='propius.Job_manager.JOB_REQUEST',
+    index=1,
+    containing_service=None,
+    input_type=_JOB_ROUND_INFO,
+    output_type=_ACK,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='JOB_FINISH',
+    full_name='propius.Job_manager.JOB_FINISH',
+    index=2,
+    containing_service=None,
+    input_type=_JOB_ID,
+    output_type=_EMPTY,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_JOB_MANAGER)
+
+DESCRIPTOR.services_by_name['Job_manager'] = _JOB_MANAGER
+
+
+_SCHEDULER = _descriptor.ServiceDescriptor(
+  name='Scheduler',
+  full_name='propius.Scheduler',
+  file=DESCRIPTOR,
+  index=2,
+  serialized_options=None,
+  create_key=_descriptor._internal_create_key,
+  serialized_start=903,
+  serialized_end=967,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='JOB_SCORE_UPDATE',
+    full_name='propius.Scheduler.JOB_SCORE_UPDATE',
+    index=0,
+    containing_service=None,
+    input_type=_JOB_ID,
+    output_type=_ACK,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_SCHEDULER)
+
+DESCRIPTOR.services_by_name['Scheduler'] = _SCHEDULER
+
+
+_CLIENT_MANAGER = _descriptor.ServiceDescriptor(
+  name='Client_manager',
+  full_name='propius.Client_manager',
+  file=DESCRIPTOR,
+  index=3,
+  serialized_options=None,
+  create_key=_descriptor._internal_create_key,
+  serialized_start=970,
+  serialized_end=1110,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='CLIENT_CHECKIN',
+    full_name='propius.Client_manager.CLIENT_CHECKIN',
+    index=0,
+    containing_service=None,
+    input_type=_CLIENT_CHECKIN,
+    output_type=_CM_OFFER,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='CLIENT_ACCEPT',
+    full_name='propius.Client_manager.CLIENT_ACCEPT',
+    index=1,
+    containing_service=None,
+    input_type=_CLIENT_ACCEPT,
+    output_type=_CM_ACK,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_CLIENT_MANAGER)
+
+DESCRIPTOR.services_by_name['Client_manager'] = _CLIENT_MANAGER
+
 # @@protoc_insertion_point(module_scope)

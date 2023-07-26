@@ -9,6 +9,7 @@ from db_stub import *
 from collections import deque
 import asyncio
 from jm_analyzer import *
+import pickle
 
 _cleanup_coroutines = []
 
@@ -32,12 +33,17 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
     async def JOB_REGIST(self, request, context):
         job_id, total_demand = request.id, request.total_demand
-        total_round, constraints = request.total_round, request.constraints
-        job_ip, job_port = request.ip, request.port
+        total_round= request.total_round
+        job_ip, job_port = pickle.loads(request.ip), request.port
+        public_constraint = pickle.loads(request.public_constraint)
+        private_constraint = pickle.loads(request.private_constraint)
         
-        cpu, memory, os = constraints.cpu, constraints.memory, constraints.os
-        print(f"Job manager: job {job_id} check in, constraints: ({cpu}, {memory}, {os})")
-        ack = self.job_db_stub.register(job_id=job_id, constraints=(cpu, memory, os), 
+        print(f"Job manager: job {job_id} check in, " +
+              f"public constraint: {public_constraint}, "+
+              f"private constraint: {private_constraint}")
+        ack = self.job_db_stub.register(job_id=job_id,
+                                        public_constraint=public_constraint,
+                                        private_constraint=private_constraint, 
                                         job_ip=job_ip, job_port=job_port,
                                         total_demand=total_demand, total_round=total_round)
         print(f"Job manager: ack job {job_id} register: {ack}")
@@ -62,7 +68,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
     async def JOB_FINISH(self, request, context):
         job_id = request.id
         print(f"Job manager: job {job_id} completed")
-        (constraints, demand, total_round, runtime, sched_latency) = self.job_db_stub.finish(job_id)
+        (constraints, demand, total_round, runtime, sched_latency) = \
+            self.job_db_stub.finish(job_id)
 
         if not runtime:
             await self.jm_analyzer.request()

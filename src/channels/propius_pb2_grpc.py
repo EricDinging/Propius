@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import src.propius_pb2 as propius__pb2
+import channels.propius_pb2 as propius__pb2
 
 
 class JobStub(object):

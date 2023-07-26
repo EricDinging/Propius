@@ -62,9 +62,10 @@ message job_info {
     int32 id = 1;
     int32 total_demand = 2;
     int32 total_round = 3;
-    bytes constraint = 4;
-    bytes ip = 5;
-    int32 port = 6;
+    bytes public_constraint = 4;
+    bytes private_constraint = 5;
+    bytes ip = 6;
+    int32 port = 7;
 }
 
 message job_round_info {

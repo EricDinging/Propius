@@ -7,6 +7,7 @@ from src.channels import propius_pb2_grpc
 import asyncio
 import sys
 import logging
+import pickle
 
 _cleanup_coroutines = []
 
@@ -41,17 +42,13 @@ class Job(propius_pb2_grpc.JobServicer):
         print(f"Job {self.id}: connecting to job manager at {jm_ip}:{jm_port}")
 
     def register(self)->bool:
-        req_msg = propius_pb2.metrics(
-            cpu=self.metrics[0],
-            memory=self.metrics[1],
-            os=self.metrics[2]
-        )
         job_info_msg = propius_pb2.job_info(
             id = self.id,
             total_demand = self.total_demand,
             total_round = self.total_round,
-            constraints = req_msg,
-            ip = self.ip,
+            public_constraint = pickle.dumps(self.public_constraint),
+            private_constraint = pickle.dumps(self.private_constraint),
+            ip = pickle.dumps(self.ip),
             port = self.port,
         )
         ack_msg = self.jm_stub.JOB_REGIST(job_info_msg)
