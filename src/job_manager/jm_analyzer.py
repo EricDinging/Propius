@@ -37,7 +37,7 @@ class JM_analyzer(Analyzer):
             self._request()
             self.total_round += 1            
 
-    async def job_finish(self, constraint:tuple[int, int, int], 
+    async def job_finish(self, constraint:tuple, 
                 demand:int, total_round: int, job_runtime:float, sched_latency:float):
         async with self.lock:
             self._request()

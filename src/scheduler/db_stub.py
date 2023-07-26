@@ -16,21 +16,25 @@ class Job_db_stub(Job_db):
     def __init__(self, gconfig):
         super().__init__(gconfig)
     
-    def get_job_constraints(self, job_id:int)->tuple[int, int, int]:
+    def get_job_constraints(self, job_id:int)->tuple:
         id = f"job:{job_id}"
+        constraint_list = []
         try:
-            cpu = int(self.r.json().get(id, "$.job.constraints.cpu")[0])
-            memory = int(self.r.json().get(id, "$.job.constraints.memory")[0])
-            os = int(self.r.json().get(id, "$.job.constraints.os")[0])
-            return (cpu, memory, os)
+            for name in self.public_constraint_name:
+                constraint_list.append(int(self.r.json().get(id, f"$.job.public_constraint.{name}")[0]))
+            return tuple(constraint_list)
         except:
             return None
     
-    def get_job_list(self, constraints:tuple[int, int, int], constraints_job_list:list)->bool:
+    def get_job_list(self, public_constraint:tuple, constraints_job_list:list)->bool:
         job_total_demand_map = {}
         job_time_map = {}
         # if constraints exist, insert as a list to dict, return true
-        q = Query(f'@cpu: [{constraints[0]},{constraints[0]}] @memory: [{constraints[1]},{constraints[1]}] @os: [{constraints[2]},{constraints[2]}]')
+        qstr = ""
+        for idx, name in enumerate(self.public_constraint_name):
+            qstr += f"@{name}: [{public_constraint[idx]}, {public_constraint[idx]}] "
+        
+        q = Query(qstr)
         result = self.r.ft('job').search(q)
         if result.total == 0:
             return False
@@ -140,20 +144,23 @@ class Client_db_stub(Client_db):
         info = self.r.ft('client').info()
         return int(info['num_docs'])
 
-    def get_client_proportion(self, constraints:tuple[int, int, int])->float:
+    def get_client_proportion(self, public_constraint:tuple)->float:
         client_size = self.get_client_size()
         if client_size == 0:
             return 0.01
 
-        q = Query(f'@cpu:[{constraints[0]}, {self.metric_scale}] @memory:[{constraints[1]}, {self.metric_scale}] @os: [{constraints[2]}, {self.metric_scale}]').no_content()
+        qstr = ""
+        for idx, name in enumerate(self.public_constraint_name):
+            qstr += f"@{name}: [{public_constraint[idx]}, {self.metric_scale}] "
 
+        q = Query(qstr).no_content()
         size = int(self.r.ft('client').search(q).total)
         if size == 0:
             return 0.01
 
         return size / client_size
     
-    def get_irs_denominator(self, client_size:int, constraints:tuple[int, int, int], q:str)->float:
+    def get_irs_denominator(self, client_size:int, q:str)->float:
         if client_size == 0:
             return 0.01
         q = Query(q).no_content()

@@ -14,13 +14,13 @@ class Job_db:
         self.r = redis.Redis(host=host, port=port)
         self.sched_alg = gconfig['sched_alg']
 
+        self.public_constraint_name = gconfig['job_public_constraint']
+        self.private_constraint_name = gconfig['job_private_constraint']
+
         schema = (
           NumericField("$.job.timestamp", as_name="timestamp"), #job register time
           NumericField("$.job.total_sched", as_name="total_sched"), #total amount of sched time
           NumericField("$.job.start_sched", as_name="start_sched"), #last round start time
-          NumericField("$.job.constraints.cpu", as_name="cpu"),
-          NumericField("$.job.constraints.memory", as_name="memory"),
-          NumericField("$.job.constraints.os", as_name="os"),
           TextField("$.job.ip", as_name="ip"),
           NumericField("$.job.port", as_name="port"),
           NumericField("$.job.total_demand", as_name="total_demand"),
@@ -31,10 +31,18 @@ class Job_db:
           NumericField("$.job.score", as_name="score"),
           )
         
+        schema = schema + tuple([NumericField(f"$.job.public_constraint.{name}", as_name=name) 
+                           for name in self.public_constraint_name])
+        
+        schema = schema + tuple([NumericField(f"$.job.private_constraint.{name}", as_name=name) 
+                           for name in self.private_constraint_name])
+        
+        
         try:
             self.r.ft("job").create_index(schema, 
                     definition=IndexDefinition(prefix=["job:"], index_type=IndexType.JSON))
-        except:
+        except Exception as e:
+            print(e)
             pass
     
     def flushdb(self):
@@ -53,11 +61,14 @@ class Client_db:
         self.start_time = int(time.time())
         self.client_ttl = int(gconfig['client_expire_time'])
 
+        self.public_constraint_name = gconfig['job_public_constraint']
+
         schema = (
           NumericField("$.client.timestamp", as_name="timestamp"),
-          NumericField("$.client.cpu", as_name="cpu"),
-          NumericField("$.client.memory", as_name="memory"),
-          NumericField("$.client.os", as_name="os"))
+        )
+
+        schema = schema + tuple([NumericField(f"$.client.{name}", as_name=name) 
+                                 for name in self.public_constraint_name])
         
         try:
             self.r.ft("client").create_index(schema, 
@@ -68,7 +79,7 @@ class Client_db:
     def flushdb(self):
         self.r.flushdb()
 
-def geq(t1:tuple[int, int, int], t2:tuple[int, int, int])->bool:
+def geq(t1:tuple, t2:tuple)->bool:
     for idx in range(len(t1)):
         if t1[idx] < t2[idx]:
             return False

@@ -25,6 +25,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         self.metric_scale = gconfig['metric_scale']
         self.std_round_time = gconfig['standard_round_time']
         self.constraints = []
+        self.public_constraint_name = gconfig['job_public_constraint']
 
         self.sc_analyzer = SC_analyzer(self.sched_alg, gconfig['total_running_second'])
 
@@ -51,8 +52,11 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         # get each client denominator
         client_size = self.client_db_stub.get_client_size()
         bq = ""
-        for cst in self.constraints:
-            this_q = f"@cpu: [{cst[0]}, {self.metric_scale}] @memory: [{cst[1]}, {self.metric_scale}] @os: [{cst[2]}, {self.metric_scale}] "
+        for cst in self.constraints:            
+            this_q = ""
+            for idx, name in enumerate(self.public_constraint_name):
+                this_q += f"@{name}: [{cst[idx]}, {self.metric_scale}] "
+
             q = this_q + bq
             constraints_denom_map[cst] = self.client_db_stub.get_irs_denominator(client_size, cst, q)
             bq = bq + f"-{this_q}"

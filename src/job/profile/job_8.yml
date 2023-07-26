@@ -1,9 +1,11 @@
 # SPEECH
 demand: 10
-constraint:
-  cpu: 75
-  memory: 75
-  os: 75
+public_constraint:
+  - 75
+  - 75
+  - 75
+private_constraint: []
+  # - 50
 total_round: 10
 #type: Googlejob
 workload: 3

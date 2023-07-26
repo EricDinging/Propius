@@ -1,5 +1,5 @@
 //  python -m grpc_tools.protoc --proto_path=. ./propius.proto --python_out=. --grpc_python_out=. 
-//  import propius.src.channels.propius_pb2 as propius__pb2
+//  import channels.propius_pb2 as propius__pb2
 
 syntax = "proto3";
 
@@ -27,11 +27,12 @@ service Client_manager {
 
 message client_checkin {
     int32 client_id = 1;
-    metrics cmetrics = 2;
+    bytes public_specification = 2;
 }
 
 message cm_offer {
-    string task_offer = 1; // <job_id>, <job_id>, <job_id>
+    bytes task_offer = 1;
+    bytes private_constraint = 2;
 }
 
 message client_accept {
@@ -41,7 +42,7 @@ message client_accept {
 
 message cm_ack {
     bool ack = 1;
-    string job_ip = 2;
+    bytes job_ip = 2;
     int32 job_port = 3;
 }
 
@@ -61,9 +62,10 @@ message job_info {
     int32 id = 1;
     int32 total_demand = 2;
     int32 total_round = 3;
-    metrics constraints = 4;
-    string ip = 5;
-    int32 port = 6;
+    bytes public_constraint = 4;
+    bytes private_constraint = 5;
+    bytes ip = 6;
+    int32 port = 7;
 }
 
 message job_round_info {
@@ -74,12 +76,6 @@ message job_round_info {
 message client_report {
     int32 client_id = 1;
     float result = 2;
-}
-
-message metrics {
-    int32 cpu = 1;
-    int32 memory = 2;
-    int32 os = 3;
 }
 
 message empty {

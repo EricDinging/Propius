@@ -1,9 +1,11 @@
 # cv1
 demand: 10
-constraint:
-  cpu: 28
-  memory: 28
-  os: 28
+public_constraint:
+  - 28
+  - 28
+  - 28
+private_constraint: []
+  # - 50
 total_round: 5
 #type: Googlejob
 workload: 3

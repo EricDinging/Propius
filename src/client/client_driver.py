@@ -1,6 +1,6 @@
 import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
-from client import *
+from src.client.client import *
 import logging
 import yaml
 import asyncio
@@ -67,7 +67,8 @@ async def run(gconfig, client_plotter):
     port = int(gconfig['client_manager_port'])
     total_time = int(gconfig['total_running_second']) + 60
     is_uniform = int(gconfig['client_is_uniform']) == 1
-
+    public_constraint_name = gconfig['job_public_constraint']
+    private_constraint_name = gconfig['job_private_constraint']
     start_time_list = [0] * total_time
 
     if not is_uniform:
@@ -83,10 +84,19 @@ async def run(gconfig, client_plotter):
     for i in range(total_time):
         for _ in range(start_time_list[i]):
             bench_mark = max(20, min(random.normalvariate(60, 20), 100))
-            cpu = int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100-bench_mark)))
-            memory = int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100-bench_mark)))
-            os = int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100-bench_mark)))
-            asyncio.ensure_future(Client(id, cpu, memory, os, ip, port).run(client_plotter))
+            
+            public_constraints = (
+                int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100-bench_mark)))
+                for _ in len(public_constraint_name)
+            )
+            
+            private_constraints = (
+                int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100-bench_mark)))
+                for _ in len(private_constraint_name)
+            )
+            
+            asyncio.ensure_future(
+                Client(id, public_constraints, private_constraints, ip, port).run(client_plotter))
 
             id += 1
         await asyncio.sleep(1)
