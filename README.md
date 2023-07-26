@@ -12,11 +12,11 @@ Propius is a Federated Learning (FL) resource manager, capable of efficiently sc
 │   ├── util/                       #   - Utility functions and classes
 │   ├── channels/                   #   - gRPC channel source code and definitions
 │   ├── database/                   #   - Redis database base interface
-│   ├── propius_job/                # Propius job interface library
-│   │   └── propius_job.py          #   - Class for Propius-job interface
-│   ├── propius_client/             # Propius client interface library
-│   │   ├── propius_client.py       #   - Class for Propius-client interface
-│   │   └── propius_client_aio.py   #   - asyncio-based class for Propius-client interface
+│   ├── propius_job/                #   - Propius job interface library
+│   │   └── propius_job.py          #       - Class for Propius-job interface
+│   ├── propius_client/             #   - Propius client interface library
+│   │   ├── propius_client.py       #       - Class for Propius-client interface
+│   │   └── propius_client_aio.py   #       - asyncio-based class for Propius-client interface
 │   └── global_config.yml           #   - Configuration for Propius system
 │
 ├── evaluation/                     # Framework for evaluating scheduling policies
