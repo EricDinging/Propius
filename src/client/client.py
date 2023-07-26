@@ -124,6 +124,6 @@ if __name__ == '__main__':
         gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
         cm_ip, cm_port = gconfig['client_manager_ip'], int(gconfig['client_manager_port'])
 
-        client = Client(0, (80, 80, 80), (50,), cm_ip, cm_port)
+        client = Client(0, (80, 80, 80), (), cm_ip, cm_port)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(client.run(None))

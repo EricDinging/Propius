@@ -4,8 +4,8 @@ public_constraint:
   - 75
   - 75
   - 75
-private_constraint:
-  - 50
+private_constraint: []
+  # - 50
 total_round: 5
 #type: Googlejob
 workload: 3
