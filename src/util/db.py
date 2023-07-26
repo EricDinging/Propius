@@ -68,7 +68,7 @@ class Client_db:
     def flushdb(self):
         self.r.flushdb()
 
-def geq(t1:tuple[int, int, int], t2:tuple[int, int, int])->bool:
+def geq(t1:tuple, t2:tuple)->bool:
     for idx in range(len(t1)):
         if t1[idx] < t2[idx]:
             return False

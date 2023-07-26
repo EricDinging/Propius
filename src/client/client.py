@@ -3,14 +3,18 @@ import yaml
 import random
 import math
 import asyncio
+import pickle
 from src.channels import propius_pb2
 from src.channels import propius_pb2_grpc
+from src.util import geq
 
 class Client:
-    def __init__(self, id:int, cpu:int, memory:int, os:int,
+    def __init__(self, id:int, public_specifications:tuple, 
+                 private_specifications:tuple,
                  cm_ip:str, cm_port:int):
         self.id = id
-        self.metrics = [cpu, memory, os]
+        self.public_specifications = public_specifications
+        self.private_specifications = private_specifications
 
         self.task_id = 0
 
@@ -29,17 +33,25 @@ class Client:
         print(f"Client {self.id}: connecting to client manager at {cm_ip}:{cm_port}")
 
     async def checkin(self)->propius_pb2.cm_offer:
-        metric_msg = propius_pb2.metrics(cpu=self.metrics[0], memory=self.metrics[1], os=self.metrics[2])
-        client_checkin_msg = propius_pb2.client_checkin(client_id=self.id, cmetrics=metric_msg)
-
+        client_checkin_msg = propius_pb2.client_checkin(
+            client_id=self.id,
+            public_specifications=pickle.dumps(self.public_specifications)
+            )
         task_offer = self.cm_stub.CLIENT_CHECKIN(client_checkin_msg)
-        print(f"Client {self.id}: recieve client manager offer: {task_offer}")
         return task_offer
     
-    async def accept(self, cm_offer:propius_pb2.cm_offer)->propius_pb2.cm_ack:
-        task_id = int(cm_offer.task_offer)
-        self.task_id = task_id
-        client_accept_msg = propius_pb2.client_accept(client_id=self.id, task_id=task_id)
+    async def select_task(self, task_ids: list, private_constraints: list):
+        for idx, id in enumerate(task_ids):
+            if geq(self.private_specifications, private_constraints[idx]):
+                self.task_id = id
+                print(f"Client {self.id}: select task {id}")
+                return
+        self.task_id = -1
+        print(f"Client {self.id}: not eligible")
+        return
+    
+    async def accept(self)->propius_pb2.cm_ack:
+        client_accept_msg = propius_pb2.client_accept(client_id=self.id, task_id=self.task_id)
         cm_ack = self.cm_stub.CLIENT_ACCEPT(client_accept_msg)
         return cm_ack
     
@@ -75,18 +87,25 @@ class Client:
         if client_plotter:
             await client_plotter.client_start()
         cm_offer = await self.checkin()
-        if cm_offer.task_offer == 'NA':
+
+        task_ids = pickle.loads(cm_offer.task_offer)
+        task_private_constraint = pickle.loads(cm_offer.private_constraint)
+        print(f"Client {self.id}: recieve client manager offer: {task_ids}")
+
+        await self.select_task(task_ids, task_private_constraint)
+        if self.task_id == -1:
             print(f"Client {self.id}: Not eligible, shutting down===")
             if client_plotter:
                 await client_plotter.client_finish('drop')
             return
-        cm_ack = await self.accept(cm_offer)
+        
+        cm_ack = await self.accept()
         if not cm_ack.ack:
             print(f"Client {self.id}: client manager not acknowledged, shutting down===")
             if client_plotter:
                 await client_plotter.client_finish('drop')
             return
-        job_ip, job_port = cm_ack.job_ip, cm_ack.job_port
+        job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
         await self.request(job_ip, job_port)
         await self.execute()
         await self.report()
@@ -101,6 +120,6 @@ if __name__ == '__main__':
         gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
         cm_ip, cm_port = gconfig['client_manager_ip'], int(gconfig['client_manager_port'])
 
-        client = Client(0, 80, 80, 80, cm_ip, cm_port)
+        client = Client(0, (80, 80, 80), (), cm_ip, cm_port)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(client.run(None))
