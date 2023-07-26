@@ -12,7 +12,7 @@ class Job_db_stub(Job_db):
     def __init__(self, gconfig):
         super().__init__(gconfig)
 
-    def client_assign(self, cmetrics:tuple[int, int, int])->tuple[list, int]:
+    def client_assign(self, specification:tuple)->tuple[list, list, int]:
         q = Query('*').sort_by('score', asc=False)
         try:
             result = self.r.ft('job').search(q)
@@ -22,13 +22,14 @@ class Job_db_stub(Job_db):
             size = result.total
             for doc in result.docs:
                     job = json.loads(doc.json)
-                    job_constraints = (job['job']['constraints']['cpu'],
-                                    job['job']['constraints']['memory'],
-                                    job['job']['constraints']['os'])
-                    if job['job']['amount'] < job['job']['demand'] and geq(cmetrics, job_constraints):
-                        return [int(doc.id.split(':')[1])], size
-            return [], size
-        return [], 0
+                    job_public_constraint = tuple([job['job']['public_constraint'][name]
+                                                    for name in self.public_constraint_name])
+                    if job['job']['amount'] < job['job']['demand'] and geq(specification, job_public_constraint):
+                        job_private_constraint = tuple([job['job']['private_constraint'][name]
+                                                        for name in self.private_constraint_name])
+                        return [int(doc.id.split(':')[1])], [job_private_constraint], size
+            return [], [], size
+        return [], [], 0
     
     def incr_amount(self, job_id:int)->tuple[str, int]:
         with self.r.json().pipeline() as pipe:
@@ -63,14 +64,14 @@ class Client_db_stub(Client_db):
     def __init__(self, gconfig):
         super().__init__(gconfig)
     
-    def insert(self, id:int, metrics:tuple[int, int, int]):
+    def insert(self, id:int, specifications:tuple):
+        if len(specifications) != len(self.public_constraint_name):
+            raise ValueError("Specification length does not match required")
+        client_dict = {"timestamp": int(time.time())}
+        spec_dict = {self.public_constraint_name[i] : specifications[i]
+                     for i in range(len(specifications))}
         client = {
-            "client":{
-                "timestamp": int(time.time()),
-                "cpu": metrics[0],
-                "memory": metrics[1],
-                "os": metrics[2],
-            }
+            "client":client_dict.update(spec_dict)
         }
         self.r.json().set(f"client:{id}", Path.root_path(), client)
         self.r.expire(f"client:{id}", self.client_ttl)

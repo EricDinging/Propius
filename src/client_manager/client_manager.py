@@ -4,6 +4,7 @@ import asyncio
 import logging
 import grpc
 import yaml
+import pickle
 from src.channels import propius_pb2
 from src.channels import propius_pb2_grpc
 from db_stub import *
@@ -22,20 +23,21 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         print(f"Client manager started, running {self.sched_alg}")
 
     async def CLIENT_CHECKIN(self, request, context):
-        client_id, metric_msg = request.client_id, request.cmetrics
-        metrics = (metric_msg.cpu, metric_msg.memory, metric_msg.os)
+        client_id = request.client_id
+        public_specification = pickle.loads(request.public_specification)
 
-        self.client_db_stub.insert(client_id, metrics)
+        self.client_db_stub.insert(client_id, public_specification)
 
-        task_offer_list, job_size = self.job_db_stub.client_assign(metrics)
+        task_offer_list, task_private_constraint, job_size = self.job_db_stub.client_assign(public_specification)
 
         await self.cm_analyzer.client_checkin(task_offer_list, job_size)
 
-        if not task_offer_list:
-            return propius_pb2.cm_offer(task_offer="NA")
-        task_offer = ' '.join(str(x) for x in task_offer_list)
-        print(f"Client manager: client {client_id} check in, offer: {task_offer}")
-        return propius_pb2.cm_offer(task_offer=task_offer)
+        
+        if task_offer_list:
+            print(f"Client manager: client {client_id} check in, offer: {task_offer_list}")
+        
+        return propius_pb2.cm_offer(task_offer=pickle.dumps(task_offer_list),
+                                    private_constraint=pickle.dumps(task_private_constraint))
     
     async def CLIENT_ACCEPT(self, request, context):
         client_id, task_id = request.client_id, request.task_id
@@ -45,9 +47,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         if not result:
             print(f"Client manager: job {task_id} over-assign")
-            return propius_pb2.cm_ack(ack=False, job_ip="", job_port=-1)
+            return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
         print(f"Client manager: ack client {client_id}, job addr {result}")
-        return propius_pb2.cm_ack(ack=True, job_ip=result[0], job_port=result[1])
+        return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]), job_port=result[1])
     
 async def serve(gconfig):
     async def server_graceful_shutdown():
