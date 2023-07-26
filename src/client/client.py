@@ -6,7 +6,7 @@ import asyncio
 import pickle
 from src.channels import propius_pb2
 from src.channels import propius_pb2_grpc
-from src.util import geq
+from src.util.db import geq
 
 class Client:
     def __init__(self, id:int, public_specifications:tuple, 
@@ -35,13 +35,15 @@ class Client:
     async def checkin(self)->propius_pb2.cm_offer:
         client_checkin_msg = propius_pb2.client_checkin(
             client_id=self.id,
-            public_specifications=pickle.dumps(self.public_specifications)
+            public_specification=pickle.dumps(self.public_specifications)
             )
         task_offer = self.cm_stub.CLIENT_CHECKIN(client_checkin_msg)
         return task_offer
     
     async def select_task(self, task_ids: list, private_constraints: list):
         for idx, id in enumerate(task_ids):
+            if len(self.private_specifications) != len(private_constraints[idx]):
+                raise ValueError("Client private specification len does not match required")
             if geq(self.private_specifications, private_constraints[idx]):
                 self.task_id = id
                 print(f"Client {self.id}: select task {id}")
@@ -66,10 +68,12 @@ class Client:
     async def execute(self):
         print(f"Client {self.id}: executing task {self.task_id}")
         metric_product = 1
-        for m in self.metrics:
-            metric_product *= m
-        extra_time_scale = (1 - metric_product / 1000000)
-        exec_time = self.workload * (1 + 0.1 * extra_time_scale * math.exp(random.gauss(0, 1)))
+        #TODO execute time calculation
+        # for m in self.public_specifications:
+        #     metric_product *= m
+        # extra_time_scale = (1 - metric_product / 1000000)
+        # exec_time = self.workload * (1 + 0.1 * extra_time_scale * math.exp(random.gauss(0, 1)))
+        exec_time = self.workload
         await asyncio.sleep(exec_time)
 
         self.result = random.normalvariate(0, 1)
@@ -120,6 +124,6 @@ if __name__ == '__main__':
         gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
         cm_ip, cm_port = gconfig['client_manager_ip'], int(gconfig['client_manager_port'])
 
-        client = Client(0, (80, 80, 80), (), cm_ip, cm_port)
+        client = Client(0, (80, 80, 80), (50,), cm_ip, cm_port)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(client.run(None))

@@ -37,10 +37,12 @@ class Job_db:
         schema = schema + tuple([NumericField(f"$.job.private_constraint.{name}", as_name=name) 
                            for name in self.private_constraint_name])
         
+        
         try:
             self.r.ft("job").create_index(schema, 
                     definition=IndexDefinition(prefix=["job:"], index_type=IndexType.JSON))
-        except:
+        except Exception as e:
+            print(e)
             pass
     
     def flushdb(self):

@@ -70,8 +70,9 @@ class Client_db_stub(Client_db):
         client_dict = {"timestamp": int(time.time())}
         spec_dict = {self.public_constraint_name[i] : specifications[i]
                      for i in range(len(specifications))}
+        client_dict.update(spec_dict)
         client = {
-            "client":client_dict.update(spec_dict)
+            "client":client_dict
         }
         self.r.json().set(f"client:{id}", Path.root_path(), client)
         self.r.expire(f"client:{id}", self.client_ttl)
