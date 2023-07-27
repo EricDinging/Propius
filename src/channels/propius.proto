@@ -26,13 +26,13 @@ service Client_manager {
 }
 
 message client_checkin {
-    int32 client_id = 1;
-    bytes public_specification = 2;
+    bytes public_specification = 1;
 }
 
 message cm_offer {
-    bytes task_offer = 1;
-    bytes private_constraint = 2;
+    int32 client_id = 1;
+    bytes task_offer = 2;
+    bytes private_constraint = 3;
 }
 
 message client_accept {

@@ -20,10 +20,12 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.client_db_stub = Client_db_stub(gconfig)
         self.job_db_stub = Job_db_stub(gconfig)
         self.cm_analyzer = CM_analyzer(self.sched_alg, gconfig['total_running_second'])
+        self.client_num = 0
         print(f"Client manager started, running {self.sched_alg}")
 
     async def CLIENT_CHECKIN(self, request, context):
-        client_id = request.client_id
+        client_id = self.client_num
+        self.client_num += 1
         public_specification = pickle.loads(request.public_specification)
 
         self.client_db_stub.insert(client_id, public_specification)
@@ -36,8 +38,10 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         if task_offer_list:
             print(f"Client manager: client {client_id} check in, offer: {task_offer_list}")
         
-        return propius_pb2.cm_offer(task_offer=pickle.dumps(task_offer_list),
-                                    private_constraint=pickle.dumps(task_private_constraint))
+        return propius_pb2.cm_offer(
+            client_id=client_id,
+            task_offer=pickle.dumps(task_offer_list),
+            private_constraint=pickle.dumps(task_private_constraint))
     
     async def CLIENT_ACCEPT(self, request, context):
         client_id, task_id = request.client_id, request.task_id
