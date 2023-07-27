@@ -85,14 +85,14 @@ async def run(gconfig, client_plotter):
         for _ in range(start_time_list[i]):
             bench_mark = max(20, min(random.normalvariate(60, 20), 100))
             
-            public_constraints = (
+            public_constraints = tuple([
                 int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100-bench_mark)))
-                for _ in len(public_constraint_name)
+                for _ in range(len(public_constraint_name))]
             )
             
-            private_constraints = (
+            private_constraints = tuple([
                 int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100-bench_mark)))
-                for _ in len(private_constraint_name)
+                for _ in range(len(private_constraint_name))]   
             )
             
             asyncio.ensure_future(

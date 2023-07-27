@@ -1,5 +1,5 @@
 //  python -m grpc_tools.protoc --proto_path=. ./propius.proto --python_out=. --grpc_python_out=. 
-//  import channels.propius_pb2 as propius__pb2
+//  import src.channels.propius_pb2 as propius__pb2
 
 syntax = "proto3";
 
@@ -60,8 +60,8 @@ message job_id {
 
 message job_info {
     int32 id = 1;
-    int32 total_demand = 2;
-    int32 total_round = 3;
+    int32 est_demand = 2;
+    int32 est_total_round = 3;
     bytes public_constraint = 4;
     bytes private_constraint = 5;
     bytes ip = 6;
