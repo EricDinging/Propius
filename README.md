@@ -46,12 +46,20 @@ $ python src/job/job_driver.py
 $ python src/client/client_driver.py
 ```
 
+## RoadMap
+- [ ] Realize training in simulation mode, with only one client per executor
+- [ ] Implement deployment mode
+- [ ] Implement large-scale simulation mode 
+
 ## Change to FedScale & Notes
 ### Client
-1. `ClientConnections` will not determine aggregator address during initialization
-2. Client id is assigned by propius and fedscale. These ID can be different in scheduling and training
-
 ### Job/Aggregator
+
+
+## Notes
+1. client id will be different between scheduling and training
 
 ## Question
 1. model.train()?
+2. Testing dataset, one executor one partition?
+

@@ -14,10 +14,6 @@ class ClientConnections(object):
         self.aggregator_address = aggregator_address
         self.channel = None
         self.stub = None
-
-    def upd_address(self, aggregator_address, base_port):
-        self.base_port = base_port
-        self.aggregator_address = aggregator_address
     
     def connect_to_server(self):
         logging.info('%%%%%%%%%% Opening grpc connection to ' +
