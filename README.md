@@ -45,3 +45,9 @@ $ python src/job/job_driver.py
 ```bash
 $ python src/client/client_driver.py
 ```
+
+## Change to FedScale
+### Client
+1. `ClientConnections` will not determine aggregator address during initialization
+
+### Job/Aggregator
