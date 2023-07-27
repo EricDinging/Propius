@@ -17,8 +17,7 @@ class Job(propius_pb2_grpc.JobServicer):
         self.demand = int(config['demand'])
         self.public_constraint = tuple(config['public_constraint'])
         self.private_constraint = tuple(config['private_constraint'])
-        self.total_round = int(config['total_round'])
-        self.total_demand = self.demand * self.total_round
+        self.est_total_round = int(config['total_round'])
         self.workload = int(config['workload'])
         # self.type = config['job_type']
         self.ip = ip
@@ -44,8 +43,8 @@ class Job(propius_pb2_grpc.JobServicer):
     def register(self)->bool:
         job_info_msg = propius_pb2.job_info(
             id = self.id,
-            total_demand = self.total_demand,
-            total_round = self.total_round,
+            est_demand = self.demand,
+            est_total_round = self.est_total_round,
             public_constraint = pickle.dumps(self.public_constraint),
             private_constraint = pickle.dumps(self.private_constraint),
             ip = pickle.dumps(self.ip),
@@ -66,10 +65,10 @@ class Job(propius_pb2_grpc.JobServicer):
         )
         ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
         if not ack_msg.ack:
-            print(f"Job {self.id} round {self.cur_round}/{self.total_round} request failed")
+            print(f"Job {self.id} round {self.cur_round}/{self.est_total_round} request failed")
             return False
         else:
-            print(f"Job {self.id} round {self.cur_round}/{self.total_round} request success")
+            print(f"Job {self.id} round {self.cur_round}/{self.est_total_round} request success")
             return True
     
     def complete_job(self):
@@ -87,7 +86,7 @@ class Job(propius_pb2_grpc.JobServicer):
         async with self.lock:
             client_id, result = request.client_id, request.result
             self.cur_result_list.append(result)
-            print(f"Job {self.id} round: {self.cur_round}/{self.total_round}: client {client_id} reported, {len(self.cur_result_list)}/{self.demand}")
+            print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} reported, {len(self.cur_result_list)}/{self.demand}")
 
             if len(self.cur_result_list) == self.demand:
                 self._close_round()
@@ -95,7 +94,7 @@ class Job(propius_pb2_grpc.JobServicer):
         
     async def CLIENT_REQUEST(self, request, context):
         client_id = request.id
-        print(f"Job {self.id} round: {self.cur_round}/{self.total_round}: client {client_id} request for plan")
+        print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
         return propius_pb2.plan(workload=self.workload)
         
 async def run(gconfig):
@@ -127,7 +126,7 @@ async def run(gconfig):
 
         round = 1
 
-        while round <= job.total_round:
+        while round <= job.est_total_round:
             if not job.request():
                 return
             async with job.lock:

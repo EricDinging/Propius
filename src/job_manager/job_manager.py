@@ -32,8 +32,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         print(f"Job manager: connecting to scheduler at {sched_ip}:{sched_port}")  
 
     async def JOB_REGIST(self, request, context):
-        job_id, total_demand = request.id, request.total_demand
-        total_round= request.total_round
+        job_id, est_demand = request.id, request.est_demand
+        est_total_round= request.est_total_round
         job_ip, job_port = pickle.loads(request.ip), request.port
         public_constraint = pickle.loads(request.public_constraint)
         private_constraint = pickle.loads(request.private_constraint)
@@ -45,7 +45,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
                                         public_constraint=public_constraint,
                                         private_constraint=private_constraint, 
                                         job_ip=job_ip, job_port=job_port,
-                                        total_demand=total_demand, total_round=total_round)
+                                        total_demand=est_demand*est_total_round,
+                                        total_round=est_total_round)
         print(f"Job manager: ack job {job_id} register: {ack}")
         if ack:
             await self.jm_analyzer.job_register()
