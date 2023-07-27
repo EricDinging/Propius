@@ -54,4 +54,4 @@ $ python src/client/client_driver.py
 ### Job/Aggregator
 
 ## Question
-1. model.train?
+1. model.train()?
