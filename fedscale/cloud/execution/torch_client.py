@@ -51,11 +51,18 @@ class TorchClient(ClientBase):
         criterion = self.get_criterion(conf)
         error_type = None
 
-        #TODO train loop
+        # NOTE: If one may hope to run fixed number of epochs, instead of iterations,
+        # use `while self.completed_steps < conf.local_steps * len(client_data)` instead
+        while self.completed_steps < conf.local_steps:
+            try:
+                self.train_step(client_data, conf, model, optimizer, criterion)
+            except Exception as ex:
+                error_type = ex
+                break
 
+        state_dicts = model.state_dict()
+        #TODO analysis result
 
-
-        
 
 
     def get_optimizer(self, model, conf):
@@ -71,6 +78,47 @@ class TorchClient(ClientBase):
         #TODO voice
         criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device=self.device)
         return criterion
+    
+    def train_step(self, client_data, conf, model, optimizer, criterion):
+        for data_pair in client_data:
+            #TODO other task
+            (data, target) = data_pair
+            data = Variable(data).to(device=self.device)
+            target = Variable(target).to(device=self.device)
+
+            output = model(data)
+            loss = criterion(output, target)
+
+            loss_list = loss.tolist()
+            loss = loss.mean()
+
+            temp_loss = sum(loss_list) / float(len(loss_list))
+            self.loss_squared = sum([l**2 for l in loss_list]) / float(len(loss_list))
+
+            if self.completed_steps < len(client_data):
+                if self.epoch_train_loss == 1e-4:
+                    self.epoch_train_loss = temp_loss
+                else:
+                    self.epoch_train_loss = (1. - conf.loss_decay) * \
+                        self.epoch_train_loss + \
+                            conf.loss_decay * temp_loss
+                    
+            # ========= Define the backward loss ==============
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # ========= Weight handler ========================
+            #TODO optimizer
+            # self.optimizer.update_client_weight(
+            #     conf, model, self.global_model if self.global_model is not None else None)
+
+            self.completed_steps += 1
+
+            if self.completed_steps == conf.local_steps:
+                break
+
+
 
     
         
