@@ -47,7 +47,15 @@ class TorchClient(ClientBase):
         self.global_model = None
 
         #TODO fedprox
-        #TODO optimizer
+        optimizer = self.get_optimizer(model, conf)
+        criterion = self.get_criterion(conf)
+        error_type = None
+
+        #TODO train loop
+
+
+
+        
 
 
     def get_optimizer(self, model, conf):
@@ -57,6 +65,12 @@ class TorchClient(ClientBase):
             momentim=0.9, weight_decay=5e-4
         )
         return optimizer
+    
+    def get_criterion(self, conf):
+        criterion = None
+        #TODO voice
+        criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device=self.device)
+        return criterion
 
     
         

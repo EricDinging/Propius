@@ -51,5 +51,7 @@ $ python src/client/client_driver.py
 1. `ClientConnections` will not determine aggregator address during initialization
 2. Client id is assigned by propius and fedscale. These ID can be different in scheduling and training
 
-
 ### Job/Aggregator
+
+## Question
+1. model.train?
