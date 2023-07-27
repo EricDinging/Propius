@@ -36,6 +36,7 @@ class TorchClient(ClientBase):
         """
         client_id = conf.client_id
         logging.info(f"Start to train (CLIENT: {client_id}) ...")
+        print(f"Client {client_id}: === Start to train ===")
         tokenizer = conf.tokenizer
 
         model = model.to(device=self.device)
@@ -61,7 +62,23 @@ class TorchClient(ClientBase):
                 break
 
         state_dicts = model.state_dict()
-        #TODO analysis result
+        model_param = {p : state_dicts[p].data.cpu().numpy() for p in state_dicts}
+        results = {'client_id' : client_id, 'moving_loss' : self.epoch_train_loss,
+                   'trained_size' : self.completed_steps * conf.batch_size,
+                   'success' : self.completed_steps == conf.local_steps}
+        
+        if error_type is None:
+            logging.info(f"Training of (CLIENT: {client_id}) completes, {results}")
+            print(f"Client {client_id}: === training complete, {results}===")
+        else:
+            logging.info(f"Training of (CLIENT: {client_id}) failed as {error_type}")
+            print(f"Client {client_id}: training failed, {error_type}")
+
+        results['utility'] = math.sqrt(self.loss_squared) * float(trained_unique_samples)
+        results['update_weight'] = model_param
+        results['wall_duration'] = 0
+
+        return results
 
 
 
@@ -95,6 +112,7 @@ class TorchClient(ClientBase):
             temp_loss = sum(loss_list) / float(len(loss_list))
             self.loss_squared = sum([l**2 for l in loss_list]) / float(len(loss_list))
 
+            print(f"Client {conf.client_id}: training step {self.completed_steps}, temp loss {temp_loss}")
             if self.completed_steps < len(client_data):
                 if self.epoch_train_loss == 1e-4:
                     self.epoch_train_loss = temp_loss
@@ -117,6 +135,32 @@ class TorchClient(ClientBase):
 
             if self.completed_steps == conf.local_steps:
                 break
+
+    def test(self, client_data, model, conf):
+        """
+        Perform a testing task.
+        :param client_data: client evaluation dataset
+        :param model: the framework-specific model
+        :param conf: job config
+        :return: testing results
+        """
+        evalStart = time.time()
+        #TODO voice task
+        criterion = torch.nn.CrossEntropyLoss().to(device=self.device)
+        #TODO test
+        #test_loss, acc, acc_5, test_results = test_pytorch_model
+        test_results = None
+        return test_results
+    
+    def get_model_adapter(self, model) -> TorchModelAdapter:
+        """
+        Return framework-specific model adapter.
+        :param model: the model
+        :return: a model adapter containing the model
+        """
+        return TorchModelAdapter(model)
+
+
 
 
 
