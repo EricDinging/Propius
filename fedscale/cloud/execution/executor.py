@@ -110,9 +110,253 @@ class Executor(object):
         """
         pass
 
+    def serialize_response(self, responses):
+        """Serialize the response to send to server upon assigned job completion
+
+        Args:
+            responses (string, bool, or bytes): TorchClient responses after job completion.
+
+        Returns:
+            bytes stream: The serialized response object to server.
+
+        """
+        return pickle.dumps(responses)
+    
+    def deserialize_response(self, responses):
+        """Deserialize the response from server
+
+        Args:
+            responses (byte stream): Serialized response from server.
+
+        Returns:
+            ServerResponse defined at job_api.proto: The deserialized response object from server.
+
+        """
+        return pickle.loads(responses)
+    
+    def report_executor_info_handler(self):
+        """Return the statistics of training dataset
+
+        Returns:
+            none
+
+        """
+        return ""
+    
+    def dispatch_worker_events(self, request):
+        """Add new events to worker queues
+
+        Args:
+            request (string): Add grpc request from server (e.g. MODEL_TEST, MODEL_TRAIN) to event_queue.
+
+        """
+        self.event_queue.append(request)
+
+    def client_register(self):
+        """Register the executor information to the aggregator
+        """
+        print(f"Client {self.executor_id} register to job server")
+        start_time = time.time()
+        while time.time() - start_time < 180:
+            try:
+                response = self.aggregator_communicator.stub.CLIENT_REGISTER(
+                    job_api_pb2.RegisterRequest(
+                        client_id=self.executor_id,
+                        executor_id=self.executor_id,
+                        executor_info=self.serialize_response(
+                            self.report_executor_info_handler()
+                        )
+                    )
+                )
+                self.dispatch_worker_events(response)
+                break
+            except Exception as e:
+                #TODO logging warning
+                time.sleep(5)
+
+    def UpdateModel(self, model_weights):
+        """Receive the broadcasted global model for current round
+
+        Args:
+            config (PyTorch or TensorFlow model): The broadcasted global model config
+
+        """
+        self.round += 1
+        self.model_adapter.set_weights(model_weights)
+
+    def client_ping(self):
+        """Ping the aggregator for new task
+        """
+        response = self.aggregator_communicator.stub.CLIENT_PING(job_api_pb2.PingRequest(
+            client_id=self.executor_id,
+            executor_id=self.executor_id
+        ))
+        self.dispatch_worker_events(response)
+
+    def Train(self, config):
+        """Load train config and data to start training on that client
+
+        Args:
+            config (dictionary): The client training config.
+
+        Returns:
+            tuple (int, dictionary): The client id and train result
+
+        """
+        client_id = config['client_id']
+        train_config = config['task_config']
+
+        if 'model' not in config or not config['model']:
+            raise "The 'model' object must be a non-null value in the training config."
+        
+        client_conf = self.override_conf(train_config)
+        train_res = self.training_handler(client_id=client_id,
+                                          conf=client_conf,
+                                          model=config['model'])
+        
+        # Report execution completion meta information
+        response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
+            job_api_pb2.CompleteRequest(
+                client_id=str(client_id),
+                executor_id=self.executor_id,
+                event=commons.CLIENT_TRAIN,
+                status=True,
+                msg=None,
+                meta_result=None,
+                data_result=None
+            )
+        )
+        self.dispatch_worker_events(response)
+
+        return client_id, train_res
+
+    def training_handler(self, client_id, conf, model):
+        """Train model given client id
+
+        Args:
+            client_id (int): The client id.
+            conf (dictionary): The client runtime config.
+
+        Returns:
+            dictionary: The train result
+
+        """
+        self.model_adapter.set_weights(model)
+        conf.client_id = client_id
+        #TODO conf tokenizer
+        #TODO rl training set
+        client_data = select_dataset(client_id, self.training_sets,
+                                   batch_size=conf.batch_size, 
+                                   args=self.args,
+                                   collate_fn=self.collate_fn)
+        client = self.get_client_trainer(self.args)
+        train_res = client.train(client_data=client_data,
+                                 model=self.model_adapter.get_model(),
+                                 conf = conf)
+        return train_res
+    
+    def testing_handler(self):
+        """Test model
+
+        Args:
+            args (dictionary): Variable arguments for fedscale runtime config. defaults to the setup in arg_parser.py
+            config (dictionary): Variable arguments from coordinator.
+        Returns:
+            dictionary: The test result
+
+        """
+        test_config = self.override_conf({
+            'rank': self.this_rank,
+            'memory_capacity': self.args.memory_capacity,
+            'tokenizer': tokenizer
+        })
+        client = self.get_client_trainer(test_config)
+        data_loader = select_dataset(self.this_rank, self.testing_sets,
+                                     batch_size=self.args.
+                                     test_bsz, args=self.args,
+                                     isTest=True, collate_fn=self.collate_fn)
+        test_results = client.test(data_loader, self.model_adapter.get_model(), test_config)
+        #TODO log result
+        #TODO gc.collect()
+        return test_results
+
+
+    
+    def Test(self, config):
+        """Model Testing. By default, we test the accuracy on all data of clients in the test group
+
+        Args:
+            config (dictionary): The client testing config.
+
+        """
+        test_res = self.testing_handler()
+        test_res = {'executorId': self.this_rank, 'results': test_res}
+
+        # Report execution completion information
+        response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
+            job_api_pb2.CompleteRequest(
+                client_id=self.executor_id, executor_id=self.executor_id,
+                event=commons.MODEL_TEST, status=True, msg=None,
+                meta_result=None, data_result=self.serialize_response(test_res)
+            )
+        )
+        self.dispatch_worker_events(response)
+
+
     def event_monitor(self):
-        pass
-        #TODO
+        """Activate event handler once receiving new message
+        """
+        #TODO logging
+        self.client_register()
+
+        while not self.recieved_stop_request:
+            if len(self.event_queue) > 0:
+                request = self.event_queue.popleft()
+                current_event = request.event
+
+                if current_event == commons.CLIENT_TRAIN:
+                    train_config = self.deserialize_response(request.meta)
+                    train_model = self.deserialize_response(request.data)
+                    train_config['model'] = train_model
+                    train_config['client_id'] = int(train_config['client_id'])
+                    client_id, train_res = self.Train(train_config)
+
+                    # Upload model updates
+                    future_call = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION.future(
+                        job_api_pb2.CompleteRequest(
+                        client_id=str(client_id),
+                        executor_id=self.executor_id,
+                        event=commons.UPLOAD_MODEL,
+                        status=True,
+                        msg=None,
+                        meta_result=None,
+                        data_result=self.serialize_response(train_res)
+                        )
+                    )
+                    future_call.add_done_callback(lambda _response: self.dispatch_worker_events(_response.result()))
+
+                elif current_event == commons.MODEL_TEST:
+                    self.Test(self.deserialize_response(request.meta))
+
+                elif current_event == commons.UPDATE_MODEL:
+                    model_weights = self.deserialize_response(request.data)
+                    self.UpdateModel(model_weights)
+                
+                elif current_event == commons.SHUT_DOWN:
+                    self.Stop()
+                
+                elif current_event == commons.DUMMY_EVENT:
+                    pass
+            
+            else:
+                time.sleep(1)
+                try:
+                    self.client_ping()
+                except Exception as e:
+                    #TODO logging
+                    self.Stop()
+
+
     
     def run(self):
         """Start running the executor by setting up execution and communication environment, and monitoring the grpc message.
@@ -122,6 +366,33 @@ class Executor(object):
         self.setup_communication()
         self.event_monitor()
 
+    def Stop(self):
+        """Stop the current executor
+        """
+        #logging.info(f"Terminating the executor ...")
+        #TODO logging
+        self.aggregator_communicator.close_sever_connection()
+        self.received_stop_request = True
+        # if self.wandb != None:
+        #     self.wandb.finish()
+        #TODO wandb
+
+    def override_conf(self, config):
+        """ Override the variable arguments for different client
+
+        Args:
+            config (dictionary): The client runtime config.
+
+        Returns:
+            dictionary: Variable arguments for client runtime config.
+
+        """
+        default_conf = vars(self.args).copy()
+
+        for key in config:
+            default_conf[key] = config[key]
+
+        return Namespace(**default_conf)
     
 
 if __name__ == "__main__":

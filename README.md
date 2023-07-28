@@ -53,6 +53,7 @@ $ python src/client/client_driver.py
 
 ## Change to FedScale & Notes
 ### Client
+1. report executor info handler does not return training set size
 ### Job/Aggregator
 
 
@@ -62,4 +63,7 @@ $ python src/client/client_driver.py
 ## Question
 1. model.train()?
 2. Testing dataset, one executor one partition?
+3. train_config = self.deserialize_response(request.meta)
+                    train_model = self.deserialize_response(request.data)
+4. return model weights instead of update?
 

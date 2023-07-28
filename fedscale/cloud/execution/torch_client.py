@@ -81,7 +81,6 @@ class TorchClient(ClientBase):
         return results
 
 
-
     def get_optimizer(self, model, conf):
         #TODO detection and nlp task
         optimizer = torch.optim.SGD(
