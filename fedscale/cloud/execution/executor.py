@@ -7,6 +7,7 @@ import time
 import numpy as np
 import torch
 
+from argparse import Namespace
 import fedscale.cloud.channels.job_api_pb2 as job_api_pb2
 from fedscale.cloud.channels.channel_context import ClientConnections
 #TODO tensorfloew client
@@ -20,14 +21,22 @@ class Executor(object):
     """Abstract class for FedScale executor.
 
     Args:
-        args (dictionary): Variable arguments for fedscale runtime config. defaults to the setup in arg_parser.py
+        args (dictionary): Variable arguments for fedscale runtime config. 
+        defaults to the setup in arg_parser.py
 
     """
 
     def __init__(self, args):
         #TODO logger
+        model = None
+        
+        #TODO use init model
+        if args.model == "resnet18":
+            from fedscale.utils.models.specialized.resnet_speech import resnet18
 
-        self.model_adapter = self.get_client_trainer(args).get_model_adapter(init_model())
+            model = resnet18(num_classes=outputClass[args.data_set], in_channels=1)
+
+        self.model_adapter = self.get_client_trainer(args).get_model_adapter(model)
 
         self.args = args
         self.num_executors = args.num_executors
@@ -77,6 +86,7 @@ class Executor(object):
 
         """
         train_dataset, test_dataset = init_dataset()
+
         #TODO various tasks
         # load data partitionxr (entire_train_data)
         #TODO logging
@@ -333,7 +343,9 @@ class Executor(object):
                         data_result=self.serialize_response(train_res)
                         )
                     )
-                    future_call.add_done_callback(lambda _response: self.dispatch_worker_events(_response.result()))
+                    future_call.add_done_callback(
+                        lambda _response: self.dispatch_worker_events(_response.result())
+                        )
 
                 elif current_event == commons.MODEL_TEST:
                     self.Test(self.deserialize_response(request.meta))
@@ -359,8 +371,10 @@ class Executor(object):
 
     
     def run(self):
-        """Start running the executor by setting up execution and communication environment, and monitoring the grpc message.
+        """Start running the executor by setting up execution and communication environment, 
+        and monitoring the grpc message.
         """
+        print(f"Client {self.executor_id}: setting up environment")
         self.setup_env()
         self.training_sets, self.testing_sets = self.init_data()
         self.setup_communication()
@@ -396,5 +410,20 @@ class Executor(object):
     
 
 if __name__ == "__main__":
-    executor = Executor(parser.args)
+    args = {
+        "client_id" : 0,
+        "tokenizer" : None,
+        "local_steps": 10,
+        "batch_size" : 10,
+        "gradient_policy" : "SGD",
+        "learning_rate" : 1e-2,
+
+        "use_cuda" : False,
+        "task" : "cv",
+        "model" : "resnet18",
+        "data_set": "femnist",
+    }
+    
+    args = Namespace(**args)
+    executor = Executor(args)
     executor.run()
