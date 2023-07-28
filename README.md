@@ -46,24 +46,5 @@ $ python src/job/job_driver.py
 $ python src/client/client_driver.py
 ```
 
-## RoadMap
-- [ ] Realize training in simulation mode, with only one client per executor
-- [ ] Implement deployment mode
-- [ ] Implement large-scale simulation mode 
 
-## Change to FedScale & Notes
-### Client
-1. report executor info handler does not return training set size
-### Job/Aggregator
-
-
-## Notes
-1. client id will be different between scheduling and training
-
-## Question
-1. model.train()?
-2. Testing dataset, one executor one partition?
-3. train_config = self.deserialize_response(request.meta)
-                    train_model = self.deserialize_response(request.data)
-4. return model weights instead of update?
 
