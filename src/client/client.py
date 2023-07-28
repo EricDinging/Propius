@@ -12,7 +12,7 @@ class Client:
     def __init__(self, id:int, public_specifications:tuple, 
                  private_specifications:tuple,
                  cm_ip:str, cm_port:int):
-        self.id = id
+        self.id = 0
         self.public_specifications = public_specifications
         self.private_specifications = private_specifications
 
@@ -34,7 +34,6 @@ class Client:
 
     async def checkin(self)->propius_pb2.cm_offer:
         client_checkin_msg = propius_pb2.client_checkin(
-            client_id=self.id,
             public_specification=pickle.dumps(self.public_specifications)
             )
         task_offer = self.cm_stub.CLIENT_CHECKIN(client_checkin_msg)
@@ -91,7 +90,7 @@ class Client:
         if client_plotter:
             await client_plotter.client_start()
         cm_offer = await self.checkin()
-
+        self.id = cm_offer.client_id
         task_ids = pickle.loads(cm_offer.task_offer)
         task_private_constraint = pickle.loads(cm_offer.private_constraint)
         print(f"Client {self.id}: recieve client manager offer: {task_ids}")

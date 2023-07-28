@@ -1,6 +1,0 @@
-README.md
-setup.py
-propius.egg-info/PKG-INFO
-propius.egg-info/SOURCES.txt
-propius.egg-info/dependency_links.txt
-propius.egg-info/top_level.txt

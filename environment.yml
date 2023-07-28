@@ -10,4 +10,5 @@ dependencies:
   - numpy
   - matplotlib
   - redis-py
-  - pickle
+  - pytorch
+  - torchvision
