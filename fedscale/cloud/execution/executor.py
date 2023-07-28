@@ -78,6 +78,19 @@ class Executor(object):
         #TODO logging
         self.setup_seed(seed=1)
 
+    def setup_seed(self, seed=1):
+        """Set random seed for reproducibility
+
+        Args:
+            seed (int): random seed
+
+        """
+        torch.manual_seed(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        random.seed(seed)
+
     def init_data(self):
         """Return the training and testing dataset
 
@@ -85,16 +98,27 @@ class Executor(object):
             Tuple of DataPartitioner class: The partioned dataset class for training and testing
 
         """
-        train_dataset, test_dataset = init_dataset()
+        #TODO train_dataset, test_dataset = init_dataset()
+        if self.args.data_set == "femnist":
+            from fedscale.dataloaders.femnist import FEMNIST
+            from fedscale.dataloaders.utils_data import get_data_transform
+
+            train_transform, test_transform = get_data_transform('mnist')
+            train_dataset = FEMNIST(
+                self.args.data_dir, dataset='train', transform=train_transform)
+            test_dataset = FEMNIST(
+                self.args.data_dir, dataset='test', transform=test_transform)
 
         #TODO various tasks
         # load data partitionxr (entire_train_data)
         #TODO logging
         training_sets = DataPartitioner(
             data=train_dataset, args=self.args, numOfClass=self.args.num_class)
+        #TODO training_sets.partition_data_helper(
+        #     num_clients=self.args.num_participants, data_map_file=self.args.data_map_file)
         training_sets.partition_data_helper(
-            num_clients=self.args.num_participants, data_map_file=self.args.data_map_file)
-        
+            num_clients=self.args.num_clients, data_map_file=None
+        )
         testing_sets = DataPartitioner(
             data=test_dataset, args=self.args, numOfClass=self.args.num_class, isTest=True)
         testing_sets.partition_data_helper(num_clients=self.num_executors)
@@ -376,7 +400,9 @@ class Executor(object):
         """
         print(f"Client {self.executor_id}: setting up environment")
         self.setup_env()
+        print(f"Client {self.executor_id}: initting data")
         self.training_sets, self.testing_sets = self.init_data()
+        print(f"Client {self.executor_id}: setting up communication")
         self.setup_communication()
         self.event_monitor()
 
@@ -422,6 +448,16 @@ if __name__ == "__main__":
         "task" : "cv",
         "model" : "resnet18",
         "data_set": "femnist",
+        "num_executors" : 1,
+        "num_clients" : 1,
+        "this_rank" : 1,
+        "ps_ip" : "localhost",
+        "ps_port" : 61000,
+        "data_dir" : "./benchmark/dataset/data/femnist",
+        "num_class" : 0,
+        "test_ratio" : 0.5,
+        "batch_size" : 10,
+        "num_loaders" : 20,
     }
     
     args = Namespace(**args)

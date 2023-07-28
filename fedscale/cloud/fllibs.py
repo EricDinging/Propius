@@ -7,12 +7,12 @@ import torchvision.models as tormodels
 from torchvision import datasets, transforms
 
 # libs from fedscale
-import fedscale.cloud.config_parser as parser
+#TODO: import fedscale.cloud.config_parser as parser
 from fedscale.cloud import commons
 from fedscale.dataloaders.utils_data import get_data_transform
 # FedScale model libs
-from fedscale.utils.models.torch_model_provider import get_cv_model
-from fedscale.utils.models.tensorflow_model_provider import get_tensorflow_model
+#TODO: from fedscale.utils.models.torch_model_provider import get_cv_model
+#TODO: from fedscale.utils.models.tensorflow_model_provider import get_tensorflow_model
 
 tokenizer = None
 
@@ -83,8 +83,9 @@ def import_libs():
 # initiate for nlp
 
 # Yile: are these vars used anywhere?
-os.environ['MASTER_ADDR'] = parser.args.ps_ip
-os.environ['MASTER_PORT'] = parser.args.ps_port
+#TODO
+# os.environ['MASTER_ADDR'] = parser.args.ps_ip
+# os.environ['MASTER_PORT'] = parser.args.ps_port
 
 outputClass = {'Mnist': 10, 'cifar10': 10, "imagenet": 1000, 'emnist': 47, 'amazon': 5,
                'openImg': 596, 'google_speech': 35, 'femnist': 62, 'yelp': 5, 'inaturalist': 1010
