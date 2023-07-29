@@ -349,6 +349,7 @@ class Executor(object):
                 current_event = request.event
 
                 if current_event == commons.CLIENT_TRAIN:
+                    print(f"Client {self.executor_id}: recieve train event")
                     train_config = self.deserialize_response(request.meta)
                     train_model = self.deserialize_response(request.data)
                     train_config['model'] = train_model
@@ -372,16 +373,20 @@ class Executor(object):
                         )
 
                 elif current_event == commons.MODEL_TEST:
+                    print(f"Client {self.executor_id}: recieve test event")
                     self.Test(self.deserialize_response(request.meta))
 
                 elif current_event == commons.UPDATE_MODEL:
+                    print(f"Client {self.executor_id}: recieve update model event")
                     model_weights = self.deserialize_response(request.data)
                     self.UpdateModel(model_weights)
                 
                 elif current_event == commons.SHUT_DOWN:
+                    print(f"Client {self.executor_id}: recieve shutdown event")
                     self.Stop()
                 
                 elif current_event == commons.DUMMY_EVENT:
+                    print(f"Client {self.executor_id}: recieve dummy event")
                     pass
             
             else:
@@ -404,6 +409,7 @@ class Executor(object):
         self.training_sets, self.testing_sets = self.init_data()
         print(f"Client {self.executor_id}: setting up communication")
         self.setup_communication()
+        print(f"Client {self.executor_id}: registering to job")
         self.event_monitor()
 
     def Stop(self):
