@@ -36,8 +36,9 @@ class Executor(object):
 
             model = resnet18(num_classes=outputClass[args.data_set], in_channels=1)
 
-        self.model_adapter = self.get_client_trainer(args).get_model_adapter(model)
-
+        #TODO self.model_adapter = self.get_client_trainer(args).get_model_adapter(model)
+        
+        self.model_adapter = None
         self.args = args
         self.num_executors = args.num_executors
         # ======== env information ========
