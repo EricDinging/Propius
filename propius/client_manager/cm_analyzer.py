@@ -1,4 +1,4 @@
-from src.util.analyzer import *
+from propius.util.analyzer import *
 import asyncio
 
 class CM_analyzer(Analyzer):

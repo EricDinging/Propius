@@ -4,11 +4,11 @@ import sys
 import logging
 import grpc
 import yaml
-from src.channels import propius_pb2
-from src.channels import propius_pb2_grpc
-from src.scheduler.db_stub import *
+from propius.channels import propius_pb2
+from propius.channels import propius_pb2_grpc
+from propius.scheduler.db_stub import *
 import asyncio
-from src.scheduler.sc_analyzer import *
+from propius.scheduler.sc_analyzer import *
 
 _cleanup_routines = []
 

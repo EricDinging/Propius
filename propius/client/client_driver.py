@@ -1,6 +1,6 @@
 import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
-from src.client.client import *
+from propius.client.client import *
 import logging
 import yaml
 import asyncio

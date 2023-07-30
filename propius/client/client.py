@@ -4,9 +4,9 @@ import random
 import math
 import asyncio
 import pickle
-from src.channels import propius_pb2
-from src.channels import propius_pb2_grpc
-from src.util.db import geq
+from propius.channels import propius_pb2
+from propius.channels import propius_pb2_grpc
+from propius.util.db import geq
 
 class Client:
     def __init__(self, id:int, public_specifications:tuple, 

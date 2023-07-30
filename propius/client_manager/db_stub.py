@@ -6,7 +6,7 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from redis.commands.search.query import NumericFilter, Query
 import time
 import json
-from src.util.db import *
+from propius.util.db import *
 
 class Job_db_stub(Job_db):
     def __init__(self, gconfig):
