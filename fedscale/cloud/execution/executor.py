@@ -447,7 +447,7 @@ if __name__ == "__main__":
         "local_steps": 10,
         "batch_size" : 10,
         "gradient_policy" : "SGD",
-        "learning_rate" : 1e-2,
+        "learning_rate" : 0.05,
 
         "use_cuda" : False,
         "task" : "cv",

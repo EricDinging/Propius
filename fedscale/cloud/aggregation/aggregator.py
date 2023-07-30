@@ -67,7 +67,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.model_update_size = 0.
 
         self.collate_fn = None
-        self.round = 0
+        self.round = 1
         self.total_round = self.args.rounds
 
         self.start_run_time = time.time()
@@ -221,7 +221,6 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.broadcast_events_queue.append(event)
     
     def round_start_handler(self):
-        self.round += 1
         run_time = time.time() - self.start_run_time
         print(f"Wall clock: {run_time} s, starting round: {self.round}, Planned participants: " + 
               f"{len(self.individual_client_events)}")
@@ -241,7 +240,6 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         #TODO virtual clock
         #TODO stats
         #TODO client manager register feedback for straggler
-
         avg_loss = sum(self.loss_accumulator) / max(1, len(self.loss_accumulator))
         #TODO logging
         run_time = time.time() - self.start_run_time
@@ -262,6 +260,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.model_in_update = 0
         self.test_result_accumulator = []
         self.loss_accumulator = []
+        self.round += 1
 
     def update_default_task_config(self):
         """Update the default task configuration after each round
@@ -269,7 +268,21 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         if self.round % self.args.decay_round == 0:
             self.args.learning_rate = max(
                 self.args.learning_rate * self.args.decay_factor, self.args.min_learning_rate)
-            
+    
+    def aggregate_test_result(self):
+        accumulator = self.test_result_accumulator[0]
+        for i in range(1, len(self.test_result_accumulator)):
+            #TODO: detection
+            for key in accumulator:
+                accumulator[key] += self.test_result_accumulator[i][key]
+        #TODO testing history
+        avg_loss = 0
+        for metric_name in accumulator.keys():
+            if metric_name == 'test_loss':
+                avg_loss = accumulator['test_loss'] / accumulator['test_len']
+            #TODO other metric
+
+        print(f"Parameter server: round {self.round} avg loss: {avg_loss}")
     def testing_completion_handler(self, client_id, results):
         """Each executor will handle a subset of testing dataset
 
@@ -285,7 +298,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         # Have collected all testing results
         if len(self.test_result_accumulator) == len(self.individual_client_events):
-            #TODO self.aggregate_test_result()
+            self.aggregate_test_result()
             #TODO dump test result
             #TODO save model
             #TODO logging
@@ -319,7 +332,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                         self.deserialize_response(data))
                     if len(self.loss_accumulator) == self.tasks_round:
                         self.round_completion_handler()
-                        if self.round >= self.args.rounds:
+                        if self.round > self.args.rounds:
                             break
                 
                 elif current_event == commons.MODEL_TEST:
@@ -372,18 +385,17 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             ServerResponse: Server response to registeration request
 
         """
-        if len(self.individual_client_events) == self.tasks_round:
-            #TODO check in later
-            return job_api_pb2.ServerResponse(event=commons.DUMMY_EVENT,
-                                          meta=dummy_data, data=dummy_data)
+        dummy_data = self.serialize_response(commons.DUMMY_RESPONSE)
+        event=commons.DUMMY_EVENT
+        if len(self.individual_client_events) >= self.tasks_round:
+            event=commons.SHUT_DOWN
         executor_id = request.executor_id
         executor_info = self.deserialize_response(request.executor_info)
         if executor_id not in self.individual_client_events:
             #TODO logging
             self.individual_client_events[executor_id] = collections.deque()
         self.executor_info_handler(executor_id, executor_info)
-        dummy_data = self.serialize_response(commons.DUMMY_RESPONSE)
-        return job_api_pb2.ServerResponse(event=commons.DUMMY_EVENT,
+        return job_api_pb2.ServerResponse(event=event,
                                           meta=dummy_data, data=dummy_data)
     
 
@@ -529,14 +541,15 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             if execution_status is False:
                 print(f"Parameter server: client {executor_id} fails to complete train")
             #TODO resource manager assign new task
-        
-        elif event in (commons.MODEL_TEST, commons.UPLOAD_MODEL):
+        elif event == commons.UPLOAD_MODEL:
             self.add_event_handler(
                 executor_id, event, meta_result, data_result
             )
             current_event = commons.SHUT_DOWN
-            response_data = response_msg = commons.DUMMY_RESPONSE
-
+        elif event in (commons.MODEL_TEST, commons.UPLOAD_MODEL):
+            self.add_event_handler(
+                executor_id, event, meta_result, data_result
+            )
         else:
             print(f"Parameter server: recieved undefined event {event} from client {executor_id}")
         response = job_api_pb2.ServerResponse(event=current_event,

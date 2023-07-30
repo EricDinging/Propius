@@ -8,7 +8,7 @@ from torch.nn import CTCLoss
 from fedscale.cloud.execution.client_base import ClientBase
 #from fedscale.cloud.execution.optimizers import ClientOptimizer
 from fedscale.cloud.internal.torch_model_adapter import TorchModelAdapter
-
+from fedscale.utils.model_test_module import test_pytorch_model
 class TorchClient(ClientBase):
     """Implements a PyTorch-based client for training and evaluation."""
 
@@ -146,9 +146,14 @@ class TorchClient(ClientBase):
         evalStart = time.time()
         #TODO voice task
         criterion = torch.nn.CrossEntropyLoss().to(device=self.device)
-        #TODO test
-        #test_loss, acc, acc_5, test_results = test_pytorch_model
-        test_results = None
+        test_loss, acc, acc_5, test_results = test_pytorch_model(conf.rank, model,
+                                                                 client_data,
+                                                                 device=self.device,
+                                                                 criterion=criterion,
+                                                                 tokenizer=conf.tokenizer)
+        
+
+        print(f"Client {conf.rank}: test_loss {test_loss}, accuracy {acc:.2f}, test_5_accuracy {acc_5:.2f}")
         return test_results
     
     def get_model_adapter(self, model) -> TorchModelAdapter:
