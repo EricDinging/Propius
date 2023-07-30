@@ -147,13 +147,13 @@ if __name__ == '__main__':
     global_setup_file = './global_config.yml'
 
     if len(sys.argv) != 5:
-        print("Wrong format: python job/job.py <config file> job_id job_ip job_port")
+        print("Wrong format: python propius/job_sim/job.py <config file> job_id job_ip job_port")
         exit(1)
 
     with open(global_setup_file, 'r') as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            print("Job manager read config successfully")
+            print("Job read config successfully")
             loop = asyncio.get_event_loop()
             loop.run_until_complete(run(gconfig))
         except KeyboardInterrupt:

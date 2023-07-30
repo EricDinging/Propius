@@ -1,0 +1,24 @@
+# Server setting
+connection_timeout : 100
+ps_ip: localhost
+ps_port: 61000
+
+# Training setting
+engine: pytorch
+model: resnet18
+data_set: femnist
+gradient_policy: fedavg
+demand: 2
+decay_round: 3 # learning rate decay after decay round
+learning_rate: 0.05
+decay_factor: 0.9
+min_learning_rate: 0.01
+rounds: 6 # Total round
+eval_interval: 3
+
+# Client constraints
+public_constraint:
+  - 28
+  - 28
+  - 28
+private_constraint: []

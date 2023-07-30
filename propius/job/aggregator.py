@@ -23,6 +23,13 @@ from fedscale.cloud.internal.torch_model_adapter import TorchModelAdapter
 from fedscale.cloud.fllibs import *
 
 from argparse import Namespace
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
+import yaml
+from propius.channels import propius_pb2
+from propius.channels import propius_pb2_grpc
+import sys
+
 
 MAX_MESSAGE_LENGTH = 1 * 1024 * 1024 * 1024  # 1GB
 
@@ -34,7 +41,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
     """
 
-    def __init__(self, args):
+    def __init__(self, gconfig, args):
         self.args = args
         #TODO deployment
         self.experiment_mode = 'deployment'
@@ -83,6 +90,25 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         #TODO log
         #TODO wandb
         #TODO init task context
+
+        # ======== propius =======
+        self.id = -1
+        self.jm_channel = None
+        self.jm_stub = None
+        jm_ip = gconfig['job_manager_ip']
+        jm_port = gconfig['job_manager_port']
+        self._connect_jm(jm_ip, jm_port)
+
+        self.public_constraint = tuple(args.public_constraint)
+        self.private_constraint = tuple(args.private_constraint)
+        self.ip = args.ps_ip
+        self.port = args.ps_port
+        self.shut_down = False
+
+    def _connect_jm(self, jm_ip:str, jm_port:int)->None:
+        self.jm_channel = grpc.insecure_channel(f'{jm_ip}:{jm_port}')
+        self.jm_stub = propius_pb2_grpc.Job_managerStub(self.jm_channel)
+        print(f"Aggregator: connecting to job manager at {jm_ip}:{jm_port}")
 
     def setup_env(self):
         """Set up experiments environment and server optimizer
@@ -261,6 +287,9 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.test_result_accumulator = []
         self.loss_accumulator = []
         self.round += 1
+        if not self.request():
+            self.shut_down = True
+            return
 
     def update_default_task_config(self):
         """Update the default task configuration after each round
@@ -282,7 +311,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 avg_loss = accumulator['test_loss'] / accumulator['test_len']
             #TODO other metric
 
-        print(f"Parameter server: round {self.round} avg loss: {avg_loss}")
+        print(f"Parameter server {self.id}: round {self.round} avg loss: {avg_loss}")
     def testing_completion_handler(self, client_id, results):
         """Each executor will handle a subset of testing dataset
 
@@ -308,7 +337,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
     def event_monitor(self):
         """Activate event handler according to the received new message
         """
-        while True:
+        while not self.shut_down:
             # Broadcast events to clients
             if len(self.broadcast_events_queue) > 0:
                 current_event = self.broadcast_events_queue.popleft()
@@ -333,7 +362,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                     if len(self.loss_accumulator) >= self.tasks_round:
                         self.round_completion_handler()
                         if self.round > self.args.rounds:
-                            break
+                            self.shut_down = True
                 
                 elif current_event == commons.MODEL_TEST:
                     self.testing_completion_handler(
@@ -357,6 +386,19 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """
         pass
 
+    def request(self)->bool:
+        request_msg = propius_pb2.job_round_info(
+            id = self.id,
+            demand = self.tasks_round,
+        )
+        ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
+        if not ack_msg.ack:
+            print(f"Parameter server {self.id} round {self.round}/{self.total_round} request failed")
+            return False
+        else:
+            print(f"Parameter server {self.id} round {self.round}/{self.total_round} request success")
+            return True
+
     def executor_info_handler(self, executor_id, info):
         """Handler for register executor info and it will start the round after number of
         executor reaches requirement.
@@ -367,13 +409,12 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         """
         #TODO logging
-        print(f"Parameter server: recieve client {executor_id} registration, {len(self.individual_client_events)} over {self.tasks_round} registered")
+        print(f"Parameter server {self.id}: recieve client {executor_id} registration, {len(self.individual_client_events)} over {self.tasks_round} registered")
 
         #TODO simulation
         #TODO self.client_register_handler(executor_id, info)
         if len(self.individual_client_events) >= self.tasks_round:
             self.round_start_handler()
-
 
     def CLIENT_REGISTER(self, request, context):
         """FL TorchClient register to the aggregator
@@ -391,9 +432,9 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         executor_info = self.deserialize_response(request.executor_info)
         if len(self.individual_client_events) >= self.tasks_round:
             event=commons.SHUT_DOWN
-            print(f"Parameter server: recieve client {executor_id} register during round, shutting it down")
+            print(f"Parameter server {self.id}: recieve client {executor_id} register during round, shutting it down")
         else:
-            print(f"Parameter server: recieve client {executor_id} register")
+            print(f"Parameter server {self.id}: recieve client {executor_id} register")
             if executor_id not in self.individual_client_events:
                 #TODO logging
                 self.individual_client_events[executor_id] = collections.deque()
@@ -506,7 +547,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                                               meta=response_msg, data=response_data)
         #TODO logging
         if current_event != commons.DUMMY_EVENT:
-            print(f"Parameter server: issue event ({current_event}) to executor ({executor_id})")
+            print(f"Parameter server {self.id}: issue event ({current_event}) to executor ({executor_id})")
         return response
     
     def add_event_handler(self, client_id, event, meta, data):
@@ -535,14 +576,14 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         executor_id, client_id, event = request.executor_id, request.client_id, request.event
         execution_status, execution_msg = request.status, request.msg
         meta_result, data_result = request.meta_result, request.data_result
-        print(f"Parameter server: recieve client {executor_id} event ({event}) completion")
+        print(f"Parameter server {self.id}: recieve client {executor_id} event ({event}) completion")
 
         current_event = commons.DUMMY_EVENT
         response_data = response_msg = commons.DUMMY_RESPONSE
 
         if event == commons.CLIENT_TRAIN:
             if execution_status is False:
-                print(f"Parameter server: client {executor_id} fails to complete train")
+                print(f"Parameter server {self.id}: client {executor_id} fails to complete train")
             #TODO resource manager assign new task
         elif event == commons.UPLOAD_MODEL:
             self.add_event_handler(
@@ -554,27 +595,53 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 executor_id, event, meta_result, data_result
             )
         else:
-            print(f"Parameter server: recieved undefined event {event} from client {executor_id}")
+            print(f"Parameter server {self.id}: recieved undefined event {event} from client {executor_id}")
         response_msg = self.serialize_response(response_msg)
         response_data = self.serialize_response(response_data)
         response = job_api_pb2.ServerResponse(event=current_event,
                                               meta=response_msg, data=response_data)
         return response
 
+    def register(self)->bool:
+        job_info_msg = propius_pb2.job_info(
+            est_demand = self.tasks_round,
+            est_total_round = self.total_round,
+            public_constraint = pickle.dumps(self.public_constraint),
+            private_constraint = pickle.dumps(self.private_constraint),
+            ip = pickle.dumps(self.ip),
+            port = self.port,
+        )
+        ack_msg = self.jm_stub.JOB_REGIST(job_info_msg)
+        self.id = ack_msg.id
+        ack = ack_msg.ack
+        if not ack:
+            print(f"Parameter server {self.id}: {self.id}: Propius register failed")
+            return False
+        else:
+            print(f"Parameter server {self.id}: {self.id}: Propius register success")
+            return True
+
     def run(self):
         """Start running the aggregator server by setting up execution
         and communication environment, and monitoring the grpc message.
         """
+        if not self.register():
+            self.stop()
+            return
         self.setup_env()
         #TODO load client profile
-        print(f"Parameter server: init control communication")
+        print(f"Parameter server {self.id}: init control communication")
         self.init_control_communication()
         #TODO init data communication
-        print(f"Parameter server: init model")
+        print(f"Parameter server {self.id}: init model")
         self.init_model()
         self.model_update_size = sys.getsizeof(
             pickle.dumps(self.model_wrapper)) / 1024.0 * 8.
-        print(f"Parameter server: init model complete, size {self.model_update_size}")
+        print(f"Parameter server {self.id}: init model complete, size {self.model_update_size}")
+        
+        if not self.request():
+            self.stop()
+            return
         self.event_monitor()
         self.stop()
     
@@ -586,23 +653,25 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         time.sleep(5)
 
 if __name__ == "__main__":
-    args = {
-        'connection_timeout' : 100,
-        'ps_ip' : 'localhost',
-        'ps_port' : 60500,
-        'engine' : 'pytorch',
-        'model' : 'resnet18',
-        'data_set' : 'femnist',
-        'gradient_policy' : 'fedavg',
-        'demand' : 2,
-        'decay_round' : 3,
-        'learning_rate' : 0.05,
-        'decay_factor' : 0.9,
-        'min_learning_rate' : 0.01,
-        'rounds' : 6,
-        'eval_interval' : 3,
+    global_setup_file = './global_config.yml'
 
-    }
-    args = Namespace(**args)
-    aggregator = Aggregator(args)
-    aggregator.run()
+    if len(sys.argv) != 2:
+        print("Wrong format: python propius/job/aggregator.py <config file>")
+        exit(1)
+
+    with open(global_setup_file, 'r') as gyamlfile:
+        try:
+            gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
+            config_file = str(sys.argv[1])
+            with open(config_file, 'r') as config_file:
+                args = yaml.load(config_file, Loader=yaml.FullLoader)
+                print("Parameter server reads config successfully")
+    
+                args = Namespace(**args)
+                aggregator = Aggregator(gconfig, args)
+                aggregator.run()
+        
+        except KeyboardInterrupt:
+            pass
+        except Exception as e:
+            print(e)

@@ -1,0 +1,2 @@
+Job manager: avg request per second: 0.013, max request per second: 2
+Job manager: total job: 2, total round: 1
