@@ -394,10 +394,10 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             print(f"Parameter server: recieve client {executor_id} register during round, shutting it down")
         else:
             print(f"Parameter server: recieve client {executor_id} register")
-        if executor_id not in self.individual_client_events:
-            #TODO logging
-            self.individual_client_events[executor_id] = collections.deque()
-        self.executor_info_handler(executor_id, executor_info)
+            if executor_id not in self.individual_client_events:
+                #TODO logging
+                self.individual_client_events[executor_id] = collections.deque()
+                self.executor_info_handler(executor_id, executor_info)
         return job_api_pb2.ServerResponse(event=event,
                                           meta=dummy_data, data=dummy_data)
     
@@ -589,7 +589,7 @@ if __name__ == "__main__":
     args = {
         'connection_timeout' : 100,
         'ps_ip' : 'localhost',
-        'ps_port' : 61000,
+        'ps_port' : 60500,
         'engine' : 'pytorch',
         'model' : 'resnet18',
         'data_set' : 'femnist',

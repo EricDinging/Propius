@@ -191,7 +191,7 @@ class Executor(object):
         start_time = time.time()
         while time.time() - start_time < 180:
             try:
-                print(f"Client {self.executor_id} register to parameter server")
+                print(f"Client {self.executor_id}: register to parameter server")
                 response = self.aggregator_communicator.stub.CLIENT_REGISTER(
                     job_api_pb2.RegisterRequest(
                         client_id=self.executor_id,
@@ -249,17 +249,23 @@ class Executor(object):
                                           conf=client_conf)
         
         # Report execution completion meta information
-        response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
-            job_api_pb2.CompleteRequest(
-                client_id=str(client_id),
-                executor_id=self.executor_id,
-                event=commons.CLIENT_TRAIN,
-                status=True,
-                msg=None,
-                meta_result=None,
-                data_result=None
-            )
-        )
+        while True:
+            try:
+                response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
+                    job_api_pb2.CompleteRequest(
+                        client_id=str(client_id),
+                        executor_id=self.executor_id,
+                        event=commons.CLIENT_TRAIN,
+                        status=True,
+                        msg=None,
+                        meta_result=None,
+                        data_result=None
+                    )
+                )
+                break
+            except Exception as e:
+                time.sleep(0.5)
+
         self.dispatch_worker_events(response)
 
         return client_id, train_res
@@ -458,7 +464,7 @@ if __name__ == "__main__":
         "num_clients" : 1,
         "this_rank" : 1,
         "ps_ip" : "localhost",
-        "ps_port" : 61000,
+        "ps_port" : 60500,
         "data_dir" : "./benchmark/dataset/data/femnist",
         "num_class" : 0,
         "test_ratio" : 0.5,
@@ -466,6 +472,7 @@ if __name__ == "__main__":
         "num_loaders" : 8,
         "memory_capacity" : 1,
         "test_bsz" : 10,
+        "loss_decay" : 0.95,
     }
     
     args = Namespace(**args)
