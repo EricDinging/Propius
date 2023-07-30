@@ -25,6 +25,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.sched_stub = None
         self._connect_sched(gconfig['sched_ip'], int(gconfig['sched_port']))
         self.sched_alg = gconfig['sched_alg']
+        self.job_total_num = 0
 
     def _connect_sched(self, sched_ip:str, sched_port:int)->None:
         self.sched_channel = grpc.insecure_channel(f'{sched_ip}:{sched_port}')
@@ -32,12 +33,13 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         print(f"Job manager: connecting to scheduler at {sched_ip}:{sched_port}")  
 
     async def JOB_REGIST(self, request, context):
-        job_id, est_demand = request.id, request.est_demand
+        est_demand = request.est_demand
         est_total_round= request.est_total_round
         job_ip, job_port = pickle.loads(request.ip), request.port
         public_constraint = pickle.loads(request.public_constraint)
         private_constraint = pickle.loads(request.private_constraint)
-        
+        job_id = self.job_total_num
+
         print(f"Job manager: job {job_id} check in, " +
               f"public constraint: {public_constraint}, "+
               f"private constraint: {private_constraint}")
@@ -50,10 +52,11 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         print(f"Job manager: ack job {job_id} register: {ack}")
         if ack:
             await self.jm_analyzer.job_register()
+            self.job_total_num += 1
             self.sched_stub.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
         else:
             await self.jm_analyzer.request()
-        return propius_pb2.ack(ack=ack)
+        return propius_pb2.job_register_ack(id=job_id, ack=ack)
     
     async def JOB_REQUEST(self, request, context):
         job_id, demand= request.id, request.demand

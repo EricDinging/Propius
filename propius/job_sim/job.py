@@ -13,7 +13,7 @@ _cleanup_coroutines = []
 
 class Job(propius_pb2_grpc.JobServicer):
     def __init__(self, id, jm_ip, jm_port, ip, port, config):
-        self.id = id
+        self.id = -1
         self.demand = int(config['demand'])
         self.public_constraint = tuple(config['public_constraint'])
         self.private_constraint = tuple(config['private_constraint'])
@@ -42,7 +42,6 @@ class Job(propius_pb2_grpc.JobServicer):
 
     def register(self)->bool:
         job_info_msg = propius_pb2.job_info(
-            id = self.id,
             est_demand = self.demand,
             est_total_round = self.est_total_round,
             public_constraint = pickle.dumps(self.public_constraint),
@@ -51,7 +50,9 @@ class Job(propius_pb2_grpc.JobServicer):
             port = self.port,
         )
         ack_msg = self.jm_stub.JOB_REGIST(job_info_msg)
-        if not ack_msg.ack:
+        self.id = ack_msg.id
+        ack = ack_msg.ack
+        if not ack:
             print(f"Job {self.id}: register failed")
             return False
         else:

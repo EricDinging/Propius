@@ -11,7 +11,7 @@ service Job {
 }
 
 service Job_manager {
-    rpc JOB_REGIST (job_info) returns (ack) {}
+    rpc JOB_REGIST (job_info) returns (job_register_ack) {}
     rpc JOB_REQUEST (job_round_info) returns (ack) {}
     rpc JOB_FINISH (job_id) returns (empty) {}
 }
@@ -59,13 +59,12 @@ message job_id {
 }
 
 message job_info {
-    int32 id = 1;
-    int32 est_demand = 2;
-    int32 est_total_round = 3;
-    bytes public_constraint = 4;
-    bytes private_constraint = 5;
-    bytes ip = 6;
-    int32 port = 7;
+    int32 est_demand = 1;
+    int32 est_total_round = 2;
+    bytes public_constraint = 3;
+    bytes private_constraint = 4;
+    bytes ip = 5;
+    int32 port = 6;
 }
 
 message job_round_info {
@@ -79,6 +78,11 @@ message client_report {
 }
 
 message empty {
+}
+
+message job_register_ack {
+    int32 id = 1;
+    bool ack = 2;
 }
 
 message ack {

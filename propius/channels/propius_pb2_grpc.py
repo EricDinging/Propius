@@ -111,7 +111,7 @@ class Job_managerStub(object):
         self.JOB_REGIST = channel.unary_unary(
                 '/propius.Job_manager/JOB_REGIST',
                 request_serializer=propius__pb2.job_info.SerializeToString,
-                response_deserializer=propius__pb2.ack.FromString,
+                response_deserializer=propius__pb2.job_register_ack.FromString,
                 )
         self.JOB_REQUEST = channel.unary_unary(
                 '/propius.Job_manager/JOB_REQUEST',
@@ -152,7 +152,7 @@ def add_Job_managerServicer_to_server(servicer, server):
             'JOB_REGIST': grpc.unary_unary_rpc_method_handler(
                     servicer.JOB_REGIST,
                     request_deserializer=propius__pb2.job_info.FromString,
-                    response_serializer=propius__pb2.ack.SerializeToString,
+                    response_serializer=propius__pb2.job_register_ack.SerializeToString,
             ),
             'JOB_REQUEST': grpc.unary_unary_rpc_method_handler(
                     servicer.JOB_REQUEST,
@@ -187,7 +187,7 @@ class Job_manager(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/propius.Job_manager/JOB_REGIST',
             propius__pb2.job_info.SerializeToString,
-            propius__pb2.ack.FromString,
+            propius__pb2.job_register_ack.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
