@@ -44,7 +44,7 @@ class Executor(object):
         self.executor_id = str(self.this_rank)
 
         # ======== model and data ========
-        self.training_sets = self.test_dataset = None
+        self.training_sets = self.testing_sets = None
 
         # ======== channels ========
         self.aggregator_communicator = ClientConnections(
@@ -188,10 +188,10 @@ class Executor(object):
     def client_register(self):
         """Register the executor information to the aggregator
         """
-        print(f"Client {self.executor_id} register to parameter server")
         start_time = time.time()
         while time.time() - start_time < 180:
             try:
+                print(f"Client {self.executor_id} register to parameter server")
                 response = self.aggregator_communicator.stub.CLIENT_REGISTER(
                     job_api_pb2.RegisterRequest(
                         client_id=self.executor_id,
@@ -204,6 +204,7 @@ class Executor(object):
                 self.dispatch_worker_events(response)
                 break
             except Exception as e:
+                print(e)
                 #TODO logging warning
                 time.sleep(5)
 
@@ -220,6 +221,7 @@ class Executor(object):
     def client_ping(self):
         """Ping the aggregator for new task
         """
+        print(f"Client {self.executor_id}: pinging parameter server")
         response = self.aggregator_communicator.stub.CLIENT_PING(job_api_pb2.PingRequest(
             client_id=self.executor_id,
             executor_id=self.executor_id
@@ -442,7 +444,6 @@ class Executor(object):
 
 if __name__ == "__main__":
     args = {
-        "client_id" : 0,
         "tokenizer" : None,
         "local_steps": 10,
         "batch_size" : 10,
@@ -462,7 +463,9 @@ if __name__ == "__main__":
         "num_class" : 0,
         "test_ratio" : 0.5,
         "batch_size" : 10,
-        "num_loaders" : 20,
+        "num_loaders" : 8,
+        "memory_capacity" : 1,
+        "test_bsz" : 10,
     }
     
     args = Namespace(**args)

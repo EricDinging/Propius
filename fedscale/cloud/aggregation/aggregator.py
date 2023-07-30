@@ -297,7 +297,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.test_result_accumulator.append(results)
 
         # Have collected all testing results
-        if len(self.test_result_accumulator) == len(self.individual_client_events):
+        if len(self.test_result_accumulator) >= self.tasks_round:
             self.aggregate_test_result()
             #TODO dump test result
             #TODO save model
@@ -330,7 +330,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 if current_event == commons.UPLOAD_MODEL:
                     self.client_completion_handler(
                         self.deserialize_response(data))
-                    if len(self.loss_accumulator) == self.tasks_round:
+                    if len(self.loss_accumulator) >= self.tasks_round:
                         self.round_completion_handler()
                         if self.round > self.args.rounds:
                             break
@@ -371,7 +371,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         #TODO simulation
         #TODO self.client_register_handler(executor_id, info)
-        if len(self.individual_client_events) >= len(self.tasks_round):
+        if len(self.individual_client_events) >= self.tasks_round:
             self.round_start_handler()
 
 
@@ -387,10 +387,13 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """
         dummy_data = self.serialize_response(commons.DUMMY_RESPONSE)
         event=commons.DUMMY_EVENT
-        if len(self.individual_client_events) >= self.tasks_round:
-            event=commons.SHUT_DOWN
         executor_id = request.executor_id
         executor_info = self.deserialize_response(request.executor_info)
+        if len(self.individual_client_events) >= self.tasks_round:
+            event=commons.SHUT_DOWN
+            print(f"Parameter server: recieve client {executor_id} register during round, shutting it down")
+        else:
+            print(f"Parameter server: recieve client {executor_id} register")
         if executor_id not in self.individual_client_events:
             #TODO logging
             self.individual_client_events[executor_id] = collections.deque()
@@ -518,7 +521,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """
         self.server_events_queue.append((client_id, event, meta, data))
     
-    def CLIENT_EXECUTE_COMPLETE(self, request, context):
+    def CLIENT_EXECUTE_COMPLETION(self, request, context):
         """FL clients complete the execution task.
 
         Args:
@@ -546,12 +549,14 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 executor_id, event, meta_result, data_result
             )
             current_event = commons.SHUT_DOWN
-        elif event in (commons.MODEL_TEST, commons.UPLOAD_MODEL):
+        elif event == commons.MODEL_TEST:
             self.add_event_handler(
                 executor_id, event, meta_result, data_result
             )
         else:
             print(f"Parameter server: recieved undefined event {event} from client {executor_id}")
+        response_msg = self.serialize_response(response_msg)
+        response_data = self.serialize_response(response_data)
         response = job_api_pb2.ServerResponse(event=current_event,
                                               meta=response_msg, data=response_data)
         return response
@@ -587,15 +592,15 @@ if __name__ == "__main__":
         'ps_port' : 61000,
         'engine' : 'pytorch',
         'model' : 'resnet18',
-        'dataset' : 'femnist',
+        'data_set' : 'femnist',
         'gradient_policy' : 'fedavg',
-        'demand' : 10,
-        'decay_round' : 10,
+        'demand' : 1,
+        'decay_round' : 3,
         'learning_rate' : 0.05,
         'decay_factor' : 0.9,
         'min_learning_rate' : 0.01,
-        'rounds' : 20,
-        'eval_interval' : 5,
+        'rounds' : 6,
+        'eval_interval' : 3,
 
     }
     args = Namespace(**args)

@@ -29,7 +29,7 @@ class TorchModelAdapter(ModelAdapterBase):
         
         new_state_dict = {
             name: torch.from_numpy(np.asarray(weights[i], dtype=np.float32))
-            for i, name in enumerate(self.model.state_dict().keys)
+            for i, name in enumerate(self.model.state_dict().keys())
         }
 
         self.model.load_state_dict(new_state_dict)
