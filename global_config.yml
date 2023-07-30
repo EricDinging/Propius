@@ -52,3 +52,8 @@ db_port: 6379
 client_expire_time: 100
 # Define the scale of the specifications
 metric_scale: 100
+
+# Fedscale simulation
+num_executors: 100
+num_clients: 100
+data_dir: ./benchmark/dataset/data/femnist
