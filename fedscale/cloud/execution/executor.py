@@ -36,9 +36,7 @@ class Executor(object):
 
             model = resnet18(num_classes=outputClass[args.data_set], in_channels=1)
 
-        #TODO self.model_adapter = self.get_client_trainer(args).get_model_adapter(model)
-        
-        self.model_adapter = None
+        self.model_adapter = self.get_client_trainer(args).get_model_adapter(model)
         self.args = args
         self.num_executors = args.num_executors
         # ======== env information ========
@@ -54,7 +52,7 @@ class Executor(object):
         
         # ======== runtime information ========
         self.collate_fn = None
-        self.round = 0
+        #self.round = 0
         self.start_run_time = time.time()
         self.recieved_stop_request = False
         self.event_queue = collections.deque()
@@ -190,7 +188,7 @@ class Executor(object):
     def client_register(self):
         """Register the executor information to the aggregator
         """
-        print(f"Client {self.executor_id} register to job server")
+        print(f"Client {self.executor_id} register to parameter server")
         start_time = time.time()
         while time.time() - start_time < 180:
             try:
@@ -216,7 +214,7 @@ class Executor(object):
             config (PyTorch or TensorFlow model): The broadcasted global model config
 
         """
-        self.round += 1
+        #self.round += 1
         self.model_adapter.set_weights(model_weights)
 
     def client_ping(self):
@@ -241,13 +239,12 @@ class Executor(object):
         client_id = config['client_id']
         train_config = config['task_config']
 
-        if 'model' not in config or not config['model']:
-            raise "The 'model' object must be a non-null value in the training config."
+        # if 'model' not in config or not config['model']:
+        #     raise "The 'model' object must be a non-null value in the training config."
         
         client_conf = self.override_conf(train_config)
         train_res = self.training_handler(client_id=client_id,
-                                          conf=client_conf,
-                                          model=config['model'])
+                                          conf=client_conf)
         
         # Report execution completion meta information
         response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
@@ -265,7 +262,7 @@ class Executor(object):
 
         return client_id, train_res
 
-    def training_handler(self, client_id, conf, model):
+    def training_handler(self, client_id, conf):
         """Train model given client id
 
         Args:
@@ -276,7 +273,7 @@ class Executor(object):
             dictionary: The train result
 
         """
-        self.model_adapter.set_weights(model)
+        #self.model_adapter.set_weights(model)
         conf.client_id = client_id
         #TODO conf tokenizer
         #TODO rl training set
@@ -352,8 +349,8 @@ class Executor(object):
                 if current_event == commons.CLIENT_TRAIN:
                     print(f"Client {self.executor_id}: recieve train event")
                     train_config = self.deserialize_response(request.meta)
-                    train_model = self.deserialize_response(request.data)
-                    train_config['model'] = train_model
+                    #train_model = self.deserialize_response(request.data)
+                    #train_config['model'] = train_model
                     train_config['client_id'] = int(train_config['client_id'])
                     client_id, train_res = self.Train(train_config)
 
@@ -384,6 +381,7 @@ class Executor(object):
                 
                 elif current_event == commons.SHUT_DOWN:
                     print(f"Client {self.executor_id}: recieve shutdown event")
+                    self.recieved_stop_request = True
                     self.Stop()
                 
                 elif current_event == commons.DUMMY_EVENT:

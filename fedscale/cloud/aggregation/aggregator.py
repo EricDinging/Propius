@@ -41,7 +41,6 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.device = 'cpu'
 
         # ======== env information ========
-        self.this_rank = 0
         #TODO virtual clock
         #TODO resource manager/client manager
 
@@ -50,40 +49,35 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.model_in_update = 0
         self.update_lock = threading.Lock()
         # all weights including bias/#_batch_tracked (e.g., state_dict)
-        self.model_weigths = None
+        self.model_weights = None
         #TODO model saving
 
         # ======== channels ========
         self.connection_timeout = self.args.connection_timeout
-        self.executors = None
         self.grpc_server = None
 
         # ======== Event Queue =======
         self.individual_client_events = {}  # Unicast
-        self.sever_events_queue = collections.deque()
+        self.server_events_queue = collections.deque()
         self.broadcast_events_queue = collections.deque()  # Broadcast
 
         # ======== runtime information ========
-        self.tasks_round = 0
-        self.num_of_clients = 0
-
-        self.sampled_participants = []
-
-        self.round_stragglers = []
+        self.tasks_round = self.args.demand
+        #TODO self.round_stragglers = []
         self.model_update_size = 0.
 
         self.collate_fn = None
         self.round = 0
+        self.total_round = self.args.rounds
 
         self.start_run_time = time.time()
         self.client_conf = {}
         
-        self.stats_util_accumulator = []
+        #TODO self.stats_util_accumulator = []
         self.loss_accumulator = []
-        self.client_training_results = []
 
         # number of registered executors
-        self.registered_executor_info = set()
+        #TODO self.registered_executor_info = set()
         self.test_result_accumulator = []
         #TODO testing history
         #TODO log
@@ -142,7 +136,161 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 self.model_wrapper = TorchModelAdapter(model, 
                                                        optimizer=TorchServerOptimizer(
                     self.args.gradient_policy, self.args, self.device))
-                self.model_weigths = self.model_wrapper.get_weights()
+                self.model_weights = self.model_wrapper.get_weights()
+
+    def dispatch_client_events(self, event, clients=None):
+        """Issue tasks (events) to clients
+
+        Args:
+            event (string): grpc event (e.g. MODEL_TEST, MODEL_TRAIN) to event_queue.
+            clients (list of int): target client ids for event.
+
+        """
+
+        for individual_event_queue in self.individual_client_events.values():
+            individual_event_queue.append(event)
+
+    def client_completion_handler(self, results):
+        """We may need to keep all updates from clients,
+        if so, we need to append results to the cache
+
+        Args:
+            results (dictionary): client's training result
+
+        """
+        # Format:
+        #       -results = {'client_id':client_id, 'update_weight': model_param, 'moving_loss': round_train_loss,
+        #       'trained_size': count, 'wall_duration': time_cost, 'success': is_success 'utility': utility}
+
+        #TODO q-fedavg
+        #TODO stats
+        self.loss_accumulator.append(results['moving_loss'])
+        #TODO client manager register feedback
+
+        # ================== Aggregate weights ======================
+        self.update_lock.acquire()
+
+        self.model_in_update += 1
+        self.update_weight_aggregation(results)
+
+        self.update_lock.release()
+
+    def _is_first_result_in_round(self):
+        return self.model_in_update == 1
+    
+    def _is_last_result_in_round(self):
+        return self.model_in_update == self.tasks_round
+
+    def update_weight_aggregation(self, results):
+        """Updates the aggregation with the new results.
+
+        :param results: the results collected from the client.
+        """
+        update_weights = results['update_weight']
+        if type(update_weights) is dict:
+            update_weights = [x for x in update_weights.values()]
+        if self._is_first_result_in_round:
+            self.model_weights = update_weights
+        else:
+            self.model_weights = [weight + update_weights[i] 
+                                  for i, weight in enumerate(self.model_weights)]
+        if self._is_last_result_in_round():
+            self.model_weights = [np.divide(weight, self.tasks_round)
+                                  for weight in self.model_weights]
+            self.model_wrapper.set_weights(copy.deepcopy(self.model_weights))
+
+    def deserialize_response(self, responses):
+        """Deserialize the response from executor
+
+        Args:
+            responses (byte stream): Serialized response from executor.
+
+        Returns:
+            string, bool, or bytes: The deserialized response object from executor.
+        """
+        return pickle.loads(responses)
+    
+    def broadcast_aggregator_events(self, event):
+        """Issue tasks (events) to aggregator worker processes by adding grpc request event
+        (e.g. MODEL_TEST, MODEL_TRAIN) to event_queue.
+
+        Args:
+            event (string): grpc event (e.g. MODEL_TEST, MODEL_TRAIN) to event_queue.
+
+        """
+        self.broadcast_events_queue.append(event)
+    
+    def round_start_handler(self):
+        self.round += 1
+        run_time = time.time() - self.start_run_time
+        print(f"Wall clock: {run_time} s, starting round: {self.round}, Planned participants: " + 
+              f"{len(self.individual_client_events)}")
+        self.update_default_task_config()
+        if self.round % self.args.eval_interval == 0 or self.round == 1:
+            self.broadcast_aggregator_events(commons.UPDATE_MODEL)
+            self.broadcast_aggregator_events(commons.MODEL_TEST)
+        else:
+            self.broadcast_aggregator_events(commons.UPDATE_MODEL)
+            self.broadcast_aggregator_events(commons.START_ROUND)
+        
+    
+    def round_completion_handler(self):
+        """Triggered upon the round completion, it registers the last round execution info,
+        broadcast new tasks for executors and select clients for next round.
+        """
+        #TODO virtual clock
+        #TODO stats
+        #TODO client manager register feedback for straggler
+
+        avg_loss = sum(self.loss_accumulator) / max(1, len(self.loss_accumulator))
+        #TODO logging
+        run_time = time.time() - self.start_run_time
+        print(f"Wall clock: {run_time} s, ending round: {self.round}, Planned participants: " + 
+              f"{len(self.individual_client_events)}, Training loss: {avg_loss}")
+        
+        #TODO dump round completion information to tensorboard
+        #TODO update select participants
+        #TODO tiktak client tasks
+
+        #TODO logging
+        #TODO issue requests to resource manager
+
+        # Update executors and participants
+        #TODO simulation
+        #TODO other simulation data
+        self.individual_client_events = {}
+        self.model_in_update = 0
+        self.test_result_accumulator = []
+        self.loss_accumulator = []
+
+    def update_default_task_config(self):
+        """Update the default task configuration after each round
+        """
+        if self.round % self.args.decay_round == 0:
+            self.args.learning_rate = max(
+                self.args.learning_rate * self.args.decay_factor, self.args.min_learning_rate)
+            
+    def testing_completion_handler(self, client_id, results):
+        """Each executor will handle a subset of testing dataset
+
+        Args:
+            client_id (int): The client id.
+            results (dictionary): The client test results.
+
+        """
+        results = results['results']
+
+        # List append is thread-safe
+        self.test_result_accumulator.append(results)
+
+        # Have collected all testing results
+        if len(self.test_result_accumulator) == len(self.individual_client_events):
+            #TODO self.aggregate_test_result()
+            #TODO dump test result
+            #TODO save model
+            #TODO logging
+            self.broadcast_events_queue.append(commons.START_ROUND)
+
 
     def event_monitor(self):
         """Activate event handler according to the received new message
@@ -161,17 +309,18 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 elif current_event == commons.SHUT_DOWN:
                     self.dispatch_client_events(commons.SHUT_DOWN)
                     #TODO edit logic for deployment
-                    break
             
             # Handle events queued on the aggregator
             elif len(self.server_events_queue) > 0:
-                client_id, current_event, _, data = self.sever_events_queue.popleft()
+                client_id, current_event, _, data = self.server_events_queue.popleft()
 
                 if current_event == commons.UPLOAD_MODEL:
                     self.client_completion_handler(
                         self.deserialize_response(data))
-                    if len(self.stats_util_accumulator) == self.tasks_round:
+                    if len(self.loss_accumulator) == self.tasks_round:
                         self.round_completion_handler()
+                        if self.round >= self.args.rounds:
+                            break
                 
                 elif current_event == commons.MODEL_TEST:
                     self.testing_completion_handler(
@@ -185,8 +334,214 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 # execute every 100 ms
                 time.sleep(0.1)
 
+    def client_register_handler(self, executor_id, info):
+        """Triggered once receive new executor registration.
+
+        Args:
+            executorId (int): Executor Id
+            info (dictionary): Executor information
+
+        """
+        pass
+
+    def executor_info_handler(self, executor_id, info):
+        """Handler for register executor info and it will start the round after number of
+        executor reaches requirement.
+
+        Args:
+            executorId (int): Executor Id
+            info (dictionary): Executor information
+
+        """
+        #TODO logging
+        print(f"Parameter server: recieve client {executor_id} registration, {len(self.individual_client_events)} over {self.tasks_round} registered")
+
+        #TODO simulation
+        #TODO self.client_register_handler(executor_id, info)
+        if len(self.individual_client_events) >= len(self.tasks_round):
+            self.round_start_handler()
 
 
+    def CLIENT_REGISTER(self, request, context):
+        """FL TorchClient register to the aggregator
+
+        Args:
+            request (RegisterRequest): Registeration request info from executor.
+
+        Returns:
+            ServerResponse: Server response to registeration request
+
+        """
+        if len(self.individual_client_events) == self.tasks_round:
+            #TODO check in later
+            return job_api_pb2.ServerResponse(event=commons.DUMMY_EVENT,
+                                          meta=dummy_data, data=dummy_data)
+        executor_id = request.executor_id
+        executor_info = self.deserialize_response(request.executor_info)
+        if executor_id not in self.individual_client_events:
+            #TODO logging
+            self.individual_client_events[executor_id] = collections.deque()
+        self.executor_info_handler(executor_id, executor_info)
+        dummy_data = self.serialize_response(commons.DUMMY_RESPONSE)
+        return job_api_pb2.ServerResponse(event=commons.DUMMY_EVENT,
+                                          meta=dummy_data, data=dummy_data)
+    
+
+    def get_client_conf(self, client_id):
+        """Training configurations that will be applied on clients,
+        developers can further define personalized client config here.
+
+        Args:
+            client_id (int): The client id.
+
+        Returns:
+            dictionary: TorchClient training config.
+
+        """
+        conf = {
+            'learning_rate': self.args.learning_rate,
+        }
+        return conf
+    
+    def create_client_task(self, executor_id):
+        """Issue a new client training task to specific executor
+
+        Args:
+            executorId (int): Executor Id.
+
+        Returns:
+            tuple: Training config for new task. (dictionary, PyTorch or TensorFlow module)
+
+        """
+        #TODO get next task
+        next_client_id = executor_id
+        config = self.get_client_conf(next_client_id)
+        train_config = {'client_id': next_client_id, 'task_config': config}
+        # return train_config, self.model_wrapper.get_weights()
+        return train_config
+    
+    def get_test_config(self, client_id):
+        """FL model testing on clients, developers can further define personalized client config here.
+
+        Args:
+            client_id (int): The client id.
+
+        Returns:
+            dictionary: The testing config for new task.
+
+        """
+        return {'client_id': client_id}
+    
+    def get_shutdown_config(self, client_id):
+        """Shutdown config for client, developers can further define personalized client config here.
+
+        Args:
+            client_id (int): TorchClient id.
+
+        Returns:
+            dictionary: Shutdown config for new task.
+
+        """
+        return {'client_id': client_id}
+    
+    def serialize_response(self, responses):
+        """ Serialize the response to send to server upon assigned job completion
+
+        Args:
+            responses (ServerResponse): Serialized response from server.
+
+        Returns:
+            bytes: The serialized response object to server.
+
+        """
+        return pickle.dumps(responses)
+    
+    def CLIENT_PING(self, request, context):
+        """Handle client ping requests
+
+        Args:
+            request (PingRequest): Ping request info from executor.
+
+        Returns:
+            ServerResponse: Server response to ping request
+
+        """
+        executor_id = request.executor_id
+        response_data = response_msg = commons.DUMMY_RESPONSE
+        if len(self.individual_client_events[executor_id]) == 0:
+            current_event = commons.DUMMY_EVENT
+            response_data = response_msg = commons.DUMMY_RESPONSE
+        else:
+            current_event = self.individual_client_events[executor_id].popleft()
+            if current_event == commons.CLIENT_TRAIN:
+                response_msg = self.create_client_task(
+                    executor_id)
+                #TODO sanity
+            elif current_event == commons.MODEL_TEST:
+                response_msg = self.get_test_config(executor_id)
+            elif current_event == commons.UPDATE_MODEL:
+                response_data = self.model_wrapper.get_weights()
+            elif current_event == commons.SHUT_DOWN:
+                response_msg = self.get_shutdown_config(executor_id)
+
+        response_msg, response_data = self.serialize_response(
+            response_msg), self.serialize_response(response_data)
+        
+        response = job_api_pb2.ServerResponse(event=current_event,
+                                              meta=response_msg, data=response_data)
+        #TODO logging
+        if current_event != commons.DUMMY_EVENT:
+            print(f"Parameter server: issue event ({current_event}) to executor ({executor_id})")
+        return response
+    
+    def add_event_handler(self, client_id, event, meta, data):
+        """ Due to the large volume of requests, we will put all events into a queue first.
+
+        Args:
+            client_id (int): The client id.
+            event (string): grpc event MODEL_TEST or UPLOAD_MODEL.
+            meta (dictionary or string): Meta message for grpc communication, could be event.
+            data (dictionary): Data transferred in grpc communication, could be model parameters, test result.
+
+        """
+        self.server_events_queue.append((client_id, event, meta, data))
+    
+    def CLIENT_EXECUTE_COMPLETE(self, request, context):
+        """FL clients complete the execution task.
+
+        Args:
+            request (CompleteRequest): Complete request info from executor.
+
+        Returns:
+            ServerResponse: Server response to job completion request
+
+        """
+
+        executor_id, client_id, event = request.executor_id, request.client_id, request.event
+        execution_status, execution_msg = request.status, request.msg
+        meta_result, data_result = request.meta_result, request.data_result
+        print(f"Parameter server: recieve client {executor_id} event ({event}) completion")
+
+        current_event = commons.DUMMY_EVENT
+        response_data = response_msg = commons.DUMMY_RESPONSE
+
+        if event == commons.CLIENT_TRAIN:
+            if execution_status is False:
+                print(f"Parameter server: client {executor_id} fails to complete train")
+            #TODO resource manager assign new task
+        
+        elif event in (commons.MODEL_TEST, commons.UPLOAD_MODEL):
+            self.add_event_handler(
+                executor_id, event, meta_result, data_result
+            )
+            current_event = commons.SHUT_DOWN
+            response_data = response_msg = commons.DUMMY_RESPONSE
+
+        else:
+            print(f"Parameter server: recieved undefined event {event} from client {executor_id}")
+        response = job_api_pb2.ServerResponse(event=current_event,
+                                              meta=response_msg, data=response_data)
+        return response
 
     def run(self):
         """Start running the aggregator server by setting up execution
@@ -194,15 +549,15 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """
         self.setup_env()
         #TODO load client profile
-        print(f"Job server: init control communication")
+        print(f"Parameter server: init control communication")
         self.init_control_communication()
         #TODO init data communication
-
+        print(f"Parameter server: init model")
         self.init_model()
         self.model_update_size = sys.getsizeof(
             pickle.dumps(self.model_wrapper)) / 1024.0 * 8.
-        
-        #TODO self.event_monitor()
+        print(f"Parameter server: init model complete, size {self.model_update_size}")
+        self.event_monitor()
         self.stop()
     
     def stop(self):
@@ -221,6 +576,14 @@ if __name__ == "__main__":
         'model' : 'resnet18',
         'dataset' : 'femnist',
         'gradient_policy' : 'fedavg',
+        'demand' : 10,
+        'decay_round' : 10,
+        'learning_rate' : 0.05,
+        'decay_factor' : 0.9,
+        'min_learning_rate' : 0.01,
+        'rounds' : 20,
+        'eval_interval' : 5,
+
     }
     args = Namespace(**args)
     aggregator = Aggregator(args)
