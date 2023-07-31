@@ -100,6 +100,7 @@ class Job(propius_pb2_grpc.JobServicer):
         
 async def run(gconfig):
     async def server_graceful_shutdown():
+        job.jm_channel.close()
         print("==Job ending==")
         logging.info("Starting graceful shutdown...")
         await server.stop(5)

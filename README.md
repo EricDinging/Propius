@@ -23,27 +23,50 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
 - Additionally, check redis server is running
     - [Install redis-cli](https://stackoverflow.com/questions/21795340/linux-install-redis-cli-only)
     - ```$ redis-cli```
-## Usage
+## Usage 
+### Propius + FedScale
 - Make changes to `global_config.yml`
 - Scheduler:
 ```bash
-$ python src/scheduler/scheduler.py
+$ python propius/scheduler/scheduler.py
 ```
 - Job manager:
 ```bash
-$ python src/job_manager/job_manager.py
+$ python propius/job_manager/job_manager.py
 ```
 - Client manager:
 ```bash
-$ python src/client_manager/client_manager.py
+$ python propius/client_manager/client_manager.py
 ```
-- Job driver:
+- Job:
 ```bash
-$ python src/job/job_driver.py
+$ python propius/job/aggregator.py
 ```
 - Client:
 ```bash
-$ python src/client/client_driver.py
+$ python propius/client/executor.py
+```
+### Propius
+- Make changes to `global_config.yml`
+- Scheduler:
+```bash
+$ python propius/scheduler/scheduler.py
+```
+- Job manager:
+```bash
+$ python propius/job_manager/job_manager.py
+```
+- Client manager:
+```bash
+$ python propius/client_manager/client_manager.py
+```
+- Job driver:
+```bash
+$ python propius/job_sim/job_driver.py
+```
+- Client:
+```bash
+$ python propius/client_sim/client_driver.py
 ```
 
 

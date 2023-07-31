@@ -1,2 +1,0 @@
-Client manager: avg request per second: 0.076, max request per second: 2
-Client manager: client num: 7, util rate: 0.857, not elig num: 1, over-assign num: 0

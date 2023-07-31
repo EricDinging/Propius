@@ -1,7 +1,7 @@
 # Server setting
 connection_timeout : 100
 ps_ip: localhost
-ps_port: 61000
+ps_port: 61001
 
 # Training setting
 engine: pytorch
@@ -18,7 +18,7 @@ eval_interval: 3
 
 # Client constraints
 public_constraint:
-  - 28
-  - 28
-  - 28
+  - 60
+  - 60
+  - 60
 private_constraint: []

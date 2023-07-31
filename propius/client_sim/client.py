@@ -109,9 +109,11 @@ class Client:
                 await client_plotter.client_finish('drop')
             return
         job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
+        self.cm_channel.close()
         await self.request(job_ip, job_port)
         await self.execute()
         await self.report()
+        self.job_channel.close()
         if client_plotter:
             await client_plotter.client_finish('success')
         print(f"Client {self.id}: task {self.task_id} executed, shutting down===")
