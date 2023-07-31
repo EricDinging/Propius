@@ -561,6 +561,8 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 response_data = self.model_wrapper.get_weights()
             elif current_event == commons.SHUT_DOWN:
                 response_msg = self.get_shutdown_config(executor_id)
+                if executor_id in self.individual_client_events:
+                    del self.individual_client_events[executor_id]
 
         response_msg, response_data = self.serialize_response(
             response_msg), self.serialize_response(response_data)
@@ -600,28 +602,36 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         meta_result, data_result = request.meta_result, request.data_result
         print(f"Parameter server {self.id}: recieve client {executor_id} event ({event}) completion")
 
-        current_event = commons.DUMMY_EVENT
+        current_event = commons.SHUT_DOWN
         response_data = response_msg = commons.DUMMY_RESPONSE
+        response_msg = self.serialize_response(response_msg)
+        response_data = self.serialize_response(response_data)
+        response = job_api_pb2.ServerResponse(event=current_event,
+                                              meta=response_msg, data=response_data)
 
         if event == commons.CLIENT_TRAIN:
             if execution_status is False:
                 print(f"Parameter server {self.id}: client {executor_id} fails to complete train")
+                if executor_id in self.individual_client_events:
+                    del self.individual_client_events[executor_id] 
+            else:
+                response = self.CLIENT_PING(request)
             #TODO resource manager assign new task
         elif event == commons.UPLOAD_MODEL:
             self.add_event_handler(
                 executor_id, event, meta_result, data_result
             )
-            current_event = commons.SHUT_DOWN
+            if executor_id in self.individual_client_events:
+                    del self.individual_client_events[executor_id] 
         elif event == commons.MODEL_TEST:
             self.add_event_handler(
                 executor_id, event, meta_result, data_result
             )
+            response = self.CLIENT_PING(request)
         else:
             print(f"Parameter server {self.id}: recieved undefined event {event} from client {executor_id}")
-        response_msg = self.serialize_response(response_msg)
-        response_data = self.serialize_response(response_data)
-        response = job_api_pb2.ServerResponse(event=current_event,
-                                              meta=response_msg, data=response_data)
+            if executor_id in self.individual_client_events:
+                    del self.individual_client_events[executor_id] 
         return response
 
     def register(self)->bool:
