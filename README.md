@@ -31,7 +31,7 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
 - [ ] Enable FedScale simulation
 - Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more info
 ## Usage 
-### Propius + FedScale
+### Propius + FedScale (scheduling + training/testing)
 - Make changes to `global_config.yml`
 - Scheduler:
     ```bash
@@ -55,7 +55,7 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
         ```bash
         $ python propius/client/executor.py propius/client/client_conf.yml
         ```
-### Propius
+### Propius (scheduling)
 - Make changes to `global_config.yml`
 - Scheduler:
     ```bash
