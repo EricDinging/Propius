@@ -3,7 +3,6 @@ import collections
 import pickle
 import random
 import time
-
 import numpy as np
 import torch
 
@@ -16,6 +15,10 @@ from fedscale.cloud.execution.data_processor import collate #TODO voice collate 
 #TODO RL client
 from fedscale.cloud.fllibs import *
 from fedscale.dataloaders.divide_data import DataPartitioner, select_dataset
+from propius.channels import propius_pb2
+from propius.channels import propius_pb2_grpc
+import yaml
+from propius.util.db import geq
 
 class Executor(object):
     """Abstract class for FedScale executor.
@@ -26,7 +29,7 @@ class Executor(object):
 
     """
 
-    def __init__(self, args):
+    def __init__(self, gconfig, args):
         #TODO logger
         model = None
         
@@ -38,17 +41,18 @@ class Executor(object):
 
         self.model_adapter = self.get_client_trainer(args).get_model_adapter(model)
         self.args = args
-        self.num_executors = args.num_executors
+        self.num_executors = gconfig['num_executors']
         # ======== env information ========
-        self.this_rank = args.this_rank
-        self.executor_id = str(self.this_rank)
+        self.executor_id = None
 
         # ======== model and data ========
         self.training_sets = self.testing_sets = None
 
         # ======== channels ========
-        self.aggregator_communicator = ClientConnections(
-            args.ps_ip, args.ps_port)
+        self.communicator = ClientConnections(
+            gconfig['client_manager_ip'],
+            gconfig['client_manager_port']
+            )
         
         # ======== runtime information ========
         self.collate_fn = None
@@ -60,6 +64,14 @@ class Executor(object):
         #TODO wandb
         self.wandb = None
         super(Executor, self).__init__()
+
+        # ======= propius ========
+        self.id = -1
+        self.gconfig = gconfig
+        self.public_spec = tuple(args.public_spec)
+        self.private_spec = tuple(args.private_spec)
+        self.task_id = -1
+        self.communicator.connect_to_cm()
 
     def get_client_trainer(self, conf):
         """
@@ -104,22 +116,22 @@ class Executor(object):
 
             train_transform, test_transform = get_data_transform('mnist')
             train_dataset = FEMNIST(
-                self.args.data_dir, dataset='train', transform=train_transform)
+                self.gconfig['data_dir'], dataset='train', transform=train_transform)
             test_dataset = FEMNIST(
-                self.args.data_dir, dataset='test', transform=test_transform)
+                self.gconfig['data_dir'], dataset='test', transform=test_transform)
 
         #TODO various tasks
         # load data partitionxr (entire_train_data)
         #TODO logging
         training_sets = DataPartitioner(
-            data=train_dataset, args=self.args, numOfClass=self.args.num_class)
+            data=train_dataset, args=self.args, numOfClass=outputClass[args.data_set])
         #TODO training_sets.partition_data_helper(
         #     num_clients=self.args.num_participants, data_map_file=self.args.data_map_file)
         training_sets.partition_data_helper(
-            num_clients=self.args.num_clients, data_map_file=None
+            num_clients=self.num_executors, data_map_file=None
         )
         testing_sets = DataPartitioner(
-            data=test_dataset, args=self.args, numOfClass=self.args.num_class, isTest=True)
+            data=test_dataset, args=self.args, numOfClass=outputClass[args.data_set], isTest=True)
         testing_sets.partition_data_helper(num_clients=self.num_executors)
 
         #TODO logging
@@ -136,7 +148,7 @@ class Executor(object):
         """Create communication channel between coordinator and executor.
         This channel serves control messages.
         """
-        self.aggregator_communicator.connect_to_server()
+        self.communicator.connect_to_server()
 
     def init_data_communication(self):
         """In charge of jumbo data traffics (e.g., fetch training result)
@@ -192,7 +204,7 @@ class Executor(object):
         while time.time() - start_time < 180:
             try:
                 print(f"Client {self.executor_id}: register to parameter server")
-                response = self.aggregator_communicator.stub.CLIENT_REGISTER(
+                response = self.communicator.stub.CLIENT_REGISTER(
                     job_api_pb2.RegisterRequest(
                         client_id=self.executor_id,
                         executor_id=self.executor_id,
@@ -222,7 +234,7 @@ class Executor(object):
         """Ping the aggregator for new task
         """
         print(f"Client {self.executor_id}: pinging parameter server")
-        response = self.aggregator_communicator.stub.CLIENT_PING(job_api_pb2.PingRequest(
+        response = self.communicator.stub.CLIENT_PING(job_api_pb2.PingRequest(
             client_id=self.executor_id,
             executor_id=self.executor_id
         ))
@@ -251,7 +263,7 @@ class Executor(object):
         # Report execution completion meta information
         while True:
             try:
-                response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
+                response = self.communicator.stub.CLIENT_EXECUTE_COMPLETION(
                     job_api_pb2.CompleteRequest(
                         client_id=str(client_id),
                         executor_id=self.executor_id,
@@ -306,12 +318,12 @@ class Executor(object):
 
         """
         test_config = self.override_conf({
-            'rank': self.this_rank,
+            'rank': self.id,
             'memory_capacity': self.args.memory_capacity,
             'tokenizer': tokenizer
         })
         client = self.get_client_trainer(test_config)
-        data_loader = select_dataset(self.this_rank, self.testing_sets,
+        data_loader = select_dataset(self.id, self.testing_sets,
                                      batch_size=self.args.
                                      test_bsz, args=self.args,
                                      isTest=True, collate_fn=self.collate_fn)
@@ -330,10 +342,10 @@ class Executor(object):
 
         """
         test_res = self.testing_handler()
-        test_res = {'executorId': self.this_rank, 'results': test_res}
+        test_res = {'executorId': self.id, 'results': test_res}
 
         # Report execution completion information
-        response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
+        response = self.communicator.stub.CLIENT_EXECUTE_COMPLETION(
             job_api_pb2.CompleteRequest(
                 client_id=self.executor_id, executor_id=self.executor_id,
                 event=commons.MODEL_TEST, status=True, msg=None,
@@ -363,7 +375,7 @@ class Executor(object):
                     client_id, train_res = self.Train(train_config)
 
                     # Upload model updates
-                    future_call = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION.future(
+                    future_call = self.communicator.stub.CLIENT_EXECUTE_COMPLETION.future(
                         job_api_pb2.CompleteRequest(
                         client_id=str(client_id),
                         executor_id=self.executor_id,
@@ -404,12 +416,60 @@ class Executor(object):
                     #TODO logging
                     self.Stop()
 
-
+    def checkin(self)->propius_pb2.cm_offer:
+        client_checkin_msg = propius_pb2.client_checkin(
+            public_specification=pickle.dumps(self.public_spec)
+            )
+        task_offer = self.communicator.cm_stub.CLIENT_CHECKIN(
+            client_checkin_msg)
+        return task_offer
+    
+    def select_task(self, task_ids: list, private_constraints: list):
+        for idx, id in enumerate(task_ids):
+            if len(self.private_spec) != len(private_constraints[idx]):
+                raise ValueError("Client private specification len does not match required")
+            if geq(self.private_spec, private_constraints[idx]):
+                self.task_id = id
+                print(f"Client {self.id}: select task {id}")
+                return
+        self.task_id = -1
+        print(f"Client {self.id}: not eligible")
+        return
+    
+    def accept(self)->propius_pb2.cm_ack:
+        client_accept_msg = propius_pb2.client_accept(client_id=self.id, task_id=self.task_id)
+        cm_ack = self.communicator.cm_stub.CLIENT_ACCEPT(client_accept_msg)
+        return cm_ack
     
     def run(self):
         """Start running the executor by setting up execution and communication environment, 
         and monitoring the grpc message.
         """
+        cm_offer = self.checkin()
+        self.id = cm_offer.client_id + 1
+        self.executor_id = str(self.id)
+        task_ids = pickle.loads(cm_offer.task_offer)
+        task_private_constraint = pickle.loads(cm_offer.private_constraint)
+        print(f"Client {self.id}: recieve client manager offer: {task_ids}")
+
+        self.select_task(task_ids, task_private_constraint)
+
+        if self.task_id == -1:
+            print(f"Client {self.id}: Not eligible, shutting down===")
+            self.communicator.cm_channel.close()
+            return
+        
+        cm_ack = self.accept()
+        if not cm_ack.ack:
+            print(f"Client {self.id}: client manager not acknowledged, shutting down===")
+            self.communicator.cm_channel.close()
+            return
+        self.communicator.aggregator_address = pickle.loads(cm_ack.job_ip)
+        self.communicator.base_port = cm_ack.job_port
+
+        # close connection to cm
+        self.communicator.cm_channel.close()
+
         print(f"Client {self.executor_id}: setting up environment")
         self.setup_env()
         print(f"Client {self.executor_id}: initting data")
@@ -424,7 +484,7 @@ class Executor(object):
         """
         #logging.info(f"Terminating the executor ...")
         #TODO logging
-        self.aggregator_communicator.close_sever_connection()
+        self.communicator.close_server_connection()
         self.received_stop_request = True
         # if self.wandb != None:
         #     self.wandb.finish()
@@ -449,32 +509,25 @@ class Executor(object):
     
 
 if __name__ == "__main__":
-    args = {
-        "tokenizer" : None,
-        "local_steps": 10,
-        "batch_size" : 10,
-        "gradient_policy" : "SGD",
-        "learning_rate" : 0.05,
+    global_setup_file = './global_config.yml'
 
-        "use_cuda" : False,
-        "task" : "cv",
-        "model" : "resnet18",
-        "data_set": "femnist",
-        "num_executors" : 2,
-        "num_clients" : 2,
-        "this_rank" : 2,
-        "ps_ip" : "localhost",
-        "ps_port" : 60500,
-        "data_dir" : "./benchmark/dataset/data/femnist",
-        "num_class" : 0,
-        "test_ratio" : 0.5,
-        "batch_size" : 10,
-        "num_loaders" : 8,
-        "memory_capacity" : 1,
-        "test_bsz" : 10,
-        "loss_decay" : 0.95,
-    }
-    
-    args = Namespace(**args)
-    executor = Executor(args)
-    executor.run()
+    if len(sys.argv) != 2:
+        print("Wrong format: python propius/client/executor.py <config file>")
+        exit(1)
+
+    with open(global_setup_file, 'r') as gyamlfile:
+        try:
+            gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
+            config_file = str(sys.argv[1])
+            with open(config_file, 'r') as config_file:
+                args = yaml.load(config_file, Loader=yaml.FullLoader)
+                print("Client reads config successfully")
+
+                args = Namespace(**args)
+                executor = Executor(gconfig, args)
+                executor.run()
+        except KeyboardInterrupt:
+            pass
+        except Exception as e:
+            print(e)
+        

@@ -8,7 +8,7 @@ from torch.nn import CTCLoss
 from fedscale.cloud.execution.client_base import ClientBase
 #from fedscale.cloud.execution.optimizers import ClientOptimizer
 from fedscale.cloud.internal.torch_model_adapter import TorchModelAdapter
-
+# from fedscale.utils.model_test_module import test_pytorch_model
 class TorchClient(ClientBase):
     """Implements a PyTorch-based client for training and evaluation."""
 
@@ -43,7 +43,7 @@ class TorchClient(ClientBase):
         model.train()
 
         trained_unique_samples = min(
-            len(client_data.dataset), conf.local_setps * conf.batch_size
+            len(client_data.dataset), conf.local_steps * conf.batch_size
         )
         self.global_model = None
 
@@ -85,7 +85,7 @@ class TorchClient(ClientBase):
         #TODO detection and nlp task
         optimizer = torch.optim.SGD(
             model.parameters(), lr=conf.learning_rate,
-            momentim=0.9, weight_decay=5e-4
+            momentum=0.9, weight_decay=5e-4
         )
         return optimizer
     
@@ -99,6 +99,7 @@ class TorchClient(ClientBase):
         for data_pair in client_data:
             #TODO other task
             (data, target) = data_pair
+            print(f"Client {conf.client_id}: Input data size {data.size()}, label size {target.size()}")
             data = Variable(data).to(device=self.device)
             target = Variable(target).to(device=self.device)
 
@@ -146,9 +147,15 @@ class TorchClient(ClientBase):
         evalStart = time.time()
         #TODO voice task
         criterion = torch.nn.CrossEntropyLoss().to(device=self.device)
-        #TODO test
-        #test_loss, acc, acc_5, test_results = test_pytorch_model
-        test_results = None
+        # test_loss, acc, acc_5, test_results = test_pytorch_model(conf.rank, model,
+        #                                                          client_data,
+        #                                                          device=self.device,
+        #                                                          criterion=criterion,
+        #                                                          tokenizer=conf.tokenizer)
+        
+
+        # print(f"Client {conf.rank}: test_loss {test_loss}, accuracy {acc:.2f}, test_5_accuracy {acc_5:.2f}")
+        test_results = {'test_loss': 0, 'test_len':1}
         return test_results
     
     def get_model_adapter(self, model) -> TorchModelAdapter:

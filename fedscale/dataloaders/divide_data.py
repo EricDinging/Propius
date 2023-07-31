@@ -95,7 +95,7 @@ class DataPartitioner(object):
             self.uniform_partition(num_clients=num_clients)
 
     def uniform_partition(self, num_clients):
-        # random partition
+        # random
         numOfLabels = self.getNumOfLabels()
         data_len = self.getDataLen()
         logging.info(f"Randomly partitioning data, {data_len} samples...")
@@ -114,7 +114,7 @@ class DataPartitioner(object):
         if not istest:
             executeLength = len(resultIndex)
         else:
-            int(len(resultIndex) * self.args.test_ratio)
+            executeLength = int(len(resultIndex) * self.args.test_ratio)
         
         resultIndex = resultIndex[:executeLength]
         self.rng.shuffle(resultIndex)
@@ -128,12 +128,12 @@ class DataPartitioner(object):
 
 def select_dataset(rank, partition, batch_size, args, isTest=False, collate_fn=None):
     """Load data given client Id"""
-    paritition = partition.use(rank - 1, isTest)
+    partition = partition.use(rank - 1, isTest)
     dropLast = False if isTest else True
     if isTest:
         num_loaders = 0
     else:
-        num_loaders = min(int(len(paritition)/args.batch_size/2), args.num_loaders)
+        num_loaders = min(int(len(partition)/args.batch_size/2), args.num_loaders)
     if num_loaders == 0:
         time_out = 0
     else:
