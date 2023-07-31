@@ -13,7 +13,7 @@ decay_round: 3 # learning rate decay after decay round
 learning_rate: 0.05
 decay_factor: 0.9
 min_learning_rate: 0.01
-rounds: 6 # Total round
+rounds: 3 # Total round
 eval_interval: 3
 
 # Client constraints

@@ -287,9 +287,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.test_result_accumulator = []
         self.loss_accumulator = []
         self.round += 1
-        if not self.request():
-            self.shut_down = True
-            return
+        
 
     def update_default_task_config(self):
         """Update the default task configuration after each round
@@ -363,6 +361,10 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                         self.round_completion_handler()
                         if self.round > self.args.rounds:
                             self.shut_down = True
+                        else:
+                            if not self.request():
+                                self.shut_down = True
+                                return
                 
                 elif current_event == commons.MODEL_TEST:
                     self.testing_completion_handler(
@@ -650,6 +652,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """
         #TODO: logging
         #TODO: wandb
+        self.jm_channel.close()
         time.sleep(5)
 
 if __name__ == "__main__":
