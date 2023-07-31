@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 import collections
 import pickle
 import random
@@ -374,7 +376,8 @@ class Executor(object):
                     client_id, train_res = self.Train(train_config)
 
                     # Upload model updates
-                    future_call = self.communicator.stub.CLIENT_EXECUTE_COMPLETION.future(
+                    print(f"Client {self.executor_id}: uploading model")
+                    response = self.communicator.stub.CLIENT_EXECUTE_COMPLETION(
                         job_api_pb2.CompleteRequest(
                         client_id=str(client_id),
                         executor_id=self.executor_id,
@@ -385,9 +388,10 @@ class Executor(object):
                         data_result=self.serialize_response(train_res)
                         )
                     )
-                    future_call.add_done_callback(
-                        lambda _response: self.dispatch_worker_events(_response.result())
-                        )
+                    self.dispatch_worker_events(response)
+                    # future_call.add_done_callback(
+                    #     lambda _response: self.dispatch_worker_events(_response.result())
+                    #     )
 
                 elif current_event == commons.MODEL_TEST:
                     print(f"Client {self.executor_id}: recieve test event")

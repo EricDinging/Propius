@@ -100,7 +100,11 @@ class Job(propius_pb2_grpc.JobServicer):
         
 async def run(gconfig):
     async def server_graceful_shutdown():
-        job.jm_channel.close()
+        try:
+            job.complete_job()
+            job.jm_channel.close()
+        except:
+            pass
         print("==Job ending==")
         logging.info("Starting graceful shutdown...")
         await server.stop(5)
@@ -127,7 +131,6 @@ async def run(gconfig):
             return
 
         round = 1
-
         while round <= job.est_total_round:
             if not job.request():
                 return
@@ -139,7 +142,6 @@ async def run(gconfig):
                         print("Timeout reached, shutting down job server")
                         return
                 round += 1
-        job.complete_job()
         print(f"Job {job.id}: All round finished, result: {job.agg_result_list[-1]}")
 
 if __name__ == '__main__':

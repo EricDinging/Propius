@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 import collections
 import copy
 import math
@@ -23,8 +25,6 @@ from fedscale.cloud.internal.torch_model_adapter import TorchModelAdapter
 from fedscale.cloud.fllibs import *
 
 from argparse import Namespace
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
 import yaml
 from propius.channels import propius_pb2
 from propius.channels import propius_pb2_grpc
@@ -269,8 +269,8 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         avg_loss = sum(self.loss_accumulator) / max(1, len(self.loss_accumulator))
         #TODO logging
         run_time = time.time() - self.start_run_time
-        print(f"Wall clock: {run_time} s, ending round: {self.round}, Planned participants: " + 
-              f"{len(self.individual_client_events)}, Training loss: {avg_loss}")
+        print(f"Wall clock: {run_time} s, ending round: {self.round}, number of results: " + 
+              f"{len(self.loss_accumulator)}, Training loss: {avg_loss}")
         
         #TODO dump round completion information to tensorboard
         #TODO update select participants
@@ -395,10 +395,10 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         )
         ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
         if not ack_msg.ack:
-            print(f"Parameter server {self.id} round {self.round}/{self.total_round} request failed")
+            print(f"Parameter server {self.id}: round {self.round}/{self.total_round} request failed")
             return False
         else:
-            print(f"Parameter server {self.id} round {self.round}/{self.total_round} request success")
+            print(f"Parameter server {self.id}: round {self.round}/{self.total_round} request success")
             return True
 
     def executor_info_handler(self, executor_id, info):
@@ -546,9 +546,10 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """
         executor_id = request.executor_id
         response_data = response_msg = commons.DUMMY_RESPONSE
-        if len(self.individual_client_events[executor_id]) == 0:
+        if executor_id not in self.individual_client_events:
+            current_event = commons.SHUT_DOWN
+        elif len(self.individual_client_events[executor_id]) == 0:
             current_event = commons.DUMMY_EVENT
-            response_data = response_msg = commons.DUMMY_RESPONSE
         else:
             current_event = self.individual_client_events[executor_id].popleft()
             if current_event == commons.CLIENT_TRAIN:
@@ -615,23 +616,23 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 if executor_id in self.individual_client_events:
                     del self.individual_client_events[executor_id] 
             else:
-                response = self.CLIENT_PING(request)
+                response = self.CLIENT_PING(request, context)
             #TODO resource manager assign new task
         elif event == commons.UPLOAD_MODEL:
             self.add_event_handler(
                 executor_id, event, meta_result, data_result
             )
             if executor_id in self.individual_client_events:
-                    del self.individual_client_events[executor_id] 
+                del self.individual_client_events[executor_id] 
         elif event == commons.MODEL_TEST:
             self.add_event_handler(
                 executor_id, event, meta_result, data_result
             )
-            response = self.CLIENT_PING(request)
+            response = self.CLIENT_PING(request, context)
         else:
             print(f"Parameter server {self.id}: recieved undefined event {event} from client {executor_id}")
             if executor_id in self.individual_client_events:
-                    del self.individual_client_events[executor_id] 
+                del self.individual_client_events[executor_id] 
         return response
 
     def register(self)->bool:
@@ -676,14 +677,22 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             return
         self.event_monitor()
         self.stop()
+
+    def complete_job(self):
+        req_msg = propius_pb2.job_id(id=self.id)
+        self.jm_stub.JOB_FINISH(req_msg)
     
     def stop(self):
         """Stop the aggregator
         """
         #TODO: logging
         #TODO: wandb
-        self.jm_channel.close()
-        time.sleep(5)
+        try:
+            self.complete_job()
+            self.jm_channel.close()
+        except:
+            pass
+        time.sleep(1)
 
 if __name__ == "__main__":
     global_setup_file = './global_config.yml'
@@ -702,8 +711,13 @@ if __name__ == "__main__":
     
                 args = Namespace(**args)
                 aggregator = Aggregator(gconfig, args)
-                aggregator.run()
-        
+                try:
+                    aggregator.run()
+                except Exception as e:
+                    raise e
+                finally:
+                    aggregator.stop()
+                    
         except KeyboardInterrupt:
             pass
         except Exception as e:
