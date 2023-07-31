@@ -14,7 +14,7 @@ def get_data_transform(data: str):
         ])
 
         test_transform = transforms.Compose([
-            # transforms.Grayscale(num_output_channels=1),
+            transforms.Grayscale(num_output_channels=1),
             transforms.Resize((32, 32)),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),

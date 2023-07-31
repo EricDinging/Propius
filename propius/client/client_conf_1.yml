@@ -3,6 +3,7 @@ model: resnet18
 data_set: femnist
 num_loaders: 8
 memory_capacity: 1
+task: cv
 
 # Training setup
 tokenizer:
