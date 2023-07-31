@@ -478,6 +478,24 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         # return train_config, self.model_wrapper.get_weights()
         return train_config
     
+    def get_client_test_conf(self, client_id):
+        """Testing configurations that will be applied on clients,
+        developers can further define personalized client config here.
+
+        Args:
+            client_id (int): The client id.
+
+        Returns:
+            dictionary: TorchClient training config.
+
+        """
+        conf = {
+            # "tokenizer": self.args.tokenizer,
+            # "test_bsz": self.args.test_bsz,
+            #TODO
+        }
+        return conf
+    
     def get_test_config(self, client_id):
         """FL model testing on clients, developers can further define personalized client config here.
 
@@ -488,7 +506,9 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             dictionary: The testing config for new task.
 
         """
-        return {'client_id': client_id}
+        config = self.get_client_test_conf(client_id)
+        test_config = {'client_id': client_id, 'task_config': config}
+        return test_config
     
     def get_shutdown_config(self, client_id):
         """Shutdown config for client, developers can further define personalized client config here.

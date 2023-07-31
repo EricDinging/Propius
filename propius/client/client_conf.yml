@@ -5,8 +5,8 @@ num_loaders: 8
 memory_capacity: 1
 task: cv
 
-# Training setup
 tokenizer:
+# Training setup
 local_steps: 10
 batch_size: 10
 gradient_policy: SGD

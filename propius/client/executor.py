@@ -46,8 +46,7 @@ class Executor(object):
         self.executor_id = None
 
         # ======== model and data ========
-        self.training_sets = self.testing_sets = None
-
+        self.train_dataloader = self.test_dataloader = None
         # ======== channels ========
         self.communicator = ClientConnections(
             gconfig['client_manager_ip'],
@@ -134,9 +133,17 @@ class Executor(object):
             data=test_dataset, args=self.args, numOfClass=outputClass[args.data_set], isTest=True)
         testing_sets.partition_data_helper(num_clients=self.num_executors)
 
+        train_dataloader = select_dataset(self.id, training_sets, 
+                                          batch_size=self.args.batch_size,
+                                          args=self.args, isTest=False,
+                                          collate_fn=self.collate_fn)
+        test_dataloader = select_dataset(self.id, testing_sets,
+                                         batch_size=self.args.test_bsz,
+                                         args=self.args, isTest=True,
+                                         collate_fn=self.collate_fn)
         #TODO logging
 
-        return training_sets, testing_sets
+        return train_dataloader, test_dataloader
 
     def setup_communication(self):
         """Set up grpc connection
@@ -297,12 +304,8 @@ class Executor(object):
         conf.client_id = client_id
         #TODO conf tokenizer
         #TODO rl training set
-        client_data = select_dataset(client_id, self.training_sets,
-                                   batch_size=conf.batch_size, 
-                                   args=self.args,
-                                   collate_fn=self.collate_fn)
         client = self.get_client_trainer(self.args)
-        train_res = client.train(client_data=client_data,
+        train_res = client.train(client_data=self.train_dataloader,
                                  model=self.model_adapter.get_model(),
                                  conf = conf)
         return train_res
@@ -323,11 +326,7 @@ class Executor(object):
             'tokenizer': tokenizer
         })
         client = self.get_client_trainer(test_config)
-        data_loader = select_dataset(self.id, self.testing_sets,
-                                     batch_size=self.args.
-                                     test_bsz, args=self.args,
-                                     isTest=True, collate_fn=self.collate_fn)
-        test_results = client.test(data_loader, self.model_adapter.get_model(), test_config)
+        test_results = client.test(self.test_dataloader, self.model_adapter.get_model(), test_config)
         #TODO log result
         #TODO gc.collect()
         return test_results
@@ -473,7 +472,7 @@ class Executor(object):
         print(f"Client {self.executor_id}: setting up environment")
         self.setup_env()
         print(f"Client {self.executor_id}: initting data")
-        self.training_sets, self.testing_sets = self.init_data()
+        self.train_dataloader, self.test_dataloader = self.init_data()
         print(f"Client {self.executor_id}: setting up communication")
         self.setup_communication()
         print(f"Client {self.executor_id}: registering to job")

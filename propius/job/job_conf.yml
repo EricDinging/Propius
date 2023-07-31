@@ -16,6 +16,10 @@ min_learning_rate: 0.01
 rounds: 3 # Total round
 eval_interval: 3
 
+# Testing setting
+test_ratio: 0.5
+test_bsz: 10
+
 # Client constraints
 public_constraint:
   - 28
