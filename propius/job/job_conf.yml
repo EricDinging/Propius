@@ -1,9 +1,9 @@
 # Server setting
 connection_timeout : 100
 ps_ip: localhost
-ps_port: 61000
+ps_port: 61001
 
-# Training setting
+# Training and testing setting
 engine: pytorch
 model: resnet18
 data_set: femnist
@@ -16,9 +16,10 @@ min_learning_rate: 0.01
 rounds: 3 # Total round
 eval_interval: 3
 
-# Testing setting
+tokenizer: None
 test_ratio: 0.5
 test_bsz: 10
+use_cuda: False
 
 # Client constraints
 public_constraint:

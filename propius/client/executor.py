@@ -32,16 +32,8 @@ class Executor(object):
     """
 
     def __init__(self, gconfig, args):
-        #TODO logger
-        model = None
-        
-        #TODO use init model
-        if args.model == "resnet18":
-            from fedscale.utils.models.specialized.resnet_speech import resnet18
-
-            model = resnet18(num_classes=outputClass[args.data_set], in_channels=1)
-
-        self.model_adapter = self.get_client_trainer(args).get_model_adapter(model)
+        #TODO loggere
+        self.model_adapter = None
         self.args = args
         self.num_executors = gconfig['num_executors']
         # ======== env information ========
@@ -229,14 +221,19 @@ class Executor(object):
                 #TODO logging warning
                 time.sleep(5)
 
-    def UpdateModel(self, model_weights):
+    def UpdateModel(self, model_weights, config):
         """Receive the broadcasted global model for current round
 
         Args:
+            model_weights
             config (PyTorch or TensorFlow model): The broadcasted global model config
 
         """
-        #self.round += 1
+        model = None
+        if config['model'] == "resnet18":
+            from fedscale.utils.models.specialized.resnet_speech import resnet18
+            model = resnet18(num_classes=outputClass[args.data_set], in_channels=1)
+        self.model_adapter = self.get_client_trainer(args).get_model_adapter(model)
         self.model_adapter.set_weights(model_weights)
 
     def client_ping(self):
@@ -400,7 +397,8 @@ class Executor(object):
                 elif current_event == commons.UPDATE_MODEL:
                     print(f"Client {self.executor_id}: recieve update model event")
                     model_weights = self.deserialize_response(request.data)
-                    self.UpdateModel(model_weights)
+                    config = self.deserialize_response(request.meta)
+                    self.UpdateModel(model_weights, config)
                 
                 elif current_event == commons.SHUT_DOWN:
                     print(f"Client {self.executor_id}: recieve shutdown event")

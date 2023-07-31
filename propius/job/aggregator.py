@@ -492,7 +492,6 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         conf = {
             # "tokenizer": self.args.tokenizer,
             # "test_bsz": self.args.test_bsz,
-            #TODO
         }
         return conf
     
@@ -534,6 +533,17 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """
         return pickle.dumps(responses)
     
+    def get_model_config(self):
+        """FL model config
+
+        Args:
+        Returns:
+            dictionary: The model config
+        """
+        config = {"model" : self.args.model}
+        return config
+
+    
     def CLIENT_PING(self, request, context):
         """Handle client ping requests
 
@@ -560,6 +570,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 response_msg = self.get_test_config(executor_id)
             elif current_event == commons.UPDATE_MODEL:
                 response_data = self.model_wrapper.get_weights()
+                response_msg = self.get_model_config()
             elif current_event == commons.SHUT_DOWN:
                 response_msg = self.get_shutdown_config(executor_id)
                 if executor_id in self.individual_client_events:
