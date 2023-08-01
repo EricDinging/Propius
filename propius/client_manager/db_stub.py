@@ -22,11 +22,13 @@ class Job_db_stub(Job_db):
             size = result.total
             for doc in result.docs:
                     job = json.loads(doc.json)
-                    job_public_constraint = tuple([job['job']['public_constraint'][name]
-                                                    for name in self.public_constraint_name])
+                    job_public_constraint = tuple(
+                        [job['job']['public_constraint'][name]
+                            for name in self.public_constraint_name])
                     if job['job']['amount'] < job['job']['demand'] and geq(specification, job_public_constraint):
-                        job_private_constraint = tuple([job['job']['private_constraint'][name]
-                                                        for name in self.private_constraint_name])
+                        job_private_constraint = tuple(
+                            [job['job']['private_constraint'][name]
+                                for name in self.private_constraint_name])
                         return [int(doc.id.split(':')[1])], [job_private_constraint], size
             return [], [], size
         return [], [], 0
