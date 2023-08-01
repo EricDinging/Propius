@@ -97,6 +97,8 @@ class Job(propius_pb2_grpc.JobServicer):
 
     async def CLIENT_REPORT(self, request, context):
         async with self.lock:
+            if self.cur_round > self.est_total_round:
+                return propius_pb2.empty()
             client_id, result = request.client_id, request.result
             self.cur_result_list.append(result)
             print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} reported, {len(self.cur_result_list)}/{self.demand}")
