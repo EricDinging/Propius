@@ -110,10 +110,13 @@ class Job(propius_pb2_grpc.JobServicer):
         client_id = request.id
         print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
         async with self.lock:
+            if self.round_client_num == self.demand:
+                return propius_pb2.plan(ack=False, workload=-1)
+            
             self.round_client_num += 1
             if self.round_client_num == self.demand:
                 self.end_request()
-        return propius_pb2.plan(workload=self.workload)
+        return propius_pb2.plan(ack=True, workload=self.workload)
         
 async def run(gconfig):
     async def server_graceful_shutdown():

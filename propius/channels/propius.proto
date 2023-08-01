@@ -48,7 +48,8 @@ message cm_ack {
 }
 
 message plan {
-    int32 workload = 1;
+    bool ack = 1;
+    int32 workload = 2;
 }
 
 message client_id {

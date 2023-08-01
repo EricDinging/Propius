@@ -56,13 +56,18 @@ class Client:
         cm_ack = self.cm_stub.CLIENT_ACCEPT(client_accept_msg)
         return cm_ack
     
-    async def request(self, job_ip:str, job_port:int):
+    async def request(self, job_ip:str, job_port:int)->bool:
         self.job_channel = grpc.insecure_channel(f"{job_ip}:{job_port}")
         self.job_stub = propius_pb2_grpc.JobStub(self.job_channel)
         client_id_msg = propius_pb2.client_id(id=self.id)
         plan = self.job_stub.CLIENT_REQUEST(client_id_msg)
+        ack = plan.ack
+        if not ack:
+            print(f"Client {self.id}: request job plan failed")
+            return False
         self.workload = plan.workload
         print(f"Client {self.id}: request job plan, workload {self.workload}")
+        return True
 
     async def execute(self):
         print(f"Client {self.id}: executing task {self.task_id}")
@@ -110,7 +115,10 @@ class Client:
             return
         job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
         self.cm_channel.close()
-        await self.request(job_ip, job_port)
+        if not await self.request(job_ip, job_port):
+            if client_plotter:
+                await client_plotter.client_finish('drop')
+            return
         await self.execute()
         await self.report()
         self.job_channel.close()
