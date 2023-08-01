@@ -34,6 +34,7 @@ message cm_offer {
     int32 client_id = 1;
     bytes task_offer = 2;
     bytes private_constraint = 3;
+    int32 total_job_num = 4; //for analytics
 }
 
 message client_accept {

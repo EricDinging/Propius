@@ -93,7 +93,6 @@ class Job(propius_pb2_grpc.JobServicer):
         self.agg_result_list.append(sum(self.cur_result_list))
         self.cur_result_list.clear()
         self.cur_round += 1
-        self.round_client_num = 0
         self.cv.notify()
 
     async def CLIENT_REPORT(self, request, context):
@@ -108,13 +107,12 @@ class Job(propius_pb2_grpc.JobServicer):
         
     async def CLIENT_REQUEST(self, request, context):
         client_id = request.id
-        print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
         async with self.lock:
-            if self.round_client_num == self.demand:
+            if self.round_client_num >= self.demand or self.cur_round == self.est_total_round + 1:
                 return propius_pb2.plan(ack=False, workload=-1)
-            
+            print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
             self.round_client_num += 1
-            if self.round_client_num == self.demand:
+            if self.round_client_num >= self.demand:
                 self.end_request()
         return propius_pb2.plan(ack=True, workload=self.workload)
         
@@ -157,6 +155,7 @@ async def run(gconfig):
             async with job.lock:
                 while job.cur_round != round + 1:
                     try:
+                        job.round_client_num = 0
                         await asyncio.wait_for(job.cv.wait(), timeout=1000)
                     except asyncio.TimeoutError:
                         print("Timeout reached, shutting down job server")

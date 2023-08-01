@@ -104,48 +104,65 @@ class Client:
     async def run(self, client_plotter=None):
         if client_plotter:
             await client_plotter.client_start()
-        cm_offer = await self.checkin()
-        self.id = cm_offer.client_id
-        task_ids = pickle.loads(cm_offer.task_offer)
-        task_private_constraint = pickle.loads(cm_offer.private_constraint)
-        print(f"Client {self.id}: recieve client manager offer: {task_ids}")
+        try:
+            cm_offer = await self.checkin()
+            self.id = cm_offer.client_id
+            task_ids = pickle.loads(cm_offer.task_offer)
+            task_private_constraint = pickle.loads(cm_offer.private_constraint)
+            total_job_num = cm_offer.total_job_num
+            print(f"Client {self.id}: recieve client manager offer: {task_ids}")
 
-        await self.select_task(task_ids, task_private_constraint)
-        if self.task_id == -1:
-            print(f"Client {self.id}: Not eligible, shutting down===")
-            if client_plotter:
-                await client_plotter.client_finish('drop')
-            return
-        
-        cm_ack = await self.accept()
-        if not cm_ack.ack:
-            print(f"Client {self.id}: client manager not acknowledged, shutting down===")
-            if client_plotter:
-                await client_plotter.client_finish('drop')
-            return
-        
-        job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
-        ping_exp_time = cm_ack.ping_exp_time
-        self.cm_channel.close()
+            await self.select_task(task_ids, task_private_constraint)
+            if self.task_id == -1:
+                print(f"Client {self.id}: Not eligible, shutting down===")
+                if total_job_num > 0 and client_plotter:
+                    await client_plotter.client_finish('drop')
+                return
+            
+            cm_ack = await self.accept()
+            if not cm_ack.ack:
+                print(f"Client {self.id}: client manager not acknowledged, shutting down===")
+                if client_plotter:
+                    await client_plotter.client_finish('drop')
+                return
+            
+            job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
+            ping_exp_time = cm_ack.ping_exp_time
+            self.cm_channel.close()
 
-        start_time = time.time()
-        job_ack = False
-        await self._connect_to_ps(job_ip, job_port)
+            start_time = time.time()
+            job_ack = False
+            try:
+                await self._connect_to_ps(job_ip, job_port)
+            except:
+                if client_plotter:
+                    await client_plotter.client_finish('drop')
+                return
 
-        while time.time() < start_time + ping_exp_time:
-            job_ack = self.request()
-            if job_ack:
-                break
-            await asyncio.sleep(max(1, min(5, ping_exp_time / 3)))
-        if not job_ack:
+            while time.time() < start_time + ping_exp_time:
+                job_ack = self.request()
+                if job_ack:
+                    break
+                await asyncio.sleep(max(1, min(5, ping_exp_time / 3)))
+            if not job_ack:
+                if client_plotter:
+                    await client_plotter.client_finish('drop')
+                return
+            try:
+                await self.execute()
+                await self.report()
+            except:
+                if client_plotter:
+                    await client_plotter.client_finish('drop')
+                return
             if client_plotter:
-                await client_plotter.client_finish('drop')
-            return
-        await self.execute()
-        await self.report()
-        if client_plotter:
-            await client_plotter.client_finish('success')
-        print(f"Client {self.id}: task {self.task_id} executed, shutting down===")
+                await client_plotter.client_finish('success')
+            print(f"Client {self.id}: task {self.task_id} executed, shutting down===")
+        except Exception as e:
+            print(e)
+        finally:
+            self.cleanup_routines()
+
     
 
 if __name__ == '__main__':
@@ -156,7 +173,4 @@ if __name__ == '__main__':
 
         client = Client(0, (80, 80, 80), (), cm_ip, cm_port)
         loop = asyncio.get_event_loop()
-        try:
-            loop.run_until_complete(client.run(None))
-        finally:
-            client.cleanup_routines()
+        loop.run_until_complete(client.run(None))

@@ -7,7 +7,7 @@ sched_alg: 'irs'
 proactive: True
 
 # Scheduling metadata (optional)
-standard_round_time: 3
+standard_round_time: 30
 irs_epsilon: 0
 
 # Scheduler address
@@ -19,10 +19,10 @@ client_manager_ip: localhost
 client_manager_port: 50001
 
 # Client simulation number
-client_num: 50000
+client_num: 60000
 # Client check in distribution over time
 # 0 is uniform distribution, 1 is normal distribution
-client_is_uniform: 0
+client_is_uniform: False
 
 # Job manager address
 job_manager_ip: localhost
@@ -56,7 +56,7 @@ db_port: 6379
 client_expire_time: 100
 
 # Client default ping expiration time. Client will try to ping job during this time
-default_ping_exp_time: 100
+default_ping_exp_time: 30
 # Define the scale of the specifications
 metric_scale: 100
 

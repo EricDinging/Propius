@@ -41,7 +41,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         return propius_pb2.cm_offer(
             client_id=client_id,
             task_offer=pickle.dumps(task_offer_list),
-            private_constraint=pickle.dumps(task_private_constraint))
+            private_constraint=pickle.dumps(task_private_constraint),
+            total_job_num=job_size)
     
     async def CLIENT_ACCEPT(self, request, context):
         client_id, task_id = request.client_id, request.task_id
