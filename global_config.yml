@@ -48,8 +48,12 @@ total_running_second: 1200
 # Redis DB address
 db_ip: localhost
 db_port: 6379
+
 # Client data expiration time in Redis DB
 client_expire_time: 100
+
+# Client default ping expiration time. Client will try to ping job during this time
+default_ping_exp_time: 100
 # Define the scale of the specifications
 metric_scale: 100
 

@@ -4,6 +4,7 @@ import random
 import math
 import asyncio
 import pickle
+import time
 from propius.channels import propius_pb2
 from propius.channels import propius_pb2_grpc
 from propius.util.db import geq
@@ -114,8 +115,17 @@ class Client:
                 await client_plotter.client_finish('drop')
             return
         job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
+        ping_exp_time = cm_ack.pint_exp_time
         self.cm_channel.close()
-        if not await self.request(job_ip, job_port):
+
+        start_time = time.time()
+        ack = False
+        while time.time() < start_time + ping_exp_time:
+            ack = self.request(job_ip, job_port)
+            if ack:
+                break
+            await asyncio.sleep(5)
+        if not ack:
             if client_plotter:
                 await client_plotter.client_finish('drop')
             return

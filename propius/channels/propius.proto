@@ -45,6 +45,7 @@ message cm_ack {
     bool ack = 1;
     bytes job_ip = 2;
     int32 job_port = 3;
+    float ping_exp_time = 4; // during the exp time, client will try to make a connection with parameter server
 }
 
 message plan {

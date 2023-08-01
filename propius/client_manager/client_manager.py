@@ -53,7 +53,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             print(f"Client manager: job {task_id} over-assign")
             return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
         print(f"Client manager: ack client {client_id}, job addr {result}")
-        return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]), job_port=result[1])
+        return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]), 
+                                  job_port=result[1], ping_exp_time=result[2])
     
 async def serve(gconfig):
     async def server_graceful_shutdown():
