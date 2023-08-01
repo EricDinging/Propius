@@ -9,6 +9,7 @@ from fedscale.cloud.execution.client_base import ClientBase
 #from fedscale.cloud.execution.optimizers import ClientOptimizer
 from fedscale.cloud.internal.torch_model_adapter import TorchModelAdapter
 from fedscale.utils.model_test_module import test_pytorch_model
+from fedscale.dataloaders.divide_data import select_dataset
 class TorchClient(ClientBase):
     """Implements a PyTorch-based client for training and evaluation."""
 
@@ -34,7 +35,10 @@ class TorchClient(ClientBase):
         :param conf: job config
         :return: training results
         """
-        client_id = conf.client_id
+        client_data = select_dataset(
+            rank=conf.rank, partition=client_data,
+            batch_size=conf.batch_size, args=conf, isTest=False, collate_fn=None)
+        client_id = conf.rank
         logging.info(f"Start to train (CLIENT: {client_id}) ...")
         print(f"Client {client_id}: === Start to train ===")
         tokenizer = conf.tokenizer
@@ -99,7 +103,7 @@ class TorchClient(ClientBase):
         for data_pair in client_data:
             #TODO other task
             (data, target) = data_pair
-            print(f"Client {conf.client_id}: Input data size {data.size()}, label size {target.size()}")
+            print(f"Client {conf.rank}: Input data size {data.size()}, label size {target.size()}")
             data = Variable(data).to(device=self.device)
             target = Variable(target).to(device=self.device)
 
@@ -112,7 +116,7 @@ class TorchClient(ClientBase):
             temp_loss = sum(loss_list) / float(len(loss_list))
             self.loss_squared = sum([l**2 for l in loss_list]) / float(len(loss_list))
 
-            print(f"Client {conf.client_id}: training step {self.completed_steps}, temp loss {temp_loss}")
+            print(f"Client {conf.rank}: training step {self.completed_steps}, temp loss {temp_loss}")
             if self.completed_steps < len(client_data):
                 if self.epoch_train_loss == 1e-4:
                     self.epoch_train_loss = temp_loss
@@ -146,9 +150,12 @@ class TorchClient(ClientBase):
         """
         evalStart = time.time()
         #TODO voice task
+        client_dataloader = select_dataset(
+            rank=conf.rank, partition=client_data,
+            batch_size=conf.test_bsz, args=conf, isTest=True, collate_fn=None)
         criterion = torch.nn.CrossEntropyLoss().to(device=self.device)
         test_loss, acc, acc_5, test_results = test_pytorch_model(conf.rank, model,
-                                                                 client_data,
+                                                                 client_dataloader,
                                                                  device=self.device,
                                                                  criterion=criterion,
                                                                  tokenizer=conf.tokenizer)

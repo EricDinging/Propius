@@ -1,22 +1,7 @@
-# Dataset and model
-model: resnet18
+# Dataset
 data_set: femnist
-num_loaders: 8
 memory_capacity: 1
 task: cv
-
-tokenizer:
-# Training setup
-local_steps: 10
-batch_size: 10
-gradient_policy: SGD
-learning_rate: 0.05
-use_cuda: False
-batch_size: 10
-loss_decay: 0.95
-# Test setup
-test_ratio: 0.5
-test_bsz: 10
 
 public_spec:
   - 30

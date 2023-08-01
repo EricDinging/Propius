@@ -445,7 +445,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                                           meta=dummy_data, data=dummy_data)
     
 
-    def get_client_conf(self, client_id):
+    def get_client_conf(self):
         """Training configurations that will be applied on clients,
         developers can further define personalized client config here.
 
@@ -457,7 +457,14 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         """
         conf = {
-            'learning_rate': self.args.learning_rate,
+            "local_steps": self.args.local_steps,
+            "learning_rate": self.args.learning_rate,
+            "use_cuda": self.args.use_cuda,
+            "num_loaders": self.args.num_loaders,
+            "tokenizer": None,
+            "local_setps": self.args.local_steps,
+            "loss_decay": self.args.loss_decay,
+            "batch_size": self.args.batch_size,
         }
         return conf
     
@@ -472,13 +479,11 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         """
         #TODO get next task
-        next_client_id = executor_id
-        config = self.get_client_conf(next_client_id)
-        train_config = {'client_id': next_client_id, 'task_config': config}
+        config = self.get_client_conf()
         # return train_config, self.model_wrapper.get_weights()
-        return train_config
+        return config
     
-    def get_client_test_conf(self, client_id):
+    def get_client_test_conf(self):
         """Testing configurations that will be applied on clients,
         developers can further define personalized client config here.
 
@@ -490,8 +495,11 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         """
         conf = {
-            # "tokenizer": self.args.tokenizer,
-            # "test_bsz": self.args.test_bsz,
+            "test_bsz": self.args.test_bsz,
+            "use_cuda": self.args.use_cuda,
+            "num_loaders": self.args.num_loaders,
+            "tokenizer": None,
+            "test_ratio": self.args.test_ratio,
         }
         return conf
     
@@ -505,9 +513,8 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             dictionary: The testing config for new task.
 
         """
-        config = self.get_client_test_conf(client_id)
-        test_config = {'client_id': client_id, 'task_config': config}
-        return test_config
+        config = self.get_client_test_conf()
+        return config
     
     def get_shutdown_config(self, client_id):
         """Shutdown config for client, developers can further define personalized client config here.
@@ -540,7 +547,11 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         Returns:
             dictionary: The model config
         """
-        config = {"model" : self.args.model}
+        config = {
+            "model": self.args.model,
+            "use_cuda": self.args.use_cuda,
+            "data_set": self.args.data_set,
+        }
         return config
 
     
