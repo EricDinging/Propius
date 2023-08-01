@@ -40,22 +40,22 @@ class SC_analyzer(Analyzer):
             self.job_size_latency_map[size] = sum(latency_list) / len(latency_list)
 
         lists = sorted(self.job_size_latency_map.items())
-        x, y = zip(*lists)
+        if len(lists) > 0:
+            x, y = zip(*lists)
+            str1 = self._gen_report()
+            with open(f'./log/SC-{self.sched_alg}-{int(time.time())}.txt', 'w') as file:
+                file.write(str1)
+                file.write("\n")
+                for idx, job_size in enumerate(x):
+                    file.write(f"Job size: {job_size}, latency: {y[idx]}\n")
 
-        str1 = self._gen_report()
-        with open(f'./log/SC-{self.sched_alg}-{int(time.time())}.txt', 'w') as file:
-            file.write(str1)
-            file.write("\n")
-            for idx, job_size in enumerate(x):
-                file.write(f"Job size: {job_size}, latency: {y[idx]}\n")
-
-        fig = plt.gcf()
-        plt.subplot(2, 1, 1)
-        self._plot_time()
-        plt.subplot(2, 1, 2)
-        self._plot_request()
-        plt.tight_layout()
-        plt.show()
-        fig.savefig(f"./fig/SC-{self.sched_alg}-{int(time.time())}")
+            fig = plt.gcf()
+            plt.subplot(2, 1, 1)
+            self._plot_time()
+            plt.subplot(2, 1, 2)
+            self._plot_request()
+            plt.tight_layout()
+            plt.show()
+            fig.savefig(f"./fig/SC-{self.sched_alg}-{int(time.time())}")
 
 

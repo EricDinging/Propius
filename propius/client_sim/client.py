@@ -13,7 +13,7 @@ class Client:
     def __init__(self, id:int, public_specifications:tuple, 
                  private_specifications:tuple,
                  cm_ip:str, cm_port:int):
-        self.id = 0
+        self.id = -1
         self.public_specifications = public_specifications
         self.private_specifications = private_specifications
 
@@ -57,9 +57,11 @@ class Client:
         cm_ack = self.cm_stub.CLIENT_ACCEPT(client_accept_msg)
         return cm_ack
     
-    async def request(self, job_ip:str, job_port:int)->bool:
+    async def _connect_to_ps(self, job_ip:str, job_port:int):
         self.job_channel = grpc.insecure_channel(f"{job_ip}:{job_port}")
         self.job_stub = propius_pb2_grpc.JobStub(self.job_channel)
+    
+    async def request(self)->bool:
         client_id_msg = propius_pb2.client_id(id=self.id)
         plan = self.job_stub.CLIENT_REQUEST(client_id_msg)
         ack = plan.ack
@@ -92,6 +94,13 @@ class Client:
 
         print(f"Client {self.id}: result reported")
 
+    def cleanup_routines(self):
+        try:
+            self.cm_channel.close()
+            self.job_channel.close()
+        except:
+            pass
+
     async def run(self, client_plotter=None):
         if client_plotter:
             await client_plotter.client_start()
@@ -114,24 +123,25 @@ class Client:
             if client_plotter:
                 await client_plotter.client_finish('drop')
             return
+        
         job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
-        ping_exp_time = cm_ack.pint_exp_time
+        ping_exp_time = cm_ack.ping_exp_time
         self.cm_channel.close()
 
         start_time = time.time()
-        ack = False
+        job_ack = False
+        await self._connect_to_ps(job_ip, job_port)
         while time.time() < start_time + ping_exp_time:
-            ack = self.request(job_ip, job_port)
-            if ack:
+            job_ack = self.request()
+            if job_ack:
                 break
             await asyncio.sleep(5)
-        if not ack:
+        if not job_ack:
             if client_plotter:
                 await client_plotter.client_finish('drop')
             return
         await self.execute()
         await self.report()
-        self.job_channel.close()
         if client_plotter:
             await client_plotter.client_finish('success')
         print(f"Client {self.id}: task {self.task_id} executed, shutting down===")
@@ -145,4 +155,7 @@ if __name__ == '__main__':
 
         client = Client(0, (80, 80, 80), (), cm_ip, cm_port)
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(client.run(None))
+        try:
+            loop.run_until_complete(client.run(None))
+        finally:
+            client.cleanup_routines()
