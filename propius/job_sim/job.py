@@ -34,6 +34,7 @@ class Job(propius_pb2_grpc.JobServicer):
         self.cur_round = 1
         self.cur_result_list = []
         self.agg_result_list = []
+        self.round_client_num = 0
 
     def _connect_jm(self, jm_ip:str, jm_port:int)->None:
         self.jm_channel = grpc.insecure_channel(f'{jm_ip}:{jm_port}')
@@ -66,12 +67,23 @@ class Job(propius_pb2_grpc.JobServicer):
         )
         ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
         if not ack_msg.ack:
-            print(f"Job {self.id} round {self.cur_round}/{self.est_total_round} request failed")
+            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} request failed")
             return False
         else:
-            print(f"Job {self.id} round {self.cur_round}/{self.est_total_round} request success")
+            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} request success")
             return True
-    
+        
+    def end_request(self)->bool:
+        """optional, terminating request"""
+        request_msg = propius_pb2.job_id(id=self.id)
+        ack_msg = self.jm_stub.JOB_END_REQUEST(request_msg)
+        if not ack_msg.ack:
+            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} end request failed")
+            return False
+        else:
+            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} end request")
+            return True
+
     def complete_job(self):
         req_msg = propius_pb2.job_id(id=self.id)
         self.jm_stub.JOB_FINISH(req_msg)
@@ -81,6 +93,7 @@ class Job(propius_pb2_grpc.JobServicer):
         self.agg_result_list.append(sum(self.cur_result_list))
         self.cur_result_list.clear()
         self.cur_round += 1
+        self.round_client_num = 0
         self.cv.notify()
 
     async def CLIENT_REPORT(self, request, context):
@@ -96,6 +109,10 @@ class Job(propius_pb2_grpc.JobServicer):
     async def CLIENT_REQUEST(self, request, context):
         client_id = request.id
         print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
+        async with self.lock:
+            self.round_client_num += 1
+            if self.round_client_num == self.demand:
+                self.end_request()
         return propius_pb2.plan(workload=self.workload)
         
 async def run(gconfig):

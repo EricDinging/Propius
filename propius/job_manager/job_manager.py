@@ -59,7 +59,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         return propius_pb2.job_register_ack(id=job_id, ack=ack)
     
     async def JOB_REQUEST(self, request, context):
-        job_id, demand= request.id, request.demand
+        job_id, demand = request.id, request.demand
         ack = self.job_db_stub.request(job_id=job_id, demand=demand)
         #await self.client_db_stub.cleanup()
         print(f"Job manager: ack job {job_id} round request: {ack}")
@@ -67,6 +67,13 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             await self.jm_analyzer.job_request()
         else:
             await self.jm_analyzer.request()
+        return propius_pb2.ack(ack=ack)
+    
+    async def JOB_END_REQUEST(self, request, context):
+        job_id = request.id
+        ack = self.job_db_stub.end_request(job_id=job_id)
+        print(f"Job manager: ack job {job_id} end round request: {ack}")
+        await self.jm_analyzer.request()
         return propius_pb2.ack(ack=ack)
     
     async def JOB_FINISH(self, request, context):

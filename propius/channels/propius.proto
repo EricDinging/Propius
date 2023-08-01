@@ -1,5 +1,5 @@
 //  python -m grpc_tools.protoc --proto_path=. ./propius.proto --python_out=. --grpc_python_out=. 
-//  import src.channels.propius_pb2 as propius__pb2
+//  import propius.channels.propius_pb2 as propius__pb2
 
 syntax = "proto3";
 
@@ -13,6 +13,7 @@ service Job {
 service Job_manager {
     rpc JOB_REGIST (job_info) returns (job_register_ack) {}
     rpc JOB_REQUEST (job_round_info) returns (ack) {}
+    rpc JOB_END_REQUEST (job_id) returns (ack) {}
     rpc JOB_FINISH (job_id) returns (empty) {}
 }
 

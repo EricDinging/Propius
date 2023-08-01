@@ -85,6 +85,30 @@ class Job_db_stub(Job_db):
                     return True
                 except redis.WatchError:
                     pass
+    
+    def end_request(self, job_id:int)->bool:
+        with self.r.json().pipeline() as pipe:
+            while True:
+                try:
+                    id = f"job:{job_id}"
+                    pipe.watch(id)
+                    if not pipe.get(id):
+                        pipe.unwatch(id)
+                        return False
+                    demand = int(self.r.json().get(id, ".job.demand")[0])
+                    amount = int(self.r.json().get(id, ".job.amount")[0])
+                    if amount >= demand:
+                        pipe.unwatch()
+                        return True
+                    start_sched = float(self.r.json().get(id, "$.job.start_sched")[0])
+                    pipe.multi()
+                    pipe.execute_command('JSON.SET', id, ".job.amount", demand)
+                    sched_time = time.time() - start_sched
+                    pipe.execute_command('JSON.NUMINCRBY',  id, "$.job.total_sched", sched_time)
+                    pipe.execute()
+                    return True
+                except redis.WatchError:
+                    pass
         
     def finish(self, job_id:int)->tuple[tuple, int, int, float, float]:
         with self.r.json().pipeline() as pipe:
