@@ -131,11 +131,12 @@ class Client:
         start_time = time.time()
         job_ack = False
         await self._connect_to_ps(job_ip, job_port)
+
         while time.time() < start_time + ping_exp_time:
             job_ack = self.request()
             if job_ack:
                 break
-            await asyncio.sleep(5)
+            await asyncio.sleep(max(1, min(5, ping_exp_time / 3)))
         if not job_ack:
             if client_plotter:
                 await client_plotter.client_finish('drop')

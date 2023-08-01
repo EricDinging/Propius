@@ -20,17 +20,32 @@ class Job_db_stub(Job_db):
             result = None
         if result:
             size = result.total
+            open_list = []
+            open_private_constraint = []
+            proactive_list = []
+            proactive_private_constraint = []
             for doc in result.docs:
                     job = json.loads(doc.json)
                     job_public_constraint = tuple(
                         [job['job']['public_constraint'][name]
                             for name in self.public_constraint_name])
-                    if job['job']['amount'] < job['job']['demand'] and geq(specification, job_public_constraint):
-                        job_private_constraint = tuple(
+                    if geq(specification, job_public_constraint):
+                        if job['job']['amount'] < job['job']['demand']:
+                            open_list.append(int(doc.id.split(':')[1]))
+                            job_private_constraint = tuple(
                             [job['job']['private_constraint'][name]
                                 for name in self.private_constraint_name])
-                        return [int(doc.id.split(':')[1])], [job_private_constraint], size
-            return [], [], size
+                            open_private_constraint.append(job_private_constraint)
+                        
+                        elif self.gconfig['proactive']:
+                            proactive_list.append(int(doc.id.split(':')[1]))
+                            job_private_constraint = tuple(
+                            [job['job']['private_constraint'][name]
+                                for name in self.private_constraint_name])
+                            proactive_private_constraint.append(job_private_constraint)
+
+            return open_list + proactive_list, open_private_constraint + proactive_private_constraint, size
+            
         return [], [], 0
     
     def incr_amount(self, job_id:int)->tuple[str, int, float]:
@@ -49,24 +64,28 @@ class Job_db_stub(Job_db):
                     register_time = float(self.r.json().get(id, "$.job.timestamp")[0])
                     runtime = time.time() - register_time
                     round = int(self.r.json().get(id, "$.job.round")[0])
+                    total_round = int(self.r.json().get(id, "$.job.total_round")[0])
+
                     if round > 1:
                         # Client will try to ping the PS within exp_ping_time
-                        ping_exp_time = float(runtime / (round - 1))
+                        ping_exp_time = 1.5 * float(runtime / (round - 1))
                     else:
                         ping_exp_time = self.gconfig['default_ping_exp_time']
 
                     if amount >= demand:
-                        pipe.unwatch()
-                        return None
-                    else:
-                        pipe.multi()
+                        if not self.gconfig['proactive'] or round == total_round:
+                            pipe.unwatch()
+                            return None
+                            
+                    pipe.multi()
+                    if amount < demand:
                         pipe.execute_command('JSON.NUMINCRBY', id, "$.job.amount", 1)
-                        if amount == demand - 1:
-                            start_sched = float(self.r.json().get(id, "$.job.start_sched")[0])
-                            sched_time = time.time() - start_sched
-                            pipe.execute_command('JSON.NUMINCRBY',  id, "$.job.total_sched", sched_time)
-                        pipe.execute()
-                        return (ip, port, ping_exp_time)
+                    if amount == demand - 1:
+                        start_sched = float(self.r.json().get(id, "$.job.start_sched")[0])
+                        sched_time = time.time() - start_sched
+                        pipe.execute_command('JSON.NUMINCRBY',  id, "$.job.total_sched", sched_time)
+                    pipe.execute()
+                    return (ip, port, ping_exp_time)
                 except redis.WatchError:
                     pass
 

@@ -3,6 +3,9 @@
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2']
 sched_alg: 'irs'
 
+# Scheduling option
+proactive: True
+
 # Scheduling metadata (optional)
 standard_round_time: 3
 irs_epsilon: 0
