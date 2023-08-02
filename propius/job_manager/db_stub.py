@@ -15,14 +15,11 @@ class Job_db_stub(Job_db):
     def register(self, job_id:int, public_constraint:tuple, private_constraint: tuple, 
                  job_ip:str, job_port:int, 
                  total_demand:int, total_round:int)->bool:
-        print("Hello")
 
         if len(public_constraint) != len(self.public_constraint_name):
             raise ValueError("Public constraint len does not match required")
         if len(private_constraint) != len(self.private_constraint_name):
             raise ValueError("Private constraint len does not match required")
-        
-        print("Hello")
         
         job_dict = {
             "timestamp": time.time(),

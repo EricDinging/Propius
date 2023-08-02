@@ -7,6 +7,7 @@ from redis.commands.search.query import NumericFilter, Query
 import time
 import json
 from propius.util.db import *
+import random
 
 class Job_db_stub(Job_db):
     def __init__(self, gconfig):
@@ -24,11 +25,14 @@ class Job_db_stub(Job_db):
             open_private_constraint = []
             proactive_list = []
             proactive_private_constraint = []
+            max_task_len = self.gconfig['max_task_offer_list_len']
             for doc in result.docs:
                     job = json.loads(doc.json)
                     job_public_constraint = tuple(
                         [job['job']['public_constraint'][name]
                             for name in self.public_constraint_name])
+                    if len(open_list) + len(proactive_list) >= max_task_len:
+                        break
                     if geq(specification, job_public_constraint):
                         if job['job']['amount'] < job['job']['demand']:
                             open_list.append(int(doc.id.split(':')[1]))
@@ -43,8 +47,15 @@ class Job_db_stub(Job_db):
                             [job['job']['private_constraint'][name]
                                 for name in self.private_constraint_name])
                             proactive_private_constraint.append(job_private_constraint)
-
-            return open_list + proactive_list, open_private_constraint + proactive_private_constraint, size
+            upd_proactive_list = upd_proactive_private_constraint = []
+            if len(proactive_list) > 0:
+                # Use random proactive scheduling
+                combined_job = list(zip(proactive_list, proactive_private_constraint))
+                random.shuffle(combined_job)
+                upd_proactive_list, upd_proactive_private_constraint = zip(*combined_job)
+                upd_proactive_list = list(upd_proactive_list)
+                upd_proactive_private_constraint = list(upd_proactive_private_constraint)
+            return open_list + upd_proactive_list, open_private_constraint + upd_proactive_private_constraint, size
             
         return [], [], 0
     

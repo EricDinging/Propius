@@ -119,11 +119,11 @@ if __name__ == '__main__':
             logger.error(str(e))
         finally:
             if client_plotter.total_client_num > 0:
-                fig = plt.gcf()
-                client_plotter.plot()
-                plt.legend(loc='upper left')
-                plt.show()
-                fig.savefig(f'./fig/CLIENT-{int(time.time())}')
+                # fig = plt.gcf()
+                # client_plotter.plot()
+                # plt.legend(loc='upper left')
+                # plt.show()
+                # fig.savefig(f'./fig/CLIENT-{int(time.time())}')
                 total, success_num, rate, drop_num = client_plotter.report()
                 str = f"Total client: {total}, success num: {success_num}, utilization rate: {rate:.3f}, drop num: {drop_num}"
                 with open(f'./log/CLIENT-{int(time.time())}.txt', 'w') as file:

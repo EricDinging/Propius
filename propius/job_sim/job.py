@@ -101,7 +101,7 @@ class Job(propius_pb2_grpc.JobServicer):
                 return propius_pb2.empty()
             client_id, result = request.client_id, request.result
             self.cur_result_list.append(result)
-            print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} reported, {len(self.cur_result_list)}/{self.demand}")
+            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round}: client {client_id} reported, {len(self.cur_result_list)}/{self.demand}")
 
             if len(self.cur_result_list) == self.demand:
                 self._close_round()
@@ -112,7 +112,7 @@ class Job(propius_pb2_grpc.JobServicer):
         async with self.lock:
             if self.round_client_num >= self.demand or self.cur_round == self.est_total_round + 1:
                 return propius_pb2.plan(ack=False, workload=-1)
-            print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
+            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
             self.round_client_num += 1
             if self.round_client_num >= self.demand:
                 self.end_request()
