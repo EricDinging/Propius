@@ -1,5 +1,25 @@
-# Global config for simulation
+# Global config
 
+# ---Addresses---
+load_balancer_ip: localhost
+load_balancer_port: 50000
+
+client_manager_ip: &cm_ip localhost
+client_manager_port: 50001
+
+client_db_ip: *cm_ip
+client_db_port: 6379
+
+job_db_ip: localhost
+job_db_port: 6380
+
+job_manager_ip: localhost
+job_manager_port: 50002
+
+scheduler_ip: localhost
+scheduler_port: 50003
+
+# ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2']
 sched_alg: 'irs'
 
@@ -11,28 +31,11 @@ max_task_offer_list_len: 10
 standard_round_time: 30
 irs_epsilon: 0
 
-# Scheduler address
-sched_ip: localhost
-sched_port: 50000
+# ---Client---
+# Client default ping expiration time. Client will try to ping job during this time
+default_ping_exp_time: 30
 
-# Client manager address
-client_manager_ip: localhost
-client_manager_port: 50001
-
-# Client simulation number
-client_num: 60000
-# Client check in distribution over time
-# 0 is uniform distribution, 1 is normal distribution
-client_is_uniform: False
-
-# Job manager address
-job_manager_ip: localhost
-job_manager_port: 50002
-
-# Job profile number
-job_profile_num : 9
-# Job total number
-total_job : 200
+# ---Constraint/spec setting---
 # Job constraint
 job_public_constraint:
   - cpu
@@ -41,7 +44,25 @@ job_public_constraint:
 job_private_constraint: []
   # - datasetsize
 
-# Job driver address
+# Define the scale of the specifications
+metric_scale: 100
+
+# ---Database setting---
+# Client data expiration time in Redis DB
+client_expire_time: 100
+
+# ---Simulation---
+# Client simulation number
+client_num: 60000
+
+# Client check in distribution over time
+client_is_uniform: False
+
+# Job profile number
+job_profile_num : 9
+# Job total number
+total_job : 200
+
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
 job_driver_starting_port: 53000
@@ -49,19 +70,8 @@ job_driver_starting_port: 53000
 # Total simulation time
 total_running_second: 1200
 
-# Redis DB address
-db_ip: localhost
-db_port: 6379
 
-# Client data expiration time in Redis DB
-client_expire_time: 100
-
-# Client default ping expiration time. Client will try to ping job during this time
-default_ping_exp_time: 30
-# Define the scale of the specifications
-metric_scale: 100
-
-# Fedscale simulation
+# Fedscale run
 num_executors: 100
 num_clients: 100
 data_dir: ./benchmark/dataset/data/femnist

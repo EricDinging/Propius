@@ -23,7 +23,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
                                        gconfig['total_running_second'])
         self.sched_channel = None
         self.sched_stub = None
-        self._connect_sched(gconfig['sched_ip'], int(gconfig['sched_port']))
+        self._connect_sched(gconfig['scheduler_ip'], int(gconfig['scheduler_port']))
         self.sched_alg = gconfig['sched_alg']
         self.job_total_num = 0
 

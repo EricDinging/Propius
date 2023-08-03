@@ -9,8 +9,8 @@ import json
 
 class Job_db:
     def __init__(self, gconfig):
-        host = gconfig['db_ip']
-        port = int(gconfig['db_port'])
+        host = gconfig['job_db_ip']
+        port = int(gconfig['job_db_port'])
         self.r = redis.Redis(host=host, port=port)
         self.sched_alg = gconfig['sched_alg']
         self.gconfig = gconfig
@@ -54,8 +54,8 @@ class Job_db:
 
 class Client_db:
     def __init__(self, gconfig):
-        host = gconfig['db_ip']
-        port = int(gconfig['db_port'])
+        host = gconfig['client_db_ip']
+        port = int(gconfig['client_db_port'])
         self.r = redis.Redis(host=host, port=port)
         #self.max_size = int(gconfig['client_db_maxsize'])
         self.start_time = int(time.time())

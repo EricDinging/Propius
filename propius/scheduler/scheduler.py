@@ -14,8 +14,8 @@ _cleanup_routines = []
 
 class Scheduler(propius_pb2_grpc.SchedulerServicer):
     def __init__(self, gconfig):
-        self.ip = gconfig['sched_ip']
-        self.port = gconfig['sched_port']
+        self.ip = gconfig['scheduler_ip']
+        self.port = gconfig['scheduler_port']
         self.sched_alg = gconfig['sched_alg']
         if self.sched_alg == 'irs':
             self.irs_epsilon = float(gconfig['irs_epsilon'])
