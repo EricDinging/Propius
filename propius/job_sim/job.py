@@ -171,7 +171,7 @@ if __name__ == '__main__':
     global_setup_file = './global_config.yml'
 
     if len(sys.argv) != 5:
-        print("Wrong format: python propius/job_sim/job.py <config file> job_id job_ip job_port")
+        print("Usage: python propius/job_sim/job.py <config file> job_id job_ip job_port")
         exit(1)
 
     with open(global_setup_file, 'r') as gyamlfile:

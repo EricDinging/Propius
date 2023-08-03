@@ -4,11 +4,11 @@
 load_balancer_ip: localhost
 load_balancer_port: 50000
 
-client_manager_ip: &cm_ip localhost
-client_manager_port: 50001
-
-client_db_ip: *cm_ip
-client_db_port: 6379
+client_manager:
+  - 0:
+    ip: localhost
+    port: 50001
+    client_db_port: 6379
 
 job_db_ip: localhost
 job_db_port: 6380

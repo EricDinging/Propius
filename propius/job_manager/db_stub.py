@@ -10,7 +10,7 @@ from propius.util.db import *
 
 class Job_db_stub(Job_db):
     def __init__(self, gconfig):
-        super().__init__(gconfig)
+        super().__init__(gconfig, True)
 
     def register(self, job_id:int, public_constraint:tuple, private_constraint: tuple, 
                  job_ip:str, job_port:int, 

@@ -14,7 +14,7 @@ import random
 
 class Job_db_stub(Job_db):
     def __init__(self, gconfig):
-        super().__init__(gconfig)
+        super().__init__(gconfig, False)
     
     def get_job_constraints(self, job_id:int)->tuple:
         id = f"job:{job_id}"
@@ -137,7 +137,8 @@ class Job_db_stub(Job_db):
         
 class Client_db_stub(Client_db):
     def __init__(self, gconfig):
-        super().__init__(gconfig)
+        #TODO determine which client db to connect
+        super().__init__(gconfig, 0, False)
         self.metric_scale = gconfig['metric_scale']
 
     def get_client_size(self)->int:
