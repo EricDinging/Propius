@@ -339,6 +339,11 @@ class Client_managerStub(object):
                 request_serializer=propius__pb2.client_accept.SerializeToString,
                 response_deserializer=propius__pb2.cm_ack.FromString,
                 )
+        self.HEALTH_CHECK = channel.unary_unary(
+                '/propius.Client_manager/HEALTH_CHECK',
+                request_serializer=propius__pb2.empty.SerializeToString,
+                response_deserializer=propius__pb2.cm_ack.FromString,
+                )
 
 
 class Client_managerServicer(object):
@@ -356,6 +361,12 @@ class Client_managerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def HEALTH_CHECK(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_Client_managerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -367,6 +378,11 @@ def add_Client_managerServicer_to_server(servicer, server):
             'CLIENT_ACCEPT': grpc.unary_unary_rpc_method_handler(
                     servicer.CLIENT_ACCEPT,
                     request_deserializer=propius__pb2.client_accept.FromString,
+                    response_serializer=propius__pb2.cm_ack.SerializeToString,
+            ),
+            'HEALTH_CHECK': grpc.unary_unary_rpc_method_handler(
+                    servicer.HEALTH_CHECK,
+                    request_deserializer=propius__pb2.empty.FromString,
                     response_serializer=propius__pb2.cm_ack.SerializeToString,
             ),
     }
@@ -408,6 +424,117 @@ class Client_manager(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/propius.Client_manager/CLIENT_ACCEPT',
+            propius__pb2.client_accept.SerializeToString,
+            propius__pb2.cm_ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def HEALTH_CHECK(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Client_manager/HEALTH_CHECK',
+            propius__pb2.empty.SerializeToString,
+            propius__pb2.cm_ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+
+class Load_balancerStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.CLIENT_CHECKIN = channel.unary_unary(
+                '/propius.Load_balancer/CLIENT_CHECKIN',
+                request_serializer=propius__pb2.client_checkin.SerializeToString,
+                response_deserializer=propius__pb2.cm_offer.FromString,
+                )
+        self.CLIENT_ACCEPT = channel.unary_unary(
+                '/propius.Load_balancer/CLIENT_ACCEPT',
+                request_serializer=propius__pb2.client_accept.SerializeToString,
+                response_deserializer=propius__pb2.cm_ack.FromString,
+                )
+
+
+class Load_balancerServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def CLIENT_CHECKIN(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CLIENT_ACCEPT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_Load_balancerServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'CLIENT_CHECKIN': grpc.unary_unary_rpc_method_handler(
+                    servicer.CLIENT_CHECKIN,
+                    request_deserializer=propius__pb2.client_checkin.FromString,
+                    response_serializer=propius__pb2.cm_offer.SerializeToString,
+            ),
+            'CLIENT_ACCEPT': grpc.unary_unary_rpc_method_handler(
+                    servicer.CLIENT_ACCEPT,
+                    request_deserializer=propius__pb2.client_accept.FromString,
+                    response_serializer=propius__pb2.cm_ack.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'propius.Load_balancer', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+ # This class is part of an EXPERIMENTAL API.
+class Load_balancer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def CLIENT_CHECKIN(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Load_balancer/CLIENT_CHECKIN',
+            propius__pb2.client_checkin.SerializeToString,
+            propius__pb2.cm_offer.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def CLIENT_ACCEPT(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Load_balancer/CLIENT_ACCEPT',
             propius__pb2.client_accept.SerializeToString,
             propius__pb2.cm_ack.FromString,
             options, channel_credentials,

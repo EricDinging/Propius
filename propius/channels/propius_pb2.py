@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\rpropius.proto\x12\x07propius\".\n\x0e\x63lient_checkin\x12\x1c\n\x14public_specification\x18\x01 \x01(\x0c\"d\n\x08\x63m_offer\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x12\n\ntask_offer\x18\x02 \x01(\x0c\x12\x1a\n\x12private_constraint\x18\x03 \x01(\x0c\x12\x15\n\rtotal_job_num\x18\x04 \x01(\x05\"3\n\rclient_accept\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x0f\n\x07task_id\x18\x02 \x01(\x05\"N\n\x06\x63m_ack\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x12\x0e\n\x06job_ip\x18\x02 \x01(\x0c\x12\x10\n\x08job_port\x18\x03 \x01(\x05\x12\x15\n\rping_exp_time\x18\x04 \x01(\x02\"%\n\x04plan\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x12\x10\n\x08workload\x18\x02 \x01(\x05\"\x17\n\tclient_id\x12\n\n\x02id\x18\x01 \x01(\x05\"\x14\n\x06job_id\x12\n\n\x02id\x18\x01 \x01(\x05\"\x88\x01\n\x08job_info\x12\x12\n\nest_demand\x18\x01 \x01(\x05\x12\x17\n\x0f\x65st_total_round\x18\x02 \x01(\x05\x12\x19\n\x11public_constraint\x18\x03 \x01(\x0c\x12\x1a\n\x12private_constraint\x18\x04 \x01(\x0c\x12\n\n\x02ip\x18\x05 \x01(\x0c\x12\x0c\n\x04port\x18\x06 \x01(\x05\",\n\x0ejob_round_info\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0e\n\x06\x64\x65mand\x18\x02 \x01(\x05\"2\n\rclient_report\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x0e\n\x06result\x18\x02 \x01(\x02\"\x07\n\x05\x65mpty\"+\n\x10job_register_ack\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0b\n\x03\x61\x63k\x18\x02 \x01(\x08\"\x12\n\x03\x61\x63k\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x32w\n\x03Job\x12\x35\n\x0e\x43LIENT_REQUEST\x12\x12.propius.client_id\x1a\r.propius.plan\"\x00\x12\x39\n\rCLIENT_REPORT\x12\x16.propius.client_report\x1a\x0e.propius.empty\"\x00\x32\xe8\x01\n\x0bJob_manager\x12<\n\nJOB_REGIST\x12\x11.propius.job_info\x1a\x19.propius.job_register_ack\"\x00\x12\x36\n\x0bJOB_REQUEST\x12\x17.propius.job_round_info\x1a\x0c.propius.ack\"\x00\x12\x32\n\x0fJOB_END_REQUEST\x12\x0f.propius.job_id\x1a\x0c.propius.ack\"\x00\x12/\n\nJOB_FINISH\x12\x0f.propius.job_id\x1a\x0e.propius.empty\"\x00\x32@\n\tScheduler\x12\x33\n\x10JOB_SCORE_UPDATE\x12\x0f.propius.job_id\x1a\x0c.propius.ack\"\x00\x32\x8c\x01\n\x0e\x43lient_manager\x12>\n\x0e\x43LIENT_CHECKIN\x12\x17.propius.client_checkin\x1a\x11.propius.cm_offer\"\x00\x12:\n\rCLIENT_ACCEPT\x12\x16.propius.client_accept\x1a\x0f.propius.cm_ack\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\rpropius.proto\x12\x07propius\".\n\x0e\x63lient_checkin\x12\x1c\n\x14public_specification\x18\x01 \x01(\x0c\"d\n\x08\x63m_offer\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x12\n\ntask_offer\x18\x02 \x01(\x0c\x12\x1a\n\x12private_constraint\x18\x03 \x01(\x0c\x12\x15\n\rtotal_job_num\x18\x04 \x01(\x05\"3\n\rclient_accept\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x0f\n\x07task_id\x18\x02 \x01(\x05\"N\n\x06\x63m_ack\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x12\x0e\n\x06job_ip\x18\x02 \x01(\x0c\x12\x10\n\x08job_port\x18\x03 \x01(\x05\x12\x15\n\rping_exp_time\x18\x04 \x01(\x02\"%\n\x04plan\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x12\x10\n\x08workload\x18\x02 \x01(\x05\"\x17\n\tclient_id\x12\n\n\x02id\x18\x01 \x01(\x05\"\x14\n\x06job_id\x12\n\n\x02id\x18\x01 \x01(\x05\"\x88\x01\n\x08job_info\x12\x12\n\nest_demand\x18\x01 \x01(\x05\x12\x17\n\x0f\x65st_total_round\x18\x02 \x01(\x05\x12\x19\n\x11public_constraint\x18\x03 \x01(\x0c\x12\x1a\n\x12private_constraint\x18\x04 \x01(\x0c\x12\n\n\x02ip\x18\x05 \x01(\x0c\x12\x0c\n\x04port\x18\x06 \x01(\x05\",\n\x0ejob_round_info\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0e\n\x06\x64\x65mand\x18\x02 \x01(\x05\"2\n\rclient_report\x12\x11\n\tclient_id\x18\x01 \x01(\x05\x12\x0e\n\x06result\x18\x02 \x01(\x02\"\x07\n\x05\x65mpty\"+\n\x10job_register_ack\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0b\n\x03\x61\x63k\x18\x02 \x01(\x08\"\x12\n\x03\x61\x63k\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\x32w\n\x03Job\x12\x35\n\x0e\x43LIENT_REQUEST\x12\x12.propius.client_id\x1a\r.propius.plan\"\x00\x12\x39\n\rCLIENT_REPORT\x12\x16.propius.client_report\x1a\x0e.propius.empty\"\x00\x32\xe8\x01\n\x0bJob_manager\x12<\n\nJOB_REGIST\x12\x11.propius.job_info\x1a\x19.propius.job_register_ack\"\x00\x12\x36\n\x0bJOB_REQUEST\x12\x17.propius.job_round_info\x1a\x0c.propius.ack\"\x00\x12\x32\n\x0fJOB_END_REQUEST\x12\x0f.propius.job_id\x1a\x0c.propius.ack\"\x00\x12/\n\nJOB_FINISH\x12\x0f.propius.job_id\x1a\x0e.propius.empty\"\x00\x32@\n\tScheduler\x12\x33\n\x10JOB_SCORE_UPDATE\x12\x0f.propius.job_id\x1a\x0c.propius.ack\"\x00\x32\xbf\x01\n\x0e\x43lient_manager\x12>\n\x0e\x43LIENT_CHECKIN\x12\x17.propius.client_checkin\x1a\x11.propius.cm_offer\"\x00\x12:\n\rCLIENT_ACCEPT\x12\x16.propius.client_accept\x1a\x0f.propius.cm_ack\"\x00\x12\x31\n\x0cHEALTH_CHECK\x12\x0e.propius.empty\x1a\x0f.propius.cm_ack\"\x00\x32\x8b\x01\n\rLoad_balancer\x12>\n\x0e\x43LIENT_CHECKIN\x12\x17.propius.client_checkin\x1a\x11.propius.cm_offer\"\x00\x12:\n\rCLIENT_ACCEPT\x12\x16.propius.client_accept\x1a\x0f.propius.cm_ack\"\x00\x62\x06proto3'
 )
 
 
@@ -779,7 +779,7 @@ _CLIENT_MANAGER = _descriptor.ServiceDescriptor(
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
   serialized_start=1129,
-  serialized_end=1269,
+  serialized_end=1320,
   methods=[
   _descriptor.MethodDescriptor(
     name='CLIENT_CHECKIN',
@@ -801,9 +801,55 @@ _CLIENT_MANAGER = _descriptor.ServiceDescriptor(
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
+  _descriptor.MethodDescriptor(
+    name='HEALTH_CHECK',
+    full_name='propius.Client_manager.HEALTH_CHECK',
+    index=2,
+    containing_service=None,
+    input_type=_EMPTY,
+    output_type=_CM_ACK,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
 ])
 _sym_db.RegisterServiceDescriptor(_CLIENT_MANAGER)
 
 DESCRIPTOR.services_by_name['Client_manager'] = _CLIENT_MANAGER
+
+
+_LOAD_BALANCER = _descriptor.ServiceDescriptor(
+  name='Load_balancer',
+  full_name='propius.Load_balancer',
+  file=DESCRIPTOR,
+  index=4,
+  serialized_options=None,
+  create_key=_descriptor._internal_create_key,
+  serialized_start=1323,
+  serialized_end=1462,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='CLIENT_CHECKIN',
+    full_name='propius.Load_balancer.CLIENT_CHECKIN',
+    index=0,
+    containing_service=None,
+    input_type=_CLIENT_CHECKIN,
+    output_type=_CM_OFFER,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='CLIENT_ACCEPT',
+    full_name='propius.Load_balancer.CLIENT_ACCEPT',
+    index=1,
+    containing_service=None,
+    input_type=_CLIENT_ACCEPT,
+    output_type=_CM_ACK,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_LOAD_BALANCER)
+
+DESCRIPTOR.services_by_name['Load_balancer'] = _LOAD_BALANCER
 
 # @@protoc_insertion_point(module_scope)
