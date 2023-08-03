@@ -63,8 +63,6 @@ class Client_plotter:
 async def run(gconfig, client_plotter):
     # clients = []
     num = int(gconfig['client_num'])
-    ip = gconfig['client_manager'][0]['ip']
-    port = gconfig['client_manager'][0]['port']
     total_time = int(gconfig['total_running_second']) + 60
     is_uniform = gconfig['client_is_uniform']
     public_constraint_name = gconfig['job_public_constraint']
@@ -80,7 +78,6 @@ async def run(gconfig, client_plotter):
     else:
         start_time_list = [int(num / total_time)] * total_time
 
-    id = 0
     for i in range(total_time):
         for _ in range(start_time_list[i]):
             bench_mark = max(20, min(random.normalvariate(60, 20), 100))
@@ -96,9 +93,8 @@ async def run(gconfig, client_plotter):
             )
             
             asyncio.ensure_future(
-                Client(id, public_constraints, private_constraints, ip, port).run(client_plotter))
-
-            id += 1
+                Client(public_constraints, private_constraints, gconfig).run(client_plotter))
+            
         await asyncio.sleep(1)
 
 if __name__ == '__main__':

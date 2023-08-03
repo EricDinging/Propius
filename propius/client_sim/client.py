@@ -10,18 +10,21 @@ from propius.channels import propius_pb2_grpc
 from propius.util.db import geq
 
 class Client:
-    def __init__(self, id:int, public_specifications:tuple, 
+    def __init__(self, public_specifications:tuple, 
                  private_specifications:tuple,
-                 cm_ip:str, cm_port:int):
+                 gconfig):
         self.id = -1
         self.public_specifications = public_specifications
         self.private_specifications = private_specifications
 
         self.task_id = 0
 
-        self.cm_channel = None
-        self.cm_stub = None
-        self._connect_cm(cm_ip, cm_port)
+        lb_ip = gconfig['load_balancer_ip']
+        lb_port = gconfig['load_balancer_port']
+        self.lb_channel = None
+        self.lb_port = None
+
+        self._connect_lb(lb_ip, lb_port)
 
         self.job_channel = None
         self.job_stub = None
@@ -29,18 +32,19 @@ class Client:
         self.result = 0
         self.client_plotter = None
 
-    def _connect_cm(self, cm_ip:str, cm_port:int)->None:
-        self.cm_channel = grpc.insecure_channel(f'{cm_ip}:{cm_port}')
-        self.cm_stub = propius_pb2_grpc.Client_managerStub(self.cm_channel)
-        print(f"Client {self.id}: connecting to client manager at {cm_ip}:{cm_port}")
+    def _connect_lb(self, lb_ip:str, lb_port:int)->None:
+        self.lb_channel = grpc.insecure_channel(f'{lb_ip}:{lb_port}')
+        self.lb_stub = propius_pb2_grpc.Load_balancerStub(self.lb_channel)
+        print(f"Client {self.id}: connecting to load balancer at {lb_ip}:{lb_port}")
 
     async def checkin(self)->propius_pb2.cm_offer:
         task_offer = None
         try:
             client_checkin_msg = propius_pb2.client_checkin(
+                client_id = -1,
                 public_specification=pickle.dumps(self.public_specifications)
                 )
-            task_offer = self.cm_stub.CLIENT_CHECKIN(client_checkin_msg)
+            task_offer = self.lb_stub.CLIENT_CHECKIN(client_checkin_msg)
         except:
             if self.client_plotter:
                 await self.client_plotter.client_finish('drop')
@@ -62,7 +66,7 @@ class Client:
     async def accept(self)->propius_pb2.cm_ack:
         try:
             client_accept_msg = propius_pb2.client_accept(client_id=self.id, task_id=self.task_id)
-            cm_ack = self.cm_stub.CLIENT_ACCEPT(client_accept_msg)
+            cm_ack = self.lb_stub.CLIENT_ACCEPT(client_accept_msg)
         except:
             if self.client_plotter:
                 await self.client_plotter.client_finish('drop')
@@ -123,7 +127,7 @@ class Client:
 
     def cleanup_routines(self):
         try:
-            self.cm_channel.close()
+            self.lb_channel.close()
             self.job_channel.close()
         except:
             pass
@@ -159,7 +163,7 @@ class Client:
         
         job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
         ping_exp_time = cm_ack.ping_exp_time
-        self.cm_channel.close()
+        self.lb_channel.close()
 
         start_time = time.time()
         job_ack = False
@@ -188,9 +192,6 @@ if __name__ == '__main__':
     global_setup_file = './global_config.yml'
     with open(global_setup_file, 'r') as gyamlfile:
         gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-        cm_ip = gconfig['client_manager'][0]['ip']
-        cm_port = gconfig['client_manager'][0]['port']
-
-        client = Client(0, (80, 80, 80), (), cm_ip, cm_port)
+        client = Client((80, 80, 80), (), gconfig)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(client.run(None))

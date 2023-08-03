@@ -25,6 +25,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.sched_stub = None
         self._connect_sched(gconfig['scheduler_ip'], int(gconfig['scheduler_port']))
         self.sched_alg = gconfig['sched_alg']
+
+        self.lock = asyncio.Lock()
         self.job_total_num = 0
 
     def _connect_sched(self, sched_ip:str, sched_port:int)->None:
@@ -38,7 +40,10 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         job_ip, job_port = pickle.loads(request.ip), request.port
         public_constraint = pickle.loads(request.public_constraint)
         private_constraint = pickle.loads(request.private_constraint)
-        job_id = self.job_total_num
+        
+        async with self.lock:
+            job_id = self.job_total_num
+            self.job_total_num += 1
 
         print(f"Job manager: job {job_id} check in, " +
               f"public constraint: {public_constraint}, "+
@@ -52,7 +57,6 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         print(f"Job manager: ack job {job_id} register: {ack}")
         if ack:
             await self.jm_analyzer.job_register()
-            self.job_total_num += 1
             self.sched_stub.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
         else:
             await self.jm_analyzer.request()
@@ -94,6 +98,10 @@ async def serve(gconfig):
         logging.info("Starting graceful shutdown...")
         job_manager.jm_analyzer.report()
         job_manager.job_db_stub.flushdb()
+        try:
+            job_manager.sched_channel.close()
+        except:
+            pass
         await server.stop(5)
     
     server = grpc.aio.server()

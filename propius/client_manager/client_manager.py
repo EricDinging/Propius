@@ -11,6 +11,7 @@ from db_stub import *
 from cm_analyzer import *
 
 _cleanup_coroutines = []
+max_client_num = 100000000
 
 class Client_manager(propius_pb2_grpc.Client_managerServicer):
     def __init__(self, gconfig, cm_id:int):
@@ -21,12 +22,17 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.client_db_stub = Client_db_stub(gconfig, self.cm_id)
         self.job_db_stub = Job_db_stub(gconfig)
         self.cm_analyzer = CM_analyzer(self.sched_alg, gconfig['total_running_second'])
-        self.client_num = 0
+
         print(f"Client manager {self.cm_id} started, running {self.sched_alg}")
 
+        self.lock = asyncio.Lock()
+        self.client_num = 0
+
     async def CLIENT_CHECKIN(self, request, context):
-        client_id = self.client_num
-        self.client_num += 1
+        async with self.lock:
+            client_id = max_client_num * self.cm_id + self.client_num % max_client_num
+            self.client_num += 1
+
         public_specification = pickle.loads(request.public_specification)
 
         self.client_db_stub.insert(client_id, public_specification)
