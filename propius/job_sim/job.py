@@ -34,6 +34,7 @@ class Job(propius_pb2_grpc.JobServicer):
         self.cur_round = 1
         self.cur_result_list = []
         self.agg_result_list = []
+        self.round_client_num = 0
 
     def _connect_jm(self, jm_ip:str, jm_port:int)->None:
         self.jm_channel = grpc.insecure_channel(f'{jm_ip}:{jm_port}')
@@ -66,12 +67,23 @@ class Job(propius_pb2_grpc.JobServicer):
         )
         ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
         if not ack_msg.ack:
-            print(f"Job {self.id} round {self.cur_round}/{self.est_total_round} request failed")
+            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} request failed")
             return False
         else:
-            print(f"Job {self.id} round {self.cur_round}/{self.est_total_round} request success")
+            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} request success")
             return True
-    
+        
+    def end_request(self)->bool:
+        """optional, terminating request"""
+        request_msg = propius_pb2.job_id(id=self.id)
+        ack_msg = self.jm_stub.JOB_END_REQUEST(request_msg)
+        if not ack_msg.ack:
+            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} end request failed")
+            return False
+        else:
+            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} end request")
+            return True
+
     def complete_job(self):
         req_msg = propius_pb2.job_id(id=self.id)
         self.jm_stub.JOB_FINISH(req_msg)
@@ -85,9 +97,11 @@ class Job(propius_pb2_grpc.JobServicer):
 
     async def CLIENT_REPORT(self, request, context):
         async with self.lock:
+            if self.cur_round > self.est_total_round:
+                return propius_pb2.empty()
             client_id, result = request.client_id, request.result
             self.cur_result_list.append(result)
-            print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} reported, {len(self.cur_result_list)}/{self.demand}")
+            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round}: client {client_id} reported, {len(self.cur_result_list)}/{self.demand}")
 
             if len(self.cur_result_list) == self.demand:
                 self._close_round()
@@ -95,12 +109,22 @@ class Job(propius_pb2_grpc.JobServicer):
         
     async def CLIENT_REQUEST(self, request, context):
         client_id = request.id
-        print(f"Job {self.id} round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
-        return propius_pb2.plan(workload=self.workload)
+        async with self.lock:
+            if self.round_client_num >= self.demand or self.cur_round == self.est_total_round + 1:
+                return propius_pb2.plan(ack=False, workload=-1)
+            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
+            self.round_client_num += 1
+            if self.round_client_num >= self.demand:
+                self.end_request()
+        return propius_pb2.plan(ack=True, workload=self.workload)
         
 async def run(gconfig):
     async def server_graceful_shutdown():
-        job.jm_channel.close()
+        try:
+            job.complete_job()
+            job.jm_channel.close()
+        except:
+            pass
         print("==Job ending==")
         logging.info("Starting graceful shutdown...")
         await server.stop(5)
@@ -127,19 +151,18 @@ async def run(gconfig):
             return
 
         round = 1
-
         while round <= job.est_total_round:
             if not job.request():
                 return
             async with job.lock:
                 while job.cur_round != round + 1:
                     try:
+                        job.round_client_num = 0
                         await asyncio.wait_for(job.cv.wait(), timeout=1000)
                     except asyncio.TimeoutError:
                         print("Timeout reached, shutting down job server")
                         return
                 round += 1
-        job.complete_job()
         print(f"Job {job.id}: All round finished, result: {job.agg_result_list[-1]}")
 
 if __name__ == '__main__':

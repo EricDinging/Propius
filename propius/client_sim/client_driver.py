@@ -50,7 +50,7 @@ class Client_plotter:
     def report(self):
         rate = -1
         if self.total_client_num != 0:
-            rate = self.total_client_success_num / self.total_client_num
+            rate = self.total_client_success_num / (self.total_client_success_num + self.total_client_drop_num)
         return self.total_client_num, self.total_client_success_num, rate, self.total_client_drop_num
     
     def plot(self):
@@ -66,7 +66,7 @@ async def run(gconfig, client_plotter):
     ip = gconfig['client_manager_ip']
     port = int(gconfig['client_manager_port'])
     total_time = int(gconfig['total_running_second']) + 60
-    is_uniform = int(gconfig['client_is_uniform']) == 1
+    is_uniform = gconfig['client_is_uniform']
     public_constraint_name = gconfig['job_public_constraint']
     private_constraint_name = gconfig['job_private_constraint']
     start_time_list = [0] * total_time
@@ -119,13 +119,13 @@ if __name__ == '__main__':
             logger.error(str(e))
         finally:
             if client_plotter.total_client_num > 0:
-                fig = plt.gcf()
-                client_plotter.plot()
-                plt.legend(loc='upper left')
-                plt.show()
-                fig.savefig(f'./fig/CLIENT-{int(time.time())}')
+                # fig = plt.gcf()
+                # client_plotter.plot()
+                # plt.legend(loc='upper left')
+                # plt.show()
+                # fig.savefig(f'./fig/CLIENT-{int(time.time())}')
                 total, success_num, rate, drop_num = client_plotter.report()
-                str = f"Total client: {total}, success num: {success_num}, usage rate: {rate:.3f}, drop num: {drop_num}"
+                str = f"Total client: {total}, success num: {success_num}, utilization rate: {rate:.3f}, drop num: {drop_num}"
                 with open(f'./log/CLIENT-{int(time.time())}.txt', 'w') as file:
                     file.write(str)
                     file.write("\n")

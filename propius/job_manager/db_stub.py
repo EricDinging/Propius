@@ -15,14 +15,11 @@ class Job_db_stub(Job_db):
     def register(self, job_id:int, public_constraint:tuple, private_constraint: tuple, 
                  job_ip:str, job_port:int, 
                  total_demand:int, total_round:int)->bool:
-        print("Hello")
 
         if len(public_constraint) != len(self.public_constraint_name):
             raise ValueError("Public constraint len does not match required")
         if len(private_constraint) != len(self.private_constraint_name):
             raise ValueError("Private constraint len does not match required")
-        
-        print("Hello")
         
         job_dict = {
             "timestamp": time.time(),
@@ -81,6 +78,30 @@ class Job_db_stub(Job_db):
                     pipe.execute_command('JSON.SET', id, "$.job.demand", demand)
                     pipe.execute_command('JSON.SET', id, "$.job.amount", 0)
                     pipe.execute_command('JSON.SET', id, "$.job.start_sched", time.time())
+                    pipe.execute()
+                    return True
+                except redis.WatchError:
+                    pass
+    
+    def end_request(self, job_id:int)->bool:
+        with self.r.json().pipeline() as pipe:
+            while True:
+                try:
+                    id = f"job:{job_id}"
+                    pipe.watch(id)
+                    if not pipe.get(id):
+                        pipe.unwatch(id)
+                        return False
+                    demand = int(self.r.json().get(id, "$.job.demand")[0])
+                    amount = int(self.r.json().get(id, "$.job.amount")[0])
+                    if amount >= demand:
+                        pipe.unwatch()
+                        return True
+                    start_sched = float(self.r.json().get(id, "$.job.start_sched")[0])
+                    pipe.multi()
+                    pipe.execute_command('JSON.SET', id, "$.job.amount", demand)
+                    sched_time = time.time() - start_sched
+                    pipe.execute_command('JSON.NUMINCRBY',  id, "$.job.total_sched", sched_time)
                     pipe.execute()
                     return True
                 except redis.WatchError:

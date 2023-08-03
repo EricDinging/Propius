@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 import collections
 import pickle
 import random
@@ -14,7 +16,7 @@ from fedscale.cloud.execution.torch_client import TorchClient
 from fedscale.cloud.execution.data_processor import collate #TODO voice collate fn
 #TODO RL client
 from fedscale.cloud.fllibs import *
-from fedscale.dataloaders.divide_data import DataPartitioner, select_dataset
+from fedscale.dataloaders.divide_data import DataPartitioner
 from propius.channels import propius_pb2
 from propius.channels import propius_pb2_grpc
 import yaml
@@ -30,16 +32,8 @@ class Executor(object):
     """
 
     def __init__(self, gconfig, args):
-        #TODO logger
-        model = None
-        
-        #TODO use init model
-        if args.model == "resnet18":
-            from fedscale.utils.models.specialized.resnet_speech import resnet18
-
-            model = resnet18(num_classes=outputClass[args.data_set], in_channels=1)
-
-        self.model_adapter = self.get_client_trainer(args).get_model_adapter(model)
+        #TODO loggere
+        self.model_adapter = None
         self.args = args
         self.num_executors = gconfig['num_executors']
         # ======== env information ========
@@ -47,7 +41,6 @@ class Executor(object):
 
         # ======== model and data ========
         self.training_sets = self.testing_sets = None
-
         # ======== channels ========
         self.communicator = ClientConnections(
             gconfig['client_manager_ip'],
@@ -107,7 +100,6 @@ class Executor(object):
 
         Returns:
             Tuple of DataPartitioner class: The partioned dataset class for training and testing
-
         """
         #TODO train_dataset, test_dataset = init_dataset()
         if self.args.data_set == "femnist":
@@ -134,6 +126,14 @@ class Executor(object):
             data=test_dataset, args=self.args, numOfClass=outputClass[args.data_set], isTest=True)
         testing_sets.partition_data_helper(num_clients=self.num_executors)
 
+        # train_dataloader = select_dataset(self.id, training_sets, 
+        #                                   batch_size=self.args.batch_size,
+        #                                   args=self.args, isTest=False,
+        #                                   collate_fn=self.collate_fn)
+        # test_dataloader = select_dataset(self.id, testing_sets,
+        #                                  batch_size=self.args.test_bsz,
+        #                                  args=self.args, isTest=True,
+        #                                  collate_fn=self.collate_fn)
         #TODO logging
 
         return training_sets, testing_sets
@@ -220,14 +220,21 @@ class Executor(object):
                 #TODO logging warning
                 time.sleep(5)
 
-    def UpdateModel(self, model_weights):
+    def UpdateModel(self, model_weights, config):
         """Receive the broadcasted global model for current round
 
         Args:
+            model_weights
             config (PyTorch or TensorFlow model): The broadcasted global model config
 
         """
-        #self.round += 1
+        model = None
+        config = Namespace(**config)
+        if config.model == "resnet18":
+            from fedscale.utils.models.specialized.resnet_speech import resnet18
+            model = resnet18(num_classes=outputClass[config.data_set], in_channels=1)
+        
+        self.model_adapter = self.get_client_trainer(config).get_model_adapter(model)
         self.model_adapter.set_weights(model_weights)
 
     def client_ping(self):
@@ -249,23 +256,16 @@ class Executor(object):
         Returns:
             tuple (int, dictionary): The client id and train result
 
-        """
-        client_id = config['client_id']
-        train_config = config['task_config']
-
-        # if 'model' not in config or not config['model']:
-        #     raise "The 'model' object must be a non-null value in the training config."
-        
-        client_conf = self.override_conf(train_config)
-        train_res = self.training_handler(client_id=client_id,
-                                          conf=client_conf)
+        """    
+        train_res = self.training_handler(client_id=self.id,
+                                          conf=config)
         
         # Report execution completion meta information
         while True:
             try:
                 response = self.communicator.stub.CLIENT_EXECUTE_COMPLETION(
                     job_api_pb2.CompleteRequest(
-                        client_id=str(client_id),
+                        client_id=str(self.id),
                         executor_id=self.executor_id,
                         event=commons.CLIENT_TRAIN,
                         status=True,
@@ -280,7 +280,7 @@ class Executor(object):
 
         self.dispatch_worker_events(response)
 
-        return client_id, train_res
+        return train_res
 
     def training_handler(self, client_id, conf):
         """Train model given client id
@@ -291,23 +291,19 @@ class Executor(object):
 
         Returns:
             dictionary: The train result
-
         """
-        #self.model_adapter.set_weights(model)
-        conf.client_id = client_id
+        conf = Namespace(**conf)
+        conf.rank = client_id
         #TODO conf tokenizer
         #TODO rl training set
-        client_data = select_dataset(client_id, self.training_sets,
-                                   batch_size=conf.batch_size, 
-                                   args=self.args,
-                                   collate_fn=self.collate_fn)
-        client = self.get_client_trainer(self.args)
-        train_res = client.train(client_data=client_data,
+
+        client = self.get_client_trainer(conf)
+        train_res = client.train(client_data=self.training_sets,
                                  model=self.model_adapter.get_model(),
-                                 conf = conf)
+                                 conf=conf)
         return train_res
     
-    def testing_handler(self):
+    def testing_handler(self, config):
         """Test model
 
         Args:
@@ -315,19 +311,12 @@ class Executor(object):
             config (dictionary): Variable arguments from coordinator.
         Returns:
             dictionary: The test result
-
         """
-        test_config = self.override_conf({
-            'rank': self.id,
-            'memory_capacity': self.args.memory_capacity,
-            'tokenizer': tokenizer
-        })
-        client = self.get_client_trainer(test_config)
-        data_loader = select_dataset(self.id, self.testing_sets,
-                                     batch_size=self.args.
-                                     test_bsz, args=self.args,
-                                     isTest=True, collate_fn=self.collate_fn)
-        test_results = client.test(data_loader, self.model_adapter.get_model(), test_config)
+        config = Namespace(**config)
+        config.rank = self.id
+        config.memory_capacity = self.args.memory_capacity
+        client = self.get_client_trainer(config)
+        test_results = client.test(self.testing_sets, self.model_adapter.get_model(), config)
         #TODO log result
         #TODO gc.collect()
         return test_results
@@ -341,7 +330,7 @@ class Executor(object):
             config (dictionary): The client testing config.
 
         """
-        test_res = self.testing_handler()
+        test_res = self.testing_handler(config)
         test_res = {'executorId': self.id, 'results': test_res}
 
         # Report execution completion information
@@ -369,15 +358,13 @@ class Executor(object):
                 if current_event == commons.CLIENT_TRAIN:
                     print(f"Client {self.executor_id}: recieve train event")
                     train_config = self.deserialize_response(request.meta)
-                    #train_model = self.deserialize_response(request.data)
-                    #train_config['model'] = train_model
-                    train_config['client_id'] = int(train_config['client_id'])
-                    client_id, train_res = self.Train(train_config)
+                    train_res = self.Train(train_config)
 
                     # Upload model updates
-                    future_call = self.communicator.stub.CLIENT_EXECUTE_COMPLETION.future(
+                    print(f"Client {self.executor_id}: uploading model")
+                    response = self.communicator.stub.CLIENT_EXECUTE_COMPLETION(
                         job_api_pb2.CompleteRequest(
-                        client_id=str(client_id),
+                        client_id=str(self.id),
                         executor_id=self.executor_id,
                         event=commons.UPLOAD_MODEL,
                         status=True,
@@ -386,9 +373,10 @@ class Executor(object):
                         data_result=self.serialize_response(train_res)
                         )
                     )
-                    future_call.add_done_callback(
-                        lambda _response: self.dispatch_worker_events(_response.result())
-                        )
+                    self.dispatch_worker_events(response)
+                    # future_call.add_done_callback(
+                    #     lambda _response: self.dispatch_worker_events(_response.result())
+                    #     )
 
                 elif current_event == commons.MODEL_TEST:
                     print(f"Client {self.executor_id}: recieve test event")
@@ -397,7 +385,8 @@ class Executor(object):
                 elif current_event == commons.UPDATE_MODEL:
                     print(f"Client {self.executor_id}: recieve update model event")
                     model_weights = self.deserialize_response(request.data)
-                    self.UpdateModel(model_weights)
+                    config = self.deserialize_response(request.meta)
+                    self.UpdateModel(model_weights, config)
                 
                 elif current_event == commons.SHUT_DOWN:
                     print(f"Client {self.executor_id}: recieve shutdown event")

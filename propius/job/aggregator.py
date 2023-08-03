@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 import collections
 import copy
 import math
@@ -23,8 +25,6 @@ from fedscale.cloud.internal.torch_model_adapter import TorchModelAdapter
 from fedscale.cloud.fllibs import *
 
 from argparse import Namespace
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
 import yaml
 from propius.channels import propius_pb2
 from propius.channels import propius_pb2_grpc
@@ -269,8 +269,8 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         avg_loss = sum(self.loss_accumulator) / max(1, len(self.loss_accumulator))
         #TODO logging
         run_time = time.time() - self.start_run_time
-        print(f"Wall clock: {run_time} s, ending round: {self.round}, Planned participants: " + 
-              f"{len(self.individual_client_events)}, Training loss: {avg_loss}")
+        print(f"Wall clock: {run_time} s, ending round: {self.round}, number of results: " + 
+              f"{len(self.loss_accumulator)}, Training loss: {avg_loss}")
         
         #TODO dump round completion information to tensorboard
         #TODO update select participants
@@ -395,10 +395,10 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         )
         ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
         if not ack_msg.ack:
-            print(f"Parameter server {self.id} round {self.round}/{self.total_round} request failed")
+            print(f"Parameter server {self.id}: round {self.round}/{self.total_round} request failed")
             return False
         else:
-            print(f"Parameter server {self.id} round {self.round}/{self.total_round} request success")
+            print(f"Parameter server {self.id}: round {self.round}/{self.total_round} request success")
             return True
 
     def executor_info_handler(self, executor_id, info):
@@ -445,7 +445,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                                           meta=dummy_data, data=dummy_data)
     
 
-    def get_client_conf(self, client_id):
+    def get_client_conf(self):
         """Training configurations that will be applied on clients,
         developers can further define personalized client config here.
 
@@ -457,7 +457,14 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         """
         conf = {
-            'learning_rate': self.args.learning_rate,
+            "local_steps": self.args.local_steps,
+            "learning_rate": self.args.learning_rate,
+            "use_cuda": self.args.use_cuda,
+            "num_loaders": self.args.num_loaders,
+            "tokenizer": None,
+            "local_setps": self.args.local_steps,
+            "loss_decay": self.args.loss_decay,
+            "batch_size": self.args.batch_size,
         }
         return conf
     
@@ -472,11 +479,29 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         """
         #TODO get next task
-        next_client_id = executor_id
-        config = self.get_client_conf(next_client_id)
-        train_config = {'client_id': next_client_id, 'task_config': config}
+        config = self.get_client_conf()
         # return train_config, self.model_wrapper.get_weights()
-        return train_config
+        return config
+    
+    def get_client_test_conf(self):
+        """Testing configurations that will be applied on clients,
+        developers can further define personalized client config here.
+
+        Args:
+            client_id (int): The client id.
+
+        Returns:
+            dictionary: TorchClient training config.
+
+        """
+        conf = {
+            "test_bsz": self.args.test_bsz,
+            "use_cuda": self.args.use_cuda,
+            "num_loaders": self.args.num_loaders,
+            "tokenizer": None,
+            "test_ratio": self.args.test_ratio,
+        }
+        return conf
     
     def get_test_config(self, client_id):
         """FL model testing on clients, developers can further define personalized client config here.
@@ -488,7 +513,8 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             dictionary: The testing config for new task.
 
         """
-        return {'client_id': client_id}
+        config = self.get_client_test_conf()
+        return config
     
     def get_shutdown_config(self, client_id):
         """Shutdown config for client, developers can further define personalized client config here.
@@ -514,6 +540,21 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """
         return pickle.dumps(responses)
     
+    def get_model_config(self):
+        """FL model config
+
+        Args:
+        Returns:
+            dictionary: The model config
+        """
+        config = {
+            "model": self.args.model,
+            "use_cuda": self.args.use_cuda,
+            "data_set": self.args.data_set,
+        }
+        return config
+
+    
     def CLIENT_PING(self, request, context):
         """Handle client ping requests
 
@@ -526,9 +567,10 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """
         executor_id = request.executor_id
         response_data = response_msg = commons.DUMMY_RESPONSE
-        if len(self.individual_client_events[executor_id]) == 0:
+        if executor_id not in self.individual_client_events:
+            current_event = commons.SHUT_DOWN
+        elif len(self.individual_client_events[executor_id]) == 0:
             current_event = commons.DUMMY_EVENT
-            response_data = response_msg = commons.DUMMY_RESPONSE
         else:
             current_event = self.individual_client_events[executor_id].popleft()
             if current_event == commons.CLIENT_TRAIN:
@@ -539,8 +581,11 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 response_msg = self.get_test_config(executor_id)
             elif current_event == commons.UPDATE_MODEL:
                 response_data = self.model_wrapper.get_weights()
+                response_msg = self.get_model_config()
             elif current_event == commons.SHUT_DOWN:
                 response_msg = self.get_shutdown_config(executor_id)
+                if executor_id in self.individual_client_events:
+                    del self.individual_client_events[executor_id]
 
         response_msg, response_data = self.serialize_response(
             response_msg), self.serialize_response(response_data)
@@ -580,28 +625,36 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         meta_result, data_result = request.meta_result, request.data_result
         print(f"Parameter server {self.id}: recieve client {executor_id} event ({event}) completion")
 
-        current_event = commons.DUMMY_EVENT
+        current_event = commons.SHUT_DOWN
         response_data = response_msg = commons.DUMMY_RESPONSE
+        response_msg = self.serialize_response(response_msg)
+        response_data = self.serialize_response(response_data)
+        response = job_api_pb2.ServerResponse(event=current_event,
+                                              meta=response_msg, data=response_data)
 
         if event == commons.CLIENT_TRAIN:
             if execution_status is False:
                 print(f"Parameter server {self.id}: client {executor_id} fails to complete train")
+                if executor_id in self.individual_client_events:
+                    del self.individual_client_events[executor_id] 
+            else:
+                response = self.CLIENT_PING(request, context)
             #TODO resource manager assign new task
         elif event == commons.UPLOAD_MODEL:
             self.add_event_handler(
                 executor_id, event, meta_result, data_result
             )
-            current_event = commons.SHUT_DOWN
+            if executor_id in self.individual_client_events:
+                del self.individual_client_events[executor_id] 
         elif event == commons.MODEL_TEST:
             self.add_event_handler(
                 executor_id, event, meta_result, data_result
             )
+            response = self.CLIENT_PING(request, context)
         else:
             print(f"Parameter server {self.id}: recieved undefined event {event} from client {executor_id}")
-        response_msg = self.serialize_response(response_msg)
-        response_data = self.serialize_response(response_data)
-        response = job_api_pb2.ServerResponse(event=current_event,
-                                              meta=response_msg, data=response_data)
+            if executor_id in self.individual_client_events:
+                del self.individual_client_events[executor_id] 
         return response
 
     def register(self)->bool:
@@ -646,14 +699,22 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             return
         self.event_monitor()
         self.stop()
+
+    def complete_job(self):
+        req_msg = propius_pb2.job_id(id=self.id)
+        self.jm_stub.JOB_FINISH(req_msg)
     
     def stop(self):
         """Stop the aggregator
         """
         #TODO: logging
         #TODO: wandb
-        self.jm_channel.close()
-        time.sleep(5)
+        try:
+            self.complete_job()
+            self.jm_channel.close()
+        except:
+            pass
+        time.sleep(1)
 
 if __name__ == "__main__":
     global_setup_file = './global_config.yml'
@@ -672,8 +733,13 @@ if __name__ == "__main__":
     
                 args = Namespace(**args)
                 aggregator = Aggregator(gconfig, args)
-                aggregator.run()
-        
+                try:
+                    aggregator.run()
+                except Exception as e:
+                    raise e
+                finally:
+                    aggregator.stop()
+                    
         except KeyboardInterrupt:
             pass
         except Exception as e:

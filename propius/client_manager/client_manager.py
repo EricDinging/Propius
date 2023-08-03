@@ -41,7 +41,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         return propius_pb2.cm_offer(
             client_id=client_id,
             task_offer=pickle.dumps(task_offer_list),
-            private_constraint=pickle.dumps(task_private_constraint))
+            private_constraint=pickle.dumps(task_private_constraint),
+            total_job_num=job_size)
     
     async def CLIENT_ACCEPT(self, request, context):
         client_id, task_id = request.client_id, request.task_id
@@ -53,7 +54,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             print(f"Client manager: job {task_id} over-assign")
             return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
         print(f"Client manager: ack client {client_id}, job addr {result}")
-        return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]), job_port=result[1])
+        return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]), 
+                                  job_port=result[1], ping_exp_time=result[2])
     
 async def serve(gconfig):
     async def server_graceful_shutdown():

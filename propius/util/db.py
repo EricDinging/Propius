@@ -13,7 +13,7 @@ class Job_db:
         port = int(gconfig['db_port'])
         self.r = redis.Redis(host=host, port=port)
         self.sched_alg = gconfig['sched_alg']
-
+        self.gconfig = gconfig
         self.public_constraint_name = gconfig['job_public_constraint']
         self.private_constraint_name = gconfig['job_private_constraint']
 

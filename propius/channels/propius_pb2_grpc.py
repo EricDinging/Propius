@@ -118,6 +118,11 @@ class Job_managerStub(object):
                 request_serializer=propius__pb2.job_round_info.SerializeToString,
                 response_deserializer=propius__pb2.ack.FromString,
                 )
+        self.JOB_END_REQUEST = channel.unary_unary(
+                '/propius.Job_manager/JOB_END_REQUEST',
+                request_serializer=propius__pb2.job_id.SerializeToString,
+                response_deserializer=propius__pb2.ack.FromString,
+                )
         self.JOB_FINISH = channel.unary_unary(
                 '/propius.Job_manager/JOB_FINISH',
                 request_serializer=propius__pb2.job_id.SerializeToString,
@@ -140,6 +145,12 @@ class Job_managerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def JOB_END_REQUEST(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def JOB_FINISH(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -157,6 +168,11 @@ def add_Job_managerServicer_to_server(servicer, server):
             'JOB_REQUEST': grpc.unary_unary_rpc_method_handler(
                     servicer.JOB_REQUEST,
                     request_deserializer=propius__pb2.job_round_info.FromString,
+                    response_serializer=propius__pb2.ack.SerializeToString,
+            ),
+            'JOB_END_REQUEST': grpc.unary_unary_rpc_method_handler(
+                    servicer.JOB_END_REQUEST,
+                    request_deserializer=propius__pb2.job_id.FromString,
                     response_serializer=propius__pb2.ack.SerializeToString,
             ),
             'JOB_FINISH': grpc.unary_unary_rpc_method_handler(
@@ -204,6 +220,23 @@ class Job_manager(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/propius.Job_manager/JOB_REQUEST',
             propius__pb2.job_round_info.SerializeToString,
+            propius__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def JOB_END_REQUEST(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Job_manager/JOB_END_REQUEST',
+            propius__pb2.job_id.SerializeToString,
             propius__pb2.ack.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
