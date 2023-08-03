@@ -49,8 +49,9 @@ class Client_plotter:
 
     def report(self):
         rate = -1
-        if self.total_client_num != 0:
-            rate = self.total_client_success_num / (self.total_client_success_num + self.total_client_drop_num)
+        total_cnt = self.total_client_success_num + self.total_client_drop_num
+        if self.total_client_num != 0 and total_cnt != 0:
+            rate = self.total_client_success_num / total_cnt
         return self.total_client_num, self.total_client_success_num, rate, self.total_client_drop_num
     
     def plot(self):

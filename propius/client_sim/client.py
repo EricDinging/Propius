@@ -1,3 +1,5 @@
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 import grpc
 import yaml
 import random
@@ -22,7 +24,7 @@ class Client:
         lb_ip = gconfig['load_balancer_ip']
         lb_port = gconfig['load_balancer_port']
         self.lb_channel = None
-        self.lb_port = None
+        self.lb_stub = None
 
         self._connect_lb(lb_ip, lb_port)
 
@@ -33,7 +35,7 @@ class Client:
         self.client_plotter = None
 
     def _connect_lb(self, lb_ip:str, lb_port:int)->None:
-        self.lb_channel = grpc.insecure_channel(f'{lb_ip}:{lb_port}')
+        self.lb_channel = grpc.aio.insecure_channel(f'{lb_ip}:{lb_port}')
         self.lb_stub = propius_pb2_grpc.Load_balancerStub(self.lb_channel)
         print(f"Client {self.id}: connecting to load balancer at {lb_ip}:{lb_port}")
 
@@ -41,14 +43,13 @@ class Client:
         task_offer = None
         try:
             client_checkin_msg = propius_pb2.client_checkin(
-                client_id = -1,
                 public_specification=pickle.dumps(self.public_specifications)
                 )
-            task_offer = self.lb_stub.CLIENT_CHECKIN(client_checkin_msg)
+            task_offer = await self.lb_stub.CLIENT_CHECKIN(client_checkin_msg)
         except:
             if self.client_plotter:
                 await self.client_plotter.client_finish('drop')
-            self.cleanup_routines()
+            await self.cleanup_routines()
         return task_offer
     
     async def select_task(self, task_ids: list, private_constraints: list):
@@ -66,26 +67,26 @@ class Client:
     async def accept(self)->propius_pb2.cm_ack:
         try:
             client_accept_msg = propius_pb2.client_accept(client_id=self.id, task_id=self.task_id)
-            cm_ack = self.lb_stub.CLIENT_ACCEPT(client_accept_msg)
+            cm_ack = await self.lb_stub.CLIENT_ACCEPT(client_accept_msg)
         except:
             if self.client_plotter:
                 await self.client_plotter.client_finish('drop')
-            self.cleanup_routines()
+            await self.cleanup_routines()
         return cm_ack
     
     async def _connect_to_ps(self, job_ip:str, job_port:int):
         try:
-            self.job_channel = grpc.insecure_channel(f"{job_ip}:{job_port}")
+            self.job_channel = grpc.aio.insecure_channel(f"{job_ip}:{job_port}")
             self.job_stub = propius_pb2_grpc.JobStub(self.job_channel)
         except:
             if self.client_plotter:
                 await self.client_plotter.client_finish('drop')
-            self.cleanup_routines()
+            await self.cleanup_routines()
     
     async def request(self)->bool:
         try:
             client_id_msg = propius_pb2.client_id(id=self.id)
-            plan = self.job_stub.CLIENT_REQUEST(client_id_msg)
+            plan = await self.job_stub.CLIENT_REQUEST(client_id_msg)
             ack = plan.ack
             if not ack:
                 print(f"Client {self.id}: not recieving ack from parameter server")
@@ -95,7 +96,7 @@ class Client:
         except:
             if self.client_plotter:
                 await self.client_plotter.client_finish('drop')
-            self.cleanup_routines()
+            await self.cleanup_routines()
         return True
 
     async def execute(self):
@@ -117,18 +118,18 @@ class Client:
             print(f"Client {self.id}: Report to job")
 
             client_report_msg = propius_pb2.client_report(client_id=self.id, result=self.result)
-            self.job_stub.CLIENT_REPORT(client_report_msg)
+            await self.job_stub.CLIENT_REPORT(client_report_msg)
 
             print(f"Client {self.id}: result reported")
         except:
             if self.client_plotter:
                 await self.client_plotter.client_finish('drop')
-            self.cleanup_routines()
+            await self.cleanup_routines()
 
-    def cleanup_routines(self):
+    async def cleanup_routines(self):
         try:
-            self.lb_channel.close()
-            self.job_channel.close()
+            await self.lb_channel.close()
+            await self.job_channel.close()
         except:
             pass
 
@@ -150,7 +151,7 @@ class Client:
             print(f"Client {self.id}: not eligible, shutting down===")
             if total_job_num > 0 and client_plotter:
                 await client_plotter.client_finish('drop')
-            self.cleanup_routines()
+            await self.cleanup_routines()
             return
         
         cm_ack = await self.accept()
@@ -158,12 +159,12 @@ class Client:
             print(f"Client {self.id}: client manager not acknowledged, shutting down===")
             if client_plotter:
                 await client_plotter.client_finish('drop')
-            self.cleanup_routines()
+            await self.cleanup_routines()
             return
         
         job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
         ping_exp_time = cm_ack.ping_exp_time
-        self.lb_channel.close()
+        await self.lb_channel.close()
 
         start_time = time.time()
         job_ack = False
@@ -178,7 +179,7 @@ class Client:
         if not job_ack:
             if client_plotter:
                 await client_plotter.client_finish('drop')
-            self.cleanup_routines()
+            await self.cleanup_routines()
             return
 
         await self.execute()

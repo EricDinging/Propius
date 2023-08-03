@@ -27,14 +27,14 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         for cm_id, cm_addr in enumerate(self.cm_addr_list):
             cm_ip = cm_addr['ip']
             cm_port = cm_addr['port']
-            self.cm_channel_dict[cm_id] = grpc.insecure_channel(f'{cm_ip}:{cm_port}')
+            self.cm_channel_dict[cm_id] = grpc.aio.insecure_channel(f'{cm_ip}:{cm_port}')
             self.cm_stub_dict[cm_id] = propius_pb2_grpc.Client_managerStub(self.cm_channel_dict[cm_id])
             print(f"Load balancer: connecting to client manager {cm_id} at {cm_ip}:{cm_port}")
     
     async def _disconnect_cm(self):
         async with self.lock:
             for cm_channel in self.cm_channel_dict.values():
-                cm_channel.close()
+                await cm_channel.close()
 
     def _next_idx(self):
         # locked
@@ -43,15 +43,17 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
     async def CLIENT_CHECKIN(self, request, context):
         async with self.lock:
             self.idx %= len(self.cm_channel_dict)
-            return_msg = self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
-            await self._next_idx()
+            print(f"Load balancer: recieve checkin request, route to client manager {self.idx}")
+            return_msg = await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
+            self._next_idx()
         return return_msg
     
     async def CLIENT_ACCEPT(self, request, context):
         async with self.lock:
             self.idx %= len(self.cm_channel_dict)
-            return_msg = self.cm_stub_dict[self.idx].CLIENT_ACCEPT(request)
-            await self._next_idx()
+            print(f"Load balancer: recieve client accept request, route to client manager {self.idx}")
+            return_msg = await self.cm_stub_dict[self.idx].CLIENT_ACCEPT(request)
+            self._next_idx()
         return return_msg
 
 async def serve(gconfig):

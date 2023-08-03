@@ -30,7 +30,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.job_total_num = 0
 
     def _connect_sched(self, sched_ip:str, sched_port:int)->None:
-        self.sched_channel = grpc.insecure_channel(f'{sched_ip}:{sched_port}')
+        self.sched_channel = grpc.aio.insecure_channel(f'{sched_ip}:{sched_port}')
         self.sched_stub = propius_pb2_grpc.SchedulerStub(self.sched_channel)
         print(f"Job manager: connecting to scheduler at {sched_ip}:{sched_port}")  
 
@@ -57,7 +57,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         print(f"Job manager: ack job {job_id} register: {ack}")
         if ack:
             await self.jm_analyzer.job_register()
-            self.sched_stub.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
+            await self.sched_stub.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
         else:
             await self.jm_analyzer.request()
         return propius_pb2.job_register_ack(id=job_id, ack=ack)
@@ -99,7 +99,7 @@ async def serve(gconfig):
         job_manager.jm_analyzer.report()
         job_manager.job_db_stub.flushdb()
         try:
-            job_manager.sched_channel.close()
+            await job_manager.sched_channel.close()
         except:
             pass
         await server.stop(5)
