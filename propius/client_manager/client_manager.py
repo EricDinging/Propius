@@ -13,15 +13,16 @@ from cm_analyzer import *
 _cleanup_coroutines = []
 
 class Client_manager(propius_pb2_grpc.Client_managerServicer):
-    def __init__(self, gconfig):
-        self.ip = gconfig['client_manager_ip']
-        self.port = int(gconfig['client_manager_port'])
+    def __init__(self, gconfig, cm_id:int):
+        self.cm_id = cm_id
+        self.ip = gconfig['client_manager'][self.cm_id]['ip']
+        self.port = gconfig['client_manager'][self.cm_id]['port']
         self.sched_alg = gconfig['sched_alg']
-        self.client_db_stub = Client_db_stub(gconfig)
+        self.client_db_stub = Client_db_stub(gconfig, self.cm_id)
         self.job_db_stub = Job_db_stub(gconfig)
         self.cm_analyzer = CM_analyzer(self.sched_alg, gconfig['total_running_second'])
         self.client_num = 0
-        print(f"Client manager started, running {self.sched_alg}")
+        print(f"Client manager {self.cm_id} started, running {self.sched_alg}")
 
     async def CLIENT_CHECKIN(self, request, context):
         client_id = self.client_num
@@ -36,7 +37,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         
         if task_offer_list:
-            print(f"Client manager: client {client_id} check in, offer: {task_offer_list}")
+            print(f"Client manager {self.cm_id}: client {client_id} check in, offer: {task_offer_list}")
         
         return propius_pb2.cm_offer(
             client_id=client_id,
@@ -51,13 +52,13 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         await self.cm_analyzer.client_accept(result)
 
         if not result:
-            print(f"Client manager: job {task_id} over-assign")
+            print(f"Client manager {self.cm_id}: job {task_id} over-assign")
             return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
-        print(f"Client manager: ack client {client_id}, job addr {result}")
+        print(f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}")
         return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]), 
                                   job_port=result[1], ping_exp_time=result[2])
     
-async def serve(gconfig):
+async def serve(gconfig, cm_id:int):
     async def server_graceful_shutdown():
         client_manager.cm_analyzer.report()
         client_manager.client_db_stub.flushdb()
@@ -65,12 +66,12 @@ async def serve(gconfig):
         await server.stop(5)
     
     server = grpc.aio.server()
-    client_manager = Client_manager(gconfig)
+    client_manager = Client_manager(gconfig, cm_id)
     propius_pb2_grpc.add_Client_managerServicer_to_server(client_manager, server)
     server.add_insecure_port(f'{client_manager.ip}:{client_manager.port}')
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.start()
-    print(f"Client manager: server started, listening on {client_manager.ip}:{client_manager.port}")
+    print(f"Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}")
     await server.wait_for_termination()
 
 if __name__ == '__main__':
@@ -78,12 +79,17 @@ if __name__ == '__main__':
     logger = logging.getLogger()
     global_setup_file = './global_config.yml'
 
+    if len(sys.argv) != 2:
+        print("Usage: python propius/client_manager/client_manager.py <cm_id>")
+        exit(1)
+
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            print("Client manager read config successfully")
+            cm_id = int(sys.argv[1])
+            print(f"Client manager {cm_id} read config successfully")
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(serve(gconfig))
+            loop.run_until_complete(serve(gconfig, cm_id))
         except KeyboardInterrupt:
             pass   
         except Exception as e:

@@ -63,8 +63,8 @@ class Client_plotter:
 async def run(gconfig, client_plotter):
     # clients = []
     num = int(gconfig['client_num'])
-    ip = gconfig['client_manager_ip']
-    port = int(gconfig['client_manager_port'])
+    ip = gconfig['client_manager'][0]['ip']
+    port = gconfig['client_manager'][0]['port']
     total_time = int(gconfig['total_running_second']) + 60
     is_uniform = gconfig['client_is_uniform']
     public_constraint_name = gconfig['job_public_constraint']

@@ -188,7 +188,8 @@ if __name__ == '__main__':
     global_setup_file = './global_config.yml'
     with open(global_setup_file, 'r') as gyamlfile:
         gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-        cm_ip, cm_port = gconfig['client_manager_ip'], int(gconfig['client_manager_port'])
+        cm_ip = gconfig['client_manager'][0]['ip']
+        cm_port = gconfig['client_manager'][0]['port']
 
         client = Client(0, (80, 80, 80), (), cm_ip, cm_port)
         loop = asyncio.get_event_loop()

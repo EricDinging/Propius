@@ -11,7 +11,7 @@ import random
 
 class Job_db_stub(Job_db):
     def __init__(self, gconfig):
-        super().__init__(gconfig)
+        super().__init__(gconfig, False)
 
     def client_assign(self, specification:tuple)->tuple[list, list, int]:
         q = Query('*').sort_by('score', asc=False)
@@ -101,8 +101,8 @@ class Job_db_stub(Job_db):
                     pass
 
 class Client_db_stub(Client_db):
-    def __init__(self, gconfig):
-        super().__init__(gconfig)
+    def __init__(self, gconfig, cm_id:int):
+        super().__init__(gconfig, cm_id, True)
     
     def insert(self, id:int, specifications:tuple):
         if len(specifications) != len(self.public_constraint_name):
