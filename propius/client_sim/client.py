@@ -35,6 +35,7 @@ class Client:
         print(f"Client {self.id}: connecting to client manager at {cm_ip}:{cm_port}")
 
     async def checkin(self)->propius_pb2.cm_offer:
+        task_offer = None
         try:
             client_checkin_msg = propius_pb2.client_checkin(
                 public_specification=pickle.dumps(self.public_specifications)

@@ -18,17 +18,18 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
     - [docker compose](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)
 - Launch `redis-stack-search` docker image
     ```bash
-    $ docker compose up -d
+    $ docker compose -f docker/client_db.yml up -d
+    $ docker compose -f docker/job_db.yml up -d
     ```
+    
 - Additionally, check redis server is running
     - [Install redis-cli](https://stackoverflow.com/questions/21795340/linux-install-redis-cli-only)
-    - ```$ redis-cli```
+    - ```
+        $ redis-cli -h localhost -p 6379 ping
+        $ redis-cli -h localhost -p 6380 ping
+        ```
 
 ## RoadMap
-- [x] Enable FedScale simulation mode (pytorch, one task: femnist) with Propius
-- [ ] Enable FedScale simulation mode (other framework, task) with Propius
-- [ ] Scaling up & fault tolerance
-- [ ] Enable FedScale simulation
 - Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more info
 ## Usage 
 ### Propius + FedScale (scheduling + training/testing)
