@@ -132,10 +132,3 @@ class Job_db_stub(Job_db):
                     return (tuple(constraint_list), demand, total_round, runtime, sched_latency)
                 except redis.WatchError:
                     pass
-
-class Client_db_stub(Client_db):
-    def __init__(self, gconfig):
-        super().__init__(gconfig)
-
-    # async def cleanup(self):
-    #     self._cleanup()

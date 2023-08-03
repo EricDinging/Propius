@@ -6,6 +6,7 @@ import grpc
 import yaml
 from propius.channels import propius_pb2
 from propius.channels import propius_pb2_grpc
+from lb_analyzer import *
 
 _cleanup_coroutines = []
 
@@ -22,6 +23,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.cm_channel_dict = {}
         self.cm_stub_dict = {}
         self._connect_cm()
+        self.lb_analyzer = LB_analyzer(gconfig['sched_alg'], gconfig['total_running_second'])
 
     def _connect_cm(self):
         for cm_id, cm_addr in enumerate(self.cm_addr_list):
@@ -42,6 +44,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
 
     async def CLIENT_CHECKIN(self, request, context):
         async with self.lock:
+            await self.lb_analyzer.request()
             self.idx %= len(self.cm_channel_dict)
             print(f"Load balancer: recieve checkin request, route to client manager {self.idx}")
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
@@ -50,6 +53,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
     
     async def CLIENT_ACCEPT(self, request, context):
         async with self.lock:
+            await self.lb_analyzer.request()
             self.idx %= len(self.cm_channel_dict)
             print(f"Load balancer: recieve client accept request, route to client manager {self.idx}")
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_ACCEPT(request)
@@ -59,6 +63,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
 async def serve(gconfig):
     async def server_graceful_shutdown():
         print("Starting graceful shutdown...")
+        load_balancer.lb_analyzer.report()
         await load_balancer._disconnect_cm()
         await server.stop(5)
     

@@ -7,11 +7,15 @@ load_balancer_port: 50000
 client_manager:
   - 0:
     ip: localhost
-    port: 50001
-    client_db_port: 6379
+    port: 50004
+    client_db_port: 6380
+  - 1:
+    ip: localhost
+    port: 50005
+    client_db_port: 6381
 
 job_db_ip: localhost
-job_db_port: 6380
+job_db_port: 6379
 
 job_manager_ip: localhost
 job_manager_port: 50002
