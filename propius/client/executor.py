@@ -43,8 +43,8 @@ class Executor(object):
         self.training_sets = self.testing_sets = None
         # ======== channels ========
         self.communicator = ClientConnections(
-            gconfig['client_manager_ip'],
-            gconfig['client_manager_port']
+            gconfig['client_manager'][0]['ip'],
+            gconfig['client_manager'][0]['port']
             )
         
         # ======== runtime information ========
