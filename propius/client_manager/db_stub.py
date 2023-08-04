@@ -42,11 +42,12 @@ class Job_db_stub(Job_db):
                             open_private_constraint.append(job_private_constraint)
                         
                         elif self.gconfig['proactive']:
-                            proactive_list.append(int(doc.id.split(':')[1]))
-                            job_private_constraint = tuple(
-                            [job['job']['private_constraint'][name]
-                                for name in self.private_constraint_name])
-                            proactive_private_constraint.append(job_private_constraint)
+                            if job['job']['round'] < job['job']['total_round']:
+                                proactive_list.append(int(doc.id.split(':')[1]))
+                                job_private_constraint = tuple(
+                                [job['job']['private_constraint'][name]
+                                    for name in self.private_constraint_name])
+                                proactive_private_constraint.append(job_private_constraint)
             upd_proactive_list = upd_proactive_private_constraint = []
             if len(proactive_list) > 0:
                 # Use random proactive scheduling
