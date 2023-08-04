@@ -36,6 +36,8 @@ class Job(propius_pb2_grpc.JobServicer):
         self.agg_result_list = []
         self.round_client_num = 0
 
+        self.execution_start = False
+
     def _connect_jm(self, jm_ip:str, jm_port:int)->None:
         self.jm_channel = grpc.insecure_channel(f'{jm_ip}:{jm_port}')
         self.jm_stub = propius_pb2_grpc.Job_managerStub(self.jm_channel)
@@ -65,6 +67,7 @@ class Job(propius_pb2_grpc.JobServicer):
             id = self.id,
             demand = self.demand,
         )
+        self.execution_start = False
         ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
         if not ack_msg.ack:
             print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} request failed")
@@ -110,12 +113,14 @@ class Job(propius_pb2_grpc.JobServicer):
     async def CLIENT_REQUEST(self, request, context):
         client_id = request.id
         async with self.lock:
-            if self.round_client_num >= self.demand or self.cur_round == self.est_total_round + 1:
+            if self.round_client_num >= self.demand or self.cur_round > self.est_total_round:
                 return propius_pb2.plan(ack=False, workload=-1)
             print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
             self.round_client_num += 1
             if self.round_client_num >= self.demand:
-                self.end_request()
+                if not self.execution_start:
+                    self.end_request()
+                    self.execution_start = True
         return propius_pb2.plan(ack=True, workload=self.workload)
         
 async def run(gconfig):
