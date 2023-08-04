@@ -64,7 +64,7 @@ class Client_plotter:
 async def run(gconfig, client_plotter):
     # clients = []
     num = int(gconfig['client_num'])
-    total_time = int(gconfig['total_running_second']) + 60
+    total_time = int(gconfig['total_running_second'])
     is_uniform = gconfig['client_is_uniform']
     public_constraint_name = gconfig['job_public_constraint']
     private_constraint_name = gconfig['job_private_constraint']
@@ -77,7 +77,9 @@ async def run(gconfig, client_plotter):
                 time = random.normalvariate(total_time/2, total_time/4)
             start_time_list[int(time)] += 1
     else:
-        start_time_list = [int(num / total_time)] * total_time
+        for i in range(num):
+            time = random.randint(0, total_time-1)
+            start_time_list[int(time)] += 1
 
     for i in range(total_time):
         for _ in range(start_time_list[i]):
@@ -103,11 +105,13 @@ if __name__ == '__main__':
     logger = logging.getLogger()
 
     global_setup_file = './global_config.yml'
+
+    random.seed(42)
     
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            client_plotter = Client_plotter(int(gconfig['total_running_second']) + 60)
+            client_plotter = Client_plotter(int(gconfig['total_running_second']))
             loop = asyncio.get_event_loop()
             loop.run_until_complete(run(gconfig, client_plotter))
         except KeyboardInterrupt:

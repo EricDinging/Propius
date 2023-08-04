@@ -4,6 +4,7 @@
 load_balancer_ip: localhost
 load_balancer_port: 50000
 
+client_manager_num: 1
 client_manager:
   - 0:
     ip: localhost
@@ -57,15 +58,15 @@ client_expire_time: 100
 
 # ---Simulation---
 # Client simulation number
-client_num: 60000
+client_num: 2400
 
 # Client check in distribution over time
-client_is_uniform: False
+client_is_uniform: True
 
 # Job profile number
 job_profile_num : 9
 # Job total number
-total_job : 200
+total_job : 25
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost

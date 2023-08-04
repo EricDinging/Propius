@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
         job_profile_num = gconfig['job_profile_num']
 
-        with open("./src/job/job_trace.txt", "w") as file:
+        with open(f"./propius/job_sim/job_trace_{total_job}.txt", "w") as file:
             time = 0
             job_id = 0
             file.write(f'0 0 {job_id}\n')

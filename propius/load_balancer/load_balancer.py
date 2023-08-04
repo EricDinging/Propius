@@ -19,6 +19,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.idx = 0
         self.lock = asyncio.Lock()
 
+        self.cm_num = gconfig['client_manager_num']
         self.cm_addr_list = gconfig['client_manager']
         self.cm_channel_dict = {}
         self.cm_stub_dict = {}
@@ -27,6 +28,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
 
     def _connect_cm(self):
         for cm_id, cm_addr in enumerate(self.cm_addr_list):
+            if cm_id >= self.cm_num:
+                break
             cm_ip = cm_addr['ip']
             cm_port = cm_addr['port']
             self.cm_channel_dict[cm_id] = grpc.aio.insecure_channel(f'{cm_ip}:{cm_port}')
