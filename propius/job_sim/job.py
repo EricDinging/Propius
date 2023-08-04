@@ -67,10 +67,10 @@ class Job(propius_pb2_grpc.JobServicer):
         )
         ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
         if not ack_msg.ack:
-            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} request failed")
+            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} request failed")
             return False
         else:
-            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} request success")
+            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} request success")
             return True
         
     def end_request(self)->bool:
@@ -78,10 +78,10 @@ class Job(propius_pb2_grpc.JobServicer):
         request_msg = propius_pb2.job_id(id=self.id)
         ack_msg = self.jm_stub.JOB_END_REQUEST(request_msg)
         if not ack_msg.ack:
-            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} end request failed")
+            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} end request failed")
             return False
         else:
-            print(f"Job {self.id}: round {self.cur_round}/{self.est_total_round} end request")
+            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} end request")
             return True
 
     def complete_job(self):
