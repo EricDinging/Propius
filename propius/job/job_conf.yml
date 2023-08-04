@@ -1,7 +1,7 @@
 # Server setting
 connection_timeout : 100
 ps_ip: localhost
-ps_port: 61001
+ps_port: 61000
 
 # Training and testing aggregator setting
 gradient_policy: fedavg

@@ -433,8 +433,9 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         executor_id = request.executor_id
         executor_info = self.deserialize_response(request.executor_info)
         if len(self.individual_client_events) >= self.tasks_round:
+            # Check in later
             event=commons.SHUT_DOWN
-            print(f"Parameter server {self.id}: recieve client {executor_id} register during round, shutting it down")
+            print(f"Parameter server {self.id}: recieve client {executor_id} register during round, check in later")
         else:
             print(f"Parameter server {self.id}: recieve client {executor_id} register")
             if executor_id not in self.individual_client_events:

@@ -19,7 +19,10 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.idx = 0
         self.lock = asyncio.Lock()
 
-        self.cm_num = gconfig['client_manager_num']
+        if len(sys.argv) == 2:
+            self.cm_num = int(sys.argv[1])  
+        else:
+            self.cm_num = gconfig['client_manager_num']
         self.cm_addr_list = gconfig['client_manager']
         self.cm_channel_dict = {}
         self.cm_stub_dict = {}
