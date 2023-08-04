@@ -41,15 +41,10 @@ class Client:
 
     async def checkin(self)->propius_pb2.cm_offer:
         task_offer = None
-        try:
-            client_checkin_msg = propius_pb2.client_checkin(
-                public_specification=pickle.dumps(self.public_specifications)
-                )
-            task_offer = await self.lb_stub.CLIENT_CHECKIN(client_checkin_msg)
-        except:
-            if self.client_plotter:
-                await self.client_plotter.client_finish('drop')
-            await self.cleanup_routines()
+        client_checkin_msg = propius_pb2.client_checkin(
+            public_specification=pickle.dumps(self.public_specifications)
+            )
+        task_offer = await self.lb_stub.CLIENT_CHECKIN(client_checkin_msg)
         return task_offer
     
     async def select_task(self, task_ids: list, private_constraints: list):
@@ -65,38 +60,24 @@ class Client:
         return
     
     async def accept(self)->propius_pb2.cm_ack:
-        try:
-            client_accept_msg = propius_pb2.client_accept(client_id=self.id, task_id=self.task_id)
-            cm_ack = await self.lb_stub.CLIENT_ACCEPT(client_accept_msg)
-        except:
-            if self.client_plotter:
-                await self.client_plotter.client_finish('drop')
-            await self.cleanup_routines()
+        client_accept_msg = propius_pb2.client_accept(client_id=self.id, task_id=self.task_id)
+        cm_ack = await self.lb_stub.CLIENT_ACCEPT(client_accept_msg)
         return cm_ack
     
     async def _connect_to_ps(self, job_ip:str, job_port:int):
-        try:
-            self.job_channel = grpc.aio.insecure_channel(f"{job_ip}:{job_port}")
-            self.job_stub = propius_pb2_grpc.JobStub(self.job_channel)
-        except:
-            if self.client_plotter:
-                await self.client_plotter.client_finish('drop')
-            await self.cleanup_routines()
-    
+        self.job_channel = grpc.aio.insecure_channel(f"{job_ip}:{job_port}")
+        self.job_stub = propius_pb2_grpc.JobStub(self.job_channel)
+        print(f"Client {self.id}: connecting to parameter server on {job_ip}:{job_port}")
+
     async def request(self)->bool:
-        try:
-            client_id_msg = propius_pb2.client_id(id=self.id)
-            plan = await self.job_stub.CLIENT_REQUEST(client_id_msg)
-            ack = plan.ack
-            if not ack:
-                print(f"Client {self.id}: not recieving ack from parameter server")
-                return False
-            self.workload = plan.workload
-            print(f"Client {self.id}: request job plan, workload {self.workload}")
-        except:
-            if self.client_plotter:
-                await self.client_plotter.client_finish('drop')
-            await self.cleanup_routines()
+        client_id_msg = propius_pb2.client_id(id=self.id)
+        plan = await self.job_stub.CLIENT_REQUEST(client_id_msg)
+        ack = plan.ack
+        if not ack:
+            print(f"Client {self.id}: not recieving ack from parameter server")
+            return False
+        self.workload = plan.workload
+        print(f"Client {self.id}: request job plan, workload {self.workload}")
         return True
 
     async def execute(self):
@@ -114,17 +95,13 @@ class Client:
         print(f"Client {self.id}: task {self.task_id} done! result: {self.result}")
     
     async def report(self):
-        try:
-            print(f"Client {self.id}: Report to job")
+        print(f"Client {self.id}: Report to job")
 
-            client_report_msg = propius_pb2.client_report(client_id=self.id, result=self.result)
-            await self.job_stub.CLIENT_REPORT(client_report_msg)
+        client_report_msg = propius_pb2.client_report(client_id=self.id, result=self.result)
+        await self.job_stub.CLIENT_REPORT(client_report_msg)
 
-            print(f"Client {self.id}: result reported")
-        except:
-            if self.client_plotter:
-                await self.client_plotter.client_finish('drop')
-            await self.cleanup_routines()
+        print(f"Client {self.id}: result reported")
+
 
     async def cleanup_routines(self):
         try:
@@ -138,55 +115,53 @@ class Client:
         if client_plotter:
             await client_plotter.client_start()
 
-        
-        cm_offer = await self.checkin()
-        self.id = cm_offer.client_id
-        task_ids = pickle.loads(cm_offer.task_offer)
-        task_private_constraint = pickle.loads(cm_offer.private_constraint)
-        total_job_num = cm_offer.total_job_num
-        print(f"Client {self.id}: recieve client manager offer: {task_ids}")
+        try:
+            cm_offer = await self.checkin()
+            self.id = cm_offer.client_id
+            task_ids = pickle.loads(cm_offer.task_offer)
+            task_private_constraint = pickle.loads(cm_offer.private_constraint)
+            total_job_num = cm_offer.total_job_num
+            print(f"Client {self.id}: recieve client manager offer: {task_ids}")
 
-        await self.select_task(task_ids, task_private_constraint)
-        if self.task_id == -1:
-            print(f"Client {self.id}: not eligible, shutting down===")
-            if total_job_num > 0 and client_plotter:
-                await client_plotter.client_finish('drop')
-            await self.cleanup_routines()
-            return
-        
-        cm_ack = await self.accept()
-        if not cm_ack.ack:
-            print(f"Client {self.id}: client manager not acknowledged, shutting down===")
+            await self.select_task(task_ids, task_private_constraint)
+            if self.task_id == -1:
+                print(f"Client {self.id}: not eligible, shutting down===")
+                if total_job_num > 0 and client_plotter:
+                    await client_plotter.client_finish('drop')
+                await self.cleanup_routines()
+                return
+            
+            cm_ack = await self.accept()
+            if not cm_ack.ack:
+                raise ValueError(f"client manager not acknowledged, shutting down===")
+            
+            job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
+            ping_exp_time = cm_ack.ping_exp_time
+            await self.lb_channel.close()
+
+            await self._connect_to_ps(job_ip, job_port)
+            
+            start_time = time.time()
+            job_ack = None
+
+            while time.time() < start_time + ping_exp_time:
+                job_ack = await self.request()
+                if job_ack:
+                    break
+                await asyncio.sleep(max(1, min(5, ping_exp_time / 3)))
+            if not job_ack:
+                raise ValueError(f"not able to make requests to parameter server")
+
+            await self.execute()
+            await self.report()
             if client_plotter:
-                await client_plotter.client_finish('drop')
+                await client_plotter.client_finish('success')
+            print(f"Client {self.id}: task {self.task_id} executed, shutting down===")
+        except Exception as e:
+            print(f"Client {self.id}: {e}")
+            if self.client_plotter:
+                await self.client_plotter.client_finish('drop')
             await self.cleanup_routines()
-            return
-        
-        job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
-        ping_exp_time = cm_ack.ping_exp_time
-        await self.lb_channel.close()
-
-        start_time = time.time()
-        job_ack = False
-
-        await self._connect_to_ps(job_ip, job_port)
-
-        while time.time() < start_time + ping_exp_time:
-            job_ack = await self.request()
-            if job_ack:
-                break
-            await asyncio.sleep(max(1, min(5, ping_exp_time / 3)))
-        if not job_ack:
-            if client_plotter:
-                await client_plotter.client_finish('drop')
-            await self.cleanup_routines()
-            return
-
-        await self.execute()
-        await self.report()
-        if client_plotter:
-            await client_plotter.client_finish('success')
-        print(f"Client {self.id}: task {self.task_id} executed, shutting down===")
         
 
 if __name__ == '__main__':
