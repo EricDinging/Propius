@@ -32,6 +32,10 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
         $ redis-cli -h localhost -p 6381 ping
         ...
         ```
+- If you want the system performance metrics and plot
+    ```
+    $ mkdir fig log
+    ```
 
 ## RoadMap
 - Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more info
