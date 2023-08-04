@@ -4,7 +4,7 @@
 load_balancer_ip: localhost
 load_balancer_port: 50000
 
-client_manager_num: 1
+client_manager_num: 2
 client_manager:
   - 0:
     ip: localhost
@@ -29,7 +29,7 @@ scheduler_port: 50003
 sched_alg: 'irs'
 
 # Scheduling option
-proactive: False
+proactive: True
 max_task_offer_list_len: 10
 
 # Scheduling metadata (optional)

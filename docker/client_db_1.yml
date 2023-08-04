@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  client_db:
+  client_db_1:
     image: redis/redis-stack-server:latest
     ports:
       - "6381:6379"
