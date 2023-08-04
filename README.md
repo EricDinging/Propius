@@ -16,10 +16,12 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
 - Install docker and docker-compose
     - [docker installation guide (step 1)](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04)
     - [docker compose](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)
-- Launch `redis-stack-search` docker image
+- Launch `redis-stack-search` docker image (for system distribution, lanuch a database instance on a specific node)
     ```bash
-    $ docker compose -f docker/client_db.yml up -d
     $ docker compose -f docker/job_db.yml up -d
+    $ docker compose -f docker/client_db_0.yml up -d
+    $ docker compose -f docker/client_db_1.yml up -d
+    ...
     ```
     
 - Additionally, check redis server is running
@@ -27,6 +29,8 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
     - ```
         $ redis-cli -h localhost -p 6379 ping
         $ redis-cli -h localhost -p 6380 ping
+        $ redis-cli -h localhost -p 6381 ping
+        ...
         ```
 
 ## RoadMap
@@ -45,7 +49,13 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
     ```
 - Client manager:
     ```bash
-    $ python propius/client_manager/client_manager.py
+    $ python propius/client_manager/client_manager.py 0
+    $ python propius/client_manager/client_manager.py 1
+    ...
+    ```
+- Load balancer:
+    ```bash
+    $ python propius/load_balancer/load_balancer.py <num of client manager>
     ```
 - Job:
     - Edit `propius/job/job_conf.yml` file
@@ -59,18 +69,7 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
         ```
 ### Propius (scheduling)
 - Make changes to `global_config.yml`
-- Scheduler:
-    ```bash
-    $ python propius/scheduler/scheduler.py
-    ```
-- Job manager:
-    ```bash
-    $ python propius/job_manager/job_manager.py
-    ```
-- Client manager:
-    ```bash
-    $ python propius/client_manager/client_manager.py
-    ```
+- Scheduler, job manager, client manager, and load balancer launches are the same as above
 - Job driver:
     ```bash
     $ python propius/job_sim/job_driver.py

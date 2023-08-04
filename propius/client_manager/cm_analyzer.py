@@ -29,7 +29,11 @@ class CM_analyzer(Analyzer):
     def report(self):
         if self.total_client_num > 0:
             str1 = self._gen_report()
-            util_rate = self.total_success_num / (self.total_success_num + self.total_client_not_elig_num + self.total_client_over_assign_num)
+            total_count = self.total_success_num + self.total_client_not_elig_num + self.total_client_over_assign_num
+            if total_count == 0:
+                util_rate = 0
+            else: 
+                util_rate = self.total_success_num / total_count
 
             str2 = f"Client manager: client num: {self.total_client_num}, util rate: {util_rate:.3f}, not elig num: {self.total_client_not_elig_num}, over-assign num: {self.total_client_over_assign_num}"
 

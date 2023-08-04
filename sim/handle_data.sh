@@ -6,7 +6,7 @@ fi
 set -x 
 dir_name="experiment/$1"
 mkdir "$dir_name"
-cp -r amg/fig amg/log "$dir_name"
-rm amg/fig/* amg/log/*
+cp -r ./fig ./log "$dir_name"
+rm ./fig/* ./log/*
 
 set +x

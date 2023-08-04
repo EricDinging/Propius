@@ -24,6 +24,12 @@ service Scheduler {
 service Client_manager {
     rpc CLIENT_CHECKIN (client_checkin) returns (cm_offer) {}
     rpc CLIENT_ACCEPT (client_accept) returns (cm_ack) {}
+    rpc HEALTH_CHECK (empty) returns (cm_ack) {}
+}
+
+service Load_balancer {
+    rpc CLIENT_CHECKIN (client_checkin) returns (cm_offer) {}
+    rpc CLIENT_ACCEPT (client_accept) returns (cm_ack) {}
 }
 
 message client_checkin {

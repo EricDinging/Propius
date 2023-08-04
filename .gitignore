@@ -45,3 +45,4 @@ fedscale/*.ckpt
 fedscale/cloud/aggregation/cache
 fig/*
 log/*
+experiment/*

@@ -4,14 +4,19 @@
 load_balancer_ip: localhost
 load_balancer_port: 50000
 
+client_manager_num: 2
 client_manager:
   - 0:
     ip: localhost
-    port: 50001
-    client_db_port: 6379
+    port: 50004
+    client_db_port: 6380
+  - 1:
+    ip: localhost
+    port: 50005
+    client_db_port: 6381
 
 job_db_ip: localhost
-job_db_port: 6380
+job_db_port: 6379
 
 job_manager_ip: localhost
 job_manager_port: 50002
@@ -24,7 +29,7 @@ scheduler_port: 50003
 sched_alg: 'irs'
 
 # Scheduling option
-proactive: False
+proactive: True
 max_task_offer_list_len: 10
 
 # Scheduling metadata (optional)
@@ -69,7 +74,6 @@ job_driver_starting_port: 53000
 
 # Total simulation time
 total_running_second: 1200
-
 
 # Fedscale run
 num_executors: 100

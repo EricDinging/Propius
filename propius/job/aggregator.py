@@ -105,6 +105,8 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.port = args.ps_port
         self.shut_down = False
 
+        self.execution_start = False
+
     def _connect_jm(self, jm_ip:str, jm_port:int)->None:
         self.jm_channel = grpc.insecure_channel(f'{jm_ip}:{jm_port}')
         self.jm_stub = propius_pb2_grpc.Job_managerStub(self.jm_channel)
@@ -393,12 +395,25 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             id = self.id,
             demand = self.tasks_round,
         )
+
+        self.execution_start = False
         ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
         if not ack_msg.ack:
             print(f"Parameter server {self.id}: round {self.round}/{self.total_round} request failed")
             return False
         else:
             print(f"Parameter server {self.id}: round {self.round}/{self.total_round} request success")
+            return True
+        
+    def end_request(self)->bool:
+        """optional, terminating request"""
+        request_msg = propius_pb2.job_id(id=self.id)
+        ack_msg = self.jm_stub.JOB_END_REQUEST(request_msg)
+        if not ack_msg.ack:
+            print(f"Job {self.id}: round: {self.round}/{self.total_round} end request failed")
+            return False
+        else:
+            print(f"Job {self.id}: round: {self.round}/{self.total_round} end request")
             return True
 
     def executor_info_handler(self, executor_id, info):
@@ -432,15 +447,20 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         event=commons.DUMMY_EVENT
         executor_id = request.executor_id
         executor_info = self.deserialize_response(request.executor_info)
-        if len(self.individual_client_events) >= self.tasks_round:
+        if len(self.individual_client_events) >= self.tasks_round or self.round > self.total_round:
+            # Check in later
             event=commons.SHUT_DOWN
-            print(f"Parameter server {self.id}: recieve client {executor_id} register during round, shutting it down")
+            print(f"Parameter server {self.id}: recieve client {executor_id} register during round, check in later")
         else:
             print(f"Parameter server {self.id}: recieve client {executor_id} register")
             if executor_id not in self.individual_client_events:
                 #TODO logging
                 self.individual_client_events[executor_id] = collections.deque()
                 self.executor_info_handler(executor_id, executor_info)
+        if len(self.individual_client_events) >= self.tasks_round:
+            if not self.execution_start:
+                self.end_request()
+                self.execution_start = True
         return job_api_pb2.ServerResponse(event=event,
                                           meta=dummy_data, data=dummy_data)
     

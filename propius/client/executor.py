@@ -43,8 +43,8 @@ class Executor(object):
         self.training_sets = self.testing_sets = None
         # ======== channels ========
         self.communicator = ClientConnections(
-            gconfig['client_manager'][0]['ip'],
-            gconfig['client_manager'][0]['port']
+            gconfig['load_balancer_ip'],
+            gconfig['load_balancer_port']
             )
         
         # ======== runtime information ========
@@ -64,7 +64,7 @@ class Executor(object):
         self.public_spec = tuple(args.public_spec)
         self.private_spec = tuple(args.private_spec)
         self.task_id = -1
-        self.communicator.connect_to_cm()
+        self.communicator.connect_to_lb()
 
     def get_client_trainer(self, conf):
         """
@@ -197,11 +197,11 @@ class Executor(object):
         """
         self.event_queue.append(request)
 
-    def client_register(self):
+    def client_register(self, ping_exp_time: float):
         """Register the executor information to the aggregator
         """
         start_time = time.time()
-        while time.time() - start_time < 180:
+        while time.time() - start_time < ping_exp_time:
             try:
                 print(f"Client {self.executor_id}: register to parameter server")
                 response = self.communicator.stub.CLIENT_REGISTER(
@@ -213,12 +213,18 @@ class Executor(object):
                         )
                     )
                 )
-                self.dispatch_worker_events(response)
-                break
+                if response.event == commons.SHUT_DOWN:
+                    print(f"Client {self.executor_id}: register to parameter server failed, register later")
+                    time.sleep(max(1, min(5, ping_exp_time / 3)))
+                    continue
+                else:
+                    self.dispatch_worker_events(response)
+                    return
             except Exception as e:
                 print(e)
                 #TODO logging warning
                 time.sleep(5)
+        raise ValueError(f"not able to register to parameter server")
 
     def UpdateModel(self, model_weights, config):
         """Receive the broadcasted global model for current round
@@ -344,11 +350,11 @@ class Executor(object):
         self.dispatch_worker_events(response)
 
 
-    def event_monitor(self):
+    def event_monitor(self, ping_exp_time: float):
         """Activate event handler once receiving new message
         """
         #TODO logging
-        self.client_register()
+        self.client_register(ping_exp_time)
 
         while not self.recieved_stop_request:
             if len(self.event_queue) > 0:
@@ -409,7 +415,7 @@ class Executor(object):
         client_checkin_msg = propius_pb2.client_checkin(
             public_specification=pickle.dumps(self.public_spec)
             )
-        task_offer = self.communicator.cm_stub.CLIENT_CHECKIN(
+        task_offer = self.communicator.lb_stub.CLIENT_CHECKIN(
             client_checkin_msg)
         return task_offer
     
@@ -427,46 +433,55 @@ class Executor(object):
     
     def accept(self)->propius_pb2.cm_ack:
         client_accept_msg = propius_pb2.client_accept(client_id=self.id, task_id=self.task_id)
-        cm_ack = self.communicator.cm_stub.CLIENT_ACCEPT(client_accept_msg)
+        cm_ack = self.communicator.lb_stub.CLIENT_ACCEPT(client_accept_msg)
         return cm_ack
+    
+    def cliean_up_routines(self):
+        try:
+            self.communicator.close_lb_connection()
+            self.communicator.close_server_connection()
+        except:
+            pass
     
     def run(self):
         """Start running the executor by setting up execution and communication environment, 
         and monitoring the grpc message.
         """
-        cm_offer = self.checkin()
-        self.id = cm_offer.client_id + 1
-        self.executor_id = str(self.id)
-        task_ids = pickle.loads(cm_offer.task_offer)
-        task_private_constraint = pickle.loads(cm_offer.private_constraint)
-        print(f"Client {self.id}: recieve client manager offer: {task_ids}")
+        try:
+            cm_offer = self.checkin()
+            self.id = cm_offer.client_id + 1
+            self.executor_id = str(self.id)
+            task_ids = pickle.loads(cm_offer.task_offer)
+            task_private_constraint = pickle.loads(cm_offer.private_constraint)
+            print(f"Client {self.id}: recieve client manager offer: {task_ids}")
 
-        self.select_task(task_ids, task_private_constraint)
+            self.select_task(task_ids, task_private_constraint)
 
-        if self.task_id == -1:
-            print(f"Client {self.id}: Not eligible, shutting down===")
-            self.communicator.cm_channel.close()
-            return
-        
-        cm_ack = self.accept()
-        if not cm_ack.ack:
-            print(f"Client {self.id}: client manager not acknowledged, shutting down===")
-            self.communicator.cm_channel.close()
-            return
-        self.communicator.aggregator_address = pickle.loads(cm_ack.job_ip)
-        self.communicator.base_port = cm_ack.job_port
+            if self.task_id == -1:
+                raise ValueError(f"Not eligible, shutting down===")
+            
+            cm_ack = self.accept()
+            if not cm_ack.ack:
+                raise ValueError(f"client manager not acknowledged, shutting down===")
 
-        # close connection to cm
-        self.communicator.cm_channel.close()
+            self.communicator.aggregator_address = pickle.loads(cm_ack.job_ip)
+            self.communicator.base_port = cm_ack.job_port
+            ping_exp_time = cm_ack.ping_exp_time
+            # close connection to cm
+            self.communicator.close_lb_connection()
 
-        print(f"Client {self.executor_id}: setting up environment")
-        self.setup_env()
-        print(f"Client {self.executor_id}: initting data")
-        self.training_sets, self.testing_sets = self.init_data()
-        print(f"Client {self.executor_id}: setting up communication")
-        self.setup_communication()
-        print(f"Client {self.executor_id}: registering to job")
-        self.event_monitor()
+            print(f"Client {self.executor_id}: setting up environment")
+            self.setup_env()
+            print(f"Client {self.executor_id}: initting data")
+            self.training_sets, self.testing_sets = self.init_data()
+            print(f"Client {self.executor_id}: setting up communication")
+            self.setup_communication()
+            print(f"Client {self.executor_id}: registering to job")
+            self.event_monitor(ping_exp_time)
+        except Exception as e:
+            print(f"Client {self.executor_id}: {e}")
+            self.cliean_up_routines()
+
 
     def Stop(self):
         """Stop the current executor
