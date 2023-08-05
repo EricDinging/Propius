@@ -23,15 +23,16 @@ class Job_db_stub(Job_db):
             size = result.total
             open_list = []
             open_private_constraint = []
-            proactive_list = []
-            proactive_private_constraint = []
+            # proactive_list = []
+            # proactive_private_constraint = []
             max_task_len = self.gconfig['max_task_offer_list_len']
             for doc in result.docs:
                     job = json.loads(doc.json)
                     job_public_constraint = tuple(
                         [job['job']['public_constraint'][name]
                             for name in self.public_constraint_name])
-                    if len(open_list) + len(proactive_list) >= max_task_len:
+                    # if len(open_list) + len(proactive_list) >= max_task_len:
+                    if len(open_list) >= max_task_len:
                         break
                     if geq(specification, job_public_constraint):
                         if job['job']['amount'] < job['job']['demand']:
@@ -41,22 +42,23 @@ class Job_db_stub(Job_db):
                                 for name in self.private_constraint_name])
                             open_private_constraint.append(job_private_constraint)
                         
-                        elif self.gconfig['proactive']:
-                            if job['job']['round'] < job['job']['total_round']:
-                                proactive_list.append(int(doc.id.split(':')[1]))
-                                job_private_constraint = tuple(
-                                [job['job']['private_constraint'][name]
-                                    for name in self.private_constraint_name])
-                                proactive_private_constraint.append(job_private_constraint)
-            upd_proactive_list = upd_proactive_private_constraint = []
-            if len(proactive_list) > 0:
-                # Use random proactive scheduling
-                combined_job = list(zip(proactive_list, proactive_private_constraint))
-                random.shuffle(combined_job)
-                upd_proactive_list, upd_proactive_private_constraint = zip(*combined_job)
-                upd_proactive_list = list(upd_proactive_list)
-                upd_proactive_private_constraint = list(upd_proactive_private_constraint)
-            return open_list + upd_proactive_list, open_private_constraint + upd_proactive_private_constraint, size
+                        # elif self.gconfig['proactive']:
+                        #     if job['job']['round'] < job['job']['total_round']:
+                        #         proactive_list.append(int(doc.id.split(':')[1]))
+                        #         job_private_constraint = tuple(
+                        #         [job['job']['private_constraint'][name]
+                        #             for name in self.private_constraint_name])
+                        #         proactive_private_constraint.append(job_private_constraint)
+            # upd_proactive_list = upd_proactive_private_constraint = []
+            # if len(proactive_list) > 0:
+            #     # Use random proactive scheduling
+            #     combined_job = list(zip(proactive_list, proactive_private_constraint))
+            #     random.shuffle(combined_job)
+            #     upd_proactive_list, upd_proactive_private_constraint = zip(*combined_job)
+            #     upd_proactive_list = list(upd_proactive_list)
+            #     upd_proactive_private_constraint = list(upd_proactive_private_constraint)
+            # return open_list + upd_proactive_list, open_private_constraint + upd_proactive_private_constraint, size
+            return open_list, open_private_constraint, size
             
         return [], [], 0
     
@@ -80,7 +82,7 @@ class Job_db_stub(Job_db):
 
                     if round > 1:
                         # Client will try to ping the PS within exp_ping_time
-                        ping_exp_time = 1.5 * float(runtime / (round - 1))
+                        ping_exp_time = min(1.5 * float(runtime / (round - 1)), 180)
                     else:
                         ping_exp_time = self.gconfig['default_ping_exp_time']
 

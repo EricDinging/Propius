@@ -148,7 +148,7 @@ class Client:
                 job_ack = await self.request()
                 if job_ack:
                     break
-                await asyncio.sleep(max(1, min(5, ping_exp_time / 3)))
+                await asyncio.sleep(max(2, min(10, ping_exp_time / 100)))
             if not job_ack:
                 raise ValueError(f"not able to make requests to parameter server")
 

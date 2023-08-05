@@ -28,8 +28,6 @@ scheduler_port: 50003
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2']
 sched_alg: 'irs'
 
-# Scheduling option
-proactive: True
 max_task_offer_list_len: 10
 
 # Scheduling metadata (optional)
