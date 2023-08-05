@@ -23,12 +23,14 @@ service Scheduler {
 
 service Client_manager {
     rpc CLIENT_CHECKIN (client_checkin) returns (cm_offer) {}
+    rpc CLIENT_PING(client_id) returns (cm_offer) {}
     rpc CLIENT_ACCEPT (client_accept) returns (cm_ack) {}
-    rpc HEALTH_CHECK (empty) returns (cm_ack) {}
+    //TODO rpc HEALTH_CHECK (empty) returns (cm_ack) {}
 }
 
 service Load_balancer {
     rpc CLIENT_CHECKIN (client_checkin) returns (cm_offer) {}
+    rpc CLIENT_PING(client_id) returns (cm_offer) {}
     rpc CLIENT_ACCEPT (client_accept) returns (cm_ack) {}
 }
 
@@ -52,7 +54,6 @@ message cm_ack {
     bool ack = 1;
     bytes job_ip = 2;
     int32 job_port = 3;
-    float ping_exp_time = 4; // during the exp time, client will try to make a connection with parameter server
 }
 
 message plan {

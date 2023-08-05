@@ -14,7 +14,7 @@ from propius.util.db import geq
 class Client:
     def __init__(self, public_specifications:tuple, 
                  private_specifications:tuple,
-                 gconfig):
+                 gconfig, TTL:int=10):
         self.id = -1
         self.public_specifications = public_specifications
         self.private_specifications = private_specifications
@@ -25,6 +25,7 @@ class Client:
         lb_port = gconfig['load_balancer_port']
         self.lb_channel = None
         self.lb_stub = None
+        self.ttl = TTL # num of times client try to get a task
 
         self._connect_lb(lb_ip, lb_port)
 
@@ -45,6 +46,11 @@ class Client:
             public_specification=pickle.dumps(self.public_specifications)
             )
         task_offer = await self.lb_stub.CLIENT_CHECKIN(client_checkin_msg)
+        return task_offer
+    
+    async def ping(self)->propius_pb2.cm_offer:
+        task_offer = None
+        task_offer = await self.lb_stub.CLIENT_PING(self.id)
         return task_offer
     
     async def select_task(self, task_ids: list, private_constraints: list):
@@ -123,6 +129,15 @@ class Client:
             total_job_num = cm_offer.total_job_num
             print(f"Client {self.id}: recieve client manager offer: {task_ids}")
 
+            for _ in range(self.ttl):
+                cm_offer = await self.ping()
+                task_ids = pickle.loads(cm_offer.task_offer)
+                task_private_constraint = pickle.loads(cm_offer.private_constraint)
+                total_job_num = cm_offer.total_job_num
+                if len(task_ids) > 0:
+                    break
+                await asyncio.sleep(5)
+
             await self.select_task(task_ids, task_private_constraint)
             if self.task_id == -1:
                 print(f"Client {self.id}: not eligible, shutting down===")
@@ -136,7 +151,7 @@ class Client:
                 raise ValueError(f"client manager not acknowledged, shutting down===")
             
             job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
-            ping_exp_time = cm_ack.ping_exp_time
+
             await self.lb_channel.close()
 
             await self._connect_to_ps(job_ip, job_port)
@@ -144,11 +159,11 @@ class Client:
             start_time = time.time()
             job_ack = None
 
-            while time.time() < start_time + ping_exp_time:
+            while time.time() < start_time + 30:
                 job_ack = await self.request()
                 if job_ack:
                     break
-                await asyncio.sleep(max(2, min(10, ping_exp_time / 100)))
+                await asyncio.sleep(2)
             if not job_ack:
                 raise ValueError(f"not able to make requests to parameter server")
 

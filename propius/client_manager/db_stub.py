@@ -62,7 +62,7 @@ class Job_db_stub(Job_db):
             
         return [], [], 0
     
-    def incr_amount(self, job_id:int)->tuple[str, int, float]:
+    def incr_amount(self, job_id:int)->tuple[str, int]:
         with self.r.json().pipeline() as pipe:
             while True:
                 try:
@@ -80,12 +80,6 @@ class Job_db_stub(Job_db):
                     round = int(self.r.json().get(id, "$.job.round")[0])
                     total_round = int(self.r.json().get(id, "$.job.total_round")[0])
 
-                    if round > 1:
-                        # Client will try to ping the PS within exp_ping_time
-                        ping_exp_time = min(1.5 * float(runtime / (round - 1)), 180)
-                    else:
-                        ping_exp_time = self.gconfig['default_ping_exp_time']
-
                     if amount >= demand:
                         if not self.gconfig['proactive'] or round == total_round:
                             pipe.unwatch()
@@ -99,7 +93,7 @@ class Job_db_stub(Job_db):
                         sched_time = time.time() - start_sched
                         pipe.execute_command('JSON.NUMINCRBY',  id, "$.job.total_sched", sched_time)
                     pipe.execute()
-                    return (ip, port, ping_exp_time)
+                    return (ip, port)
                 except redis.WatchError:
                     pass
 

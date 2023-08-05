@@ -35,8 +35,6 @@ standard_round_time: 30
 irs_epsilon: 0
 
 # ---Client---
-# Client default ping expiration time. Client will try to ping job during this time
-default_ping_exp_time: 30
 
 # ---Constraint/spec setting---
 # Job constraint

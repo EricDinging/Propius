@@ -62,7 +62,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
         print(f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}")
         return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]), 
-                                  job_port=result[1], ping_exp_time=result[2])
+                                  job_port=result[1])
     
 async def serve(gconfig, cm_id:int):
     async def server_graceful_shutdown():
