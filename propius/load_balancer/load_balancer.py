@@ -14,6 +14,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
     def __init__(self, gconfig):
         self.ip = gconfig['load_balancer_ip']
         self.port = gconfig['load_balancer_port']
+        self.id_weight = gconfig['client_manager_id_weight']
 
         # Round robin
         self.idx = 0
@@ -52,16 +53,24 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         async with self.lock:
             await self.lb_analyzer.request()
             self.idx %= len(self.cm_channel_dict)
-            print(f"Load balancer: recieve checkin request, route to client manager {self.idx}")
+            print(f"Load balancer: client check in, route to client manager {self.idx}")
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
             self._next_idx()
+        return return_msg
+    
+    async def CLIENT_PING(self, request, context):
+        async with self.lock:
+            await self.lb_analyzer.request()
+            idx = int(request.id/self.id_weight)
+            print(f"Load balancer: client ping, route to client manager {idx}")
+            return_msg = await self.cm_stub_dict[idx].CLIENT_PING(request)
         return return_msg
     
     async def CLIENT_ACCEPT(self, request, context):
         async with self.lock:
             await self.lb_analyzer.request()
             self.idx %= len(self.cm_channel_dict)
-            print(f"Load balancer: recieve client accept request, route to client manager {self.idx}")
+            print(f"Load balancer: client accept, route to client manager {self.idx}")
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_ACCEPT(request)
             self._next_idx()
         return return_msg

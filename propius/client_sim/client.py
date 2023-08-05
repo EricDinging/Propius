@@ -50,7 +50,8 @@ class Client:
     
     async def ping(self)->propius_pb2.cm_offer:
         task_offer = None
-        task_offer = await self.lb_stub.CLIENT_PING(self.id)
+        task_offer = await self.lb_stub.CLIENT_PING(propius_pb2.client_id(id=self.id))
+        print(f"Client {self.id}: ping")
         return task_offer
     
     async def select_task(self, task_ids: list, private_constraints: list):
@@ -129,43 +130,32 @@ class Client:
             total_job_num = cm_offer.total_job_num
             print(f"Client {self.id}: recieve client manager offer: {task_ids}")
 
-            for _ in range(self.ttl):
-                cm_offer = await self.ping()
-                task_ids = pickle.loads(cm_offer.task_offer)
-                task_private_constraint = pickle.loads(cm_offer.private_constraint)
-                total_job_num = cm_offer.total_job_num
-                if len(task_ids) > 0:
+            while (True):
+                while self.ttl > 0:
+                    if len(task_ids) > 0:
+                        break
+                    await asyncio.sleep(5)
+                    cm_offer = await self.ping()
+                    task_ids = pickle.loads(cm_offer.task_offer)
+                    task_private_constraint = pickle.loads(cm_offer.private_constraint)
+                    total_job_num = cm_offer.total_job_num
+                    self.ttl -= 1
+
+                await self.select_task(task_ids, task_private_constraint)
+                if self.task_id == -1:
+                    if self.ttl == 0:
+                        raise ValueError(f"not eligible, shutting down===")
+                    else:
+                        continue
+                
+                cm_ack = await self.accept()
+                
+                if not cm_ack.ack and self.ttl == 0:
+                    raise ValueError(f"not acknowledged by client manager, shutting down===")
+
+                if cm_ack.ack:
+                    print(f"Client {self.id}: acknowledged, start execution")
                     break
-                await asyncio.sleep(5)
-
-            await self.select_task(task_ids, task_private_constraint)
-            if self.task_id == -1:
-                print(f"Client {self.id}: not eligible, shutting down===")
-                if total_job_num > 0 and client_plotter:
-                    await client_plotter.client_finish('drop')
-                await self.cleanup_routines()
-                return
-            
-            cm_ack = await self.accept()
-            if not cm_ack.ack:
-                raise ValueError(f"client manager not acknowledged, shutting down===")
-            
-            job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
-
-            await self.lb_channel.close()
-
-            await self._connect_to_ps(job_ip, job_port)
-            
-            start_time = time.time()
-            job_ack = None
-
-            while time.time() < start_time + 30:
-                job_ack = await self.request()
-                if job_ack:
-                    break
-                await asyncio.sleep(2)
-            if not job_ack:
-                raise ValueError(f"not able to make requests to parameter server")
 
             await self.execute()
             await self.report()

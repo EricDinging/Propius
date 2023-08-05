@@ -7,37 +7,27 @@ class CM_analyzer(Analyzer):
         self.sched_alg = sched_alg
         self.lock = asyncio.Lock()
         self.total_client_num = 0
-        self.total_success_num = 0
-        self.total_client_not_elig_num = 0
-        self.total_client_over_assign_num = 0
 
-    async def client_checkin(self, is_elig:bool, job_size:int):
+    async def client_checkin(self):
         async with self.lock:
             self._request()
             self.total_client_num += 1
-            if not is_elig and job_size > 0:
-                self.total_client_not_elig_num += 1
+    
+    async def client_ping(self):
+        async with self.lock:
+            self._request()
     
     async def client_accept(self, success:bool):
         async with self.lock:
             self._request()
-            if not success:
-                self.total_client_over_assign_num += 1
-            else:
-                self.total_success_num += 1
 
-    def report(self):
+    def report(self, id:int):
         if self.total_client_num > 0:
             str1 = self._gen_report()
-            total_count = self.total_success_num + self.total_client_not_elig_num + self.total_client_over_assign_num
-            if total_count == 0:
-                util_rate = 0
-            else: 
-                util_rate = self.total_success_num / total_count
 
-            str2 = f"Client manager: client num: {self.total_client_num}, util rate: {util_rate:.3f}, not elig num: {self.total_client_not_elig_num}, over-assign num: {self.total_client_over_assign_num}"
+            str2 = f"Client manager {id}: client num: {self.total_client_num}"
 
-            with open(f'./log/CM-{self.sched_alg}-{int(time.time())}.txt', 'w') as file:
+            with open(f'./log/CM{id}-{self.sched_alg}-{int(time.time())}.txt', 'w') as file:
                 file.write(str1)
                 file.write("\n")
                 file.write(str2)
@@ -46,4 +36,4 @@ class CM_analyzer(Analyzer):
             fig = plt.gcf()
             self._plot_request()
             plt.show()
-            fig.savefig(f"./fig/CM-{self.sched_alg}-{int(time.time())}")
+            fig.savefig(f"./fig/CM{id}-{self.sched_alg}-{int(time.time())}")

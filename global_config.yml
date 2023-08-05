@@ -5,6 +5,7 @@ load_balancer_ip: localhost
 load_balancer_port: 50000
 
 client_manager_num: 2
+client_manager_id_weight: 1000000 # for client id assignment
 client_manager:
   - 0:
     ip: localhost

@@ -113,3 +113,15 @@ class Client_db_stub(Client_db):
         }
         self.r.json().set(f"client:{id}", Path.root_path(), client)
         self.r.expire(f"client:{id}", self.client_ttl)
+
+    def get(self, id:int)->tuple:
+        id = f"client:{id}"
+        specs = [0] * len(self.public_constraint_name)
+        try:
+            for idx, name in enumerate(self.public_constraint_name):
+                spec = int(self.r.json().get(id, f"$.client.{name}")[0])
+                specs[idx] = spec
+        except:
+            pass
+        return tuple(specs)
+            

@@ -11,7 +11,6 @@ from db_stub import *
 from cm_analyzer import *
 
 _cleanup_coroutines = []
-max_client_num = 100000000
 
 class Client_manager(propius_pb2_grpc.Client_managerServicer):
     def __init__(self, gconfig, cm_id:int):
@@ -22,7 +21,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.client_db_stub = Client_db_stub(gconfig, self.cm_id)
         self.job_db_stub = Job_db_stub(gconfig)
         self.cm_analyzer = CM_analyzer(self.sched_alg, gconfig['total_running_second'])
-
+        self.max_client_num = gconfig['client_manager_id_weight']
         print(f"Client manager {self.cm_id} started, running {self.sched_alg}")
 
         self.lock = asyncio.Lock()
@@ -30,7 +29,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
     async def CLIENT_CHECKIN(self, request, context):
         async with self.lock:
-            client_id = max_client_num * self.cm_id + self.client_num % max_client_num
+            client_id = self.max_client_num * self.cm_id + \
+                self.client_num % self.max_client_num
             self.client_num += 1
 
         public_specification = pickle.loads(request.public_specification)
@@ -39,7 +39,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         task_offer_list, task_private_constraint, job_size = self.job_db_stub.client_assign(public_specification)
 
-        await self.cm_analyzer.client_checkin(task_offer_list, job_size)
+        await self.cm_analyzer.client_checkin()
 
         
         if task_offer_list:
@@ -50,6 +50,23 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             task_offer=pickle.dumps(task_offer_list),
             private_constraint=pickle.dumps(task_private_constraint),
             total_job_num=job_size)
+    
+    async def CLIENT_PING(self, request, context):
+        public_specification = self.client_db_stub.get(request.id)
+
+        task_offer_list, task_private_constraint, job_size = self.job_db_stub.client_assign(public_specification)
+
+        await self.cm_analyzer.client_ping()
+
+        if task_offer_list:
+            print(f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}")
+        
+        return propius_pb2.cm_offer(
+            client_id=-1,
+            task_offer=pickle.dumps(task_offer_list),
+            private_constraint=pickle.dumps(task_private_constraint),
+            total_job_num=job_size
+        )
     
     async def CLIENT_ACCEPT(self, request, context):
         client_id, task_id = request.client_id, request.task_id
@@ -66,7 +83,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
     
 async def serve(gconfig, cm_id:int):
     async def server_graceful_shutdown():
-        client_manager.cm_analyzer.report()
+        client_manager.cm_analyzer.report(client_manager.cm_id)
         client_manager.client_db_stub.flushdb()
         print("Starting graceful shutdown...")
         await server.stop(5)
