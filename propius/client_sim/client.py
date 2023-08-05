@@ -123,14 +123,23 @@ class Client:
             await client_plotter.client_start()
 
         try:
-            cm_offer = await self.checkin()
-            self.id = cm_offer.client_id
-            task_ids = pickle.loads(cm_offer.task_offer)
-            task_private_constraint = pickle.loads(cm_offer.private_constraint)
-            #total_job_num = cm_offer.total_job_num
-            print(f"Client {self.id}: recieve client manager offer: {task_ids}")
-
             while (True):
+                while self.ttl > 0:
+                    try:
+                        self.ttl -= 1
+                        cm_offer = await self.checkin()
+                        self.id = cm_offer.client_id
+                        task_ids = pickle.loads(cm_offer.task_offer)
+                        task_private_constraint = pickle.loads(cm_offer.private_constraint)
+                        #total_job_num = cm_offer.total_job_num
+                        print(f"Client {self.id}: recieve client manager offer: {task_ids}")
+                        break
+                    except:
+                        if self.ttl == 0:
+                            raise(f"unable to connet to propius")
+                        continue
+
+
                 while self.ttl > 0:
                     if len(task_ids) > 0:
                         break

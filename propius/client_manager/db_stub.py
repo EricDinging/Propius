@@ -81,9 +81,8 @@ class Job_db_stub(Job_db):
                     total_round = int(self.r.json().get(id, "$.job.total_round")[0])
 
                     if amount >= demand:
-                        if not self.gconfig['proactive'] or round == total_round:
-                            pipe.unwatch()
-                            return None
+                        pipe.unwatch()
+                        return None
                             
                     pipe.multi()
                     if amount < demand:

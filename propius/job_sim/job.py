@@ -12,7 +12,7 @@ import pickle
 _cleanup_coroutines = []
 
 class Job(propius_pb2_grpc.JobServicer):
-    def __init__(self, id, jm_ip, jm_port, ip, port, config):
+    def __init__(self, jm_ip, jm_port, ip, port, config):
         self.id = -1
         self.demand = int(config['demand'])
         self.public_constraint = tuple(config['public_constraint'])
@@ -138,13 +138,12 @@ async def run(gconfig):
     jm_ip, jm_port = gconfig['job_manager_ip'], int(gconfig['job_manager_port'])
 
     setup_file = str(sys.argv[1])
-    id = int(sys.argv[2])
-    ip = str(sys.argv[3])
-    port = int(sys.argv[4])
+    ip = str(sys.argv[2])
+    port = int(sys.argv[3])
 
     with open(setup_file, 'r') as yamlfile:
         config = yaml.load(yamlfile, Loader=yaml.FullLoader)
-        job = Job(id, jm_ip, jm_port, ip, port, config)
+        job = Job(jm_ip, jm_port, ip, port, config)
         propius_pb2_grpc.add_JobServicer_to_server(job, server)
         server.add_insecure_port(f'{ip}:{port}')
         await server.start()
@@ -175,8 +174,8 @@ if __name__ == '__main__':
     logger = logging.getLogger()
     global_setup_file = './global_config.yml'
 
-    if len(sys.argv) != 5:
-        print("Usage: python propius/job_sim/job.py <config file> job_id job_ip job_port")
+    if len(sys.argv) != 4:
+        print("Usage: python propius/job_sim/job.py <config file> job_ip job_port")
         exit(1)
 
     with open(global_setup_file, 'r') as gyamlfile:
