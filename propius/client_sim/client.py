@@ -127,7 +127,7 @@ class Client:
             self.id = cm_offer.client_id
             task_ids = pickle.loads(cm_offer.task_offer)
             task_private_constraint = pickle.loads(cm_offer.private_constraint)
-            total_job_num = cm_offer.total_job_num
+            #total_job_num = cm_offer.total_job_num
             print(f"Client {self.id}: recieve client manager offer: {task_ids}")
 
             while (True):
@@ -138,7 +138,7 @@ class Client:
                     cm_offer = await self.ping()
                     task_ids = pickle.loads(cm_offer.task_offer)
                     task_private_constraint = pickle.loads(cm_offer.private_constraint)
-                    total_job_num = cm_offer.total_job_num
+                    #total_job_num = cm_offer.total_job_num
                     self.ttl -= 1
 
                 await self.select_task(task_ids, task_private_constraint)
@@ -146,6 +146,8 @@ class Client:
                     if self.ttl == 0:
                         raise ValueError(f"not eligible, shutting down===")
                     else:
+                        task_ids = []
+                        task_private_constraint = []
                         continue
                 
                 cm_ack = await self.accept()
@@ -157,6 +159,24 @@ class Client:
                     print(f"Client {self.id}: acknowledged, start execution")
                     break
 
+                task_ids = []
+                task_private_constraint = []
+
+            job_ip, job_port = pickle.loads(cm_ack.job_ip), cm_ack.job_port
+            await self.lb_channel.close()
+
+            await self._connect_to_ps(job_ip, job_port)
+            
+            job_ack = None
+            while True:
+                job_ack = await self.request()
+                if job_ack:
+                    break
+                if self.ttl == 0:
+                    raise ValueError(f"cannot make request to parameter server")
+                await asyncio.sleep(5)
+                self.ttl -= 1
+
             await self.execute()
             await self.report()
             if client_plotter:
@@ -166,6 +186,7 @@ class Client:
             print(f"Client {self.id}: {e}")
             if self.client_plotter:
                 await self.client_plotter.client_finish('drop')
+        finally:
             await self.cleanup_routines()
         
 
