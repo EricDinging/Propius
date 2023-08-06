@@ -1,6 +1,7 @@
-from propius.util.monitor import *
 import asyncio
 import time
+from propius.util.monitor import *
+from propius.util.commons import *
 
 class JM_monitor(Monitor):
     def __init__(self, sched_alg:str, total_running_time:int):
@@ -72,7 +73,7 @@ class JM_monitor(Monitor):
     def report(self):
         str1 = self._gen_report()
         
-        with open(f'./log/JM-{self.sched_alg}-{int(time.time())}.txt', 'w') as file:
+        with open(f'./log/JM-{self.sched_alg}-{get_time()}.txt', 'w') as file:
             file.write(str1)
             file.write("\n")
             file.write(f"Job manager: total job: {self.total_job}, total round: {self.total_round}\n")
@@ -100,4 +101,4 @@ class JM_monitor(Monitor):
         self._plot_request()
         plt.tight_layout()
         plt.show()
-        fig.savefig(f"./fig/JM-{self.sched_alg}-{int(time.time())}")
+        fig.savefig(f"./fig/JM-{self.sched_alg}-{get_time()}")

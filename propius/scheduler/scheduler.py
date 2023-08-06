@@ -4,11 +4,12 @@ import sys
 import logging
 import grpc
 import yaml
+import asyncio
 from propius.channels import propius_pb2
 from propius.channels import propius_pb2_grpc
 from propius.scheduler.sc_db_portal import *
-import asyncio
 from propius.scheduler.sc_monitor import *
+from propius.util.commons import *
 
 _cleanup_routines = []
 
@@ -83,9 +84,10 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             constraints_denom_map[cst] = self.client_db_portal.get_irs_denominator(client_size, cst, q)
             bq = bq + f"-{this_q}"
         # update all score
+        print(f"{get_time()} Scheduler: starting to update scores")
         for cst in self.constraints:
             try:
-                print(f"Scheduler: upd score for {cst}: ")
+                print(f"{get_time()} Scheduler: update score for {cst}: ")
                 for idx, job in enumerate(constraints_job_map[cst]):
                     groupsize = len(constraints_job_map[cst])
                     self.job_db_portal.irs_update_score(job, groupsize, idx, constraints_denom_map[cst], self.irs_epsilon, self.std_round_time)
@@ -108,7 +110,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             return propius_pb2.ack(ack=False)
         client_prop = self.client_db_portal.get_client_proportion(constraint)
 
-        print(f"Scheduler: upd score for {constraint}: ")
+        print(f"{get_time()} Scheduler: upd score for {constraint}: ")
         for idx, job in enumerate(constraint_job_list):
             groupsize = len(constraint_job_list)
             self.job_db_portal.irs_update_score(job, groupsize, idx, client_prop)
@@ -162,7 +164,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
     
 async def serve(gconfig):
     async def server_graceful_shutdown():
-        print("==Scheduler ending==")
+        print(f"{get_time()} ==Scheduler ending==")
         logging.info("Starting graceful shutdown...")
         scheduler.sc_monitor.report()
         await server.stop(5)
@@ -172,7 +174,7 @@ async def serve(gconfig):
     propius_pb2_grpc.add_SchedulerServicer_to_server(scheduler, server)
     server.add_insecure_port(f'{scheduler.ip}:{scheduler.port}')
     await server.start()
-    print(f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}")
+    print(f"{get_time()} Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}")
     _cleanup_routines.append(server_graceful_shutdown())
     await server.wait_for_termination()
 
@@ -184,7 +186,7 @@ if __name__ == '__main__':
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            print("scheduler read config successfully")
+            print(f"{get_time()} scheduler read config successfully")
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig))
         except KeyboardInterrupt:

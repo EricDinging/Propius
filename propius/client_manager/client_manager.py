@@ -8,7 +8,8 @@ import pickle
 from propius.channels import propius_pb2
 from propius.channels import propius_pb2_grpc
 from propius.client_manager.cm_db_portal import *
-from cm_monitor import *
+from propius.client_manager.cm_monitor import *
+from propius.util.commons import *
 
 _cleanup_coroutines = []
 
@@ -22,7 +23,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.job_db_portal = Job_db_portal(gconfig)
         self.cm_monitor = CM_monitor(self.sched_alg, gconfig['total_running_second'])
         self.max_client_num = gconfig['client_manager_id_weight']
-        print(f"Client manager {self.cm_id} started, running {self.sched_alg}")
+        print(f"{get_time()} Client manager {self.cm_id} started, running {self.sched_alg}")
 
         self.lock = asyncio.Lock()
         self.client_num = 0
@@ -43,7 +44,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         
         if task_offer_list:
-            print(f"Client manager {self.cm_id}: client {client_id} check in, offer: {task_offer_list}")
+            print(f"{get_time()} Client manager {self.cm_id}: client {client_id} check in, offer: {task_offer_list}")
         
         return propius_pb2.cm_offer(
             client_id=client_id,
@@ -59,7 +60,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         await self.cm_monitor.client_ping()
 
         if task_offer_list:
-            print(f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}")
+            print(f"{get_time()} Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}")
         
         return propius_pb2.cm_offer(
             client_id=-1,
@@ -75,9 +76,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         await self.cm_monitor.client_accept(result)
 
         if not result:
-            print(f"Client manager {self.cm_id}: job {task_id} over-assign")
+            print(f"{get_time()} Client manager {self.cm_id}: job {task_id} over-assign")
             return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
-        print(f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}")
+        print(f"{get_time()} Client manager {self.cm_id}: ack client {client_id}, job addr {result}")
         return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]), 
                                   job_port=result[1])
     
@@ -85,7 +86,7 @@ async def serve(gconfig, cm_id:int):
     async def server_graceful_shutdown():
         client_manager.cm_monitor.report(client_manager.cm_id)
         client_manager.client_db_portal.flushdb()
-        print("Starting graceful shutdown...")
+        print(f"{get_time()} Starting graceful shutdown...")
         await server.stop(5)
     
     server = grpc.aio.server()
@@ -94,7 +95,7 @@ async def serve(gconfig, cm_id:int):
     server.add_insecure_port(f'{client_manager.ip}:{client_manager.port}')
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.start()
-    print(f"Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}")
+    print(f"{get_time()} Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}")
     await server.wait_for_termination()
 
 if __name__ == '__main__':
@@ -110,7 +111,7 @@ if __name__ == '__main__':
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
             cm_id = int(sys.argv[1])
-            print(f"Client manager {cm_id} read config successfully")
+            print(f"{get_time()} Client manager {cm_id} read config successfully")
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, cm_id))
         except KeyboardInterrupt:

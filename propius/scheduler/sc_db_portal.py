@@ -91,7 +91,7 @@ class Job_db_portal(Job_db):
             score = score * (self._get_job_time(job_id) / sjct)**irs_epsilon
         try:
             self.r.execute_command('JSON.SET', f"job:{job_id}", "$.job.score", score)
-            print(f"job:{job_id} {score:.3f} ")
+            print(f"-------job:{job_id} {score:.3f} ")
         except:
             pass
 
@@ -106,7 +106,7 @@ class Job_db_portal(Job_db):
         for doc in result.docs:
             id = doc.id
             score = -json.loads(doc.json)["job"]["timestamp"]
-            print(f"{id}: {score:.3f} ")
+            print(f"-------job:{job_id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
     
     def random_update_all_job_score(self):
@@ -122,7 +122,7 @@ class Job_db_portal(Job_db):
             id = doc.id
             job_size = self.get_job_size()
             score = random.uniform(0, 10)
-            print(f"{id}: {score:.3f} ")
+            print(f"-------job:{job_id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
     
     def srdf_update_all_job_score(self):
@@ -143,7 +143,7 @@ class Job_db_portal(Job_db):
             # if remain_demand == 0:
             #     remain_demand = job_dict['total_demand']
             score = -remain_demand
-            print(f"{id}: {score:.3f} ")
+            print(f"-------job:{job_id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def srtf_update_all_job_score(self, std_round_time:float):
@@ -167,7 +167,7 @@ class Job_db_portal(Job_db):
                 avg_round_time = (time.time() - job_dict['timestamp']) / past_round
             remain_time = remain_round * avg_round_time
             score = -remain_time
-            print(f"{id}: {score:.3f} ")
+            print(f"-------job:{job_id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def _get_job_time(self, job_id:int)->float:
