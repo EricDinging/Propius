@@ -22,7 +22,6 @@ class JM_monitor(Monitor):
 
     async def job_register(self):
         async with self.lock:
-            self._request()
             self.total_job += 1
 
             runtime = int(time.time()) - self.start_time
@@ -33,14 +32,11 @@ class JM_monitor(Monitor):
 
     async def job_request(self):
         async with self.lock:
-            self._request()
             self.total_round += 1
 
     async def job_finish(self, constraint: tuple,
                          demand: int, total_round: int, job_runtime: float, sched_latency: float):
         async with self.lock:
-            self._request()
-
             runtime = int(time.time()) - self.start_time
             self.job_timestamp.append(runtime)
             self.job_timestamp.append(self.job_timestamp[-1])

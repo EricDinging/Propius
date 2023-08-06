@@ -82,7 +82,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
 
             q = this_q + bq
             constraints_denom_map[cst] = self.client_db_portal.get_irs_denominator(
-                client_size, cst, q)
+                client_size, q)
             bq = bq + f"-{this_q}"
         # update all score
         print(f"{get_time()} Scheduler: starting to update scores")
@@ -102,7 +102,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                 pass
         return propius_pb2.ack(ack=False)
 
-    async def _irs_score(self, job_id: int):
+    async def _irs2_score(self, job_id: int):
         """Update all jobs' score in database according to IRS2, a derivant from IRS
 
         Args:

@@ -77,15 +77,12 @@ class Job_db_portal(Job_db):
                     demand = int(self.r.json().get(id, "$.job.demand")[0])
                     ip = str(self.r.json().get(id, "$.job.ip")[0])
                     port = int(self.r.json().get(id, "$.job.port")[0])
-                    register_time = float(
-                        self.r.json().get(
-                            id, "$.job.timestamp")[0])
-                    runtime = time.time() - register_time
+
                     round = int(self.r.json().get(id, "$.job.round")[0])
                     total_round = int(
                         self.r.json().get(
                             id, "$.job.total_round")[0])
-
+                    
                     if amount >= demand:
                         pipe.unwatch()
                         return None
@@ -122,7 +119,7 @@ class Client_db_portal(Client_db):
             "client": client_dict
         }
         self.r.json().set(f"client:{id}", Path.root_path(), client)
-        self.r.expire(f"client:{id}", self.client_ttl)
+        self.r.expire(f"client:{id}", self.client_exp_time)
 
     def get(self, id: int) -> tuple:
         id = f"client:{id}"

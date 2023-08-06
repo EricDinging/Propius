@@ -36,6 +36,10 @@ standard_round_time: 30 # avg round time for jobs that doesn't have history roun
 irs_epsilon: 0
 
 # ---Client---
+# Client data expiration time in Redis DB
+client_expire_time: 100
+# ---Job---
+job_expire_time: 604800 # a week
 
 # ---Constraint/spec setting---
 # Job constraint
@@ -48,10 +52,6 @@ job_private_constraint: []
 
 # Define the scale of the specifications
 metric_scale: 100
-
-# ---Database setting---
-# Client data expiration time in Redis DB
-client_expire_time: 100
 
 # ---Simulation---
 # Client simulation number

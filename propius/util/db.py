@@ -19,6 +19,7 @@ class Job_db:
                 sched_alg
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
+                job_expire_time:
             is_jm: a bool indicating whether the user of the database is job manager
         """
 
@@ -29,7 +30,7 @@ class Job_db:
         self.gconfig = gconfig
         self.public_constraint_name = gconfig['job_public_constraint']
         self.private_constraint_name = gconfig['job_private_constraint']
-
+        self.job_exp_time = gconfig['job_expire_time']
         if is_jm:
             schema = (
                 NumericField(
@@ -96,7 +97,7 @@ class Client_db:
         port = gconfig['client_manager'][cm_id]['client_db_port']
         self.r = redis.Redis(host=host, port=port)
         self.start_time = int(time.time())
-        self.client_ttl = int(gconfig['client_expire_time'])
+        self.client_exp_time = int(gconfig['client_expire_time'])
 
         self.public_constraint_name = gconfig['job_public_constraint']
 

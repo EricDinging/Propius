@@ -66,6 +66,7 @@ class Job_db_portal(Job_db):
                         pipe.unwatch()
                         return False
                     pipe.set(id, Path.root_path(), job)
+                    pipe.expire(f"job:{id}", self.job_exp_time)
                     pipe.unwatch()
                     return True
                 except redis.WatchError:
@@ -78,6 +79,11 @@ class Job_db_portal(Job_db):
                     id = f"job:{job_id}"
                     pipe.watch(id)
                     if not pipe.get(id):
+                        pipe.unwatch()
+                        return False
+                    cur_round = int(self.r.json().get(id, "$.job.round")[0])
+                    total_round = int(self.r.json().get(id, "$.job.total_round")[0])
+                    if cur_round >= total_round:
                         pipe.unwatch()
                         return False
                     pipe.multi()

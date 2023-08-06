@@ -65,8 +65,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         if ack:
             await self.jm_monitor.job_register()
             await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
-        else:
-            await self.jm_monitor.request()
+        
+        await self.jm_monitor.request()
         return propius_pb2.job_register_ack(id=job_id, ack=ack)
 
     async def JOB_REQUEST(self, request, context):
@@ -76,8 +76,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         print(f"{get_time()} Job manager: ack job {job_id} round request: {ack}")
         if ack:
             await self.jm_monitor.job_request()
-        else:
-            await self.jm_monitor.request()
+
+        await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
 
     async def JOB_END_REQUEST(self, request, context):
@@ -93,10 +93,9 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         (constraints, demand, total_round, runtime, sched_latency) = \
             self.job_db_portal.finish(job_id)
 
-        if not runtime:
-            await self.jm_monitor.request()
-        else:
+        if runtime:
             await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
+        await self.jm_monitor.request()
         return propius_pb2.empty()
 
 
