@@ -3,8 +3,8 @@ from propius.util.monitor import *
 from propius.util.commons import *
 
 class CM_monitor(Monitor):
-    def __init__(self, sched_alg:str, total_running_time:int):
-        super().__init__("Client manager", total_running_time)
+    def __init__(self, sched_alg:str):
+        super().__init__("Client manager")
         self.sched_alg = sched_alg
         self.lock = asyncio.Lock()
         self.total_client_num = 0

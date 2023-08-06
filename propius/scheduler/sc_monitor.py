@@ -7,8 +7,8 @@ from propius.util.monitor import *
 from propius.util.commons import *
 
 class SC_monitor(Monitor):
-    def __init__(self, sched_alg:str, total_running_time:int):
-        super().__init__("Scheduler", total_running_time)
+    def __init__(self, sched_alg:str):
+        super().__init__("Scheduler")
         self.job_size_latency_map = {}
         self.job_request_map = {}
         self.lock = asyncio.Lock()

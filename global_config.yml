@@ -72,7 +72,7 @@ job_driver_starting_port: 53000
 # Total simulation time
 total_running_second: 1200
 
-# Fedscale run
+# ---Fedscale---
 num_executors: 100
 num_clients: 100
 data_dir: ./benchmark/dataset/data/femnist

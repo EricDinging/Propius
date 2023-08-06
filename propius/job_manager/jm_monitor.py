@@ -4,8 +4,8 @@ from propius.util.monitor import *
 from propius.util.commons import *
 
 class JM_monitor(Monitor):
-    def __init__(self, sched_alg:str, total_running_time:int):
-        super().__init__("Job manager", total_running_time)
+    def __init__(self, sched_alg:str):
+        super().__init__("Job manager")
         self.lock = asyncio.Lock()
         self.sched_alg = sched_alg
 
@@ -15,8 +15,6 @@ class JM_monitor(Monitor):
         self.start_time = int(time.time())
         self.job_time_num = [0]
         self.job_timestamp = [0]
-
-        self.total_running_time = total_running_time
 
         self.constraint_jct_dict = {}
         self.constraint_sched_dict = {}

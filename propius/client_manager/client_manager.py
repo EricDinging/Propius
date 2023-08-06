@@ -21,7 +21,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.sched_alg = gconfig['sched_alg']
         self.client_db_portal = Client_db_portal(gconfig, self.cm_id)
         self.job_db_portal = Job_db_portal(gconfig)
-        self.cm_monitor = CM_monitor(self.sched_alg, gconfig['total_running_second'])
+        self.cm_monitor = CM_monitor(self.sched_alg)
         self.max_client_num = gconfig['client_manager_id_weight']
         print(f"{get_time()} Client manager {self.cm_id} started, running {self.sched_alg}")
 

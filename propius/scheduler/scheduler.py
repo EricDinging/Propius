@@ -25,9 +25,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                 irs_epsilon (apply to IRS algorithm)
                 metric_scale
                 standard_round_time: default round execution time for SRTF
-                job_public_constraint: name for constraint
-                
-                total_running_time: simulation running time  
+                job_public_constraint: name for constraint 
         """
 
         self.ip = gconfig['scheduler_ip']
@@ -43,7 +41,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         self.constraints = []
         self.public_constraint_name = gconfig['job_public_constraint']
 
-        self.sc_monitor = SC_monitor(self.sched_alg, gconfig['total_running_second'])
+        self.sc_monitor = SC_monitor(self.sched_alg)
 
     async def _irs_score(self, job_id:int):
         """Update all jobs' score in database according to IRS
@@ -192,6 +190,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             pass
         except Exception as e:
+            print(e)
             logger.error(str(e))
         finally:
             loop.run_until_complete(*_cleanup_routines)

@@ -147,7 +147,7 @@ async def run(gconfig):
         propius_pb2_grpc.add_JobServicer_to_server(job, server)
         server.add_insecure_port(f'{ip}:{port}')
         await server.start()
-        print(f"Job {id}: job started, listening on {ip}:{port}")
+        print(f"Job: job started, listening on {ip}:{port}")
 
         _cleanup_coroutines.append(server_graceful_shutdown())
 
