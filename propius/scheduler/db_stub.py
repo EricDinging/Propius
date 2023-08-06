@@ -14,9 +14,26 @@ import random
 
 class Job_db_stub(Job_db):
     def __init__(self, gconfig):
+        """Initialize job db stub
+
+        Args:
+            gconfig: config dictionary
+                job_db_ip
+                job_db_port
+                sched_alg
+                job_public_constraint: name of public constraint
+                job_private_constraint: name of private constraint
+        """
+        
         super().__init__(gconfig, False)
     
     def get_job_constraints(self, job_id:int)->tuple:
+        """Get job constraint values of the job in a tuple
+
+        Args:
+            job_id: id of job
+        """
+
         id = f"job:{job_id}"
         constraint_list = []
         try:
@@ -27,6 +44,13 @@ class Job_db_stub(Job_db):
             return None
     
     def get_job_list(self, public_constraint:tuple, constraints_job_list:list)->bool:
+        """Get all the jobs that has the input public constraint, sorted by the total demand in ascending order
+        
+        Args:
+            public_constraint: constraint values listed in a tuple
+            constraints_job_list: a list that the sorted job will be stored in
+        """
+
         job_total_demand_map = {}
         job_time_map = {}
         # if constraints exist, insert as a list to dict, return true
@@ -49,19 +73,32 @@ class Job_db_stub(Job_db):
 
         return True
     
-    def irs_update_score(self, job:int, groupsize:int, idx:int, denominator:float, irs_epsilon:float=0, std_round_time:float=0):
+    def irs_update_score(self, job_id:int, groupsize:int, idx:int, denominator:float, irs_epsilon:float=0, std_round_time:float=0):
+        """Calculate job score using IRS.
+
+        Args:
+            job: job id
+            groupsize: number of jobs in a group with the same constraints
+            idx: index of the job within the group list
+            denominator: IRS score denominator, eligible client group size for the job group
+            irs_epsilon: hyperparameter for fairness adjustment
+            std_round_time: default round execution time for jobs that don't have history round info
+        """
+
         score = (groupsize - idx) / denominator
         if irs_epsilon > 0:
-            sjct = self._get_job_SJCT(job, std_round_time)
-            score = score * (self._get_job_time(job) / sjct)**irs_epsilon
+            sjct = self._get_est_JCT(job_id, std_round_time)
+            score = score * (self._get_job_time(job_id) / sjct)**irs_epsilon
         try:
-            self.r.execute_command('JSON.SET', f"job:{job}", "$.job.score", score)
-            print(f"job:{job} {score:.3f} ")
+            self.r.execute_command('JSON.SET', f"job:{job_id}", "$.job.score", score)
+            print(f"job:{job_id} {score:.3f} ")
         except:
             pass
 
 
     def fifo_update_all_job_score(self):
+        """Give every job which doesn't have a score yet a score of -timestamp
+        """
         q = Query('@score: [0, 0]')
         result = self.r.ft('job').search(q)
         if result.total == 0:
@@ -73,6 +110,10 @@ class Job_db_stub(Job_db):
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
     
     def random_update_all_job_score(self):
+        """Give every job which doesn't have a score yet a score of 
+            a random float ranging from 0 to 10.
+        """
+
         q = Query('@score: [0, 0]')
         result = self.r.ft('job').search(q)
         if result.total == 0:
@@ -85,6 +126,11 @@ class Job_db_stub(Job_db):
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
     
     def srdf_update_all_job_score(self):
+        """Give every job a score of -remaining demand.
+            remaining demand = remaining round * current round demand
+            Prioritize job with the smallest remaining demand.
+        """
+
         q = Query('*')
         result = self.r.ft('job').search(q)
         if result.total == 0:
@@ -94,13 +140,18 @@ class Job_db_stub(Job_db):
             job_dict = json.loads(doc.json)['job']
             remain_round = job_dict['total_round'] - job_dict['round']
             remain_demand = job_dict['demand'] * remain_round
-            if remain_demand == 0:
-                remain_demand = job_dict['total_demand']
+            # if remain_demand == 0:
+            #     remain_demand = job_dict['total_demand']
             score = -remain_demand
             print(f"{id}: {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def srtf_update_all_job_score(self, std_round_time:float):
+        """Give every job a score of -remaining time
+            remaining time = past avg round time * remaining round
+            Prioritize job with the shortest remaining demand
+        """
+
         q = Query('*')
         result = self.r.ft('job').search(q)
         if result.total == 0:
@@ -127,7 +178,7 @@ class Job_db_stub(Job_db):
         except:
             return 0
         
-    def _get_job_SJCT(self, job_id:int, std_round_time:float)->float:
+    def _get_est_JCT(self, job_id:int, std_round_time:float)->float:
         id = f"job:{job_id}"
         try:
             total_round = int(self.r.json().get(id, ".job.total_round")[0])
@@ -137,15 +188,31 @@ class Job_db_stub(Job_db):
         
 class Client_db_stub(Client_db):
     def __init__(self, gconfig):
+        """Initialize client db stub
+
+        Args:
+            gconfig: config dictionary
+                metric_scale: upper bound of the score
+        """
         #TODO determine which client db to connect
         super().__init__(gconfig, 0, False)
         self.metric_scale = gconfig['metric_scale']
 
     def get_client_size(self)->int:
+        """Get client dataset size
+        """
         info = self.r.ft('client').info()
         return int(info['num_docs'])
 
     def get_client_proportion(self, public_constraint:tuple)->float:
+        """Get client subset size
+
+        Args:
+            public_constraint: lower bounds of the client specification.
+                                Eveery client in the returned subset has 
+                                spec greater or equal to this constraint
+        """
+
         client_size = self.get_client_size()
         if client_size == 0:
             return 0.01
@@ -162,6 +229,12 @@ class Client_db_stub(Client_db):
         return size / client_size
     
     def get_irs_denominator(self, client_size:int, q:str)->float:
+        """Get IRS denominator value using client subset size which is defined by input query
+
+        Args:
+            client_size: total number of client
+            q: query which defines a client subset
+        """
         if client_size == 0:
             return 0.01
         q = Query(q).no_content()

@@ -31,8 +31,8 @@ sched_alg: 'irs'
 
 max_task_offer_list_len: 10
 
-# Scheduling metadata (optional)
-standard_round_time: 30
+# Scheduling context
+standard_round_time: 30 # avg round time for jobs that doesn't have history round
 irs_epsilon: 0
 
 # ---Client---

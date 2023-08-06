@@ -14,6 +14,21 @@ _cleanup_routines = []
 
 class Scheduler(propius_pb2_grpc.SchedulerServicer):
     def __init__(self, gconfig):
+        """Init scheduler class
+
+        Args:
+            gconfig: global config dictionary
+                scheduler_ip
+                scheduler_port
+                sched_alg
+                irs_epsilon (apply to IRS algorithm)
+                metric_scale
+                standard_round_time: default round execution time for SRTF
+                job_public_constraint: name for constraint
+                
+                total_running_time: simulation running time  
+        """
+
         self.ip = gconfig['scheduler_ip']
         self.port = gconfig['scheduler_port']
         self.sched_alg = gconfig['sched_alg']
@@ -30,6 +45,12 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         self.sc_analyzer = SC_analyzer(self.sched_alg, gconfig['total_running_second'])
 
     async def _irs_score(self, job_id:int):
+        """Update all jobs' score in database according to IRS
+
+        Args:
+            job_id: id of job that has just been registered by job manager
+        """
+
         constraints_client_map = {}
         constraints_job_map = {}
         constraints_denom_map = {}
@@ -46,7 +67,8 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                 self.constraints.remove(cst)
         # search elig client size for each group
         for cst in self.constraints:
-            constraints_client_map[cst] = self.client_db_stub.get_client_proportion(cst)
+            constraints_client_map[cst] = self.client_db_stub.\
+            get_client_proportion(cst)
         # sort constraints
         self.constraints.sort(key=lambda x: constraints_client_map[x])
         # get each client denominator
@@ -72,6 +94,12 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         return propius_pb2.ack(ack=False)
 
     async def _irs_score(self, job_id:int):
+        """Update all jobs' score in database according to IRS2, a derivant from IRS
+
+        Args:
+            job_id: id of job that has just been registered by job manager
+        """
+
         constraint_job_list = []
         constraint = self.job_db_stub.get_job_constraints(job_id)
         if not constraint:
@@ -87,24 +115,49 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         return propius_pb2.ack(ack=False)
         
 
-    async def JOB_SCORE_UPDATE(self, request, context):
+    async def JOB_SCORE_UPDATE(self, request, context)->propius_pb2.ack:
+        """Service function that update scores of job in database
+        
+        Args:
+            request: job manager request message: job_id.id
+            context:
+        """
         job_id = request.id
         await self.sc_analyzer.request_start(job_id)
+
         job_size = self.job_db_stub.get_job_size()
 
         if self.sched_alg == 'irs':
+            # Update every job score using IRS
             await self._irs_score(job_id)
         elif self.sched_alg == 'irs2':
+            # Update every job socre using IRS with a slight tweek that has experimental
+            # performance improvement
             await self._irs2_score(job_id)
+
         elif self.sched_alg == 'fifo':
+            # Give every job which doesn't have a score yet a score of -timestamp
             self.job_db_stub.fifo_update_all_job_score()
+
         elif self.sched_alg == 'random':
+            # Give every job which doesn't have a score yet a score of 
+            # a random float ranging from 0 to 10.
             self.job_db_stub.random_update_all_job_score()
+
         elif self.sched_alg == 'srdf':
+            # Give every job a score of -remaining demand.
+            # remaining demand = remaining round * current round demand
+            # Prioritize job with the smallest remaining demand
             self.job_db_stub.srdf_update_all_job_score()
+
         elif self.sched_alg == 'srtf':
+            # Give every job a score of -remaining time
+            # remaining time = past avg round time * remaining round
+            # Prioritize job with the shortest remaining demand
             self.job_db_stub.srtf_update_all_job_score(self.std_round_time)
+
         await self.sc_analyzer.request_end(job_id, job_size)
+
         return propius_pb2.ack(ack=True)
     
 async def serve(gconfig):

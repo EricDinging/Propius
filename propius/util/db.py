@@ -9,6 +9,18 @@ import json
 
 class Job_db:
     def __init__(self, gconfig, is_jm:bool):
+        """Initialize job db portal
+
+        Args:
+            gconfig: config dictionary
+                job_db_ip
+                job_db_port
+                sched_alg
+                job_public_constraint: name of public constraint
+                job_private_constraint: name of private constraint
+            is_jm: a bool indicating whether the user of the database is job manager
+        """
+
         host = gconfig['job_db_ip']
         port = int(gconfig['job_db_port'])
         self.r = redis.Redis(host=host, port=port)
@@ -55,6 +67,20 @@ class Job_db:
 
 class Client_db:
     def __init__(self, gconfig, cm_id:int, is_cm:bool):
+        """Initialize client db portal
+        
+        Args:
+            gconfig: config dictionary
+                client_manager: list of client manager address
+                    ip:
+                    client_db_port
+                client_expire_time: expiration time of clients in the db
+                job_public_constraint: name of public constraint
+            
+            cm_id: id of the client manager is the user is client manager
+            is_cm: bool indicating whether the user is client manager
+        """
+
         host = gconfig['client_manager'][cm_id]['ip']
         port = gconfig['client_manager'][cm_id]['client_db_port']
         self.r = redis.Redis(host=host, port=port)
@@ -81,6 +107,13 @@ class Client_db:
         self.r.flushdb()
 
 def geq(t1:tuple, t2:tuple)->bool:
+    """Compare two tuples. Return True only if every values in t1 is greater than t2
+    
+    Args:
+        t1
+        t2
+    """
+    
     for idx in range(len(t1)):
         if t1[idx] < t2[idx]:
             return False
