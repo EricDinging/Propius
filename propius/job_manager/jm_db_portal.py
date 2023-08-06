@@ -8,7 +8,7 @@ import time
 import json
 from propius.util.db import *
 
-class Job_db_stub(Job_db):
+class Job_db_portal(Job_db):
     def __init__(self, gconfig):
         super().__init__(gconfig, True)
 

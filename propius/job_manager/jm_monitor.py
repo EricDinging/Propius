@@ -1,8 +1,8 @@
-from propius.util.analyzer import *
+from propius.util.monitor import *
 import asyncio
 import time
 
-class JM_analyzer(Analyzer):
+class JM_monitor(Monitor):
     def __init__(self, sched_alg:str, total_running_time:int):
         super().__init__("Job manager", total_running_time)
         self.lock = asyncio.Lock()

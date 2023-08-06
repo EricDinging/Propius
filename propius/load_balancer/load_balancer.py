@@ -6,7 +6,7 @@ import grpc
 import yaml
 from propius.channels import propius_pb2
 from propius.channels import propius_pb2_grpc
-from lb_analyzer import *
+from propius.load_balancer.lb_monitor import *
 
 _cleanup_coroutines = []
 

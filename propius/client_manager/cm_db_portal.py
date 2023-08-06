@@ -9,7 +9,7 @@ import json
 from propius.util.db import *
 import random
 
-class Job_db_stub(Job_db):
+class Job_db_portal(Job_db):
     def __init__(self, gconfig):
         super().__init__(gconfig, False)
 
@@ -96,7 +96,7 @@ class Job_db_stub(Job_db):
                 except redis.WatchError:
                     pass
 
-class Client_db_stub(Client_db):
+class Client_db_portal(Client_db):
     def __init__(self, gconfig, cm_id:int):
         super().__init__(gconfig, cm_id, True)
     

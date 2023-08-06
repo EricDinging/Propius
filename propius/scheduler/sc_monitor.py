@@ -1,11 +1,11 @@
 import sys
 sys.path.append('..')
 
-from propius.util.analyzer import *
+from propius.util.monitor import *
 import asyncio
 import time
 
-class SC_analyzer(Analyzer):
+class SC_monitor(Monitor):
     def __init__(self, sched_alg:str, total_running_time:int):
         super().__init__("Scheduler", total_running_time)
         self.job_size_latency_map = {}

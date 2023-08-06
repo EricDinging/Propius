@@ -7,8 +7,8 @@ import yaml
 import pickle
 from propius.channels import propius_pb2
 from propius.channels import propius_pb2_grpc
-from db_stub import *
-from cm_analyzer import *
+from propius.client_manager.cm_db_portal import *
+from cm_monitor import *
 
 _cleanup_coroutines = []
 
@@ -18,9 +18,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.ip = gconfig['client_manager'][self.cm_id]['ip']
         self.port = gconfig['client_manager'][self.cm_id]['port']
         self.sched_alg = gconfig['sched_alg']
-        self.client_db_stub = Client_db_stub(gconfig, self.cm_id)
-        self.job_db_stub = Job_db_stub(gconfig)
-        self.cm_analyzer = CM_analyzer(self.sched_alg, gconfig['total_running_second'])
+        self.client_db_portal = Client_db_portal(gconfig, self.cm_id)
+        self.job_db_portal = Job_db_portal(gconfig)
+        self.cm_monitor = CM_monitor(self.sched_alg, gconfig['total_running_second'])
         self.max_client_num = gconfig['client_manager_id_weight']
         print(f"Client manager {self.cm_id} started, running {self.sched_alg}")
 
@@ -35,11 +35,11 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         public_specification = pickle.loads(request.public_specification)
 
-        self.client_db_stub.insert(client_id, public_specification)
+        self.client_db_portal.insert(client_id, public_specification)
 
-        task_offer_list, task_private_constraint, job_size = self.job_db_stub.client_assign(public_specification)
+        task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(public_specification)
 
-        await self.cm_analyzer.client_checkin()
+        await self.cm_monitor.client_checkin()
 
         
         if task_offer_list:
@@ -52,11 +52,11 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             total_job_num=job_size)
     
     async def CLIENT_PING(self, request, context):
-        public_specification = self.client_db_stub.get(request.id)
+        public_specification = self.client_db_portal.get(request.id)
 
-        task_offer_list, task_private_constraint, job_size = self.job_db_stub.client_assign(public_specification)
+        task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(public_specification)
 
-        await self.cm_analyzer.client_ping()
+        await self.cm_monitor.client_ping()
 
         if task_offer_list:
             print(f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}")
@@ -70,9 +70,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
     
     async def CLIENT_ACCEPT(self, request, context):
         client_id, task_id = request.client_id, request.task_id
-        result = self.job_db_stub.incr_amount(task_id)
+        result = self.job_db_portal.incr_amount(task_id)
 
-        await self.cm_analyzer.client_accept(result)
+        await self.cm_monitor.client_accept(result)
 
         if not result:
             print(f"Client manager {self.cm_id}: job {task_id} over-assign")
@@ -83,8 +83,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
     
 async def serve(gconfig, cm_id:int):
     async def server_graceful_shutdown():
-        client_manager.cm_analyzer.report(client_manager.cm_id)
-        client_manager.client_db_stub.flushdb()
+        client_manager.cm_monitor.report(client_manager.cm_id)
+        client_manager.client_db_portal.flushdb()
         print("Starting graceful shutdown...")
         await server.stop(5)
     

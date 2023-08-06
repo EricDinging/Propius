@@ -1,7 +1,7 @@
-from propius.util.analyzer import *
+from propius.util.monitor import *
 import asyncio
 
-class CM_analyzer(Analyzer):
+class CM_monitor(Monitor):
     def __init__(self, sched_alg:str, total_running_time:int):
         super().__init__("Client manager", total_running_time)
         self.sched_alg = sched_alg

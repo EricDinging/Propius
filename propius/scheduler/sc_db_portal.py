@@ -12,9 +12,9 @@ import json
 from propius.util.db import *
 import random
 
-class Job_db_stub(Job_db):
+class Job_db_portal(Job_db):
     def __init__(self, gconfig):
-        """Initialize job db stub
+        """Initialize job db portal
 
         Args:
             gconfig: config dictionary
@@ -186,9 +186,9 @@ class Job_db_stub(Job_db):
         except:
             return 1000 * std_round_time
         
-class Client_db_stub(Client_db):
+class Client_db_portal(Client_db):
     def __init__(self, gconfig):
-        """Initialize client db stub
+        """Initialize client db portal
 
         Args:
             gconfig: config dictionary

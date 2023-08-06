@@ -1,7 +1,7 @@
 import time
 import matplotlib.pyplot as plt
 
-class Analyzer:
+class Monitor:
     def __init__(self, server_name:str, total_running_time:int):
         self.start_time = int(time.time())
         self.total_running_time = total_running_time
