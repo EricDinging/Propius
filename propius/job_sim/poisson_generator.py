@@ -11,9 +11,10 @@ if __name__ == '__main__':
         gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
         total_running_second = gconfig['total_running_second']
         total_job = gconfig['total_job']
-        
+
         avg_interval = total_running_second / total_job
-        time_intervals = np.random.exponential(scale=avg_interval, size=total_job-1)
+        time_intervals = np.random.exponential(
+            scale=avg_interval, size=total_job - 1)
 
         job_profile_num = gconfig['job_profile_num']
 
@@ -29,4 +30,3 @@ if __name__ == '__main__':
                     break
                 file.write(f'{int(i)} {job_id % job_profile_num} {job_id}\n')
                 job_id += 1
-            

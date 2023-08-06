@@ -1,16 +1,16 @@
+import random
+from propius.util.db import *
+import json
+import time
+from redis.commands.search.query import NumericFilter, Query
+from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+from redis.commands.search.field import TextField, NumericField, TagField
+import redis.commands.search.reducers as reducers
+from redis.commands.json.path import Path
+import redis
 import sys
 sys.path.append('..')
 
-import redis
-from redis.commands.json.path import Path
-import redis.commands.search.reducers as reducers
-from redis.commands.search.field import TextField, NumericField, TagField
-from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-from redis.commands.search.query import NumericFilter, Query
-import time
-import json
-from propius.util.db import *
-import random
 
 class Job_db_portal(Job_db):
     def __init__(self, gconfig):
@@ -24,10 +24,10 @@ class Job_db_portal(Job_db):
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
         """
-        
+
         super().__init__(gconfig, False)
-    
-    def get_job_constraints(self, job_id:int)->tuple:
+
+    def get_job_constraints(self, job_id: int) -> tuple:
         """Get job constraint values of the job in a tuple
 
         Args:
@@ -38,14 +38,16 @@ class Job_db_portal(Job_db):
         constraint_list = []
         try:
             for name in self.public_constraint_name:
-                constraint_list.append(int(self.r.json().get(id, f"$.job.public_constraint.{name}")[0]))
+                constraint_list.append(int(self.r.json().get(
+                    id, f"$.job.public_constraint.{name}")[0]))
             return tuple(constraint_list)
-        except:
+        except BaseException:
             return None
-    
-    def get_job_list(self, public_constraint:tuple, constraints_job_list:list)->bool:
+
+    def get_job_list(self, public_constraint: tuple,
+                     constraints_job_list: list) -> bool:
         """Get all the jobs that has the input public constraint, sorted by the total demand in ascending order
-        
+
         Args:
             public_constraint: constraint values listed in a tuple
             constraints_job_list: a list that the sorted job will be stored in
@@ -57,7 +59,7 @@ class Job_db_portal(Job_db):
         qstr = ""
         for idx, name in enumerate(self.public_constraint_name):
             qstr += f"@{name}: [{public_constraint[idx]}, {public_constraint[idx]}] "
-        
+
         q = Query(qstr)
         result = self.r.ft('job').search(q)
         if result.total == 0:
@@ -69,11 +71,21 @@ class Job_db_portal(Job_db):
             job_dict = json.loads(doc.json)["job"]
             job_total_demand_map[id] = job_dict["total_demand"]
             job_time_map[id] = job_dict['timestamp']
-        constraints_job_list.sort(key=lambda x: (job_total_demand_map[x], job_time_map[x]))
+        constraints_job_list.sort(
+            key=lambda x: (
+                job_total_demand_map[x],
+                job_time_map[x]))
 
         return True
-    
-    def irs_update_score(self, job_id:int, groupsize:int, idx:int, denominator:float, irs_epsilon:float=0, std_round_time:float=0):
+
+    def irs_update_score(
+            self,
+            job_id: int,
+            groupsize: int,
+            idx: int,
+            denominator: float,
+            irs_epsilon: float = 0,
+            std_round_time: float = 0):
         """Calculate job score using IRS.
 
         Args:
@@ -90,11 +102,11 @@ class Job_db_portal(Job_db):
             sjct = self._get_est_JCT(job_id, std_round_time)
             score = score * (self._get_job_time(job_id) / sjct)**irs_epsilon
         try:
-            self.r.execute_command('JSON.SET', f"job:{job_id}", "$.job.score", score)
+            self.r.execute_command(
+                'JSON.SET', f"job:{job_id}", "$.job.score", score)
             print(f"-------job:{job_id} {score:.3f} ")
-        except:
+        except BaseException:
             pass
-
 
     def fifo_update_all_job_score(self):
         """Give every job which doesn't have a score yet a score of -timestamp
@@ -108,9 +120,9 @@ class Job_db_portal(Job_db):
             score = -json.loads(doc.json)["job"]["timestamp"]
             print(f"-------{id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
-    
+
     def random_update_all_job_score(self):
-        """Give every job which doesn't have a score yet a score of 
+        """Give every job which doesn't have a score yet a score of
             a random float ranging from 0 to 10.
         """
 
@@ -124,7 +136,7 @@ class Job_db_portal(Job_db):
             score = random.uniform(0, 10)
             print(f"-------{id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
-    
+
     def srdf_update_all_job_score(self):
         """Give every job a score of -remaining demand.
             remaining demand = remaining round * current round demand
@@ -146,7 +158,7 @@ class Job_db_portal(Job_db):
             print(f"-------{id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
-    def srtf_update_all_job_score(self, std_round_time:float):
+    def srtf_update_all_job_score(self, std_round_time: float):
         """Give every job a score of -remaining time
             remaining time = past avg round time * remaining round
             Prioritize job with the shortest remaining demand
@@ -164,28 +176,30 @@ class Job_db_portal(Job_db):
             if past_round == 0:
                 avg_round_time = std_round_time
             else:
-                avg_round_time = (time.time() - job_dict['timestamp']) / past_round
+                avg_round_time = (
+                    time.time() - job_dict['timestamp']) / past_round
             remain_time = remain_round * avg_round_time
             score = -remain_time
             print(f"-------{id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
-    def _get_job_time(self, job_id:int)->float:
+    def _get_job_time(self, job_id: int) -> float:
         id = f"job:{job_id}"
         try:
             timestamp = float(self.r.json().get(id, "$.job.timestamp")[0])
             return time.time() - timestamp
-        except:
+        except BaseException:
             return 0
-        
-    def _get_est_JCT(self, job_id:int, std_round_time:float)->float:
+
+    def _get_est_JCT(self, job_id: int, std_round_time: float) -> float:
         id = f"job:{job_id}"
         try:
             total_round = int(self.r.json().get(id, ".job.total_round")[0])
             return total_round * std_round_time
-        except:
+        except BaseException:
             return 1000 * std_round_time
-        
+
+
 class Client_db_portal(Client_db):
     def __init__(self, gconfig):
         """Initialize client db portal
@@ -194,22 +208,22 @@ class Client_db_portal(Client_db):
             gconfig: config dictionary
                 metric_scale: upper bound of the score
         """
-        #TODO determine which client db to connect
+        # TODO determine which client db to connect
         super().__init__(gconfig, 0, False)
         self.metric_scale = gconfig['metric_scale']
 
-    def get_client_size(self)->int:
+    def get_client_size(self) -> int:
         """Get client dataset size
         """
         info = self.r.ft('client').info()
         return int(info['num_docs'])
 
-    def get_client_proportion(self, public_constraint:tuple)->float:
+    def get_client_proportion(self, public_constraint: tuple) -> float:
         """Get client subset size
 
         Args:
             public_constraint: lower bounds of the client specification.
-                                Eveery client in the returned subset has 
+                                Every client in the returned subset has
                                 spec greater or equal to this constraint
         """
 
@@ -227,8 +241,8 @@ class Client_db_portal(Client_db):
             return 0.01
 
         return size / client_size
-    
-    def get_irs_denominator(self, client_size:int, q:str)->float:
+
+    def get_irs_denominator(self, client_size: int, q: str) -> float:
         """Get IRS denominator value using client subset size which is defined by input query
 
         Args:
@@ -242,5 +256,5 @@ class Client_db_portal(Client_db):
 
         if size == 0:
             return 0.01
-        
+
         return size / client_size

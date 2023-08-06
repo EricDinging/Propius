@@ -1,25 +1,25 @@
+from propius.util.commons import *
+from propius.util.monitor import *
+import time
+import asyncio
 import sys
 sys.path.append('..')
 
-import asyncio
-import time
-from propius.util.monitor import *
-from propius.util.commons import *
 
 class SC_monitor(Monitor):
-    def __init__(self, sched_alg:str):
+    def __init__(self, sched_alg: str):
         super().__init__("Scheduler")
         self.job_size_latency_map = {}
         self.job_request_map = {}
         self.lock = asyncio.Lock()
         self.sched_alg = sched_alg
 
-    async def request_start(self, job_id:int):
+    async def request_start(self, job_id: int):
         async with self.lock:
             self._request()
             self.job_request_map[job_id] = time.time()
-    
-    async def request_end(self, job_id:int, job_size:int):
+
+    async def request_end(self, job_id: int, job_size: int):
         async with self.lock:
             runtime = time.time() - self.job_request_map[job_id]
             if job_size not in self.job_size_latency_map:
@@ -38,7 +38,8 @@ class SC_monitor(Monitor):
 
     def report(self):
         for size, latency_list in self.job_size_latency_map.items():
-            self.job_size_latency_map[size] = sum(latency_list) / len(latency_list)
+            self.job_size_latency_map[size] = sum(
+                latency_list) / len(latency_list)
 
         lists = sorted(self.job_size_latency_map.items())
         if len(lists) > 0:
@@ -58,5 +59,3 @@ class SC_monitor(Monitor):
             plt.tight_layout()
             plt.show()
             fig.savefig(f"./fig/SC-{self.sched_alg}-{get_time()}")
-
-

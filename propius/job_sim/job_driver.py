@@ -13,8 +13,12 @@ with open('./global_config.yml', 'r') as gyamlfile:
         for line in file:
             line = line.strip().split(" ")
             time.sleep(int(line[0]))
-            command = ["python", "./propius/job_sim/job.py", f"./propius/job_sim/profile/job_{line[1]}.yml", 
-                    f"{ip}", f"{port + i}"]
+            command = [
+                "python",
+                "./propius/job_sim/job.py",
+                f"./propius/job_sim/profile/job_{line[1]}.yml",
+                f"{ip}",
+                f"{port + i}"]
             print(command)
             subprocess.Popen(command)
             i += 1

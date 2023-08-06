@@ -2,8 +2,9 @@ import asyncio
 from propius.util.monitor import *
 from propius.util.commons import *
 
+
 class CM_monitor(Monitor):
-    def __init__(self, sched_alg:str):
+    def __init__(self, sched_alg: str):
         super().__init__("Client manager")
         self.sched_alg = sched_alg
         self.lock = asyncio.Lock()
@@ -13,16 +14,16 @@ class CM_monitor(Monitor):
         async with self.lock:
             self._request()
             self.total_client_num += 1
-    
+
     async def client_ping(self):
         async with self.lock:
             self._request()
-    
-    async def client_accept(self, success:bool):
+
+    async def client_accept(self, success: bool):
         async with self.lock:
             self._request()
 
-    def report(self, id:int):
+    def report(self, id: int):
         if self.total_client_num > 0:
             str1 = self._gen_report()
 

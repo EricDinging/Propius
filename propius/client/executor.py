@@ -1,38 +1,39 @@
 # -*- coding: utf-8 -*-
+from fedscale.cloud.execution.data_processor import collate  # TODO voice collate fn
+from propius.util.db import geq
+import yaml
+from propius.channels import propius_pb2_grpc
+from propius.channels import propius_pb2
+from fedscale.dataloaders.divide_data import DataPartitioner
+from fedscale.cloud.fllibs import *
+from fedscale.cloud.execution.torch_client import TorchClient
+from fedscale.cloud.channels.channel_context import ClientConnections
+import fedscale.cloud.channels.job_api_pb2 as job_api_pb2
+from argparse import Namespace
+import torch
+import numpy as np
+import time
+import random
+import pickle
+import collections
 import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
-import collections
-import pickle
-import random
-import time
-import numpy as np
-import torch
 
-from argparse import Namespace
-import fedscale.cloud.channels.job_api_pb2 as job_api_pb2
-from fedscale.cloud.channels.channel_context import ClientConnections
-#TODO tensorfloew client
-from fedscale.cloud.execution.torch_client import TorchClient
-from fedscale.cloud.execution.data_processor import collate #TODO voice collate fn
-#TODO RL client
-from fedscale.cloud.fllibs import *
-from fedscale.dataloaders.divide_data import DataPartitioner
-from propius.channels import propius_pb2
-from propius.channels import propius_pb2_grpc
-import yaml
-from propius.util.db import geq
+# TODO tensorfloew client
+# TODO RL client
+
 
 class Executor(object):
     """Abstract class for FedScale executor.
 
     Args:
-        args (dictionary): Variable arguments for fedscale runtime config. 
+        args (dictionary): Variable arguments for fedscale runtime config.
         defaults to the setup in arg_parser.py
 
     """
 
     def __init__(self, gconfig, args):
-        #TODO loggere
+        # TODO loggere
         self.model_adapter = None
         self.args = args
         self.num_executors = gconfig['num_executors']
@@ -45,16 +46,16 @@ class Executor(object):
         self.communicator = ClientConnections(
             gconfig['load_balancer_ip'],
             gconfig['load_balancer_port']
-            )
-        
+        )
+
         # ======== runtime information ========
         self.collate_fn = None
-        #self.round = 0
+        # self.round = 0
         self.start_run_time = time.time()
         self.recieved_stop_request = False
         self.event_queue = collections.deque()
 
-        #TODO wandb
+        # TODO wandb
         self.wandb = None
         super(Executor, self).__init__()
 
@@ -72,14 +73,14 @@ class Executor(object):
         :param conf: job config
         :return: framework-specific client instance
         """
-        #TODO tensorflow
-        #TODO RLclient
+        # TODO tensorflow
+        # TODO RLclient
         return TorchClient(conf)
-    
+
     def setup_env(self):
         """Set up experiments environment
         """
-        #TODO logging
+        # TODO logging
         self.setup_seed(seed=1)
 
     def setup_seed(self, seed=1):
@@ -101,24 +102,29 @@ class Executor(object):
         Returns:
             Tuple of DataPartitioner class: The partioned dataset class for training and testing
         """
-        #TODO train_dataset, test_dataset = init_dataset()
+        # TODO train_dataset, test_dataset = init_dataset()
         if self.args.data_set == "femnist":
             from fedscale.dataloaders.femnist import FEMNIST
             from fedscale.dataloaders.utils_data import get_data_transform
 
             train_transform, test_transform = get_data_transform('mnist')
             train_dataset = FEMNIST(
-                self.gconfig['data_dir'], dataset='train', transform=train_transform)
+                self.gconfig['data_dir'],
+                dataset='train',
+                transform=train_transform)
             test_dataset = FEMNIST(
-                self.gconfig['data_dir'], dataset='test', transform=test_transform)
+                self.gconfig['data_dir'],
+                dataset='test',
+                transform=test_transform)
 
-        #TODO various tasks
+        # TODO various tasks
         # load data partitionxr (entire_train_data)
-        #TODO logging
+        # TODO logging
         training_sets = DataPartitioner(
             data=train_dataset, args=self.args, numOfClass=outputClass[args.data_set])
-        #TODO training_sets.partition_data_helper(
-        #     num_clients=self.args.num_participants, data_map_file=self.args.data_map_file)
+        # TODO training_sets.partition_data_helper(
+        # num_clients=self.args.num_participants,
+        # data_map_file=self.args.data_map_file)
         training_sets.partition_data_helper(
             num_clients=self.num_executors, data_map_file=None
         )
@@ -126,7 +132,7 @@ class Executor(object):
             data=test_dataset, args=self.args, numOfClass=outputClass[args.data_set], isTest=True)
         testing_sets.partition_data_helper(num_clients=self.num_executors)
 
-        # train_dataloader = select_dataset(self.id, training_sets, 
+        # train_dataloader = select_dataset(self.id, training_sets,
         #                                   batch_size=self.args.batch_size,
         #                                   args=self.args, isTest=False,
         #                                   collate_fn=self.collate_fn)
@@ -134,7 +140,7 @@ class Executor(object):
         #                                  batch_size=self.args.test_bsz,
         #                                  args=self.args, isTest=True,
         #                                  collate_fn=self.collate_fn)
-        #TODO logging
+        # TODO logging
 
         return training_sets, testing_sets
 
@@ -166,7 +172,7 @@ class Executor(object):
 
         """
         return pickle.dumps(responses)
-    
+
     def deserialize_response(self, responses):
         """Deserialize the response from server
 
@@ -178,7 +184,7 @@ class Executor(object):
 
         """
         return pickle.loads(responses)
-    
+
     def report_executor_info_handler(self):
         """Return the statistics of training dataset
 
@@ -187,7 +193,7 @@ class Executor(object):
 
         """
         return ""
-    
+
     def dispatch_worker_events(self, request):
         """Add new events to worker queues
 
@@ -203,7 +209,8 @@ class Executor(object):
         start_time = time.time()
         while time.time() - start_time < ping_exp_time:
             try:
-                print(f"Client {self.executor_id}: register to parameter server")
+                print(
+                    f"Client {self.executor_id}: register to parameter server")
                 response = self.communicator.stub.CLIENT_REGISTER(
                     job_api_pb2.RegisterRequest(
                         client_id=self.executor_id,
@@ -214,7 +221,8 @@ class Executor(object):
                     )
                 )
                 if response.event == commons.SHUT_DOWN:
-                    print(f"Client {self.executor_id}: register to parameter server failed, register later")
+                    print(
+                        f"Client {self.executor_id}: register to parameter server failed, register later")
                     time.sleep(max(1, min(5, ping_exp_time / 3)))
                     continue
                 else:
@@ -222,7 +230,7 @@ class Executor(object):
                     return
             except Exception as e:
                 print(e)
-                #TODO logging warning
+                # TODO logging warning
                 time.sleep(5)
         raise ValueError(f"not able to register to parameter server")
 
@@ -238,9 +246,11 @@ class Executor(object):
         config = Namespace(**config)
         if config.model == "resnet18":
             from fedscale.utils.models.specialized.resnet_speech import resnet18
-            model = resnet18(num_classes=outputClass[config.data_set], in_channels=1)
-        
-        self.model_adapter = self.get_client_trainer(config).get_model_adapter(model)
+            model = resnet18(
+                num_classes=outputClass[config.data_set], in_channels=1)
+
+        self.model_adapter = self.get_client_trainer(
+            config).get_model_adapter(model)
         self.model_adapter.set_weights(model_weights)
 
     def client_ping(self):
@@ -262,10 +272,10 @@ class Executor(object):
         Returns:
             tuple (int, dictionary): The client id and train result
 
-        """    
+        """
         train_res = self.training_handler(client_id=self.id,
                                           conf=config)
-        
+
         # Report execution completion meta information
         while True:
             try:
@@ -300,15 +310,15 @@ class Executor(object):
         """
         conf = Namespace(**conf)
         conf.rank = client_id
-        #TODO conf tokenizer
-        #TODO rl training set
+        # TODO conf tokenizer
+        # TODO rl training set
 
         client = self.get_client_trainer(conf)
         train_res = client.train(client_data=self.training_sets,
                                  model=self.model_adapter.get_model(),
                                  conf=conf)
         return train_res
-    
+
     def testing_handler(self, config):
         """Test model
 
@@ -322,13 +332,14 @@ class Executor(object):
         config.rank = self.id
         config.memory_capacity = self.args.memory_capacity
         client = self.get_client_trainer(config)
-        test_results = client.test(self.testing_sets, self.model_adapter.get_model(), config)
-        #TODO log result
-        #TODO gc.collect()
+        test_results = client.test(
+            self.testing_sets,
+            self.model_adapter.get_model(),
+            config)
+        # TODO log result
+        # TODO gc.collect()
         return test_results
 
-
-    
     def Test(self, config):
         """Model Testing. By default, we test the accuracy on all data of clients in the test group
 
@@ -349,11 +360,10 @@ class Executor(object):
         )
         self.dispatch_worker_events(response)
 
-
     def event_monitor(self, ping_exp_time: float):
         """Activate event handler once receiving new message
         """
-        #TODO logging
+        # TODO logging
         self.client_register(ping_exp_time)
 
         while not self.recieved_stop_request:
@@ -370,13 +380,13 @@ class Executor(object):
                     print(f"Client {self.executor_id}: uploading model")
                     response = self.communicator.stub.CLIENT_EXECUTE_COMPLETION(
                         job_api_pb2.CompleteRequest(
-                        client_id=str(self.id),
-                        executor_id=self.executor_id,
-                        event=commons.UPLOAD_MODEL,
-                        status=True,
-                        msg=None,
-                        meta_result=None,
-                        data_result=self.serialize_response(train_res)
+                            client_id=str(self.id),
+                            executor_id=self.executor_id,
+                            event=commons.UPLOAD_MODEL,
+                            status=True,
+                            msg=None,
+                            meta_result=None,
+                            data_result=self.serialize_response(train_res)
                         )
                     )
                     self.dispatch_worker_events(response)
@@ -389,40 +399,42 @@ class Executor(object):
                     self.Test(self.deserialize_response(request.meta))
 
                 elif current_event == commons.UPDATE_MODEL:
-                    print(f"Client {self.executor_id}: recieve update model event")
+                    print(
+                        f"Client {self.executor_id}: recieve update model event")
                     model_weights = self.deserialize_response(request.data)
                     config = self.deserialize_response(request.meta)
                     self.UpdateModel(model_weights, config)
-                
+
                 elif current_event == commons.SHUT_DOWN:
                     print(f"Client {self.executor_id}: recieve shutdown event")
                     self.recieved_stop_request = True
                     self.Stop()
-                
+
                 elif current_event == commons.DUMMY_EVENT:
                     print(f"Client {self.executor_id}: recieve dummy event")
                     pass
-            
+
             else:
                 time.sleep(1)
                 try:
                     self.client_ping()
                 except Exception as e:
-                    #TODO logging
+                    # TODO logging
                     self.Stop()
 
-    def checkin(self)->propius_pb2.cm_offer:
+    def checkin(self) -> propius_pb2.cm_offer:
         client_checkin_msg = propius_pb2.client_checkin(
             public_specification=pickle.dumps(self.public_spec)
-            )
+        )
         task_offer = self.communicator.lb_stub.CLIENT_CHECKIN(
             client_checkin_msg)
         return task_offer
-    
+
     def select_task(self, task_ids: list, private_constraints: list):
         for idx, id in enumerate(task_ids):
             if len(self.private_spec) != len(private_constraints[idx]):
-                raise ValueError("Client private specification len does not match required")
+                raise ValueError(
+                    "Client private specification len does not match required")
             if geq(self.private_spec, private_constraints[idx]):
                 self.task_id = id
                 print(f"Client {self.id}: select task {id}")
@@ -430,21 +442,22 @@ class Executor(object):
         self.task_id = -1
         print(f"Client {self.id}: not eligible")
         return
-    
-    def accept(self)->propius_pb2.cm_ack:
-        client_accept_msg = propius_pb2.client_accept(client_id=self.id, task_id=self.task_id)
+
+    def accept(self) -> propius_pb2.cm_ack:
+        client_accept_msg = propius_pb2.client_accept(
+            client_id=self.id, task_id=self.task_id)
         cm_ack = self.communicator.lb_stub.CLIENT_ACCEPT(client_accept_msg)
         return cm_ack
-    
+
     def cliean_up_routines(self):
         try:
             self.communicator.close_lb_connection()
             self.communicator.close_server_connection()
-        except:
+        except BaseException:
             pass
-    
+
     def run(self):
-        """Start running the executor by setting up execution and communication environment, 
+        """Start running the executor by setting up execution and communication environment,
         and monitoring the grpc message.
         """
         try:
@@ -453,16 +466,18 @@ class Executor(object):
             self.executor_id = str(self.id)
             task_ids = pickle.loads(cm_offer.task_offer)
             task_private_constraint = pickle.loads(cm_offer.private_constraint)
-            print(f"Client {self.id}: recieve client manager offer: {task_ids}")
+            print(
+                f"Client {self.id}: recieve client manager offer: {task_ids}")
 
             self.select_task(task_ids, task_private_constraint)
 
             if self.task_id == -1:
                 raise ValueError(f"Not eligible, shutting down===")
-            
+
             cm_ack = self.accept()
             if not cm_ack.ack:
-                raise ValueError(f"client manager not acknowledged, shutting down===")
+                raise ValueError(
+                    f"client manager not acknowledged, shutting down===")
 
             self.communicator.aggregator_address = pickle.loads(cm_ack.job_ip)
             self.communicator.base_port = cm_ack.job_port
@@ -482,17 +497,16 @@ class Executor(object):
             print(f"Client {self.executor_id}: {e}")
             self.cliean_up_routines()
 
-
     def Stop(self):
         """Stop the current executor
         """
-        #logging.info(f"Terminating the executor ...")
-        #TODO logging
+        # logging.info(f"Terminating the executor ...")
+        # TODO logging
         self.communicator.close_server_connection()
         self.received_stop_request = True
         # if self.wandb != None:
         #     self.wandb.finish()
-        #TODO wandb
+        # TODO wandb
 
     def override_conf(self, config):
         """ Override the variable arguments for different client
@@ -510,7 +524,7 @@ class Executor(object):
             default_conf[key] = config[key]
 
         return Namespace(**default_conf)
-    
+
 
 if __name__ == "__main__":
     global_setup_file = './global_config.yml'
@@ -534,4 +548,3 @@ if __name__ == "__main__":
             pass
         except Exception as e:
             print(e)
-        

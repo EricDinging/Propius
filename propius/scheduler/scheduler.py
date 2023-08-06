@@ -1,17 +1,18 @@
+from propius.util.commons import *
+from propius.scheduler.sc_monitor import *
+from propius.scheduler.sc_db_portal import *
+from propius.channels import propius_pb2_grpc
+from propius.channels import propius_pb2
+import asyncio
+import yaml
+import grpc
+import logging
 import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
 
-import logging
-import grpc
-import yaml
-import asyncio
-from propius.channels import propius_pb2
-from propius.channels import propius_pb2_grpc
-from propius.scheduler.sc_db_portal import *
-from propius.scheduler.sc_monitor import *
-from propius.util.commons import *
 
 _cleanup_routines = []
+
 
 class Scheduler(propius_pb2_grpc.SchedulerServicer):
     def __init__(self, gconfig):
@@ -25,7 +26,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                 irs_epsilon (apply to IRS algorithm)
                 metric_scale
                 standard_round_time: default round execution time for SRTF
-                job_public_constraint: name for constraint 
+                job_public_constraint: name for constraint
         """
 
         self.ip = gconfig['scheduler_ip']
@@ -35,7 +36,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             self.irs_epsilon = float(gconfig['irs_epsilon'])
         self.job_db_portal = Job_db_portal(gconfig)
         self.client_db_portal = Client_db_portal(gconfig)
-        
+
         self.metric_scale = gconfig['metric_scale']
         self.std_round_time = gconfig['standard_round_time']
         self.constraints = []
@@ -43,7 +44,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
 
         self.sc_monitor = SC_monitor(self.sched_alg)
 
-    async def _irs_score(self, job_id:int):
+    async def _irs_score(self, job_id: int):
         """Update all jobs' score in database according to IRS
 
         Args:
@@ -62,24 +63,26 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         # search job for each group, remove if empty
         for cst in self.constraints:
             constraints_job_map[cst] = []
-            if not self.job_db_portal.get_job_list(cst, constraints_job_map[cst]):
+            if not self.job_db_portal.get_job_list(
+                    cst, constraints_job_map[cst]):
                 self.constraints.remove(cst)
         # search elig client size for each group
         for cst in self.constraints:
             constraints_client_map[cst] = self.client_db_portal.\
-            get_client_proportion(cst)
+                get_client_proportion(cst)
         # sort constraints
         self.constraints.sort(key=lambda x: constraints_client_map[x])
         # get each client denominator
         client_size = self.client_db_portal.get_client_size()
         bq = ""
-        for cst in self.constraints:            
+        for cst in self.constraints:
             this_q = ""
             for idx, name in enumerate(self.public_constraint_name):
                 this_q += f"@{name}: [{cst[idx]}, {self.metric_scale}] "
 
             q = this_q + bq
-            constraints_denom_map[cst] = self.client_db_portal.get_irs_denominator(client_size, cst, q)
+            constraints_denom_map[cst] = self.client_db_portal.get_irs_denominator(
+                client_size, cst, q)
             bq = bq + f"-{this_q}"
         # update all score
         print(f"{get_time()} Scheduler: starting to update scores")
@@ -88,12 +91,18 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                 print(f"{get_time()} Scheduler: update score for {cst}: ")
                 for idx, job in enumerate(constraints_job_map[cst]):
                     groupsize = len(constraints_job_map[cst])
-                    self.job_db_portal.irs_update_score(job, groupsize, idx, constraints_denom_map[cst], self.irs_epsilon, self.std_round_time)
-            except:
+                    self.job_db_portal.irs_update_score(
+                        job,
+                        groupsize,
+                        idx,
+                        constraints_denom_map[cst],
+                        self.irs_epsilon,
+                        self.std_round_time)
+            except BaseException:
                 pass
         return propius_pb2.ack(ack=False)
 
-    async def _irs_score(self, job_id:int):
+    async def _irs_score(self, job_id: int):
         """Update all jobs' score in database according to IRS2, a derivant from IRS
 
         Args:
@@ -104,20 +113,21 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         constraint = self.job_db_portal.get_job_constraints(job_id)
         if not constraint:
             return propius_pb2.ack(ack=False)
-        if not self.job_db_portal.get_job_list(constraint, constraint_job_list):
+        if not self.job_db_portal.get_job_list(
+                constraint, constraint_job_list):
             return propius_pb2.ack(ack=False)
         client_prop = self.client_db_portal.get_client_proportion(constraint)
 
         print(f"{get_time()} Scheduler: upd score for {constraint}: ")
         for idx, job in enumerate(constraint_job_list):
             groupsize = len(constraint_job_list)
-            self.job_db_portal.irs_update_score(job, groupsize, idx, client_prop)
+            self.job_db_portal.irs_update_score(
+                job, groupsize, idx, client_prop)
         return propius_pb2.ack(ack=False)
-        
 
-    async def JOB_SCORE_UPDATE(self, request, context)->propius_pb2.ack:
+    async def JOB_SCORE_UPDATE(self, request, context) -> propius_pb2.ack:
         """Service function that update scores of job in database
-        
+
         Args:
             request: job manager request message: job_id.id
             context:
@@ -136,11 +146,12 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             await self._irs2_score(job_id)
 
         elif self.sched_alg == 'fifo':
-            # Give every job which doesn't have a score yet a score of -timestamp
+            # Give every job which doesn't have a score yet a score of
+            # -timestamp
             self.job_db_portal.fifo_update_all_job_score()
 
         elif self.sched_alg == 'random':
-            # Give every job which doesn't have a score yet a score of 
+            # Give every job which doesn't have a score yet a score of
             # a random float ranging from 0 to 10.
             self.job_db_portal.random_update_all_job_score()
 
@@ -159,7 +170,8 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         await self.sc_monitor.request_end(job_id, job_size)
 
         return propius_pb2.ack(ack=True)
-    
+
+
 async def serve(gconfig):
     async def server_graceful_shutdown():
         print(f"{get_time()} ==Scheduler ending==")

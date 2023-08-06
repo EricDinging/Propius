@@ -18,10 +18,13 @@ with open('./global_config.yml', 'r') as gyamlfile:
     job_profile_num = int(gconfig['job_profile_num'])
 
     for i in range(job_start_num):
-        command = ["python", "./propius/job_sim/job.py", f"./propius/job_sim/profile/job_{i % job_profile_num}.yml", 
-                    f"{i}", f"{ip}", f"{port}"]
+        command = [
+            "python",
+            "./propius/job_sim/job.py",
+            f"./propius/job_sim/profile/job_{i % job_profile_num}.yml",
+            f"{i}",
+            f"{ip}",
+            f"{port}"]
         print(command)
         subprocess.Popen(command)
         port += 1
-
-            

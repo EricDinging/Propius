@@ -1,8 +1,9 @@
 import time
 import matplotlib.pyplot as plt
 
+
 class Monitor:
-    def __init__(self, server_name:str):
+    def __init__(self, server_name: str):
         self.start_time = int(time.time())
         self.request_num_log = {}
         self.server_name = server_name
@@ -23,11 +24,10 @@ class Monitor:
         plt.ylabel('Number of requests')
         plt.xlabel('Time (sec)')
 
-    def _gen_report(self)->str:
+    def _gen_report(self) -> str:
         runtime = int(time.time()) - self.start_time
         avg_request_per_second = sum(self.request_num_log.values()) / runtime
         max_request_per_second = max(self.request_num_log.values())
-        report = self.server_name + f": avg request per second: {avg_request_per_second:.3f}, max request per second: {max_request_per_second}"
+        report = self.server_name + \
+            f": avg request per second: {avg_request_per_second:.3f}, max request per second: {max_request_per_second}"
         return report
-
-    

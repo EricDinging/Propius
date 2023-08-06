@@ -2,8 +2,9 @@ from propius.util.monitor import *
 from propius.util.commons import *
 import asyncio
 
+
 class LB_analyzer(Monitor):
-    def __init__(self, sched_alg:str):
+    def __init__(self, sched_alg: str):
         super().__init__("Load balancer")
         self.sched_alg = sched_alg
         self.lock = asyncio.Lock()

@@ -1,15 +1,15 @@
+import pickle
+import logging
+import asyncio
+from propius.channels import propius_pb2_grpc
+from propius.channels import propius_pb2
+import yaml
+import grpc
 import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
-import grpc
-import yaml
-from propius.channels import propius_pb2
-from propius.channels import propius_pb2_grpc
-import asyncio
-import sys
-import logging
-import pickle
 
 _cleanup_coroutines = []
+
 
 class Job(propius_pb2_grpc.JobServicer):
     def __init__(self, jm_ip, jm_port, ip, port, config):
@@ -29,7 +29,7 @@ class Job(propius_pb2_grpc.JobServicer):
         print(f"Job {self.id}: Init")
         self._connect_jm(jm_ip, jm_port)
 
-        self.lock =  asyncio.Lock()
+        self.lock = asyncio.Lock()
         self.cv = asyncio.Condition(self.lock)
         self.cur_round = 1
         self.cur_result_list = []
@@ -38,19 +38,19 @@ class Job(propius_pb2_grpc.JobServicer):
 
         self.execution_start = False
 
-    def _connect_jm(self, jm_ip:str, jm_port:int)->None:
+    def _connect_jm(self, jm_ip: str, jm_port: int) -> None:
         self.jm_channel = grpc.insecure_channel(f'{jm_ip}:{jm_port}')
         self.jm_stub = propius_pb2_grpc.Job_managerStub(self.jm_channel)
         print(f"Job {self.id}: connecting to job manager at {jm_ip}:{jm_port}")
 
-    def register(self)->bool:
+    def register(self) -> bool:
         job_info_msg = propius_pb2.job_info(
-            est_demand = self.demand,
-            est_total_round = self.est_total_round,
-            public_constraint = pickle.dumps(self.public_constraint),
-            private_constraint = pickle.dumps(self.private_constraint),
-            ip = pickle.dumps(self.ip),
-            port = self.port,
+            est_demand=self.demand,
+            est_total_round=self.est_total_round,
+            public_constraint=pickle.dumps(self.public_constraint),
+            private_constraint=pickle.dumps(self.private_constraint),
+            ip=pickle.dumps(self.ip),
+            port=self.port,
         )
         ack_msg = self.jm_stub.JOB_REGIST(job_info_msg)
         self.id = ack_msg.id
@@ -61,38 +61,42 @@ class Job(propius_pb2_grpc.JobServicer):
         else:
             print(f"Job {self.id}: register success")
             return True
-        
-    def request(self)->bool:
+
+    def request(self) -> bool:
         request_msg = propius_pb2.job_round_info(
-            id = self.id,
-            demand = self.demand,
+            id=self.id,
+            demand=self.demand,
         )
         self.execution_start = False
         ack_msg = self.jm_stub.JOB_REQUEST(request_msg)
         if not ack_msg.ack:
-            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} request failed")
+            print(
+                f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} request failed")
             return False
         else:
-            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} request success")
+            print(
+                f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} request success")
             return True
-        
-    def end_request(self)->bool:
+
+    def end_request(self) -> bool:
         """optional, terminating request"""
         request_msg = propius_pb2.job_id(id=self.id)
         ack_msg = self.jm_stub.JOB_END_REQUEST(request_msg)
         if not ack_msg.ack:
-            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} end request failed")
+            print(
+                f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} end request failed")
             return False
         else:
-            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} end request")
+            print(
+                f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} end request")
             return True
 
     def complete_job(self):
         req_msg = propius_pb2.job_id(id=self.id)
         self.jm_stub.JOB_FINISH(req_msg)
-    
+
     def _close_round(self):
-        #locked
+        # locked
         self.agg_result_list.append(sum(self.cur_result_list))
         self.cur_result_list.clear()
         self.cur_round += 1
@@ -109,33 +113,36 @@ class Job(propius_pb2_grpc.JobServicer):
             if len(self.cur_result_list) == self.demand:
                 self._close_round()
             return propius_pb2.empty()
-        
+
     async def CLIENT_REQUEST(self, request, context):
         client_id = request.id
         async with self.lock:
             if self.round_client_num >= self.demand or self.cur_round > self.est_total_round:
                 return propius_pb2.plan(ack=False, workload=-1)
-            print(f"Job {self.id}: round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
+            print(
+                f"Job {self.id}: round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
             self.round_client_num += 1
             if self.round_client_num >= self.demand:
                 if not self.execution_start:
                     self.end_request()
                     self.execution_start = True
         return propius_pb2.plan(ack=True, workload=self.workload)
-        
+
+
 async def run(gconfig):
     async def server_graceful_shutdown():
         try:
             job.complete_job()
             job.jm_channel.close()
-        except:
+        except BaseException:
             pass
         print("==Job ending==")
         logging.info("Starting graceful shutdown...")
         await server.stop(5)
 
     server = grpc.aio.server()
-    jm_ip, jm_port = gconfig['job_manager_ip'], int(gconfig['job_manager_port'])
+    jm_ip, jm_port = gconfig['job_manager_ip'], int(
+        gconfig['job_manager_port'])
 
     setup_file = str(sys.argv[1])
     ip = str(sys.argv[2])
@@ -167,7 +174,8 @@ async def run(gconfig):
                         print("Timeout reached, shutting down job server")
                         return
                 round += 1
-        print(f"Job {job.id}: All round finished, result: {job.agg_result_list[-1]}")
+        print(
+            f"Job {job.id}: All round finished, result: {job.agg_result_list[-1]}")
 
 if __name__ == '__main__':
     logging.basicConfig()

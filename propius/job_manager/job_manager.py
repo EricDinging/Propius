@@ -1,18 +1,19 @@
+from propius.util.commons import *
+from propius.job_manager.jm_monitor import *
+from propius.job_manager.jm_db_portal import *
+from propius.channels import propius_pb2_grpc
+from propius.channels import propius_pb2
+import asyncio
+from collections import deque
+import pickle
+import yaml
+import grpc
+import logging
 import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
-import logging
-import grpc
-import yaml
-import pickle
-from collections import deque
-import asyncio
-from propius.channels import propius_pb2
-from propius.channels import propius_pb2_grpc
-from propius.job_manager.jm_db_portal import *
-from propius.job_manager.jm_monitor import *
-from propius.util.commons import *
 
 _cleanup_coroutines = []
+
 
 class Job_manager(propius_pb2_grpc.Job_managerServicer):
     def __init__(self, gconfig):
@@ -22,24 +23,28 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.jm_monitor = JM_monitor(gconfig['sched_alg'])
         self.sched_channel = None
         self.sched_portal = None
-        self._connect_sched(gconfig['scheduler_ip'], int(gconfig['scheduler_port']))
+        self._connect_sched(
+            gconfig['scheduler_ip'], int(
+                gconfig['scheduler_port']))
         self.sched_alg = gconfig['sched_alg']
 
         self.lock = asyncio.Lock()
         self.job_total_num = 0
 
-    def _connect_sched(self, sched_ip:str, sched_port:int)->None:
-        self.sched_channel = grpc.aio.insecure_channel(f'{sched_ip}:{sched_port}')
+    def _connect_sched(self, sched_ip: str, sched_port: int) -> None:
+        self.sched_channel = grpc.aio.insecure_channel(
+            f'{sched_ip}:{sched_port}')
         self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
-        print(f"{get_time()} Job manager: connecting to scheduler at {sched_ip}:{sched_port}")  
+        print(
+            f"{get_time()} Job manager: connecting to scheduler at {sched_ip}:{sched_port}")
 
     async def JOB_REGIST(self, request, context):
         est_demand = request.est_demand
-        est_total_round= request.est_total_round
+        est_total_round = request.est_total_round
         job_ip, job_port = pickle.loads(request.ip), request.port
         public_constraint = pickle.loads(request.public_constraint)
         private_constraint = pickle.loads(request.private_constraint)
-        
+
         async with self.lock:
             job_id = self.job_total_num
             self.job_total_num += 1
@@ -47,12 +52,15 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         print(f"{get_time()} Job manager: job {job_id} check in, "
               f"public constraint: {public_constraint}, "
               f"private constraint: {private_constraint}")
-        ack = self.job_db_portal.register(job_id=job_id,
-                                        public_constraint=public_constraint,
-                                        private_constraint=private_constraint, 
-                                        job_ip=job_ip, job_port=job_port,
-                                        total_demand=est_demand*est_total_round,
-                                        total_round=est_total_round)
+        ack = self.job_db_portal.register(
+            job_id=job_id,
+            public_constraint=public_constraint,
+            private_constraint=private_constraint,
+            job_ip=job_ip,
+            job_port=job_port,
+            total_demand=est_demand *
+            est_total_round,
+            total_round=est_total_round)
         print(f"{get_time()} Job manager: ack job {job_id} register: {ack}")
         if ack:
             await self.jm_monitor.job_register()
@@ -60,25 +68,25 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         else:
             await self.jm_monitor.request()
         return propius_pb2.job_register_ack(id=job_id, ack=ack)
-    
+
     async def JOB_REQUEST(self, request, context):
         job_id, demand = request.id, request.demand
         ack = self.job_db_portal.request(job_id=job_id, demand=demand)
-        #await self.client_db_portal.cleanup()
+        # await self.client_db_portal.cleanup()
         print(f"{get_time()} Job manager: ack job {job_id} round request: {ack}")
         if ack:
             await self.jm_monitor.job_request()
         else:
             await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
-    
+
     async def JOB_END_REQUEST(self, request, context):
         job_id = request.id
         ack = self.job_db_portal.end_request(job_id=job_id)
         print(f"{get_time()} Job manager: ack job {job_id} end round request: {ack}")
         await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
-    
+
     async def JOB_FINISH(self, request, context):
         job_id = request.id
         print(f"{get_time()} Job manager: job {job_id} completed")
@@ -91,6 +99,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
         return propius_pb2.empty()
 
+
 async def serve(gconfig):
     async def server_graceful_shutdown():
         print(f"{get_time()} ==Job manager ending==")
@@ -99,10 +108,10 @@ async def serve(gconfig):
         job_manager.job_db_portal.flushdb()
         try:
             await job_manager.sched_channel.close()
-        except:
+        except BaseException:
             pass
         await server.stop(5)
-    
+
     server = grpc.aio.server()
     job_manager = Job_manager(gconfig)
     propius_pb2_grpc.add_Job_managerServicer_to_server(job_manager, server)

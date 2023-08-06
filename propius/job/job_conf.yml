@@ -1,14 +1,14 @@
 # Server setting
-connection_timeout : 100
+connection_timeout: 100
 ps_ip: localhost
 ps_port: 61000
 
 # Training and testing aggregator setting
 gradient_policy: fedavg
 demand: 1
-decay_round: 3 # learning rate decay after decay round
+decay_round: 3  # learning rate decay after decay round
 decay_factor: 0.9
-rounds: 3 # Total round
+rounds: 3  # Total round
 min_learning_rate: 0.01
 eval_interval: 3
 
@@ -27,7 +27,7 @@ batch_size: 10
 
 # Client constraints
 public_constraint:
-  - 28
-  - 28
-  - 28
+    - 28
+    - 28
+    - 28
 private_constraint: []

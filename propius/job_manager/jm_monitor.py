@@ -3,8 +3,9 @@ import time
 from propius.util.monitor import *
 from propius.util.commons import *
 
+
 class JM_monitor(Monitor):
-    def __init__(self, sched_alg:str):
+    def __init__(self, sched_alg: str):
         super().__init__("Job manager")
         self.lock = asyncio.Lock()
         self.sched_alg = sched_alg
@@ -18,7 +19,6 @@ class JM_monitor(Monitor):
 
         self.constraint_jct_dict = {}
         self.constraint_sched_dict = {}
-        
 
     async def job_register(self):
         async with self.lock:
@@ -34,10 +34,10 @@ class JM_monitor(Monitor):
     async def job_request(self):
         async with self.lock:
             self._request()
-            self.total_round += 1            
+            self.total_round += 1
 
-    async def job_finish(self, constraint:tuple, 
-                demand:int, total_round: int, job_runtime:float, sched_latency:float):
+    async def job_finish(self, constraint: tuple,
+                         demand: int, total_round: int, job_runtime: float, sched_latency: float):
         async with self.lock:
             self._request()
 
@@ -46,7 +46,7 @@ class JM_monitor(Monitor):
             self.job_timestamp.append(self.job_timestamp[-1])
             self.job_time_num.append(self.job_time_num[-1])
             self.job_time_num.append(self.job_time_num[-1] - 1)
-            
+
             key = (constraint, demand, total_round)
             if key in self.constraint_jct_dict:
                 self.constraint_jct_dict[key].append(job_runtime)
@@ -70,11 +70,12 @@ class JM_monitor(Monitor):
 
     def report(self):
         str1 = self._gen_report()
-        
+
         with open(f'./log/JM-{self.sched_alg}-{get_time()}.txt', 'w') as file:
             file.write(str1)
             file.write("\n")
-            file.write(f"Job manager: total job: {self.total_job}, total round: {self.total_round}\n")
+            file.write(
+                f"Job manager: total job: {self.total_job}, total round: {self.total_round}\n")
 
             total_sum_jct = 0
             total_sum_sched_latency = 0
@@ -89,9 +90,11 @@ class JM_monitor(Monitor):
                     sum_sched = sum(self.constraint_sched_dict[constraint])
                     total_sum_sched_latency += sum_sched
                     avg_sched = sum_sched / len(jct)
-                    file.write(f"Job group: {constraint}, num: {len(jct)}, avg JCT: {avg_jct:.3f}, avg sched latency: {avg_sched:.3f}\n")
+                    file.write(
+                        f"Job group: {constraint}, num: {len(jct)}, avg JCT: {avg_jct:.3f}, avg sched latency: {avg_sched:.3f}\n")
             if total_num > 0:
-                file.write(f"Total avg JCT: {total_sum_jct / total_num:.3f}, avg sched latency: {total_sum_sched_latency / total_num:.3f}\n")
+                file.write(
+                    f"Total avg JCT: {total_sum_jct / total_num:.3f}, avg sched latency: {total_sum_sched_latency / total_num:.3f}\n")
         fig = plt.gcf()
         plt.subplot(2, 1, 1)
         self._plot_job()
