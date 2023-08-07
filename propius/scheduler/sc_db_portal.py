@@ -23,6 +23,7 @@ class Job_db_portal(Job_db):
                 sched_alg
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
+                job_expire_time
         """
 
         super().__init__(gconfig, False)
@@ -207,6 +208,11 @@ class Client_db_portal(Client_db):
         Args:
             gconfig: config dictionary
                 metric_scale: upper bound of the score
+                client_manager: list of client manager address
+                    ip:
+                    client_db_port
+                client_expire_time: expiration time of clients in the db
+                job_public_constraint: name of public constraint
         """
         # TODO determine which client db to connect
         super().__init__(gconfig, 0, False)

@@ -27,6 +27,17 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                 metric_scale
                 standard_round_time: default round execution time for SRTF
                 job_public_constraint: name for constraint
+                job_db_ip
+                job_db_port
+                sched_alg
+                job_public_constraint: name of public constraint
+                job_private_constraint: name of private constraint
+                metric_scale: upper bound of the score
+                job_expire_time
+                client_manager: list of client manager address
+                    ip:
+                    client_db_port
+                client_expire_time: expiration time of clients in the db
         """
 
         self.ip = gconfig['scheduler_ip']

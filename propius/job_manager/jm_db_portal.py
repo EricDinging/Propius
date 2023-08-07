@@ -11,6 +11,18 @@ from propius.util.db import *
 
 class Job_db_portal(Job_db):
     def __init__(self, gconfig):
+        """Init job database portal class
+
+        Args:
+            gconfig: config dictionary
+                job_db_ip
+                job_db_port
+                sched_alg
+                job_public_constraint: name of public constraint
+                job_private_constraint: name of private constraint
+                job_expire_time
+        """
+
         super().__init__(gconfig, True)
 
     def register(
@@ -22,6 +34,19 @@ class Job_db_portal(Job_db):
             job_port: int,
             total_demand: int,
             total_round: int) -> bool:
+        """Register incoming job to the database. 
+        Return False if the job ID is already in the database. 
+        Set expiration time of the job
+
+        Args:
+            job_id
+            public_constraint: a tuple of values of constraints
+            private_constraint: a tuple of values of constraints
+            job_ip
+            job_port
+            total_demand
+            total_round
+        """
 
         if len(public_constraint) != len(self.public_constraint_name):
             raise ValueError("Public constraint len does not match required")
@@ -73,6 +98,16 @@ class Job_db_portal(Job_db):
                     pass
 
     def request(self, job_id: int, demand: int) -> bool:
+        """Update job metadata based on request. 
+        Return False if the job_id is not in the database. 
+        Increment job round, update job demand for new round, 
+        and clear job allocation amount counter. Start sched_time counter
+
+        Args:
+            job_id
+            demand
+        """
+
         with self.r.json().pipeline() as pipe:
             while True:
                 try:
@@ -82,7 +117,9 @@ class Job_db_portal(Job_db):
                         pipe.unwatch()
                         return False
                     cur_round = int(self.r.json().get(id, "$.job.round")[0])
-                    total_round = int(self.r.json().get(id, "$.job.total_round")[0])
+                    total_round = int(
+                        self.r.json().get(
+                            id, "$.job.total_round")[0])
                     if cur_round >= total_round:
                         pipe.unwatch()
                         return False
@@ -100,6 +137,14 @@ class Job_db_portal(Job_db):
                     pass
 
     def end_request(self, job_id: int) -> bool:
+        """Update job metadata based on end request. 
+        Set job allocation amount as job demand to indicate allocation has finished. 
+        Update total scheduling time.
+
+        Args:
+            job_id
+        """
+
         with self.r.json().pipeline() as pipe:
             while True:
                 try:
@@ -128,6 +173,14 @@ class Job_db_portal(Job_db):
                     pass
 
     def finish(self, job_id: int) -> tuple[tuple, int, int, float, float]:
+        """Remove the job from database. 
+        Returns a tuple of public constraints, demand, total round, 
+        runtime and avg scheduling latency for analsis
+
+        Args:
+            job_id
+        """
+
         with self.r.json().pipeline() as pipe:
             while True:
                 try:
