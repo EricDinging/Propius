@@ -5,8 +5,7 @@ from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import yaml
 import grpc
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
+from propius_job.propius_job import *
 
 _cleanup_coroutines = []
 

@@ -5,11 +5,6 @@ syntax = "proto3";
 
 package propius;
 
-service Job {
-    rpc CLIENT_REQUEST (client_id) returns (plan) {}
-    rpc CLIENT_REPORT (client_report) returns (empty) {}
-}
-
 service Job_manager {
     rpc JOB_REGIST (job_info) returns (job_register_ack) {}
     rpc JOB_REQUEST (job_round_info) returns (ack) {}
@@ -56,11 +51,6 @@ message cm_ack {
     int32 job_port = 3;
 }
 
-message plan {
-    bool ack = 1;
-    int32 workload = 2;
-}
-
 message client_id {
     int32 id = 1;
 }
@@ -81,11 +71,6 @@ message job_info {
 message job_round_info {
     int32 id = 1;
     int32 demand = 2;
-}
-
-message client_report {
-    int32 client_id = 1;
-    float result = 2;
 }
 
 message empty {
