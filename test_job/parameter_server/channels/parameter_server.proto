@@ -1,5 +1,5 @@
 //  python -m grpc_tools.protoc --proto_path=. ./parameter_server.proto --python_out=. --grpc_python_out=. 
-//  import job_sim.channels.parameter_server_pb2 as parameter_server__pb2
+//  import channels.parameter_server_pb2 as parameter__server__pb2
 
 syntax = "proto3";
 

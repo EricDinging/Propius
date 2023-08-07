@@ -14,7 +14,7 @@ def encode_constraints(**kargs)->tuple[list, list]:
     Raises: 
         ValueError: if input key is not recognized
     """
-    
+
     public_constraint_dict = {
         "cpu": 0,
         "memory": 0,

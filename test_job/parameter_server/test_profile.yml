@@ -7,4 +7,11 @@ private_constraint: []
 # - 50
 total_round: 5
 # type: Googlejob
-workload: 30
+workload: 3
+
+ip: localhost
+port: 60000
+
+job_manager_ip: localhost
+job_manager_port: 50002
+
