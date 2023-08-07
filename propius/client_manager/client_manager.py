@@ -111,7 +111,7 @@ async def serve(gconfig, cm_id: int):
 if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger()
-    global_setup_file = './global_config.yml'
+    global_setup_file = './propius/global_config.yml'
 
     if len(sys.argv) != 2:
         print("Usage: python propius/client_manager/client_manager.py <cm_id>")

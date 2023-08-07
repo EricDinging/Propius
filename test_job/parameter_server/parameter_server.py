@@ -1,11 +1,11 @@
+import sys
+
 import pickle
 import logging
 import asyncio
-from propius.channels import propius_pb2_grpc
-from propius.channels import propius_pb2
 import yaml
 import grpc
-from propius_job.propius_job import *
+from propius_job.propius_job import * # communication with Propius
 
 _cleanup_coroutines = []
 

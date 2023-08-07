@@ -167,7 +167,7 @@ async def serve(gconfig):
 if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger()
-    global_setup_file = './global_config.yml'
+    global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:
         try:
