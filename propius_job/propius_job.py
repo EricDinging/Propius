@@ -4,8 +4,41 @@ from propius.channels import propius_pb2
 import grpc
 import time
 
-def gen_job_config(public_constraint: list,
-                   private_constraint: list,
+def encode_constraints(**kargs)->tuple[list, list]:
+    """Encode job constraints. Eg. encode_constraints(cpu=50, memory=50).
+    Currently supported keys are {cpu, memory, os}
+
+    Args:
+        Keyword arguments 
+
+    Raises: 
+        ValueError: if input key is not recognized
+    """
+    
+    public_constraint_dict = {
+        "cpu": 0,
+        "memory": 0,
+        "os": 0,
+    }
+    private_constraint_dict = {}
+
+    for key in public_constraint_dict.keys():
+        if key in kargs:
+            public_constraint_dict[key] = kargs[key]
+
+    for key in private_constraint_dict.keys():
+        if key in kargs:
+            private_constraint_dict[key] = kargs[key]
+
+    for key in kargs.keys():
+        if key not in public_constraint_dict and key not in private_constraint_dict:
+            raise ValueError(f"{key} constraint is not supported")
+    
+    #TODO encoding, value check
+
+    return (list(public_constraint_dict.values()), list(private_constraint_dict))
+
+def gen_job_config(constraint: tuple[list, list],
                    est_total_round: int,
                    demand: int,
                    job_manager_ip: str,
@@ -14,13 +47,6 @@ def gen_job_config(public_constraint: list,
                    ps_port: int
                    )->dict:
     #TODO
-    pass
-
-def encode_constraints(**kargs)->list:
-    # os: 12.4 -> os: 66
-    # cpu: None -> cpu: 0
-    # return [66, 0]
-    #TODO 
     pass
 
 class Propius_job():
