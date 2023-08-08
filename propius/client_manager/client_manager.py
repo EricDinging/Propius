@@ -16,6 +16,26 @@ _cleanup_coroutines = []
 
 class Client_manager(propius_pb2_grpc.Client_managerServicer):
     def __init__(self, gconfig, cm_id: int):
+        """Initialize client db portal
+
+        Args:
+            gconfig: config dictionary
+                client_manager: list of client manager address
+                    ip
+                    port
+                    client_db_port
+                client_expire_time: expiration time of clients in the db
+                client_manager_id_weight
+                job_public_constraint: name of public constraint
+                job_db_ip
+                job_db_port
+                sched_alg
+                job_public_constraint: name of public constraint
+                job_private_constraint: name of private constraint
+
+            cm_id: id of the client manager is the user is client manager
+        """
+
         self.cm_id = cm_id
         self.ip = gconfig['client_manager'][self.cm_id]['ip']
         self.port = gconfig['client_manager'][self.cm_id]['port']
@@ -31,6 +51,20 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.client_num = 0
 
     async def CLIENT_CHECKIN(self, request, context):
+        """Hanle client check in, store client meatadata to database, and 
+        return task offer list
+
+        Args:
+            public_specification: a tuple of client public specs
+
+        Returns:
+            cm_offer:
+                client_id: assigned by client manager
+                task_offer_list
+                private_constraint
+                total_job_num
+        """
+
         async with self.lock:
             client_id = self.max_client_num * self.cm_id + \
                 self.client_num % self.max_client_num
@@ -56,6 +90,21 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             total_job_num=job_size)
 
     async def CLIENT_PING(self, request, context):
+        """Hanle client check in, fetch client meatadata from database, and 
+        return task offer list. This method should be called if previous client 
+        task selection failed.
+
+        Args:
+            id
+
+        Returns:
+            cm_offer:
+                client_id: assigned by client manager
+                task_offer_list
+                private_constraint
+                total_job_num
+        """
+
         public_specification = self.client_db_portal.get(request.id)
 
         task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
@@ -75,6 +124,19 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         )
 
     async def CLIENT_ACCEPT(self, request, context):
+        """Handle client acceptance of a task, increment allocation amount of the corresponding job, if current amount is smaller than the corresponding job total. Return job parameter server address, and ack. 
+        Otherwise, job allocation amount will not increased by the calling client
+
+        Args:
+            client_id
+
+        Returns:
+            cm_ack:
+                ack
+                job_ip
+                job_port 
+        """
+        
         client_id, task_id = request.client_id, request.task_id
         result = self.job_db_portal.incr_amount(task_id)
 

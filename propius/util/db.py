@@ -30,8 +30,9 @@ class Job_db:
         self.gconfig = gconfig
         self.public_constraint_name = gconfig['job_public_constraint']
         self.private_constraint_name = gconfig['job_private_constraint']
-        self.job_exp_time = gconfig['job_expire_time']
+    
         if is_jm:
+            self.job_exp_time = gconfig['job_expire_time']
             schema = (
                 NumericField(
                     "$.job.timestamp",

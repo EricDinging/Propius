@@ -11,14 +11,15 @@ def get_time() -> str:
     format_time = current_time.strftime("%Y-%m-%d:%H:%M:%S:%f")[:-4]
     return format_time
 
-def encode_constraints(**kargs)->tuple[list, list]:
+
+def encode_constraints(**kargs) -> tuple[list, list]:
     """Encode job constraints. Eg. encode_constraints(cpu=50, memory=50).
     Currently supported keys are {cpu, memory, os}
 
     Args:
-        Keyword arguments 
+        Keyword arguments
 
-    Raises: 
+    Raises:
         ValueError: if input key is not recognized
     """
 
@@ -40,24 +41,27 @@ def encode_constraints(**kargs)->tuple[list, list]:
     for key in kargs.keys():
         if key not in public_constraint_dict and key not in private_constraint_dict:
             raise ValueError(f"{key} constraint is not supported")
-    
-    #TODO encoding, value check
 
-    return (list(public_constraint_dict.values()), list(private_constraint_dict))
+    # TODO encoding, value check
+
+    return (list(public_constraint_dict.values()),
+            list(private_constraint_dict))
+
 
 def gen_job_config(constraint: tuple[list, list],
                    est_total_round: int,
                    demand: int,
                    job_manager_ip: str,
-                   job_manager_port:int,
+                   job_manager_port: int,
                    ps_ip: str,
                    ps_port: int
-                   )->dict:
-    #TODO
+                   ) -> dict:
+    # TODO
     pass
 
+
 class Propius_job():
-    def __init__(self, job_config: dict, verbose: bool=False):
+    def __init__(self, job_config: dict, verbose: bool = False):
         """Init Propius_job class
 
         Args:
@@ -74,8 +78,8 @@ class Propius_job():
         """
         self.id = -1
         try:
-            #TODO arguments check
-            #TODO add state flow check
+            # TODO arguments check
+            # TODO add state flow check
             self.public_constraint = tuple(job_config['public_constraint'])
             self.private_constraint = tuple(job_config['private_constraint'])
             self.est_total_round = job_config['total_round']
@@ -88,25 +92,24 @@ class Propius_job():
             self.port = job_config['port']
             self.verbose = verbose
             self.id = -1
-        except:
+        except BaseException:
             raise ValueError("Missing config arguments")
-        
+
     def _cleanup_routine(self):
         try:
             self._jm_channel.close()
-        except:
+        except BaseException:
             pass
-    
+
     def __del__(self):
         self._cleanup_routine()
-        
-        
+
     def _connect_jm(self, jm_ip: str, jm_port: int) -> None:
         self._jm_channel = grpc.insecure_channel(f'{jm_ip}:{jm_port}')
         self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
-        
+
         if self.verbose:
-            print(f"{get_time()} Job: connecting to job manager at {jm_ip}:{jm_port}") 
+            print(f"{get_time()} Job: connecting to job manager at {jm_ip}:{jm_port}")
 
     def connect(self):
         """Connect to Propius job manager
@@ -123,7 +126,8 @@ class Propius_job():
                     print(f"{get_time()} {e}")
                 time.sleep(2)
 
-        raise RuntimeError("Unable to connect to Propius job manager at the moment")
+        raise RuntimeError(
+            "Unable to connect to Propius job manager at the moment")
 
     def close(self) -> None:
         """Clean up allocation, close connection to Propius job manager
@@ -169,18 +173,19 @@ class Propius_job():
                 print(f"{get_time()} {e}")
                 time.sleep(2)
 
-        raise RuntimeError("Unable to register to Propius job manager at the moment")
-    
-    def round_start_request(self, new_demand: bool, demand:int=0) -> bool:
+        raise RuntimeError(
+            "Unable to register to Propius job manager at the moment")
+
+    def round_start_request(self, new_demand: bool, demand: int = 0) -> bool:
         """Send round start request to Propius job manager. Client will be routed to parameter server after this call
-        until the number of clients has reached specified demand, or round_end_request is called. 
-        Note that though Propius provide the guarantee that the requested demand will be satisfied, 
+        until the number of clients has reached specified demand, or round_end_request is called.
+        Note that though Propius provide the guarantee that the requested demand will be satisfied,
         allocated clients may experience various issues such as network failure
         such that the number of check-in clients might be lower than what is demanded at the parameter server
-        
+
         Args:
             new_demand: boolean indicating whether to use a new demand number for this round (only)
-            demand: positive integer indicating number of demand in this round. 
+            demand: positive integer indicating number of demand in this round.
                     If not specified, will use the default demand which is specified in the initial configuration
 
         Raise:
@@ -192,7 +197,8 @@ class Propius_job():
             this_round_demand = self.demand
         else:
             if demand <= 0:
-                raise ValueError("Input demand number is not a positive integer")
+                raise ValueError(
+                    "Input demand number is not a positive integer")
             else:
                 this_round_demand = demand
 
@@ -200,7 +206,7 @@ class Propius_job():
             id=self.id,
             demand=this_round_demand
         )
-        
+
         for _ in range(10):
             try:
                 ack_msg = self._jm_stub.JOB_REQUEST(request_msg)
@@ -219,10 +225,11 @@ class Propius_job():
                     print(f"{get_time()} {e}")
                 time.sleep(2)
 
-        raise RuntimeError("Unable to send round start request to Propius job manager at the moment")
-    
+        raise RuntimeError(
+            "Unable to send round start request to Propius job manager at the moment")
+
     def round_end_request(self) -> bool:
-        """Send round end request to Propius job manager. Client won't be routed to parameter server after this call, 
+        """Send round end request to Propius job manager. Client won't be routed to parameter server after this call,
         unless round_start_request is called
 
         Raise:
@@ -245,21 +252,22 @@ class Propius_job():
                             f"{get_time()} Job {self.id}: end request succeeded")
                     return True
             except Exception as e:
-                    if self.verbose:
-                        print(f"{get_time()} {e}")
-                    time.sleep(2)
-        
-        raise RuntimeError("Unable to send round end request to Propius job manager at this moment")
-    
+                if self.verbose:
+                    print(f"{get_time()} {e}")
+                time.sleep(2)
+
+        raise RuntimeError(
+            "Unable to send round end request to Propius job manager at this moment")
+
     def complete_job(self):
         """Send complete job request to Propius job manager. Job configuration will be removed from Propius.
-        
+
         Raise:
             RuntimeError: if can't send complete_job request after multiple trial
         """
 
         req_msg = propius_pb2.job_id(id=self.id)
-        
+
         for _ in range(10):
             try:
                 self._jm_stub.JOB_FINISH(req_msg)
@@ -271,4 +279,5 @@ class Propius_job():
                     print(f"{get_time()} {e}")
                 time.sleep(2)
 
-        raise RuntimeError("Unable to send complete job request to Propius job manager at this moment")
+        raise RuntimeError(
+            "Unable to send complete job request to Propius job manager at this moment")
