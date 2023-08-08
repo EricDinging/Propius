@@ -32,8 +32,22 @@ def encode_specification(**kargs) -> tuple[list, list]:
 def gen_client_config():
     pass
 
-class Propius_job():
+class Propius_client():
     def __init__(self, client_config: dict, verbose: bool = False):
+        """Init Propius_client class
+
+        Args:
+            client_config:
+                public_specifications
+                private_specifications
+                load_balancer_ip
+                load_balancer_port
+            verbose: whether to print or not
+
+        Raises:
+            ValueError: missing config args
+        """
+
         self.id = -1
         try:
             # TODO arguments check
@@ -69,9 +83,13 @@ class Propius_job():
     def connect(self, num_trial: int=1):
         """Connect to Propius load balancer
 
+        Args: 
+            num_trial: number of connection attempt, default to 1
+
         Raise:
             RuntimeError: if can't establish connection after multiple trial
         """
+
         for _ in range(num_trial):
             try:
                 self._connect_lb()
@@ -86,8 +104,28 @@ class Propius_job():
         raise RuntimeError(
             "Unable to connect to Propius at the moment")
     
+    def close(self) -> None:
+        """Clean up allocation, close connection to Propius
+        """
+
+        self._cleanup_routine()
+        if self.verbose:
+            print(f"{get_time()} Client {self.id}: closing connection to Propius")
+    
     def client_check_in(self, num_trial: int=1) -> tuple[list, list]:
+        """Client check in. Send client public spec to Propius client manager. Propius will return task offer list for client to select a task locally.
+
+        Args:
+            num_trial: number of connection attempt, default to 1
+
+        Returns:
+            task_ids: list of task ids
+            task_private_constraint: list of tuple of private constraint of the corresponding task in task_ids
         
+        Raises: 
+            RuntimeError: if can't establish connection after multiple trial
+        """
+
         for _ in range(num_trial):
             client_checkin_msg = propius_pb2.client_checkin(
                 public_specification=pickle.dumps(self.public_specifications)
@@ -109,6 +147,18 @@ class Propius_job():
         raise RuntimeError("Unable to connect to Propius at the moment")
     
     def client_ping(self, num_trial: int=1) -> tuple[list, list]:
+        """Client ping. Propius will return task offer list for client to select a task locally. Note that this function should only be called after client_check_in fails.
+
+        Args:
+            num_trial: number of connection attempt, default to 1
+
+        Returns:
+            task_ids: list of task ids
+            task_private_constraint: list of tuple of private constraint of the corresponding task in task_ids
+        
+        Raises: 
+            RuntimeError: if can't establish connection after multiple trial
+        """
 
         for _ in range(num_trial):
             try:
@@ -128,6 +178,15 @@ class Propius_job():
         raise RuntimeError("Unable to connect to Propius at the moment")
     
     def select_task(self, task_ids: list, private_constraints: list)->int:
+        """Client select a task locally. The default strategy is to select the first task in task offer list of which the private constraint is satisfied by the client private specs. 
+
+        Args:   
+            task_ids: list of task id
+            private_constraint: list of tuples of task private constraint
+
+        Returns:
+            task_id: id of task, -1 if no suitable task is found
+        """
 
         for idx, task_id in enumerate(task_ids):
             if len(
@@ -144,7 +203,21 @@ class Propius_job():
             print(f"{get_time()} Client {self.id}: not eligible")
         return -1
     
-    def client_accept(self, task_id: int, num_trial: int)->bool:
+    def client_accept(self, task_id: int, num_trial: int)->tuple[str, int]:
+        """Client send task id of the selected task to Propius. Returns address of the selected job parameter server if successful, None otherwise
+
+        Args:
+            task_id: id of the selected task
+            num_trial: number of connection attempt, default to 1
+
+        Returns:
+            ack: a boolean indicating whether the task selected is available for the client.
+            job_ip: ip address of the selected job parameter server
+            job_port: port number of the selected job parameter server
+        Raises: 
+            RuntimeError: if can't establish connection after multiple trial
+        """
+
         for _ in range(num_trial):
             client_accept_msg = propius_pb2.client_accept(
                 client_id=self.id, task_id=task_id
@@ -154,10 +227,11 @@ class Propius_job():
                 if self.verbose:
                     if cm_ack.ack:
                         print(f"{get_time()} Client {self.id}: client task selection is recieved")
+                        return (cm_ack.job_ip, cm_ack.job_port)
                     else:
                         print(f"{get_time()} Client {self.id}: client task selection is rejected")
-                return cm_ack.ack
-    
+                        return None
+            
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")

@@ -105,6 +105,7 @@ async def run(config):
             round += 1
     #TODO error handling
     ps.propius_stub.complete_job()
+    ps.propius_stub.close()
     print(
         f"Parameter server: All round finished, result: {ps.agg_result_list[-1]}")
 

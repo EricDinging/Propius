@@ -75,6 +75,9 @@ class Propius_job():
                 ip
                 port
             verbose: whether to print or not
+
+        Raises:
+            ValueError: missing config args
         """
         self.id = -1
         try:
@@ -132,6 +135,7 @@ class Propius_job():
     def close(self) -> None:
         """Clean up allocation, close connection to Propius job manager
         """
+        
         self._cleanup_routine()
         if self.verbose:
             print(f"{get_time()} Job {self.id}: closing connection to Propius")
