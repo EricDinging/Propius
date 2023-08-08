@@ -64,7 +64,7 @@ class Client:
         try:
             await self.propius_client_stub.close()
             await self.job_channel.close()
-        except BaseException:
+        except Exception:
             pass
 
     async def run(self, client_plotter=None):
@@ -73,53 +73,46 @@ class Client:
             await client_plotter.client_start()
         
         try:
-            while (True):
-                self.propius_client_stub.connect()
-                while self.ttl > 0:
-                    try:
-                        self.ttl -= 1
-                        #TODO impl async verseion
-                        task_ids, task_private_constraint = self.propius_client_stub.client_check_in()
+            self.propius_client_stub.connect()
+        
+            task_ids, task_private_constraint = self.propius_client_stub.client_check_in()
 
-                        print(
-                            f"Client {self.id}: recieve client manager offer: {task_ids}")
-                        self.id = self.propius_client_stub.id
-                        break
-                    except BaseException:
-                        if self.ttl == 0:
-                            raise (f"unable to connet to propius")
-                        continue
+            print(
+                f"Client {self.id}: recieve client manager offer: {task_ids}")
+            self.id = self.propius_client_stub.id
 
+            while True:
                 while self.ttl > 0:
                     if len(task_ids) > 0:
                         break
-                    await asyncio.sleep(5)
-                    task_ids, task_private_constraint = self.propius_client_stub.client_ping()
+                    await asyncio.sleep(2)
                     self.ttl -= 1
-
+                    task_ids, task_private_constraint = self.propius_client_stub.client_ping()
+                
                 self.task_id = self.propius_client_stub.select_task(task_ids, task_private_constraint)
-
                 if self.task_id == -1:
-                    if self.ttl == 0:
+                    task_ids = []
+                    task_private_constraint = []
+                    if self.ttl <= 0:
                         raise ValueError(f"not eligible, shutting down===")
                     else:
-                        task_ids = []
-                        task_private_constraint = []
                         continue
 
                 result = self.propius_client_stub.client_accept(self.task_id)
 
-                if not result and self.ttl == 0:
-                    raise ValueError(
-                        f"not acknowledged by client manager, shutting down===")
-
-                if result:
+                if not result:
+                    task_ids = []
+                    task_private_constraint = []
+                    if self.ttl <= 0:
+                        raise ValueError(
+                            f"not acknowledged by client manager, shutting down===")
+                    else:
+                        continue
+                else:
                     print(f"Client {self.id}: acknowledged, start execution")
                     break
 
-                task_ids = []
-                task_private_constraint = []
-
+            # Executing task
             job_ip, job_port = result
             self.propius_client_stub.close()
 

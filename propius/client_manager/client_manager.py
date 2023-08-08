@@ -142,7 +142,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         client_id, task_id = request.client_id, request.task_id
         result = self.job_db_portal.incr_amount(task_id)
 
-        await self.cm_monitor.client_accept(result)
+        await self.cm_monitor.client_accept(result != None)
 
         if not result:
             print(

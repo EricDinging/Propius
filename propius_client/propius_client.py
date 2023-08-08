@@ -61,13 +61,13 @@ class Propius_client():
             self._lb_stub = None
 
             self.verbose = verbose
-        except BaseException:
+        except Exception:
             raise ValueError("Missing config arguments")
         
     def _cleanup_routine(self):
         try:
             self._lb_channel.close()
-        except BaseException:
+        except Exception:
             pass
 
     def __del__(self):
