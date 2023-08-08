@@ -1,3 +1,5 @@
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 from propius.util.commons import *
 from propius.load_balancer.lb_monitor import *
 from propius.channels import propius_pb2_grpc
@@ -6,8 +8,6 @@ import yaml
 import grpc
 import logging
 import asyncio
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
 
 _cleanup_coroutines = []
 

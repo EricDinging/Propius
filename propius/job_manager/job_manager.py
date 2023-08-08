@@ -1,3 +1,5 @@
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 from propius.util.commons import *
 from propius.job_manager.jm_monitor import *
 from propius.job_manager.jm_db_portal import *
@@ -9,8 +11,6 @@ import pickle
 import yaml
 import grpc
 import logging
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
 
 _cleanup_coroutines = []
 

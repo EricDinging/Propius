@@ -10,12 +10,14 @@ from propius_client.propius_client import *
 class Client:
     def __init__(self, client_config: dict):
         #TODO specification encode
-        self.propius_client_stub = Propius_client(client_config)
+        self.id = -1
+        self.propius_client_stub = Propius_client(client_config=client_config, verbose=True)
         self.job_channel = None
         self.job_stub = None
         self.workload = 0
         self.result = 0
         self.client_plotter = None
+        self.ttl = 10
 
     async def _connect_to_ps(self, job_ip: str, job_port: int):
         self.job_channel = grpc.aio.insecure_channel(f"{job_ip}:{job_port}")
@@ -81,6 +83,7 @@ class Client:
 
                         print(
                             f"Client {self.id}: recieve client manager offer: {task_ids}")
+                        self.id = self.propius_client_stub.id
                         break
                     except BaseException:
                         if self.ttl == 0:
@@ -94,7 +97,7 @@ class Client:
                     task_ids, task_private_constraint = self.propius_client_stub.client_ping()
                     self.ttl -= 1
 
-                task_id = self.propius_client_stub.select_task(task_ids, task_private_constraint)
+                self.task_id = self.propius_client_stub.select_task(task_ids, task_private_constraint)
 
                 if self.task_id == -1:
                     if self.ttl == 0:
@@ -104,7 +107,7 @@ class Client:
                         task_private_constraint = []
                         continue
 
-                result = self.propius_client_stub.client_accept(task_id)
+                result = self.propius_client_stub.client_accept(self.task_id)
 
                 if not result and self.ttl == 0:
                     raise ValueError(

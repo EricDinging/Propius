@@ -1,3 +1,5 @@
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 from propius.util.commons import *
 from propius.scheduler.sc_monitor import *
 from propius.scheduler.sc_db_portal import *
@@ -7,8 +9,6 @@ import asyncio
 import yaml
 import grpc
 import logging
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
 
 
 _cleanup_routines = []
