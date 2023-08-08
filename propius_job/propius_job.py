@@ -3,6 +3,13 @@ from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import grpc
 import time
+from datetime import datetime
+
+
+def get_time() -> str:
+    current_time = datetime.now()
+    format_time = current_time.strftime("%Y-%m-%d:%H:%M:%S:%f")[:-4]
+    return format_time
 
 def encode_constraints(**kargs)->tuple[list, list]:
     """Encode job constraints. Eg. encode_constraints(cpu=50, memory=50).
@@ -50,7 +57,7 @@ def gen_job_config(constraint: tuple[list, list],
     pass
 
 class Propius_job():
-    def __init__(self, job_config):
+    def __init__(self, job_config: dict, verbose: bool=False):
         """Init Propius_job class
 
         Args:
@@ -63,10 +70,12 @@ class Propius_job():
                 job_manager_port
                 ip
                 port
+            verbose: whether to print or not
         """
         self.id = -1
         try:
             #TODO arguments check
+            #TODO add state flow check
             self.public_constraint = tuple(job_config['public_constraint'])
             self.private_constraint = tuple(job_config['private_constraint'])
             self.est_total_round = job_config['total_round']
@@ -77,13 +86,14 @@ class Propius_job():
             self._jm_stub = None
             self.ip = job_config['ip']
             self.port = job_config['port']
-
+            self.verbose = verbose
+            self.id = -1
         except:
             raise ValueError("Missing config arguments")
         
     def _cleanup_routine(self):
         try:
-            self.jm_channel.close()
+            self._jm_channel.close()
         except:
             pass
     
@@ -93,10 +103,12 @@ class Propius_job():
         
     def _connect_jm(self, jm_ip: str, jm_port: int) -> None:
         self._jm_channel = grpc.insecure_channel(f'{jm_ip}:{jm_port}')
-        self._jm_stub = propius_pb2_grpc.Job_managerStub(self.jm_channel)
-        # print(f"Job {self.id}: connecting to job manager at {jm_ip}:{jm_port}") 
+        self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
+        
+        if self.verbose:
+            print(f"{get_time()} Job: connecting to job manager at {jm_ip}:{jm_port}") 
 
-    def connect(self) -> None:
+    def connect(self):
         """Connect to Propius job manager
 
         Raise:
@@ -106,7 +118,9 @@ class Propius_job():
             try:
                 self._connect_jm(self.jm_ip, self.jm_port)
                 return
-            except:
+            except Exception as e:
+                if self.verbose:
+                    print(f"{get_time()} {e}")
                 time.sleep(2)
 
         raise RuntimeError("Unable to connect to Propius job manager at the moment")
@@ -115,10 +129,15 @@ class Propius_job():
         """Clean up allocation, close connection to Propius job manager
         """
         self._cleanup_routine()
+        if self.verbose:
+            print(f"{get_time()} Job {self.id}: closing connection to Propius")
 
     def register(self) -> bool:
         """Register job. Send job config to Propius job manager. This configuration will expire
         in one week, which means the job completion time should be within one week.
+
+        Returns:
+            ack: status of job register
 
         Raise:
             RuntimeError: if can't send register request after multiple trial
@@ -139,12 +158,15 @@ class Propius_job():
                 self.id = ack_msg.id
                 ack = ack_msg.ack
                 if not ack:
-                    # print(f"Job {self.id}: register failed")
+                    if self.verbose:
+                        print(f"{get_time()} Job {self.id}: register failed")
                     return False
                 else:
-                    # print(f"Job {self.id}: register success")
+                    if self.verbose:
+                        print(f"{get_time()} Job {self.id}: register success")
                     return True
-            except:
+            except Exception as e:
+                print(f"{get_time()} {e}")
                 time.sleep(2)
 
         raise RuntimeError("Unable to register to Propius job manager at the moment")
@@ -183,14 +205,18 @@ class Propius_job():
             try:
                 ack_msg = self._jm_stub.JOB_REQUEST(request_msg)
                 if not ack_msg.ack:
-                    # print(
-                    #     f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} request failed")
+                    if self.verbose:
+                        print(
+                            f"{get_time()} Job {self.id}: round request failed")
                     return False
                 else:
-                    # print(
-                    #     f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} request success")
+                    if self.verbose:
+                        print(
+                            f"{get_time()} Job {self.id}: round request succeeded")
                     return True
-            except:
+            except Exception as e:
+                if self.verbose:
+                    print(f"{get_time()} {e}")
                 time.sleep(2)
 
         raise RuntimeError("Unable to send round start request to Propius job manager at the moment")
@@ -209,14 +235,18 @@ class Propius_job():
             try:
                 ack_msg = self._jm_stub.JOB_END_REQUEST(request_msg)
                 if not ack_msg.ack:
-                    # print(
-                    #     f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} end request failed")
+                    if self.verbose:
+                        print(
+                            f"{get_time()} Job {self.id}: end request failed")
                     return False
                 else:
-                    # print(
-                    #     f"Job {self.id}: round: {self.cur_round}/{self.est_total_round} end request")
+                    if self.verbose:
+                        print(
+                            f"{get_time()} Job {self.id}: end request succeeded")
                     return True
-            except:
+            except Exception as e:
+                    if self.verbose:
+                        print(f"{get_time()} {e}")
                     time.sleep(2)
         
         raise RuntimeError("Unable to send round end request to Propius job manager at this moment")
@@ -233,9 +263,12 @@ class Propius_job():
         for _ in range(10):
             try:
                 self._jm_stub.JOB_FINISH(req_msg)
+                if self.verbose:
+                    print(f"{get_time()} Job {self.id}: job completed")
                 return
-            
-            except:
+            except Exception as e:
+                if self.verbose:
+                    print(f"{get_time()} {e}")
                 time.sleep(2)
 
         raise RuntimeError("Unable to send complete job request to Propius job manager at this moment")

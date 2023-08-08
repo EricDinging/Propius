@@ -10,7 +10,8 @@ import yaml
 import grpc
 import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
-
+from test_job.parameter_server.channels import parameter_server_pb2_grpc
+from test_job.parameter_server.channels import parameter_server_pb2
 
 class Client:
     def __init__(self, public_specifications: tuple,
@@ -79,7 +80,7 @@ class Client:
 
     async def _connect_to_ps(self, job_ip: str, job_port: int):
         self.job_channel = grpc.aio.insecure_channel(f"{job_ip}:{job_port}")
-        self.job_stub = propius_pb2_grpc.JobStub(self.job_channel)
+        self.job_stub = parameter_server_pb2_grpc.Parameter_serverStub(self.job_channel)
         print(
             f"Client {self.id}: connecting to parameter server on {job_ip}:{job_port}")
 
@@ -112,7 +113,7 @@ class Client:
     async def report(self):
         print(f"Client {self.id}: Report to job")
 
-        client_report_msg = propius_pb2.client_report(
+        client_report_msg = parameter_server_pb2.client_report(
             client_id=self.id, result=self.result)
         await self.job_stub.CLIENT_REPORT(client_report_msg)
 
@@ -213,7 +214,7 @@ class Client:
 
 
 if __name__ == '__main__':
-    global_setup_file = './global_config.yml'
+    global_setup_file = './propius/global_config.yml'
     with open(global_setup_file, 'r') as gyamlfile:
         gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
         client = Client((80, 80, 80), (), gconfig)

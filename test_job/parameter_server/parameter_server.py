@@ -14,7 +14,6 @@ _cleanup_coroutines = []
 
 class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def __init__(self, config):
-        self.id = -1
         self.est_total_round = config['total_round']
         self.demand = config['demand']
         self.workload = config['workload']
@@ -29,9 +28,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.execution_start = False
 
         #TODO config init
-        self.propius_stub = Propius_job(config)
+        self.propius_stub = Propius_job(job_config=config, verbose=True)
         
-        #TODO error handlling
         self.propius_stub.connect()
 
     def _close_round(self):
@@ -47,7 +45,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 return parameter_server_pb2.empty()
             client_id, result = request.client_id, request.result
             self.cur_result_list.append(result)
-            print(f"Parameter server {self.id}: round: {self.cur_round}/{self.est_total_round}: client {client_id} reported, {len(self.cur_result_list)}/{self.demand}")
+            print(f"Parameter server: round: {self.cur_round}/{self.est_total_round}: client {client_id} reported, {len(self.cur_result_list)}/{self.demand}")
 
             if len(self.cur_result_list) == self.demand:
                 self._close_round()
@@ -59,7 +57,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             if self.round_client_num >= self.demand or self.cur_round > self.est_total_round:
                 return parameter_server_pb2.plan(ack=False, workload=-1)
             print(
-                f"Parameter server {self.id}: round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
+                f"Parameter server: round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
             self.round_client_num += 1
             if self.round_client_num >= self.demand:
                 if not self.execution_start:
@@ -72,7 +70,7 @@ async def run(config):
     async def server_graceful_shutdown():
         ps.propius_stub.close()
         print("==Parameter server ending==")
-        logging.info("Starting graceful shutdown...")
+        #TODO logging.info("Starting graceful shutdown...")
         await server.stop(5)
 
     server = grpc.aio.server()
@@ -80,9 +78,10 @@ async def run(config):
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     # Register
-    #TODO error handling
-    ps.propius_stub.register()
-
+    if not ps.propius_stub.register():
+        print(f"Parameter server: register failed")
+        return
+    
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
     server.add_insecure_port(f"{config['ip']}:{config['port']}")
     await server.start()
@@ -91,7 +90,9 @@ async def run(config):
     round = 1
     while round <= ps.est_total_round:
         #TODO error handling
+        ps.execution_start = False
         if not ps.propius_stub.round_start_request(new_demand=False):
+            print(f"Parameter server: round start request failed")
             return
         async with ps.lock:
             while ps.cur_round != round + 1:
@@ -105,12 +106,12 @@ async def run(config):
     #TODO error handling
     ps.propius_stub.complete_job()
     print(
-        f"Parameter server {ps.id}: All round finished, result: {ps.agg_result_list[-1]}")
+        f"Parameter server: All round finished, result: {ps.agg_result_list[-1]}")
 
 if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger()
-    config_file = './test_profile.yml'
+    config_file = './test_job/parameter_server/test_profile.yml'
 
     with open(config_file, 'r') as config:
         try:
