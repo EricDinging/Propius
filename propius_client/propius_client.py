@@ -203,7 +203,7 @@ class Propius_client():
             print(f"{get_time()} Client {self.id}: not eligible")
         return -1
     
-    def client_accept(self, task_id: int, num_trial: int)->tuple[str, int]:
+    def client_accept(self, task_id: int, num_trial: int=1)->tuple[str, int]:
         """Client send task id of the selected task to Propius. Returns address of the selected job parameter server if successful, None otherwise
 
         Args:
