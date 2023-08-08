@@ -227,7 +227,7 @@ class Propius_client():
                 if self.verbose:
                     if cm_ack.ack:
                         print(f"{get_time()} Client {self.id}: client task selection is recieved")
-                        return (cm_ack.job_ip, cm_ack.job_port)
+                        return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
                     else:
                         print(f"{get_time()} Client {self.id}: client task selection is rejected")
                         return None
