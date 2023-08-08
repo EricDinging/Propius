@@ -1,13 +1,12 @@
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 import matplotlib.pyplot as plt
 import time
 import random
 import asyncio
 import yaml
 import logging
-from propius.client_sim.client import *
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
-
+from test_client.client import *
 
 class Client_plotter:
     def __init__(self, total_time: int):
@@ -21,6 +20,7 @@ class Client_plotter:
         self.total_client_num = 0
         self.total_client_success_num = 0
         self.total_client_drop_num = 0
+        #TODO client num count
 
     async def client_start(self):
         async with self.lock:
@@ -86,21 +86,22 @@ async def run(gconfig, client_plotter):
         for _ in range(start_time_list[i]):
             bench_mark = max(20, min(random.normalvariate(60, 20), 100))
 
-            public_constraints = tuple([
+            public_specs = [
                 int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100 - bench_mark)))
                 for _ in range(len(public_constraint_name))]
-            )
 
-            private_constraints = tuple([
+            private_specs = [
                 int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100 - bench_mark)))
                 for _ in range(len(private_constraint_name))]
-            )
 
+            client_config = {
+                "public_specifications": public_specs,
+                "private_specifications": private_specs,
+                "load_balancer_ip": gconfig['load_balancer_ip'],
+                "load_balancer_port": gconfig['load_balancer_port']
+            }
             asyncio.ensure_future(
-                Client(
-                    public_constraints,
-                    private_constraints,
-                    gconfig).run(client_plotter))
+                Client(client_config).run(client_plotter))
 
         await asyncio.sleep(1)
 
@@ -108,7 +109,7 @@ if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger()
 
-    global_setup_file = './global_config.yml'
+    global_setup_file = './propius/global_config.yml'
 
     random.seed(42)
 

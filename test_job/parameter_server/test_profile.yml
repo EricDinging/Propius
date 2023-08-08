@@ -10,9 +10,6 @@ total_round: 5
 
 workload: 3
 
-ip: localhost
-port: 60000
-
 job_manager_ip: localhost
 job_manager_port: 50002
 

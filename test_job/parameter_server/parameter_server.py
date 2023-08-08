@@ -111,12 +111,21 @@ async def run(config):
 if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger()
-    config_file = './test_job/parameter_server/test_profile.yml'
+
+    if len(sys.argv) != 4:
+        print("Usage: python test_job/parameter_server/parameter_server.py <config> <ip> <port>")
+        exit(1)
+        
+    config_file = sys.argv[1]
+    ip = sys.argv[2]
+    port = int(sys.argv[3])
 
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
             print("Parameter server read config successfully")
+            config["ip"] = ip
+            config["port"] = port
             loop = asyncio.get_event_loop()
             loop.run_until_complete(run(config))
         except KeyboardInterrupt:
