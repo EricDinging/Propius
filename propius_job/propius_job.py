@@ -84,8 +84,8 @@ class Propius_job():
             self.private_constraint = tuple(job_config['private_constraint'])
             self.est_total_round = job_config['total_round']
             self.demand = job_config['demand']
-            self.jm_ip = job_config['job_manager_ip']
-            self.jm_port = job_config['job_manager_port']
+            self._jm_ip = job_config['job_manager_ip']
+            self._jm_port = job_config['job_manager_port']
             self._jm_channel = None
             self._jm_stub = None
             self.ip = job_config['ip']
@@ -104,12 +104,12 @@ class Propius_job():
     def __del__(self):
         self._cleanup_routine()
 
-    def _connect_jm(self, jm_ip: str, jm_port: int) -> None:
-        self._jm_channel = grpc.insecure_channel(f'{jm_ip}:{jm_port}')
+    def _connect_jm(self) -> None:
+        self._jm_channel = grpc.insecure_channel(f'{self._jm_ip}:{self._jm_port}')
         self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
 
         if self.verbose:
-            print(f"{get_time()} Job: connecting to job manager at {jm_ip}:{jm_port}")
+            print(f"{get_time()} Job: connecting to job manager at {self._jm_ip}:{self._jm_port}")
 
     def connect(self):
         """Connect to Propius job manager
@@ -119,7 +119,7 @@ class Propius_job():
         """
         for _ in range(10):
             try:
-                self._connect_jm(self.jm_ip, self.jm_port)
+                self._connect_jm()
                 return
             except Exception as e:
                 if self.verbose:
