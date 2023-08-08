@@ -124,11 +124,13 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         )
 
     async def CLIENT_ACCEPT(self, request, context):
-        """Handle client acceptance of a task, increment allocation amount of the corresponding job, if current amount is smaller than the corresponding job total. Return job parameter server address, and ack. 
-        Otherwise, job allocation amount will not increased by the calling client
+        """Handle client acceptance of a task, increment allocation amount of the corresponding job, if current amount is smaller than the corresponding round demand. Return job parameter server address, and ack. 
+        Otherwise, job allocation amount will not increased by the calling client, 
+        and the client fails to be assigned to this task.
 
         Args:
             client_id
+            task_id
 
         Returns:
             cm_ack:
@@ -136,7 +138,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 job_ip
                 job_port 
         """
-        
+
         client_id, task_id = request.client_id, request.task_id
         result = self.job_db_portal.incr_amount(task_id)
 
