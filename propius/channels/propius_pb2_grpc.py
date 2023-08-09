@@ -5,100 +5,6 @@ import grpc
 import propius.channels.propius_pb2 as propius__pb2
 
 
-class JobStub(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def __init__(self, channel):
-        """Constructor.
-
-        Args:
-            channel: A grpc.Channel.
-        """
-        self.CLIENT_REQUEST = channel.unary_unary(
-                '/propius.Job/CLIENT_REQUEST',
-                request_serializer=propius__pb2.client_id.SerializeToString,
-                response_deserializer=propius__pb2.plan.FromString,
-                )
-        self.CLIENT_REPORT = channel.unary_unary(
-                '/propius.Job/CLIENT_REPORT',
-                request_serializer=propius__pb2.client_report.SerializeToString,
-                response_deserializer=propius__pb2.empty.FromString,
-                )
-
-
-class JobServicer(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def CLIENT_REQUEST(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def CLIENT_REPORT(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-
-def add_JobServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-            'CLIENT_REQUEST': grpc.unary_unary_rpc_method_handler(
-                    servicer.CLIENT_REQUEST,
-                    request_deserializer=propius__pb2.client_id.FromString,
-                    response_serializer=propius__pb2.plan.SerializeToString,
-            ),
-            'CLIENT_REPORT': grpc.unary_unary_rpc_method_handler(
-                    servicer.CLIENT_REPORT,
-                    request_deserializer=propius__pb2.client_report.FromString,
-                    response_serializer=propius__pb2.empty.SerializeToString,
-            ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-            'propius.Job', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-
-
- # This class is part of an EXPERIMENTAL API.
-class Job(object):
-    """Missing associated documentation comment in .proto file."""
-
-    @staticmethod
-    def CLIENT_REQUEST(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/propius.Job/CLIENT_REQUEST',
-            propius__pb2.client_id.SerializeToString,
-            propius__pb2.plan.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def CLIENT_REPORT(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/propius.Job/CLIENT_REPORT',
-            propius__pb2.client_report.SerializeToString,
-            propius__pb2.empty.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-
 class Job_managerStub(object):
     """Missing associated documentation comment in .proto file."""
 
@@ -334,14 +240,14 @@ class Client_managerStub(object):
                 request_serializer=propius__pb2.client_checkin.SerializeToString,
                 response_deserializer=propius__pb2.cm_offer.FromString,
                 )
+        self.CLIENT_PING = channel.unary_unary(
+                '/propius.Client_manager/CLIENT_PING',
+                request_serializer=propius__pb2.client_id.SerializeToString,
+                response_deserializer=propius__pb2.cm_offer.FromString,
+                )
         self.CLIENT_ACCEPT = channel.unary_unary(
                 '/propius.Client_manager/CLIENT_ACCEPT',
                 request_serializer=propius__pb2.client_accept.SerializeToString,
-                response_deserializer=propius__pb2.cm_ack.FromString,
-                )
-        self.HEALTH_CHECK = channel.unary_unary(
-                '/propius.Client_manager/HEALTH_CHECK',
-                request_serializer=propius__pb2.empty.SerializeToString,
                 response_deserializer=propius__pb2.cm_ack.FromString,
                 )
 
@@ -355,13 +261,13 @@ class Client_managerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def CLIENT_ACCEPT(self, request, context):
+    def CLIENT_PING(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def HEALTH_CHECK(self, request, context):
+    def CLIENT_ACCEPT(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -375,14 +281,14 @@ def add_Client_managerServicer_to_server(servicer, server):
                     request_deserializer=propius__pb2.client_checkin.FromString,
                     response_serializer=propius__pb2.cm_offer.SerializeToString,
             ),
+            'CLIENT_PING': grpc.unary_unary_rpc_method_handler(
+                    servicer.CLIENT_PING,
+                    request_deserializer=propius__pb2.client_id.FromString,
+                    response_serializer=propius__pb2.cm_offer.SerializeToString,
+            ),
             'CLIENT_ACCEPT': grpc.unary_unary_rpc_method_handler(
                     servicer.CLIENT_ACCEPT,
                     request_deserializer=propius__pb2.client_accept.FromString,
-                    response_serializer=propius__pb2.cm_ack.SerializeToString,
-            ),
-            'HEALTH_CHECK': grpc.unary_unary_rpc_method_handler(
-                    servicer.HEALTH_CHECK,
-                    request_deserializer=propius__pb2.empty.FromString,
                     response_serializer=propius__pb2.cm_ack.SerializeToString,
             ),
     }
@@ -413,6 +319,23 @@ class Client_manager(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
+    def CLIENT_PING(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Client_manager/CLIENT_PING',
+            propius__pb2.client_id.SerializeToString,
+            propius__pb2.cm_offer.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
     def CLIENT_ACCEPT(request,
             target,
             options=(),
@@ -425,23 +348,6 @@ class Client_manager(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/propius.Client_manager/CLIENT_ACCEPT',
             propius__pb2.client_accept.SerializeToString,
-            propius__pb2.cm_ack.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def HEALTH_CHECK(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/propius.Client_manager/HEALTH_CHECK',
-            propius__pb2.empty.SerializeToString,
             propius__pb2.cm_ack.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -461,6 +367,11 @@ class Load_balancerStub(object):
                 request_serializer=propius__pb2.client_checkin.SerializeToString,
                 response_deserializer=propius__pb2.cm_offer.FromString,
                 )
+        self.CLIENT_PING = channel.unary_unary(
+                '/propius.Load_balancer/CLIENT_PING',
+                request_serializer=propius__pb2.client_id.SerializeToString,
+                response_deserializer=propius__pb2.cm_offer.FromString,
+                )
         self.CLIENT_ACCEPT = channel.unary_unary(
                 '/propius.Load_balancer/CLIENT_ACCEPT',
                 request_serializer=propius__pb2.client_accept.SerializeToString,
@@ -472,6 +383,12 @@ class Load_balancerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def CLIENT_CHECKIN(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CLIENT_PING(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -489,6 +406,11 @@ def add_Load_balancerServicer_to_server(servicer, server):
             'CLIENT_CHECKIN': grpc.unary_unary_rpc_method_handler(
                     servicer.CLIENT_CHECKIN,
                     request_deserializer=propius__pb2.client_checkin.FromString,
+                    response_serializer=propius__pb2.cm_offer.SerializeToString,
+            ),
+            'CLIENT_PING': grpc.unary_unary_rpc_method_handler(
+                    servicer.CLIENT_PING,
+                    request_deserializer=propius__pb2.client_id.FromString,
                     response_serializer=propius__pb2.cm_offer.SerializeToString,
             ),
             'CLIENT_ACCEPT': grpc.unary_unary_rpc_method_handler(
@@ -519,6 +441,23 @@ class Load_balancer(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/propius.Load_balancer/CLIENT_CHECKIN',
             propius__pb2.client_checkin.SerializeToString,
+            propius__pb2.cm_offer.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def CLIENT_PING(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Load_balancer/CLIENT_PING',
+            propius__pb2.client_id.SerializeToString,
             propius__pb2.cm_offer.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

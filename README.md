@@ -39,10 +39,10 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
 
 ## RoadMap
 - Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more info
-## Usage 
-### Propius + FedScale (scheduling + training/testing)
+## Usage
+### Propius
 - Download dataset using FedScale (will be included in this library later)
-- Make changes to `global_config.yml`
+- Make changes to `propius/global_config.yml`
 - Scheduler:
     ```bash
     $ python propius/scheduler/scheduler.py
@@ -61,17 +61,27 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
     ```bash
     $ python propius/load_balancer/load_balancer.py <num of client manager>
     ```
+### Interface
+- Propius' job interface is defined in `propius_job/propius_job.py`
+- Propius' client interface is defined in `propius_client/propius_client.py`
+- Refer to `test_job/parameter_server/parameter_server.py` and `test_client/client.py` to get an idea how your FL job and FL client can utilize Propius
+### Evaluation
+- Try out new scheduling algorithm
+- Large evaluation framework is under construction
+### FedScale Integration
+- Under construction
+### Testing
 - Job:
-    - Edit `propius/job/job_conf.yml` file
-        ```bash
-        $ python propius/job/aggregator.py propius/job/job_conf.yml
+    - Edit `test_job/parameter_server/test_profile.yml` file
+    -   ```bash
+        $ python test_job/parameter_server/parameter_server.py test_job/parameter_server/test_profile.yml <ip> <port>
         ```
 - Client:
-    - Edit `propius/client/client_conf.yml` file
-        ```bash
-        $ python propius/client/executor.py propius/client/client_conf.yml
+    - Edit `test_client/test_profile.yml` file
+    -   ```bash
+        $ python test_client/client.py
         ```
-### Propius (scheduling)
+<!-- ### Propius (scheduling)
 - Make changes to `global_config.yml`
 - Scheduler, job manager, client manager, and load balancer launches are the same as above
 - Job driver:
@@ -81,7 +91,7 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
 - Client:
     ```bash
     $ python propius/client_sim/client_driver.py
-    ```
+    ``` -->
 
 
 

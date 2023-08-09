@@ -5,11 +5,6 @@ syntax = "proto3";
 
 package propius;
 
-service Job {
-    rpc CLIENT_REQUEST (client_id) returns (plan) {}
-    rpc CLIENT_REPORT (client_report) returns (empty) {}
-}
-
 service Job_manager {
     rpc JOB_REGIST (job_info) returns (job_register_ack) {}
     rpc JOB_REQUEST (job_round_info) returns (ack) {}
@@ -23,12 +18,14 @@ service Scheduler {
 
 service Client_manager {
     rpc CLIENT_CHECKIN (client_checkin) returns (cm_offer) {}
+    rpc CLIENT_PING(client_id) returns (cm_offer) {}
     rpc CLIENT_ACCEPT (client_accept) returns (cm_ack) {}
-    rpc HEALTH_CHECK (empty) returns (cm_ack) {}
+    //TODO rpc HEALTH_CHECK (empty) returns (cm_ack) {}
 }
 
 service Load_balancer {
     rpc CLIENT_CHECKIN (client_checkin) returns (cm_offer) {}
+    rpc CLIENT_PING(client_id) returns (cm_offer) {}
     rpc CLIENT_ACCEPT (client_accept) returns (cm_ack) {}
 }
 
@@ -52,12 +49,6 @@ message cm_ack {
     bool ack = 1;
     bytes job_ip = 2;
     int32 job_port = 3;
-    float ping_exp_time = 4; // during the exp time, client will try to make a connection with parameter server
-}
-
-message plan {
-    bool ack = 1;
-    int32 workload = 2;
 }
 
 message client_id {
@@ -80,11 +71,6 @@ message job_info {
 message job_round_info {
     int32 id = 1;
     int32 demand = 2;
-}
-
-message client_report {
-    int32 client_id = 1;
-    float result = 2;
 }
 
 message empty {
