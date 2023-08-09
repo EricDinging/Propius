@@ -67,15 +67,44 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     )
                     if len(self.client_event_dict) == self.demand:
                         #TODO job aggregation task register to executor
-                        pass
+                        if not self.execution_start:
+                            self.propius_stub.round_end_request()
+                            self.execution_start = True
             else:
                 return server_response_msg
         
         return super().CLIENT_PING(request, context)
     
     async def CLIENT_EXECUTE_COMPLETION(self, request, context):
-        # job task register to executor
-        return super().CLIENT_EXECUTE_COMPLETION(request, context)
+        client_id = request.id
+        compl_event, status = request.event, request.status
+        meta, data = request.meta, request.data
+
+        #TODO result handling
+        server_response_msg = parameter_server_pb2.server_response(
+            event=SHUT_DOWN,
+            meta=pickle.dumps(DUMMY_RESPONSE),
+            data=pickle.dumps(DUMMY_RESPONSE)
+            )
+        async with self.lock:
+            if client_id not in self.client_event_dict:
+                return server_response_msg
+            else:
+                if len(self.client_event_dict[client_id]) == 0:
+                    del self.client_event_dict[client_id]
+                else:
+                    next_event = self.client_event_dict[client_id].popleft()
+                    if len(self.client_event_dict[client_id]) == 0:
+                        del self.client_event_dict[client_id]
+                    server_response_msg = parameter_server_pb2.server_response(
+                        event=next_event,
+                        meta=pickle.dumps(DUMMY_RESPONSE),
+                        data=pickle.dumps(DUMMY_RESPONSE)
+                    )
+                #TODO handling compl event
+                if len(self.client_event_dict) == 0:
+                    self._close_round()
+                return server_response_msg
 
 async def run(config):
     async def server_graceful_shutdown():
