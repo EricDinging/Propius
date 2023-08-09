@@ -148,7 +148,7 @@ async def run(config):
             round += 1
     ps.propius_stub.complete_job()
     print(
-        f"Parameter server: All round finished, result: {ps.agg_result_list[-1]}")
+        f"Parameter server: All round finished")
     
 if __name__ == '__main__':
     
