@@ -6,7 +6,7 @@ import grpc
 from propius_job.propius_job import *
 from channels import parameter_server_pb2
 from channels import parameter_server_pb2_grpc
-from commons import *
+from evaluation.commons import *
 from collections import deque
 
 _cleanup_coroutines = []
@@ -52,25 +52,28 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             )
         async with self.lock:
             if client_id not in self.client_event_dict:
-                if len(self.client_event_dict) >= self.demand or self.cur_round > self.total_round:
-                    return server_response_msg
-                else:
+                if len(self.client_event_dict) < self.demand and self.cur_round <= self.total_round:
                     #TODO job train task register to executor
                     self._init_event_queue(client_id)
+                    event = self.client_event_dict[client_id].popleft()
                     server_response_msg = parameter_server_pb2.server_response(
-                        event=self.client_event_dict[client_id].popleft(),
+                        event=event,
                         meta=pickle.dumps(DUMMY_RESPONSE),
                         data=pickle.dumps(DUMMY_RESPONSE)
                     )
+
+                    print(f"PS {self.propius_stub.id}: client {client_id} ping, issue {event} event")
+
                     if len(self.client_event_dict) == self.demand:
                         #TODO job aggregation task register to executor
                         if not self.execution_start:
                             self.propius_stub.round_end_request()
                             self.execution_start = True
             else:
-                return server_response_msg
-        
-        return super().CLIENT_PING(request, context)
+                del self.client_event_dict[client_id]
+            
+            return server_response_msg
+
     
     async def CLIENT_EXECUTE_COMPLETION(self, request, context):
         client_id = request.id
@@ -98,6 +101,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         meta=pickle.dumps(DUMMY_RESPONSE),
                         data=pickle.dumps(DUMMY_RESPONSE)
                     )
+
+                    print(f"PS {self.propius_stub.id}: client compl, issue {next_event} event")
                 #TODO handling compl event
                 if len(self.client_event_dict) == 0:
                     self._close_round()
@@ -126,16 +131,17 @@ async def run(config):
     print(f"Parameter server: parameter server started, listening on {config['ip']}:{config['port']}")
 
     round = 1
-    while round <= ps.total_round:
-        ps.execution_start = False
-        if not ps.propius_stub.round_start_request(new_demand=False):
-            print(f"Parameter server: round start request failed")
-            return
-        async with ps.lock:
+    async with ps.lock:
+        while round <= ps.total_round:
+            ps.execution_start = False
+            if not ps.propius_stub.round_start_request(new_demand=False):
+                print(f"Parameter server: round start request failed")
+                return
             while ps.cur_round != round + 1:
                 try:
                     # reset client event queue dict
                     ps.client_event_dict = {}
+                    await asyncio.wait_for(ps.cv.wait(), timeout=1000)
                 except asyncio.TimeoutError:
                     print("Timeout reached, shutting down job server")
                     return
