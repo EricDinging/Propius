@@ -1,6 +1,5 @@
 import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
-import pickle
 import logging
 import asyncio
 import yaml
