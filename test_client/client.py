@@ -78,12 +78,12 @@ class Client:
 
             self.id, status, self.task_id, job_ip, job_port = await self.propius_client_stub.auto_assign(10)
         
-            # Executing task
             await self.propius_client_stub.close()
             
             if not status:
                 return
 
+            # Execute task
             await self._connect_to_ps(job_ip, job_port)
 
             job_ack = None

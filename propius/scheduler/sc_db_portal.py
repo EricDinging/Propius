@@ -12,7 +12,7 @@ import sys
 sys.path.append('..')
 
 
-class Job_db_portal(Job_db):
+class SC_job_db_portal(Job_db):
     def __init__(self, gconfig):
         """Initialize job db portal
 
@@ -201,7 +201,7 @@ class Job_db_portal(Job_db):
             return 1000 * std_round_time
 
 
-class Client_db_portal(Client_db):
+class SC_client_db_portal(Client_db):
     def __init__(self, gconfig):
         """Initialize client db portal
 

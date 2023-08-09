@@ -45,8 +45,8 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         self.sched_alg = gconfig['sched_alg']
         if self.sched_alg == 'irs':
             self.irs_epsilon = float(gconfig['irs_epsilon'])
-        self.job_db_portal = Job_db_portal(gconfig)
-        self.client_db_portal = Client_db_portal(gconfig)
+        self.job_db_portal = SC_job_db_portal(gconfig)
+        self.client_db_portal = SC_client_db_portal(gconfig)
 
         self.metric_scale = gconfig['metric_scale']
         self.std_round_time = gconfig['standard_round_time']
