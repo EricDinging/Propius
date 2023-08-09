@@ -6,6 +6,8 @@ import grpc
 from propius_job.propius_job import *
 from channels import parameter_server_pb2
 from channels import parameter_server_pb2_grpc
+from commons import *
+from collections import deque
 
 _cleanup_coroutines = []
 
@@ -33,9 +35,42 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         # locked
         self.cur_round += 1
         self.cv.notify()
+
+    def _init_event_queue(self, client_id:int):
+        # locked
+        #TODO other task
+        event_q = deque()
+        event_q.append(UPDATE_MODEL)
+        event_q.append(CLIENT_TRAIN)
+        event_q.append(UPLOAD_MODEL)
+        event_q.append(SHUT_DOWN)
+        self.client_event_dict[client_id] = event_q
     
     async def CLIENT_PING(self, request, context):
-        # job task register to executor
+        client_id = request.id
+        server_response_msg = parameter_server_pb2.server_response(
+            event=SHUT_DOWN,
+            meta=pickle.dumps(DUMMY_RESPONSE),
+            data=pickle.dumps(DUMMY_RESPONSE)
+            )
+        async with self.lock:
+            if client_id not in self.client_event_dict:
+                if len(self.client_event_dict) >= self.demand or self.cur_round > self.total_round:
+                    return server_response_msg
+                else:
+                    #TODO job train task register to executor
+                    self._init_event_queue(client_id)
+                    server_response_msg = parameter_server_pb2.server_response(
+                        event=self.client_event_dict[client_id].popleft(),
+                        meta=pickle.dumps(DUMMY_RESPONSE),
+                        data=pickle.dumps(DUMMY_RESPONSE)
+                    )
+                    if len(self.client_event_dict) == self.demand:
+                        #TODO job aggregation task register to executor
+                        pass
+            else:
+                return server_response_msg
+        
         return super().CLIENT_PING(request, context)
     
     async def CLIENT_EXECUTE_COMPLETION(self, request, context):
