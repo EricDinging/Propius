@@ -22,6 +22,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.cur_round = 1
         self.client_event_dict = {}
 
+        self.round_client_num = 0
+
         self.execution_start = False #indicating whether the scheduling phase has passed
 
         self.propius_stub = Propius_job(job_config=config, verbose=True)
@@ -52,7 +54,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             )
         async with self.lock:
             if client_id not in self.client_event_dict:
-                if len(self.client_event_dict) < self.demand and self.cur_round <= self.total_round:
+                if self.round_client_num < self.demand and self.cur_round <= self.total_round:
                     #TODO job train task register to executor
                     self._init_event_queue(client_id)
                     event = self.client_event_dict[client_id].popleft()
@@ -62,9 +64,11 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         data=pickle.dumps(DUMMY_RESPONSE)
                     )
 
-                    print(f"PS {self.propius_stub.id}: client {client_id} ping, issue {event} event")
+                    self.round_client_num += 1
 
-                    if len(self.client_event_dict) == self.demand:
+                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, issue {event} event, {self.round_client_num}/{self.demand}")
+
+                    if self.round_client_num >= self.demand:
                         #TODO job aggregation task register to executor
                         if not self.execution_start:
                             self.propius_stub.round_end_request()
@@ -102,7 +106,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         data=pickle.dumps(DUMMY_RESPONSE)
                     )
 
-                    print(f"PS {self.propius_stub.id}: client compl, issue {next_event} event")
+                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event} event")
                 #TODO handling compl event
                 if len(self.client_event_dict) == 0:
                     self._close_round()
@@ -134,6 +138,7 @@ async def run(config):
     async with ps.lock:
         while round <= ps.total_round:
             ps.execution_start = False
+            ps.round_client_num = 0
             if not ps.propius_stub.round_start_request(new_demand=False):
                 print(f"Parameter server: round start request failed")
                 return
