@@ -16,9 +16,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.total_round = config['total_round']
         self.demand = config['demand']
         
-        #TODO round duration calculation
-        self.round_duration = 10
-
         self.lock = asyncio.Lock()
         self.cv = asyncio.Condition(self.lock)
 
@@ -172,7 +169,3 @@ if __name__ == '__main__':
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()
-
-
-
-

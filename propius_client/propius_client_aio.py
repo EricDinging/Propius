@@ -2,7 +2,7 @@ from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import pickle
 import grpc
-import time
+import asyncio
 from datetime import datetime
 
 #TODO state flow check
@@ -32,7 +32,7 @@ def encode_specification(**kargs) -> tuple[list, list]:
 def gen_client_config():
     pass
 
-class Propius_client():
+class Propius_client_aio():
     def __init__(self, client_config: dict, verbose: bool = False):
         """Init Propius_client class
 
@@ -80,7 +80,7 @@ class Propius_client():
         if self.verbose:
             print(f"{get_time()} Client: connecting to load balancer at {self._lb_ip}:{self._lb_port}")
 
-    def connect(self, num_trial: int=1):
+    async def connect(self, num_trial: int=1):
         """Connect to Propius load balancer
 
         Args: 
@@ -99,12 +99,12 @@ class Propius_client():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                await asyncio.sleep(2)
 
         raise RuntimeError(
             "Unable to connect to Propius at the moment")
     
-    def close(self) -> None:
+    async def close(self) -> None:
         """Clean up allocation, close connection to Propius
         """
 
@@ -112,7 +112,7 @@ class Propius_client():
         if self.verbose:
             print(f"{get_time()} Client {self.id}: closing connection to Propius")
     
-    def client_check_in(self, num_trial: int=1) -> tuple[list, list]:
+    async def client_check_in(self, num_trial: int=1) -> tuple[list, list]:
         """Client check in. Send client public spec to Propius client manager. Propius will return task offer list for client to select a task locally.
 
         Args:
@@ -143,10 +143,10 @@ class Propius_client():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                await asyncio.sleep(2)
         raise RuntimeError("Unable to connect to Propius at the moment")
     
-    def client_ping(self, num_trial: int=1) -> tuple[list, list]:
+    async def client_ping(self, num_trial: int=1) -> tuple[list, list]:
         """Client ping. Propius will return task offer list for client to select a task locally. Note that this function should only be called after client_check_in fails.
 
         Args:
@@ -173,11 +173,11 @@ class Propius_client():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                await asyncio.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
     
-    def select_task(self, task_ids: list, private_constraints: list)->int:
+    async def select_task(self, task_ids: list, private_constraints: list)->int:
         """Client select a task locally. The default strategy is to select the first task in task offer list of which the private constraint is satisfied by the client private specs. 
 
         Args:   
@@ -203,7 +203,7 @@ class Propius_client():
             print(f"{get_time()} Client {self.id}: not eligible")
         return -1
     
-    def client_accept(self, task_id: int, num_trial: int=1)->tuple[str, int]:
+    async def client_accept(self, task_id: int, num_trial: int=1)->tuple[str, int]:
         """Client send task id of the selected task to Propius. Returns address of the selected job parameter server if successful, None otherwise
 
         Args:
@@ -235,18 +235,18 @@ class Propius_client():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                await asyncio.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
 
-    def auto_assign(self, ttl:int=0)->tuple[int, bool, int, str, int]:
+    async def auto_assign(self, ttl:int=0)->tuple[int, bool, int, str, int]:
         """Automate client register, client ping, and client task selection process
 
         Args:
             ttl: number of attempts to inquire Propius for task offer until client is scheduled
 
         Returns:
-            client_id: client id assigned by Propius
+            id: client id assigned by Propius
             status: a boolean indicating whether the client is assigned
             task_id: task id
             ps_ip: job parameter server ip address
@@ -256,7 +256,7 @@ class Propius_client():
             RuntimeError: if can't establish connection after multiple trial
         """
 
-        task_ids, task_private_constraint = self.client_check_in()
+        task_ids, task_private_constraint = await self.client_check_in()
         if self.verbose:
             print(
                 f"{get_time()} Client {self.id}: recieve client manager offer: {task_ids}")
@@ -265,11 +265,11 @@ class Propius_client():
             while ttl > 0:
                 if len(task_ids) > 0:
                     break
-                time.sleep(2)
+                await asyncio.sleep(2)
                 ttl -= 1
-                task_ids, task_private_constraint = self.client_ping()
+                task_ids, task_private_constraint = await self.client_ping()
             
-            task_id = self.select_task(task_ids, task_private_constraint)
+            task_id = await self.select_task(task_ids, task_private_constraint)
             if task_id == -1:
                 task_ids = []
                 task_private_constraint = []
@@ -278,7 +278,7 @@ class Propius_client():
                 else:
                     continue
 
-            result = self.client_accept(task_id)
+            result = await self.client_accept(task_id)
 
             if not result:
                 task_ids = []

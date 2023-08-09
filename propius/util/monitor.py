@@ -25,9 +25,11 @@ class Monitor:
         plt.xlabel('Time (sec)')
 
     def _gen_report(self) -> str:
-        runtime = int(time.time()) - self.start_time
-        avg_request_per_second = sum(self.request_num_log.values()) / runtime
-        max_request_per_second = max(self.request_num_log.values())
-        report = self.server_name + \
-            f": avg request per second: {avg_request_per_second:.3f}, max request per second: {max_request_per_second}"
+        report = ""
+        if len(self.request_num_log) > 0:
+            runtime = int(time.time()) - self.start_time
+            avg_request_per_second = sum(self.request_num_log.values()) / runtime
+            max_request_per_second = max(self.request_num_log.values())
+            report = self.server_name + \
+                f": avg request per second: {avg_request_per_second:.3f}, max request per second: {max_request_per_second}"
         return report
