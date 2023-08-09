@@ -9,7 +9,7 @@ import json
 from propius.util.db import *
 
 
-class Job_db_portal(Job_db):
+class JM_job_db_portal(Job_db):
     def __init__(self, gconfig):
         """Init job database portal class
 

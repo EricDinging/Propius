@@ -36,7 +36,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         self.ip = gconfig['job_manager_ip']
         self.port = int(gconfig['job_manager_port'])
-        self.job_db_portal = Job_db_portal(gconfig)
+        self.job_db_portal = JM_job_db_portal(gconfig)
         self.jm_monitor = JM_monitor(gconfig['sched_alg'])
         self.sched_channel = None
         self.sched_portal = None

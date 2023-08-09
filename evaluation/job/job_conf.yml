@@ -1,0 +1,35 @@
+# Server setting
+connection_timeout: 100
+
+# Propius
+job_manager_ip: localhost
+job_manager_port: 50002
+
+# Training and testing aggregator setting
+gradient_policy: fedavg
+demand: 1
+decay_round: 3  # learning rate decay after decay round
+decay_factor: 0.9
+total_round: 3  # Total round
+min_learning_rate: 0.01
+eval_interval: 3
+
+# Training and testing client setting
+engine: pytorch
+model: resnet18
+data_set: femnist
+learning_rate: 0.05
+num_loaders: 6
+test_ratio: 0.5
+test_bsz: 10
+use_cuda: False
+local_steps: 10
+loss_decay: 0.95
+batch_size: 10
+
+# Client constraints
+public_constraint:
+    - 28
+    - 28
+    - 28
+private_constraint: []

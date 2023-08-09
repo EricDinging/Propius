@@ -10,7 +10,7 @@ from propius.util.db import *
 import random
 
 
-class Job_db_portal(Job_db):
+class CM_job_db_portal(Job_db):
     def __init__(self, gconfig):
         """Initialize job db portal
 
@@ -143,7 +143,7 @@ class Job_db_portal(Job_db):
                     pass
 
 
-class Client_db_portal(Client_db):
+class CM_client_db_portal(Client_db):
     def __init__(self, gconfig, cm_id: int):
         """Initialize client db portal
 

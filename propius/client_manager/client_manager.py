@@ -40,8 +40,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.ip = gconfig['client_manager'][self.cm_id]['ip']
         self.port = gconfig['client_manager'][self.cm_id]['port']
         self.sched_alg = gconfig['sched_alg']
-        self.client_db_portal = Client_db_portal(gconfig, self.cm_id)
-        self.job_db_portal = Job_db_portal(gconfig)
+        self.client_db_portal = CM_client_db_portal(gconfig, self.cm_id)
+        self.job_db_portal = CM_job_db_portal(gconfig)
         self.cm_monitor = CM_monitor(self.sched_alg)
         self.max_client_num = gconfig['client_manager_id_weight']
         print(

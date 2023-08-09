@@ -1,17 +1,18 @@
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 import asyncio
 import random
 import yaml
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
 from test_job.parameter_server.channels import parameter_server_pb2_grpc
 from test_job.parameter_server.channels import parameter_server_pb2
-from propius_client.propius_client import *
+from propius_client.propius_client_aio import *
 
 class Client:
     def __init__(self, client_config: dict):
         #TODO specification encode
         self.id = -1
-        self.propius_client_stub = Propius_client(client_config=client_config, verbose=True)
+        self.task_id = -1
+        self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=True)
         self.job_channel = None
         self.job_stub = None
         self.workload = 0
@@ -73,49 +74,16 @@ class Client:
             await client_plotter.client_start()
         
         try:
-            self.propius_client_stub.connect()
+            await self.propius_client_stub.connect()
+
+            self.id, status, self.task_id, job_ip, job_port = await self.propius_client_stub.auto_assign(10)
         
-            task_ids, task_private_constraint = self.propius_client_stub.client_check_in()
+            await self.propius_client_stub.close()
+            
+            if not status:
+                return
 
-            print(
-                f"Client {self.id}: recieve client manager offer: {task_ids}")
-            self.id = self.propius_client_stub.id
-
-            while True:
-                while self.ttl > 0:
-                    if len(task_ids) > 0:
-                        break
-                    await asyncio.sleep(2)
-                    self.ttl -= 1
-                    task_ids, task_private_constraint = self.propius_client_stub.client_ping()
-                
-                self.task_id = self.propius_client_stub.select_task(task_ids, task_private_constraint)
-                if self.task_id == -1:
-                    task_ids = []
-                    task_private_constraint = []
-                    if self.ttl <= 0:
-                        raise ValueError(f"not eligible, shutting down===")
-                    else:
-                        continue
-
-                result = self.propius_client_stub.client_accept(self.task_id)
-
-                if not result:
-                    task_ids = []
-                    task_private_constraint = []
-                    if self.ttl <= 0:
-                        raise ValueError(
-                            f"not acknowledged by client manager, shutting down===")
-                    else:
-                        continue
-                else:
-                    print(f"Client {self.id}: acknowledged, start execution")
-                    break
-
-            # Executing task
-            job_ip, job_port = result
-            self.propius_client_stub.close()
-
+            # Execute task
             await self._connect_to_ps(job_ip, job_port)
 
             job_ack = None
