@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x65xecutor.proto\x12\x08\x65xecutor\",\n\x08job_info\x12\x0e\n\x06job_id\x18\x01 \x01(\x05\x12\x10\n\x08job_type\x18\x02 \x01(\t\"O\n\rjob_task_info\x12\x0e\n\x06job_id\x18\x01 \x01(\x05\x12\x11\n\tclient_id\x18\x02 \x01(\x05\x12\r\n\x05\x65vent\x18\x03 \x01(\t\x12\x0c\n\x04meta\x18\x04 \x01(\x0c\"\x14\n\x06job_id\x12\n\n\x02id\x18\x01 \x01(\x05\"\x12\n\x03\x61\x63k\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\"\x1a\n\njob_result\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x32\xb8\x01\n\x08\x45xecutor\x12\x33\n\x0cJOB_REGISTER\x12\x12.executor.job_info\x1a\r.executor.ack\"\x00\x12=\n\x11JOB_REGISTER_TASK\x12\x17.executor.job_task_info\x1a\r.executor.ack\"\x00\x12\x38\n\x0cMONITOR_PING\x12\x10.executor.job_id\x1a\x14.executor.job_result\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x65xecutor.proto\x12\x08\x65xecutor\",\n\x08job_info\x12\x0e\n\x06job_id\x18\x01 \x01(\x05\x12\x10\n\x08job_meta\x18\x02 \x01(\x0c\"c\n\rjob_task_info\x12\x0e\n\x06job_id\x18\x01 \x01(\x05\x12\x11\n\tclient_id\x18\x02 \x01(\x05\x12\r\n\x05round\x18\x03 \x01(\x05\x12\r\n\x05\x65vent\x18\x04 \x01(\t\x12\x11\n\ttask_meta\x18\x05 \x01(\x0c\"\x14\n\x06job_id\x12\n\n\x02id\x18\x01 \x01(\x05\"\x12\n\x03\x61\x63k\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\x08\"\x1a\n\njob_result\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x32\xb8\x01\n\x08\x45xecutor\x12\x33\n\x0cJOB_REGISTER\x12\x12.executor.job_info\x1a\r.executor.ack\"\x00\x12=\n\x11JOB_REGISTER_TASK\x12\x17.executor.job_task_info\x1a\r.executor.ack\"\x00\x12\x38\n\x0cMONITOR_PING\x12\x10.executor.job_id\x1a\x14.executor.job_result\"\x00\x62\x06proto3')
 
 
 
@@ -65,13 +65,13 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _JOB_INFO._serialized_start=28
   _JOB_INFO._serialized_end=72
   _JOB_TASK_INFO._serialized_start=74
-  _JOB_TASK_INFO._serialized_end=153
-  _JOB_ID._serialized_start=155
-  _JOB_ID._serialized_end=175
-  _ACK._serialized_start=177
-  _ACK._serialized_end=195
-  _JOB_RESULT._serialized_start=197
-  _JOB_RESULT._serialized_end=223
-  _EXECUTOR._serialized_start=226
-  _EXECUTOR._serialized_end=410
+  _JOB_TASK_INFO._serialized_end=173
+  _JOB_ID._serialized_start=175
+  _JOB_ID._serialized_end=195
+  _ACK._serialized_start=197
+  _ACK._serialized_end=215
+  _JOB_RESULT._serialized_start=217
+  _JOB_RESULT._serialized_end=243
+  _EXECUTOR._serialized_start=246
+  _EXECUTOR._serialized_end=430
 # @@protoc_insertion_point(module_scope)

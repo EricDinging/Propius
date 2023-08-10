@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import channels.executor_pb2 as executor__pb2
+import evaluation.executor.channels.executor_pb2 as executor__pb2
 
 
 class ExecutorStub(object):

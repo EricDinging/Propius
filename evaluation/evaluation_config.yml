@@ -27,3 +27,10 @@ job_driver_starting_port: 53000
 
 # Total simulation time
 total_running_second: 1200
+
+
+# ---Execution---
+use_cuda: False
+
+executor_ip: localhost
+executor_port: 49999
