@@ -42,21 +42,36 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         #TODO
         while True:
             execute_meta = self.task_pool.get_next_task()
+            
             if not execute_meta:
                 await asyncio.sleep(5)
                 continue
-
+            
+            job_id = execute_meta['job_id']
+            
             if execute_meta['event'] == JOB_FINISH:
-                await self.task_pool.remove_job(execute_meta['job_id'])
+                await self.task_pool.remove_job(job_id)
             
             elif execute_meta['event'] == CLIENT_TRAIN:
                 #TODO train
+                model_weights = await self.task_pool.get_model_weights(job_id)
                 await asyncio.sleep(5)
+                await self.task_pool.update_model_weights(job_id, model_weights)
+
+            elif execute_meta['event'] == MODEL_TEST:
+                #TODO gen test config
+                model_weights = await self.task_pool.get_model_weights(job_id)
+                await asyncio.sleep(1)
+                result = {
+                    "loss": 0.0,
+                    "accuracy": 0.0
+                }
+                await self.task_pool.report_result(job_id, execute_meta['round'], result)
 
             elif execute_meta['event'] == AGGREGATE:
                 #TODO aggregate
+                await self.task_pool.agg_model_weights(job_id)
                 await asyncio.sleep(1)
-
 
     
 async def run(config):
