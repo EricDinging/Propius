@@ -8,7 +8,6 @@ package executor;
 service Executor {
     rpc JOB_REGISTER (job_info) returns (ack) {}
     rpc JOB_REGISTER_TASK (job_task_info) returns (ack) {}
-    rpc MONITOR_PING (job_id) returns (job_result) {} 
 }
 
 message job_info {

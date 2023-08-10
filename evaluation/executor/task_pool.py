@@ -7,16 +7,27 @@ class Task_pool:
         self.lock = asyncio.Lock()
         self.job_meta_dict = {}
         self.job_task_dict = {}
+        self.job_data_dict = {}
         self.cur_job_id = -1
         self.result_dict = {}
 
-    async def init_job(self, job_id: int, job_meta: dict):
+    async def init_job(self, job_id: int, job_meta: dict, job_data: dict):
         async with self.lock:
+            job_meta["job_id"] = job_id
             self.job_meta_dict[job_id] = job_meta
-            self.job_task_dict = deque()
+
+            self.job_task_dict[job_id] = deque()
+            test_task_meta = {}
+            test_task_meta["event"] = MODEL_TEST
+            self.job_task_dict[job_id].append(test_task_meta)
+            
+            job_data["client_num"] = 0
+            job_data["agg_model_weights"] = {}
+            self.job_data_dict[job_id] = job_data
+
     
     async def insert_job_task(self, job_id: int, client_id: int, round: int, event: str, task_meta: dict):
-        """event: {MODEL_TRAIN, AGGREGATE}
+        """event: {CLIENT_TRAIN, AGGREGATE, FINISH}
         """
         task_meta["client_id"] = client_id
         task_meta["round"] = round
@@ -26,7 +37,31 @@ class Task_pool:
             assert job_id in self.job_meta_dict
             assert job_id in self.job_task_dict
 
-            self.job_meta_dict[job_id].append(task_meta)
+            test_task_meta = {}
+            test_task_meta["event"] = MODEL_TEST
+
+            self.job_task_dict[job_id].append(task_meta)
+
+            if event == AGGREGATE:
+                self.job_task_dict[job_id].append(test_task_meta)
+
+    async def get_model_weights(self, job_id: int)->dict:
+        #TODO copy 
+        return self.job_data_dict[job_id]["model_weights"] 
+
+    async def update_model_weights(self, job_id, model_weights: dict):
+        async with self.lock:
+            #TODO agg
+            self.job_data_dict["agg_model_weights"] = {}
+            self.job_data_dict["client_num"] += 1
+
+    async def agg_model_weights(self, job_id):
+        async with self.lock:
+            #TODO agg
+            self.job_data_dict["model_weights"] = self.job_data_dict["agg_model_weights"]
+            self.job_data_dict["agg_model_weights"] = {}
+            self.job_data_dict["client_num"] = 0
+
 
     async def get_next_task(self)->dict:
         """Get next task, prioritize previous job id if there is still task left for the job

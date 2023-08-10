@@ -17,8 +17,15 @@ DUMMY_RESPONSE = 'N'
 # PYTORCH = 'pytorch'
 
 JOB_META = {
+    "job_id": -1,
     "model": "",
     "dataset": "",
+}
+
+JOB_DATA = {
+    "model_weights": {},
+    "agg_model_weights": {},
+    "client_num": 0
 }
 
 TASK_META = {
