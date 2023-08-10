@@ -20,7 +20,7 @@ class Task_pool:
             self.job_task_dict[job_id] = deque()
             test_task_meta = {
                 "client_id": -1,
-                "round": 1,
+                "round": 0,
                 "event": MODEL_TEST,
                 "local_steps": 10,
                 "learning_rate": 0,
@@ -63,15 +63,15 @@ class Task_pool:
     async def update_model_weights(self, job_id, model_weights: dict):
         async with self.lock:
             #TODO agg
-            self.job_data_dict["agg_model_weights"] = {}
-            self.job_data_dict["client_num"] += 1
+            self.job_data_dict[job_id]["agg_model_weights"] = {}
+            self.job_data_dict[job_id]["client_num"] += 1
 
     async def agg_model_weights(self, job_id):
         async with self.lock:
             #TODO agg
-            self.job_data_dict["model_weights"] = self.job_data_dict["agg_model_weights"]
-            self.job_data_dict["agg_model_weights"] = {}
-            self.job_data_dict["client_num"] = 0
+            self.job_data_dict[job_id]["model_weights"] = self.job_data_dict[job_id]["agg_model_weights"]
+            self.job_data_dict[job_id]["agg_model_weights"] = {}
+            self.job_data_dict[job_id]["client_num"] = 0
 
 
     async def get_next_task(self)->dict:
@@ -79,14 +79,16 @@ class Task_pool:
         """
         async with self.lock:
             if self.cur_job_id in self.job_meta_dict and len(self.job_task_dict[self.cur_job_id]) > 0:
-                execute_meta = job_meta.update(self.job_meta_dict[self.cur_job_id].popleft())
-                return copy.deepcopy(execute_meta)
+                execute_meta = copy.deepcopy(self.job_meta_dict[self.cur_job_id])
+                execute_meta.update(self.job_task_dict[self.cur_job_id].popleft())
+                return execute_meta
             
             for job_id, job_meta in self.job_meta_dict.items():
                 if len(self.job_task_dict[job_id]) > 0:
-                    execute_meta = job_meta.update(self.job_task_dict[job_id].popleft())
+                    execute_meta = copy.deepcopy(job_meta)
+                    execute_meta.update(self.job_task_dict[job_id].popleft())
                     self.cur_job_id = job_id
-                    return copy.deepcopy(execute_meta)
+                    return execute_meta
             return None
 
     async def remove_job(self, job_id: int):

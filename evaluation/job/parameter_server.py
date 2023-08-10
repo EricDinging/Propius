@@ -25,6 +25,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.client_event_dict = {}
 
         self.round_client_num = 0
+        self.round_result_cnt = 0
 
         self.execution_start = False #indicating whether the scheduling phase has passed
 
@@ -101,8 +102,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         #TODO job aggregation task register to executor
                         if not self.execution_start:
                             #TODO send agg task to executor
-                            task_meta = {
-                            }
+                            task_meta = {}
 
                             job_task_info_msg = executor_pb2.job_task_info(
                                 job_id=self.propius_stub.id,
@@ -133,7 +133,11 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
             )
+
         async with self.lock:
+            if compl_event == UPLOAD_MODEL:
+                self.round_result_cnt += 1
+                
             if client_id not in self.client_event_dict:
                 return server_response_msg
             else:
@@ -150,13 +154,27 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     )
 
                     print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event} event")
+
+
                 #TODO handling compl event
-                if len(self.client_event_dict) == 0:
+                if self.round_result_cnt >= self.demand:
                     self._close_round()
                 return server_response_msg
 
 async def run(config):
     async def server_graceful_shutdown():
+
+        task_meta = {}
+        job_task_info_msg = executor_pb2.job_task_info(
+            job_id=ps.propius_stub.id,
+            client_id=-1,
+            round=-1,
+            event=JOB_FINISH,
+            task_meta=pickle.dumps(task_meta)
+        )
+        await ps.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+
+        ps.propius_stub.complete_job()
         ps.propius_stub.close()
         await ps.executor_channel.close()
         print("==Parameter server ending==")
@@ -190,6 +208,7 @@ async def run(config):
         while round <= ps.total_round:
             ps.execution_start = False
             ps.round_client_num = 0
+            ps.round_result_cnt = 0
             if not ps.propius_stub.round_start_request(new_demand=False):
                 print(f"Parameter server: round start request failed")
                 return
@@ -202,7 +221,6 @@ async def run(config):
                     print("Timeout reached, shutting down job server")
                     return
             round += 1
-    ps.propius_stub.complete_job()
 
     print(
         f"Parameter server: All round finished")
@@ -227,7 +245,7 @@ if __name__ == '__main__':
             eval_config_file = './evaluation/evaluation_config.yml'
             with open(eval_config_file, 'r') as eval_config:
             
-                eval_config = yaml.load(config, Loader=yaml.FullLoader)
+                eval_config = yaml.load(eval_config, Loader=yaml.FullLoader)
                 config['executor_ip'] = eval_config['executor_ip']
                 config['executor_port'] = eval_config['executor_port']
                 loop = asyncio.get_event_loop()

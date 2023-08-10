@@ -120,7 +120,7 @@ class Propius_job():
         Raise:
             RuntimeError: if can't establish connection after multiple trial
         """
-        for _ in range(10):
+        for _ in range(3):
             try:
                 self._connect_jm()
                 return
@@ -160,7 +160,7 @@ class Propius_job():
             port=self.port,
         )
 
-        for _ in range(10):
+        for _ in range(3):
             try:
                 ack_msg = self._jm_stub.JOB_REGIST(job_info_msg)
                 self.id = ack_msg.id
@@ -174,13 +174,14 @@ class Propius_job():
                         print(f"{get_time()} Job {self.id}: register success")
                     return True
             except Exception as e:
-                print(f"{get_time()} {e}")
+                if self.verbose:
+                    print(f"{get_time()} {e}")
                 time.sleep(2)
 
         raise RuntimeError(
             "Unable to register to Propius job manager at the moment")
 
-    def round_start_request(self, new_demand: bool, demand: int = 0) -> bool:
+    def round_start_request(self, new_demand: bool = False, demand: int = 0) -> bool:
         """Send round start request to Propius job manager. Client will be routed to parameter server after this call
         until the number of clients has reached specified demand, or round_end_request is called.
         Note that though Propius provide the guarantee that the requested demand will be satisfied,
@@ -211,7 +212,7 @@ class Propius_job():
             demand=this_round_demand
         )
 
-        for _ in range(10):
+        for _ in range(3):
             try:
                 ack_msg = self._jm_stub.JOB_REQUEST(request_msg)
                 if not ack_msg.ack:
@@ -242,7 +243,7 @@ class Propius_job():
 
         request_msg = propius_pb2.job_id(id=self.id)
 
-        for _ in range(10):
+        for _ in range(3):
             try:
                 ack_msg = self._jm_stub.JOB_END_REQUEST(request_msg)
                 if not ack_msg.ack:
@@ -272,7 +273,7 @@ class Propius_job():
 
         req_msg = propius_pb2.job_id(id=self.id)
 
-        for _ in range(10):
+        for _ in range(3):
             try:
                 self._jm_stub.JOB_FINISH(req_msg)
                 if self.verbose:

@@ -1,7 +1,7 @@
 # Define Basic FL Events
 UPDATE_MODEL = 'update_model'
 MODEL_TEST = 'model_test'
-SHUT_DOWN = 'terminate_executor'
+SHUT_DOWN = 'shut_down'
 # START_ROUND = 'start_round'
 # CLIENT_CONNECT = 'client_connect'
 CLIENT_TRAIN = 'client_train'

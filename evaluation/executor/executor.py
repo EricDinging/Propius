@@ -41,14 +41,16 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
     async def execute(self):
         #TODO
         while True:
-            execute_meta = self.task_pool.get_next_task()
+            execute_meta = await self.task_pool.get_next_task()
             
             if not execute_meta:
                 await asyncio.sleep(5)
                 continue
             
             job_id = execute_meta['job_id']
-            
+
+            print(f"Executor: execute job {job_id} {execute_meta['event']}")
+
             if execute_meta['event'] == JOB_FINISH:
                 await self.task_pool.remove_job(job_id)
             
@@ -102,8 +104,8 @@ if __name__ == '__main__':
             loop.run_until_complete(run(config))
         except KeyboardInterrupt:
             pass
-        except Exception as e:
-            print(e)
+        # except Exception as e:
+        #     print(e)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()
