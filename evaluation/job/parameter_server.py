@@ -8,6 +8,8 @@ from channels import parameter_server_pb2
 from channels import parameter_server_pb2_grpc
 from evaluation.commons import *
 from collections import deque
+from evaluation.executor.channels import executor_pb2
+from evaluation.executor.channels import executor_pb2_grpc
 
 _cleanup_coroutines = []
 
@@ -29,6 +31,17 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.propius_stub = Propius_job(job_config=config, verbose=True)
 
         self.propius_stub.connect()
+
+        self.executor_ip = config['executor_ip']
+        self.executor_port = config['executor_port']
+        self.executor_channel = None
+        self.executor_stub = None
+        self._connect_to_executor()
+
+    def _connect_to_executor(self):
+        self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
+        self.executor_stub = executor_pb2_grpc.ExecutorStub(self.executor_channel)
+        print(f"PS: connecting to executor on {self.executor_ip}: {self.executor_port}")
 
     def _close_round(self):
         # locked
@@ -68,9 +81,39 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
                     print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, issue {event} event, {self.round_client_num}/{self.demand}")
 
+                    #TODO send training task to executor
+                    task_meta = {
+                        "local_steps": 0,
+                        "learning_rate": 0,
+                        "batch_size": 0,
+                    }
+                    job_task_info_msg = executor_pb2.job_task_info(
+                        job_id=self.propius_stub.id,
+                        client_id=client_id,
+                        round=self.cur_round,
+                        event=CLIENT_TRAIN,
+                        task_meta=pickle.dumps(task_meta)
+                    )
+
+                    await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+
                     if self.round_client_num >= self.demand:
                         #TODO job aggregation task register to executor
                         if not self.execution_start:
+                            #TODO send agg task to executor
+                            task_meta = {
+                            }
+
+                            job_task_info_msg = executor_pb2.job_task_info(
+                                job_id=self.propius_stub.id,
+                                client_id=-1,
+                                round=self.cur_round,
+                                event=AGGREGATE,
+                                task_meta=pickle.dumps(task_meta)
+                            )
+
+                            await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+
                             self.propius_stub.round_end_request()
                             self.execution_start = True
             else:
@@ -115,6 +158,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 async def run(config):
     async def server_graceful_shutdown():
         ps.propius_stub.close()
+        await ps.executor_channel.close()
         print("==Parameter server ending==")
         await server.stop(5)
     
@@ -127,7 +171,14 @@ async def run(config):
         print(f"Parameter server: register failed")
         return
     
-    #TODO Register to worker
+    #TODO Register to executor
+    job_meta = {
+        "model": config["model"],
+        "dataset": config["dataset"]
+    }
+    job_info_msg = executor_pb2.job_info(job_id=ps.propius_stub.id, 
+                                         job_meta=pickle.dumps(job_meta))
+    await ps.executor_stub.JOB_REGISTER(job_info_msg)
 
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
     server.add_insecure_port(f"{config['ip']}:{config['port']}")
@@ -152,6 +203,7 @@ async def run(config):
                     return
             round += 1
     ps.propius_stub.complete_job()
+
     print(
         f"Parameter server: All round finished")
     
@@ -171,8 +223,16 @@ if __name__ == '__main__':
             print("Parameter server read config successfully")
             config["ip"] = ip
             config["port"] = port
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(run(config))
+
+            eval_config_file = './evaluation/evaluation_config.yml'
+            with open(eval_config_file, 'r') as eval_config:
+            
+                eval_config = yaml.load(config, Loader=yaml.FullLoader)
+                config['executor_ip'] = eval_config['executor_ip']
+                config['executor_port'] = eval_config['executor_port']
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(run(config))
+                
         except KeyboardInterrupt:
             pass
         except Exception as e:
