@@ -34,3 +34,5 @@ use_cuda: False
 
 executor_ip: localhost
 executor_port: 49999
+
+num_worker: 1
