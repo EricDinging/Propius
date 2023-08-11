@@ -11,7 +11,7 @@ class Task_pool:
         self.cur_job_id = -1
         self.result_dict = {}
 
-    async def init_job(self, job_id: int, job_meta: dict, job_data: dict):
+    async def init_job(self, job_id: int, job_meta: dict):
         async with self.lock:
             job_meta["job_id"] = job_id
             self.job_meta_dict[job_id] = job_meta

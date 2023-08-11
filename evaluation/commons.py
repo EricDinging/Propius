@@ -17,7 +17,6 @@ DUMMY_RESPONSE = 'N'
 # PYTORCH = 'pytorch'
 
 JOB_META = {
-    "job_id": -1,
     "model": "",
     "dataset": "",
 }

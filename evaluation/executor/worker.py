@@ -8,6 +8,9 @@ from torch.autograd import Variable
 from torch.nn import CTCLoss
 import numpy as np
 import random
+from typing import List
+
+import asyncio
 
 class Worker:
     def __init__(self, config):
@@ -23,11 +26,11 @@ class Worker:
         self.test_data_partition_dict = {}
         self.data_partitioner_ref_cnt_dict = {}
 
-        self.job_id_model_weight_map = {}
+        self.job_id_model_adapter_map = {}
         self.job_id_agg_weight_map = {}
         self.job_id_agg_cnt = {}
         # self.num_worker = config['num_worker']
-        self.cur_job = -1
+        self.lock = asyncio.Lock()
 
         self._setup_seed()
 
@@ -127,80 +130,82 @@ class Worker:
 
         return (model_param, results)
 
-    def remove_job(self, job_id: int):
-        dataset_name = self.job_id_data_map[job_id]
-        del self.job_id_data_map[job_id]
-        del self.job_id_model_weight_map[job_id]
-        del self.job_id_agg_weight_map[job_id]
-        del self.job_id_agg_cnt[job_id]
-        self.data_partitioner_ref_cnt_dict[dataset_name] -= 1
-        if self.data_partitioner_dict[dataset_name] <= 0:
-            del self.data_partitioner_dict[dataset_name]
-            del self.test_data_partition_dict[dataset_name]
-            del self.data_partitioner_ref_cnt_dict[dataset_name]
+    async def remove_job(self, job_id: int):
+        async with self.lock:
+            dataset_name = self.job_id_data_map[job_id]
+            del self.job_id_data_map[job_id]
+            del self.job_id_model_adapter_map[job_id]
+            del self.job_id_agg_weight_map[job_id]
+            del self.job_id_agg_cnt[job_id]
+            self.data_partitioner_ref_cnt_dict[dataset_name] -= 1
+            if self.data_partitioner_dict[dataset_name] <= 0:
+                del self.data_partitioner_dict[dataset_name]
+                del self.test_data_partition_dict[dataset_name]
+                del self.data_partitioner_ref_cnt_dict[dataset_name]
 
-    def init_job(self, job_id: int, dataset_name: str, model_name: str, args, model_weights):
-        self.job_id_data_map[job_id] = dataset_name
+    async def init_job(self, job_id: int, dataset_name: str, model_name: str):
+        async with self.lock:
+            self.job_id_data_map[job_id] = dataset_name
 
-        if dataset_name not in self.data_partitioner_dict:
-            #TODO init data partitioner
-            #TODO test data partitioner
-            if dataset_name == "femnist":
-                from fedscale.dataloaders.femnist import FEMNIST
-                from fedscale.dataloaders.utils_data import get_data_transform
+            if dataset_name not in self.data_partitioner_dict:
+                #TODO init data partitioner
+                #TODO test data partitioner
+                if dataset_name == "femnist":
+                    from fedscale.dataloaders.femnist import FEMNIST
+                    from fedscale.dataloaders.utils_data import get_data_transform
 
-                train_transform, test_transform = get_data_transform("mnist")
-                train_dataset = FEMNIST(
-                    self.config['data_dir'],
-                    dataset='train',
-                    transform=train_transform
+                    train_transform, test_transform = get_data_transform("mnist")
+                    train_dataset = FEMNIST(
+                        self.config['femnist_data_dir'],
+                        dataset='train',
+                        transform=train_transform
+                    )
+                    test_dataset = FEMNIST(
+                        self.config['femnist_data_dir'],
+                        dataset='test',
+                        transform=test_transform
+                    )
+
+                    self.data_partitioner_dict[dataset_name] = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
+                    self.data_partitioner_dict[dataset_name].partition_data_helper(0, data_map_file=self.config['femnist_data_map_file'])
+                    
+                    self.test_data_partition_dict[dataset_name] = Data_partitioner(data=test_dataset, num_of_labels=out_put_class[dataset_name])
+                    self.test_data_partition_dict[dataset_name].partition_data_helper(0, data_map_file=self.config['femnist_test_data_map_file'])
+
+                self.data_partitioner_ref_cnt_dict[dataset_name] = 0
+
+            self.data_partitioner_ref_cnt_dict[dataset_name] += 1
+
+            model = None
+            if model_name == "resnet_18":
+                from fedscale.utils.models.specialized.resnet_speech import resnet18
+                model = resnet18(
+                    num_classes=out_put_class[dataset_name],
+                    in_channels=1
                 )
-                test_dataset = FEMNIST(
-                    self.config['data_dir'],
-                    dataset='test',
-                    transform=test_transform
-                )
+                model_adapter = torch_module_adapter(model)
+                # model_adapter.set_weights(model_weights)
+            self.job_id_model_adapter_map[job_id] = model_adapter
+            self.job_id_agg_weight_map[job_id] = model_adapter.get_weights()
+            self.job_id_agg_cnt[job_id] = 0
 
-                self.data_partitioner_dict[dataset_name] = Data_partitioner(data=train_dataset, args=args, num_of_labels=out_put_class[dataset_name])
-                self.data_partitioner_dict[dataset_name].partition_data_helper(-1, data_map_file=self.config['data_map_file'])
-                
-                self.test_data_partition_dict[dataset_name] = Data_partitioner(data=test_dataset, args=args, num_of_labels=out_put_class[dataset_name])
-                self.test_data_partition_dict[dataset_name].partition_data_helper(-1, data_map_file=self.config['test_data_map_file'])
+    async def execute(self, event: str, job_id: int, client_id: int, args)->dict:
+        async with self.lock:
+            if event == CLIENT_TRAIN:
+                model_param, results = self._train(client_id=client_id, 
+                            partition=self.data_partitioner_dict[self.job_id_data_map[job_id]],
+                            model=self.job_id_model_adapter_map[job_id],
+                            conf=args)
+                self.job_id_agg_cnt[job_id] += 1
+                self.job_id_agg_weight_map[job_id] = None #TODO aggregate
 
-            self.data_partitioner_ref_cnt_dict[dataset_name] = 0
+            elif event == AGGREGATE:
+                self.job_id_model_adapter_map[job_id] = self.job_id_agg_weight_map[job_id] #TODO
+                self.job_id_agg_cnt[job_id] = 0
 
-        self.data_partitioner_ref_cnt_dict[dataset_name] += 1
-
-        model = None
-        if model_name == "resnet_18":
-            from fedscale.utils.models.specialized.resnet_speech import resnet18
-            model = resnet18(
-                num_classes=out_put_class[dataset_name],
-                in_channels=1
-            )
-            model_adapter = torch_module_adapter(model)
-            model_adapter.set_weights(model_weights)
-        self.job_id_model_weight_map[job_id] = model_adapter
-        self.job_id_agg_weight_map[job_id] = None
-        self.job_id_agg_cnt[job_id] = 0
-
-    def execute(self, event: str, job_id: int, client_id: int, args)->dict:
-        if event == CLIENT_TRAIN:
-            model_param, results = self._train(client_id=client_id, 
-                        partition=self.data_partitioner_dict[self.job_id_data_map[job_id]],
-                        model=self.job_id_model_weight_map[job_id],
-                        conf=args)
-            self.job_id_agg_cnt += 1
-            self.job_id_agg_weight_map = None #TODO aggregate
-
-        elif event == AGGREGATE:
-            self.job_id_agg_cnt = self.job_id_agg_weight_map #TODO
-            self.job_id_agg_cnt = 0
-
-        elif event == MODEL_TEST:
-            #TODO
-            pass
-            
+            elif event == MODEL_TEST:
+                #TODO
+                pass
             
             
 

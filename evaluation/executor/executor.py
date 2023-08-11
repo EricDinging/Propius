@@ -7,6 +7,7 @@ import pickle
 from evaluation.executor.channels import executor_pb2
 from evaluation.executor.channels import executor_pb2_grpc
 from evaluation.executor.task_pool import *
+from evaluation.executor.worker import *
 from evaluation.commons import *
 
 _cleanup_coroutines = []
@@ -16,14 +17,19 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.ip = config['executor_ip']
         self.port = config['executor_port']
         self.task_pool = Task_pool()
+        self.worker = Worker(config)
 
     async def JOB_REGISTER(self, request, context):
         job_id = request.job_id
         job_meta = pickle.loads(request.job_meta)
-        job_data = {
-            "model_weights": {}
-        } #TODO get model weights
-        await self.task_pool.init_job(job_id, job_meta, job_data)
+
+        #TODO get model weights
+        await self.task_pool.init_job(job_id, job_meta)
+        await self.worker.init_job(job_id=job_id, 
+                                   dataset_name=job_meta["dataset"],
+                                   model_name=job_meta["model"],
+                                   )
+
         return executor_pb2.ack(ack=True)
     
     async def JOB_REGISTER_TASK(self, request, context):

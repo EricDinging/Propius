@@ -18,14 +18,13 @@ class Partition:
             return self.data[data_idx]
         
 class Data_partitioner:
-    def __init__(self, data, args, num_of_labels=0, seed=1):
+    def __init__(self, data, num_of_labels=0, seed=1):
         self.partitions = []
         self.rng = Random()
         self.rng.seed(seed)
 
         self.data = data
         self.labels = self.data.targets
-        self.args = args
         np.random.seed(seed)
 
         self.data_len = len(self.data)
