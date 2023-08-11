@@ -35,6 +35,9 @@ TASK_META = {
     "local_steps": 0,
     "learning_rate": 0,
     "batch_size": 0,
+    "test_ratio": 0, 
+    "num_loaders": 5,
+    "loss_decay": 0.9
 }
 
 EXECUTE_META = JOB_META.update(TASK_META)
@@ -42,4 +45,5 @@ EXECUTE_META = JOB_META.update(TASK_META)
 result_dict = {
     "accuracy": 0,
     "loss": 0,
+    "moving_loss": 0,
 }
