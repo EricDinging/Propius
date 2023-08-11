@@ -56,13 +56,10 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             
             elif execute_meta['event'] == CLIENT_TRAIN:
                 #TODO train
-                model_weights = await self.task_pool.get_model_weights(job_id)
                 await asyncio.sleep(5)
-                await self.task_pool.update_model_weights(job_id, model_weights)
 
             elif execute_meta['event'] == MODEL_TEST:
                 #TODO gen test config
-                model_weights = await self.task_pool.get_model_weights(job_id)
                 await asyncio.sleep(1)
                 result = {
                     "loss": 0.0,
@@ -72,7 +69,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
 
             elif execute_meta['event'] == AGGREGATE:
                 #TODO aggregate
-                await self.task_pool.agg_model_weights(job_id)
                 await asyncio.sleep(1)
 
     

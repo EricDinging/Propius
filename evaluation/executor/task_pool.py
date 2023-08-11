@@ -8,7 +8,6 @@ class Task_pool:
         self.lock = asyncio.Lock()
         self.job_meta_dict = {}
         self.job_task_dict = {}
-        self.job_data_dict = {}
         self.cur_job_id = -1
         self.result_dict = {}
 
@@ -28,10 +27,6 @@ class Task_pool:
             }
             self.job_task_dict[job_id].append(test_task_meta)
             
-            job_data["client_num"] = 0
-            job_data["agg_model_weights"] = {}
-            self.job_data_dict[job_id] = job_data
-
     
     async def insert_job_task(self, job_id: int, client_id: int, round: int, event: str, task_meta: dict):
         """event: {CLIENT_TRAIN, AGGREGATE, FINISH}
@@ -57,22 +52,6 @@ class Task_pool:
                 }
                 self.job_task_dict[job_id].append(test_task_meta)
 
-    async def get_model_weights(self, job_id: int)->dict:
-        return copy.deepcopy(self.job_data_dict[job_id]["model_weights"])
-
-    async def update_model_weights(self, job_id, model_weights: dict):
-        async with self.lock:
-            #TODO agg
-            self.job_data_dict[job_id]["agg_model_weights"] = {}
-            self.job_data_dict[job_id]["client_num"] += 1
-
-    async def agg_model_weights(self, job_id):
-        async with self.lock:
-            #TODO agg
-            self.job_data_dict[job_id]["model_weights"] = self.job_data_dict[job_id]["agg_model_weights"]
-            self.job_data_dict[job_id]["agg_model_weights"] = {}
-            self.job_data_dict[job_id]["client_num"] = 0
-
 
     async def get_next_task(self)->dict:
         """Get next task, prioritize previous job id if there is still task left for the job
@@ -96,7 +75,6 @@ class Task_pool:
             try:
                 del self.job_meta_dict[job_id]
                 del self.job_task_dict[job_id]
-                del self.job_data_dict[job_id]
             except:
                 pass
 

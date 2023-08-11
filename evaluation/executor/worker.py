@@ -18,8 +18,13 @@ class Worker:
                 use_cuda
                 cuda_device
         """
-        self.model_adapter_dict = {}
+        self.job_id_data_map = {}
+        self.data_partitioner_dict = {}
+        self.data_partitioner_ref_cnt_dict = {}
 
+        self.job_id_model_weight_map = {}
+        self.job_id_agg_weight_map = {}
+        self.job_id_agg_cnt = {}
         # self.num_worker = config['num_worker']
         self.cur_job = -1
 
@@ -29,7 +34,7 @@ class Worker:
         self.device = torch.device('cpu')
 
         self._completed_steps = 0
-        self.epoch_train_loss = 1e-4
+        self._epoch_train_loss = 1e-4
 
     def _setup_seed(self, seed=1):
         torch.manual_seed(seed)
@@ -65,11 +70,11 @@ class Worker:
             temp_loss = sum(loss_list) / float(len(loss_list))
 
             if self._completed_steps < len(client_data):
-                if self.epoch_train_loss == 1e-4:
-                    self.epoch_train_loss = temp_loss
+                if self._epoch_train_loss == 1e-4:
+                    self._epoch_train_loss = temp_loss
                 else:
-                    self.epoch_train_loss = (1. - conf.loss_decay) * \
-                        self.epoch_train_loss + conf.loss_decay * temp_loss
+                    self._epoch_train_loss = (1. - conf.loss_decay) * \
+                        self._epoch_train_loss + conf.loss_decay * temp_loss
             
             optimizer.zero_grad()
             loss.backward()
@@ -82,7 +87,7 @@ class Worker:
 
     def _train(self, client_id, partition: Data_partitioner, model, conf)->tuple[dict, dict]:
         self._completed_steps = 0
-        self.epoch_train_loss = 1e-4
+        self._epoch_train_loss = 1e-4
 
         client_data = select_dataset(client_id=client_id, 
                                      partition=partition,
@@ -111,7 +116,7 @@ class Worker:
         
         state_dict = model.state_dict()
         model_param = {p: state_dict[p].data.cpu().numpy() for p in state_dict}
-        results = {'moving_loss': self.epoch_train_loss, 
+        results = {'moving_loss': self._epoch_train_loss, 
                   'trained_size': self._completed_steps * conf.batch_size,
         }       
 
@@ -121,11 +126,45 @@ class Worker:
 
 
         
-    def remove_job(self):
-        pass
+    def remove_job(self, job_id: int):
+        dataset_name = self.job_id_data_map[job_id]
+        del self.job_id_data_map[job_id]
+        self.data_partitioner_ref_cnt_dict[dataset_name] -= 1
+        if self.data_partitioner_dict[dataset_name] <= 0:
+            del self.data_partitioner_dict[dataset_name]
+            del self.data_partitioner_dict[dataset_name]
 
-    def init_job(self):
-        pass
+    def init_job(self, job_id: int, dataset_name: str, model_name: str, args):
+        self.job_id_data_map[job_id] = dataset_name
+        if dataset_name not in self.data_partitioner_dict:
+            #TODO init data partitioner
+            self.data_partitioner_dict[dataset_name] = Data_partitioner(None, args=args, num_of_labels=0, seed=1)
+            self.data_partitioner_ref_cnt_dict[dataset_name] = 0
 
-    def execute(self, event: str, client_id: int)->dict:
-        pass
+        self.data_partitioner_ref_cnt_dict[dataset_name] += 1
+
+        model = None
+        self.job_id_model_weight_map[job_id] = torch_module_adapter(model)
+        self.job_id_agg_weight_map[job_id] = None
+        self.job_id_agg_cnt[job_id] = 0
+
+    def execute(self, event: str, job_id: int, client_id: int, args)->dict:
+        if event == CLIENT_TRAIN:
+            model_param, results = self._train(client_id=client_id, 
+                        partition=self.data_partitioner_dict[self.job_id_data_map[job_id]],
+                        model=self.job_id_model_weight_map[job_id],
+                        conf=args)
+            self.job_id_agg_cnt += 1
+            self.job_id_agg_weight_map = None #TODO aggregate
+
+        elif event == AGGREGATE:
+            self.job_id_agg_cnt = self.job_id_agg_weight_map #TODO
+            self.job_id_agg_cnt = 0
+
+        elif event == MODEL_TEST:
+            #TODO
+            pass
+            
+            
+            
+
