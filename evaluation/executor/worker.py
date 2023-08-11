@@ -1,5 +1,5 @@
 from evaluation.executor.task_pool import *
-from evaluation.executor.internal import torch_module_adapter
+from evaluation.executor.internal.torch_module_adapter import *
 from evaluation.executor.internal.dataset_handler import *
 
 import math
@@ -51,7 +51,7 @@ class Worker:
 
     def _get_optimizer(self, model, conf):
         optimizer = torch.optim.SGD(
-            model.parameters(), lr=conf.learning_rate,
+            model.parameters(), lr=conf['learning_rate'],
             momentum=0.9, weight_decay=5e-4
         )
         return optimizer
@@ -61,7 +61,7 @@ class Worker:
         criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device=self.device)
         return criterion
     
-    def _train_step(self, client_data: DataLoader, conf, model, optimizer, criterion):
+    def _train_step(self, client_data: DataLoader, conf: dict, model: Torch_model_adapter, optimizer, criterion):
         for data_pair in client_data:
             (data, target) = data_pair
             data = Variable(data).to(device=self.device)
@@ -79,8 +79,8 @@ class Worker:
                 if self._epoch_train_loss == 1e-4:
                     self._epoch_train_loss = temp_loss
                 else:
-                    self._epoch_train_loss = (1. - conf.loss_decay) * \
-                        self._epoch_train_loss + conf.loss_decay * temp_loss
+                    self._epoch_train_loss = (1. - conf['loss_decay']) * \
+                        self._epoch_train_loss + conf['loss_decay'] * temp_loss
             
             optimizer.zero_grad()
             loss.backward()
@@ -88,16 +88,16 @@ class Worker:
 
             self._completed_steps += 1
 
-            if self._completed_steps == conf.local_steps:
+            if self._completed_steps == conf['local_steps']:
                 break
 
-    def _train(self, client_id, partition: Data_partitioner, model, conf)->tuple[dict, dict]:
+    def _train(self, client_id, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->tuple[dict, dict]:
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
 
         client_data = select_dataset(client_id=client_id, 
                                      partition=partition,
-                                     batch_size=conf.batch_size,
+                                     batch_size=conf['batch_size'],
                                      args=conf,
                                      is_test=False,
                                      )
@@ -105,14 +105,14 @@ class Worker:
         model = model.to(device=self.device)
         model.train()
 
-        trained_unique_samples = min(
-            len(client_data.dataset), conf.local_steps * conf.batch_size
-        )
+        # trained_unique_samples = min(
+        #     len(client_data.dataset), conf.local_steps * conf.batch_size
+        # )
 
         optimizer = self._get_optimizer(model, conf)
         criterion = self._get_criterion(conf)
         
-        while self._completed_steps < conf.local_steps:
+        while self._completed_steps < conf['local_steps']:
             try:
                 #TODO 
                 self._train_step(client_data, conf, model, optimizer, criterion)
@@ -121,9 +121,9 @@ class Worker:
                 break
         
         state_dict = model.state_dict()
-        model_param = {p: state_dict[p].data.cpu().numpy() for p in state_dict}
+        model_param = [state_dict[p].data.cpu().numpy() for p in state_dict]
         results = {'moving_loss': self._epoch_train_loss, 
-                  'trained_size': self._completed_steps * conf.batch_size,
+                  'trained_size': self._completed_steps * conf['batch_size'],
         }       
 
         print(f"Worker: Client {client_id}: training complete, {results}===")
@@ -132,16 +132,17 @@ class Worker:
 
     async def remove_job(self, job_id: int):
         async with self.lock:
-            dataset_name = self.job_id_data_map[job_id]
-            del self.job_id_data_map[job_id]
-            del self.job_id_model_adapter_map[job_id]
-            del self.job_id_agg_weight_map[job_id]
-            del self.job_id_agg_cnt[job_id]
-            self.data_partitioner_ref_cnt_dict[dataset_name] -= 1
-            if self.data_partitioner_dict[dataset_name] <= 0:
-                del self.data_partitioner_dict[dataset_name]
-                del self.test_data_partition_dict[dataset_name]
-                del self.data_partitioner_ref_cnt_dict[dataset_name]
+            if job_id in self.job_id_data_map:
+                dataset_name = self.job_id_data_map[job_id]
+                del self.job_id_data_map[job_id]
+                del self.job_id_model_adapter_map[job_id]
+                del self.job_id_agg_weight_map[job_id]
+                del self.job_id_agg_cnt[job_id]
+                self.data_partitioner_ref_cnt_dict[dataset_name] -= 1
+                if self.data_partitioner_ref_cnt_dict[dataset_name] <= 0:
+                    del self.data_partitioner_dict[dataset_name]
+                    del self.test_data_partition_dict[dataset_name]
+                    del self.data_partitioner_ref_cnt_dict[dataset_name]
 
     async def init_job(self, job_id: int, dataset_name: str, model_name: str):
         async with self.lock:
@@ -165,39 +166,50 @@ class Worker:
                         dataset='test',
                         transform=test_transform
                     )
-
-                    self.data_partitioner_dict[dataset_name] = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
-                    self.data_partitioner_dict[dataset_name].partition_data_helper(0, data_map_file=self.config['femnist_data_map_file'])
                     
-                    self.test_data_partition_dict[dataset_name] = Data_partitioner(data=test_dataset, num_of_labels=out_put_class[dataset_name])
-                    self.test_data_partition_dict[dataset_name].partition_data_helper(0, data_map_file=self.config['femnist_test_data_map_file'])
+                    train_partitioner = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
+                    train_partitioner.partition_data_helper(0, data_map_file=self.config['femnist_data_map_file'])
+                    self.data_partitioner_dict[dataset_name] = train_partitioner
+                   
+                    test_partitioner = Data_partitioner(data=test_dataset, num_of_labels=out_put_class[dataset_name])
+                    test_partitioner.partition_data_helper(0, data_map_file=self.config['femnist_test_data_map_file'])
+                    self.test_data_partition_dict[dataset_name] = test_partitioner
 
                 self.data_partitioner_ref_cnt_dict[dataset_name] = 0
 
             self.data_partitioner_ref_cnt_dict[dataset_name] += 1
 
             model = None
-            if model_name == "resnet_18":
+            if model_name == "resnet18":
                 from fedscale.utils.models.specialized.resnet_speech import resnet18
                 model = resnet18(
                     num_classes=out_put_class[dataset_name],
                     in_channels=1
                 )
-                model_adapter = torch_module_adapter(model)
+                model_adapter = Torch_model_adapter(model)
                 # model_adapter.set_weights(model_weights)
             self.job_id_model_adapter_map[job_id] = model_adapter
-            self.job_id_agg_weight_map[job_id] = model_adapter.get_weights()
+            self.job_id_agg_weight_map[job_id] = []
             self.job_id_agg_cnt[job_id] = 0
 
-    async def execute(self, event: str, job_id: int, client_id: int, args)->dict:
+    async def execute(self, event: str, job_id: int, client_id: int, args: dict)->dict:
         async with self.lock:
             if event == CLIENT_TRAIN:
                 model_param, results = self._train(client_id=client_id, 
                             partition=self.data_partitioner_dict[self.job_id_data_map[job_id]],
-                            model=self.job_id_model_adapter_map[job_id],
+                            model=self.job_id_model_adapter_map[job_id].get_model(),
                             conf=args)
+                
                 self.job_id_agg_cnt[job_id] += 1
-                self.job_id_agg_weight_map[job_id] = None #TODO aggregate
+
+                agg_weight = self.job_id_agg_weight_map[job_id]
+                if self.job_id_agg_cnt[job_id] == 1:
+                    agg_weight = model_param
+                else:
+                    agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
+                self.job_id_agg_weight_map[job_id] = agg_weight
+
+                return results
 
             elif event == AGGREGATE:
                 self.job_id_model_adapter_map[job_id] = self.job_id_agg_weight_map[job_id] #TODO

@@ -6,16 +6,15 @@ from collections import defaultdict
 
 class Partition:
     def __init__(self, data, index):
-        def __init__(self, data, index):
-            self.data = data
-            self.index = index
+        self.data = data
+        self.index = index
 
-        def __len__(self):
-            return len(self.index)
-        
-        def __getitem__(self, index):
-            data_idx = self.index[index]
-            return self.data[data_idx]
+    def __len__(self):
+        return len(self.index)
+    
+    def __getitem__(self, index):
+        data_idx = self.index[index]
+        return self.data[data_idx]
         
 class Data_partitioner:
     def __init__(self, data, num_of_labels=0, seed=1):
@@ -62,7 +61,7 @@ class Data_partitioner:
                     client_id = row[0]
                     
                     if client_id not in unqiue_client_ids:
-                        unqiue_client_ids[sample_id] = len(unqiue_client_ids)
+                        unqiue_client_ids[client_id] = len(unqiue_client_ids)
                     
                     client_id_maps[sample_id] = unqiue_client_ids[client_id]
                     self.client_label_cnt[unqiue_client_ids[client_id]].add
@@ -106,9 +105,9 @@ class Data_partitioner:
     def get_size(self):
         return {'size': [len(partition) for partition in self.partitions]}
     
-def select_dataset(client_id: int, partition: Data_partitioner, batch_size: int, args, is_test: bool=False):
+def select_dataset(client_id: int, partition: Partition, batch_size: int, args: dict, is_test: bool=False):
     if is_test:
-        partition = partition.use(client_id, is_test, args.test_ratio)
+        partition = partition.use(client_id, is_test, args['test_ratio'])
 
     else:
         partition = partition.use(client_id, is_test)
@@ -118,7 +117,7 @@ def select_dataset(client_id: int, partition: Data_partitioner, batch_size: int,
     if is_test:
         num_loaders = 0
     else:
-        num_loaders = min(int(len(partition)/batch_size/2), args.num_loaders)
+        num_loaders = min(int(len(partition)/batch_size/2), args['num_loaders'])
 
     if num_loaders == 0:
         time_out = 0

@@ -58,18 +58,30 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             print(f"Executor: execute job {job_id} {execute_meta['event']}")
 
             if execute_meta['event'] == JOB_FINISH:
-                await self.task_pool.remove_job(job_id)
+                await self.task_pool.remove_job(job_id=job_id)
+                await self.worker.remove_job(job_id=job_id)
             
             elif execute_meta['event'] == CLIENT_TRAIN:
                 #TODO train
-                await asyncio.sleep(5)
+                client_id = execute_meta['client_id']
+                results = await self.worker.execute(event=CLIENT_TRAIN,
+                                          job_id=job_id,
+                                          client_id=client_id,
+                                          args=execute_meta)
+                
+                results = {CLIENT_TRAIN+str(client_id): results}
+                await self.task_pool.report_result(job_id=job_id, 
+                                                   round=execute_meta['round'],
+                                                   result=results)
 
             elif execute_meta['event'] == MODEL_TEST:
                 #TODO gen test config
                 await asyncio.sleep(1)
                 result = {
-                    "loss": 0.0,
-                    "accuracy": 0.0
+                    MODEL_TEST:{
+                        "loss": 0.0,
+                        "accuracy": 0.0
+                    }
                 }
                 await self.task_pool.report_result(job_id, execute_meta['round'], result)
 

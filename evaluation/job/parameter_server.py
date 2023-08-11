@@ -38,6 +38,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.executor_channel = None
         self.executor_stub = None
         self._connect_to_executor()
+        self.config = config
 
     def _connect_to_executor(self):
         self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
@@ -84,9 +85,11 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
                     #TODO send training task to executor
                     task_meta = {
-                        "local_steps": 0,
-                        "learning_rate": 0,
-                        "batch_size": 0,
+                        "local_steps": self.config["local_steps"],
+                        "learning_rate": self.config["learning_rate"],
+                        "batch_size": self.config["batch_size"],
+                        "num_loaders": self.config["num_loaders"],
+                        "loss_decay": self.config["loss_decay"]
                     }
                     job_task_info_msg = executor_pb2.job_task_info(
                         job_id=self.propius_stub.id,
@@ -95,7 +98,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         event=CLIENT_TRAIN,
                         task_meta=pickle.dumps(task_meta)
                     )
-
                     await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
 
                     if self.round_client_num >= self.demand:
@@ -163,7 +165,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
 async def run(config):
     async def server_graceful_shutdown():
-
+        ps.propius_stub.complete_job()
+        ps.propius_stub.close()
+        
         task_meta = {}
         job_task_info_msg = executor_pb2.job_task_info(
             job_id=ps.propius_stub.id,
@@ -173,9 +177,6 @@ async def run(config):
             task_meta=pickle.dumps(task_meta)
         )
         await ps.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
-
-        ps.propius_stub.complete_job()
-        ps.propius_stub.close()
         await ps.executor_channel.close()
         print("==Parameter server ending==")
         await server.stop(5)

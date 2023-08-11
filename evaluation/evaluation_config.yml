@@ -41,5 +41,5 @@ num_loaders: 5
 
 #FEMNIST
 femnist_data_dir: ./evaluation/datasets/femnist
-femnist_data_map_file: ./evaluation/datasest/client_data_mapping/train.csv
-femnist_test_data_map_file: ./evaluation/dataset/client_data_mapping/test.csv
+femnist_data_map_file: ./evaluation/datasets/femnist/client_data_mapping/train.csv
+femnist_test_data_map_file: ./evaluation/datasets/femnist/client_data_mapping/test.csv
