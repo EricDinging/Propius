@@ -94,11 +94,11 @@ class Task_pool:
     
     async def gen_report(self, job_id: int, sched_alg: str):
         async with self.lock:
-            test_csv_file_name = f"test_{sched_alg}_{job_id}.csv"
+            test_csv_file_name = f"./evaluation/result/test_{sched_alg}_{job_id}.csv"
             fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
-            with open(test_csv_file_name, mode="w", newline="") as test_csv:
-                writer=csv.DictWriter(test_csv, mode="w", fieldnames=fieldnames)
-                writer.writeheader
+            with open(test_csv_file_name, "w", newline="") as test_csv:
+                writer=csv.DictWriter(test_csv, fieldnames=fieldnames)
+                writer.writeheader()
                 
                 for round, results in self.result_dict[job_id].items():
                     for event, result in results.items():

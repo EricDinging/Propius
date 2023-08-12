@@ -101,14 +101,14 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                 result=results)
 
     
-async def run(config):
+async def run(config, gconfig):
     async def server_graceful_shutdown():
         print("==Executor ending==")
         #TODO handling result
         await server.stop(5)
 
     server = grpc.aio.server()
-    executor = Executor(config)
+    executor = Executor(config, gconfig)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     executor_pb2_grpc.add_ExecutorServicer_to_server(executor, server)
