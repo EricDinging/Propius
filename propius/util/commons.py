@@ -15,12 +15,12 @@ ERROR = 3
 verbose = True
 
 def custom_print(message: str, level: int=INFO):
-    if verbose:
-        print(f"{get_time()} {message}")
-    if level == DEBUG:
-        logging.debug(message)
-    elif level == INFO:
+    if level == INFO:
+        if verbose:
+            print(f"{get_time()} {message}")
         logging.info(message)
+    elif level == DEBUG:
+        logging.debug(message)
     elif level == WARNING:
         logging.warning(message)
     else:

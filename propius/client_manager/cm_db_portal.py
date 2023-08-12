@@ -8,6 +8,7 @@ import time
 import json
 from propius.util.db import *
 import random
+from propius.util.commons import *
 
 
 class CM_job_db_portal(Job_db):
@@ -45,7 +46,8 @@ class CM_job_db_portal(Job_db):
         q = Query('*').sort_by('score', asc=False)
         try:
             result = self.r.ft('job').search(q)
-        except BaseException:
+        except Exception as e:
+            custom_print(e, WARNING)
             result = None
         if result:
             size = result.total
@@ -197,6 +199,6 @@ class CM_client_db_portal(Client_db):
             for idx, name in enumerate(self.public_constraint_name):
                 spec = int(self.r.json().get(id, f"$.client.{name}")[0])
                 specs[idx] = spec
-        except BaseException:
-            pass
+        except Exception as e:
+            custom_print(e, WARNING)
         return tuple(specs)
