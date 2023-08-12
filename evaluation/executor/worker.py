@@ -209,15 +209,20 @@ class Worker:
                     agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
                 self.job_id_agg_weight_map[job_id] = agg_weight
 
-                return results
-
             elif event == AGGREGATE:
-                self.job_id_model_adapter_map[job_id] = self.job_id_agg_weight_map[job_id] #TODO
+                agg_weight = self.job_id_agg_weight_map[job_id]
+                agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]
+
+                self.job_id_model_adapter_map[job_id].set_weights(copy.deepcopy(agg_weight))
+                results = {
+                    "agg_number": self.job_id_agg_cnt[job_id]
+                }
                 self.job_id_agg_cnt[job_id] = 0
 
             elif event == MODEL_TEST:
                 #TODO
                 pass
             
+            return results
             
 

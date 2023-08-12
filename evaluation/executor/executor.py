@@ -86,8 +86,14 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 await self.task_pool.report_result(job_id, execute_meta['round'], result)
 
             elif execute_meta['event'] == AGGREGATE:
-                #TODO aggregate
-                await asyncio.sleep(1)
+                results = await self.worker.execute(event=AGGREGATE,
+                                                    job_id=job_id,
+                                                    client_id=-1,
+                                                    args=execute_meta)
+                results = {AGGREGATE: results}
+                await self.task_pool.report_result(job_id=job_id,
+                                                   round=execute_meta['round'],
+                                                   result=results)
 
     
 async def run(config):
