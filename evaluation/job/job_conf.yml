@@ -7,10 +7,10 @@ job_manager_port: 50002
 
 # Training and testing aggregator setting
 gradient_policy: fedavg
-demand: 2
+demand: 5
 decay_round: 3  # learning rate decay after decay round
 decay_factor: 0.9
-total_round: 2  # Total round
+total_round: 4  # Total round
 min_learning_rate: 0.01
 eval_interval: 3
 

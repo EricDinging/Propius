@@ -1,15 +1,17 @@
 import asyncio
 from evaluation.commons import *
 from collections import deque
+import random
 import copy
 
 class Task_pool:
-    def __init__(self):
+    def __init__(self, config):
         self.lock = asyncio.Lock()
         self.job_meta_dict = {}
         self.job_task_dict = {}
         self.cur_job_id = -1
         self.result_dict = {}
+        self.config = config
 
     async def init_job(self, job_id: int, job_meta: dict):
         async with self.lock:
@@ -18,12 +20,11 @@ class Task_pool:
 
             self.job_task_dict[job_id] = deque()
             test_task_meta = {
-                "client_id": -1,
+                "client_id": random.randint(0, 10000),
                 "round": 0,
                 "event": MODEL_TEST,
-                "local_steps": 10,
-                "learning_rate": 0,
-                "batch_size": 10
+                "test_ratio": self.config["test_ratio"],
+                "test_bsz": self.config["test_bsz"]
             }
             self.job_task_dict[job_id].append(test_task_meta)
             
@@ -43,12 +44,11 @@ class Task_pool:
 
             if event == AGGREGATE:
                 test_task_meta = {
-                    "client_id": -1,
+                    "client_id": random.randint(0, 10000),
                     "round": task_meta["round"],
                     "event": MODEL_TEST,
-                    "local_steps": 10,
-                    "learning_rate": 0,
-                    "batch_size": 10
+                    "test_ratio": self.config["test_ratio"],
+                    "test_bsz": self.config["test_bsz"]
                 }
                 self.job_task_dict[job_id].append(test_task_meta)
 

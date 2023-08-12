@@ -39,6 +39,9 @@ num_worker: 1
 
 num_loaders: 5
 
+test_bsz: 20
+test_ratio: 1
+
 #FEMNIST
 femnist_data_dir: ./evaluation/datasets/femnist
 femnist_data_map_file: ./evaluation/datasets/femnist/client_data_mapping/train.csv

@@ -16,7 +16,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
     def __init__(self, config):
         self.ip = config['executor_ip']
         self.port = config['executor_port']
-        self.task_pool = Task_pool()
+        self.task_pool = Task_pool(config)
         self.worker = Worker(config)
 
     async def JOB_REGISTER(self, request, context):
@@ -60,9 +60,9 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             if execute_meta['event'] == JOB_FINISH:
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
+                continue
             
             elif execute_meta['event'] == CLIENT_TRAIN:
-                #TODO train
                 client_id = execute_meta['client_id']
                 results = await self.worker.execute(event=CLIENT_TRAIN,
                                           job_id=job_id,
@@ -70,20 +70,17 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                           args=execute_meta)
                 
                 results = {CLIENT_TRAIN+str(client_id): results}
-                await self.task_pool.report_result(job_id=job_id, 
-                                                   round=execute_meta['round'],
-                                                   result=results)
 
             elif execute_meta['event'] == MODEL_TEST:
-                #TODO gen test config
-                await asyncio.sleep(1)
-                result = {
-                    MODEL_TEST:{
-                        "loss": 0.0,
-                        "accuracy": 0.0
-                    }
+                results = await self.worker.execute(
+                    event=MODEL_TEST,
+                    job_id=job_id,
+                    client_id=execute_meta['client_id'],
+                    args=execute_meta
+                )
+                results = {
+                    MODEL_TEST: results
                 }
-                await self.task_pool.report_result(job_id, execute_meta['round'], result)
 
             elif execute_meta['event'] == AGGREGATE:
                 results = await self.worker.execute(event=AGGREGATE,
@@ -91,9 +88,9 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     client_id=-1,
                                                     args=execute_meta)
                 results = {AGGREGATE: results}
-                await self.task_pool.report_result(job_id=job_id,
-                                                   round=execute_meta['round'],
-                                                   result=results)
+            await self.task_pool.report_result(job_id=job_id,
+                                                round=execute_meta['round'],
+                                                result=results)
 
     
 async def run(config):

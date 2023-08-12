@@ -1,6 +1,7 @@
 from evaluation.executor.task_pool import *
 from evaluation.executor.internal.torch_module_adapter import *
 from evaluation.executor.internal.dataset_handler import *
+from evaluation.executor.internal.test_helper import *
 
 import math
 import torch
@@ -129,6 +130,55 @@ class Worker:
         print(f"Worker: Client {client_id}: training complete, {results}===")
 
         return (model_param, results)
+    
+    def _test(self, client_id: int, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->dict:
+        test_data = select_dataset(
+            client_id=client_id, 
+            partition=partition, 
+            batch_size=conf['test_bsz'],
+            args=conf,
+            is_test=True)
+        criterion = self._get_criterion(conf)
+        
+        test_loss = 0
+        correct = 0
+        top_5 = 0
+        test_len = 0
+        model = model.to(device=self.device)
+        model.eval()
+
+        with torch.no_grad():
+            for data, target in test_data:
+                try:
+                    data = Variable(data).to(device=self.device)
+                    target = Variable(target).to(device=self.device)
+                    output = model(data)
+                    loss = criterion(output, target)
+                    loss = loss.tolist()
+
+                    test_loss += sum(loss)
+                    acc = accuracy(output, target, topk=(1, 5))
+                    correct += acc[0].item()
+                    top_5 += acc[1].item()
+                except Exception as ex:
+                    print(ex)
+                    break
+                test_len += len(target)
+        
+        test_len = max(test_len, 1)
+        test_loss /= len(test_data)
+
+        acc = round(correct / test_len, 4)
+        acc_5 = round(top_5 / test_len, 4)
+        test_loss = round(test_loss, 4)
+
+        results = {
+            "test_loss": test_loss,
+            "acc": acc,
+            "acc_5": acc_5,
+            "test_len": test_len
+        }
+        return results
 
     async def remove_job(self, job_id: int):
         async with self.lock:
@@ -220,8 +270,12 @@ class Worker:
                 self.job_id_agg_cnt[job_id] = 0
 
             elif event == MODEL_TEST:
-                #TODO
-                pass
+                results = self._test(
+                    client_id=client_id,
+                    partition=self.test_data_partition_dict[self.job_id_data_map[job_id]],
+                    model=self.job_id_model_adapter_map[job_id].get_model(),
+                    conf=args,
+                )
             
             return results
             

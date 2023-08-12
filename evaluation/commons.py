@@ -28,7 +28,8 @@ TASK_META = {
     "local_steps": 0,
     "learning_rate": 0,
     "batch_size": 0,
-    "test_ratio": 0, 
+    "test_ratio": 0,
+    "test_bsz": 0, 
     "num_loaders": 5,
     "loss_decay": 0.9
 }
