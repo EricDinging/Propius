@@ -2,6 +2,7 @@ import asyncio
 import time
 from propius.util.monitor import *
 from propius.util.commons import *
+import os
 
 
 class JM_monitor(Monitor):
@@ -19,6 +20,14 @@ class JM_monitor(Monitor):
 
         self.constraint_jct_dict = {}
         self.constraint_sched_dict = {}
+
+        fig_dir = "./propius/fig"
+        log_dir = "./propius/log"
+
+        if not os.path.exists(fig_dir):
+            os.mkdir(fig_dir)
+        if not os.path.exists(log_dir):
+            os.mkdir(log_dir)
 
     async def job_register(self):
         async with self.lock:
@@ -67,7 +76,7 @@ class JM_monitor(Monitor):
     def report(self):
         str1 = self._gen_report()
 
-        with open(f'./log/JM-{self.sched_alg}-{get_time()}.txt', 'w') as file:
+        with open(f'./propius/log/JM-{self.sched_alg}-{get_time()}.txt', 'w') as file:
             file.write(str1)
             file.write("\n")
             file.write(
@@ -98,4 +107,4 @@ class JM_monitor(Monitor):
         self._plot_request()
         plt.tight_layout()
         plt.show()
-        fig.savefig(f"./fig/JM-{self.sched_alg}-{get_time()}")
+        fig.savefig(f"./propius/fig/JM-{self.sched_alg}-{get_time()}")

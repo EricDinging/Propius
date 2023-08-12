@@ -9,15 +9,21 @@ from evaluation.executor.channels import executor_pb2_grpc
 from evaluation.executor.task_pool import *
 from evaluation.executor.worker import *
 from evaluation.commons import *
+import os
 
 _cleanup_coroutines = []
 
 class Executor(executor_pb2_grpc.ExecutorServicer):
-    def __init__(self, config):
+    def __init__(self, config: dict, gconfig: dict):
         self.ip = config['executor_ip']
         self.port = config['executor_port']
         self.task_pool = Task_pool(config)
         self.worker = Worker(config)
+        self.gconfig = gconfig
+
+        result_dict = "./evaluation/result"
+        if not os.path.exists(result_dict):
+            os.mkdir(result_dict)
 
     async def JOB_REGISTER(self, request, context):
         job_id = request.job_id
@@ -58,6 +64,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             print(f"Executor: execute job {job_id} {execute_meta['event']}")
 
             if execute_meta['event'] == JOB_FINISH:
+                await self.task_pool.gen_report(job_id=job_id,
+                                                sched_alg=self.gconfig["sched_alg"])
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 continue
@@ -97,7 +105,6 @@ async def run(config):
     async def server_graceful_shutdown():
         print("==Executor ending==")
         #TODO handling result
-        executor.task_pool.gen_report()
         await server.stop(5)
 
     server = grpc.aio.server()
@@ -117,8 +124,11 @@ if __name__ == '__main__':
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
             print("Executor read config successfully")
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(run(config))
+            with open('./propius/global_config.yml', 'r') as gconfig:
+                gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
+                
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(run(config, gconfig))
         except KeyboardInterrupt:
             pass
         # except Exception as e:

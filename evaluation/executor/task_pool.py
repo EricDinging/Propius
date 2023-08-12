@@ -3,6 +3,7 @@ from evaluation.commons import *
 from collections import deque
 import random
 import copy
+import csv
 
 class Task_pool:
     def __init__(self, config):
@@ -69,12 +70,14 @@ class Task_pool:
                     self.cur_job_id = job_id
                     return execute_meta
             return None
-
+        
     async def remove_job(self, job_id: int):
         async with self.lock:
+
             try:
                 del self.job_meta_dict[job_id]
                 del self.job_task_dict[job_id]
+                del self.result_dict[job_id]
             except:
                 pass
 
@@ -89,8 +92,17 @@ class Task_pool:
 
             self.result_dict[job_id][round].update(result)
     
-    def gen_report(self):
-        for job_id, round_result_dict in self.result_dict.items():
-            print(f"Job {job_id}: ")
-            for round, result in round_result_dict.items():
-                print(f"    Round {round}: {result}")
+    async def gen_report(self, job_id: int, sched_alg: str):
+        async with self.lock:
+            test_csv_file_name = f"test_{sched_alg}_{job_id}.csv"
+            fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
+            with open(test_csv_file_name, mode="w", newline="") as test_csv:
+                writer=csv.DictWriter(test_csv, mode="w", fieldnames=fieldnames)
+                writer.writeheader
+                
+                for round, results in self.result_dict[job_id].items():
+                    for event, result in results.items():
+                        if event == MODEL_TEST:
+                            result["round"] = round
+                            writer.writerow(result)
+

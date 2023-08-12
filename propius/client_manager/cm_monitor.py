@@ -1,6 +1,7 @@
 import asyncio
 from propius.util.monitor import *
 from propius.util.commons import *
+import os
 
 
 class CM_monitor(Monitor):
@@ -13,6 +14,14 @@ class CM_monitor(Monitor):
 
         self.client_accept_num = 0
         self.client_over_assign_num = 0
+
+        fig_dir = "./propius/fig"
+        log_dir = "./propius/log"
+
+        if not os.path.exists(fig_dir):
+            os.mkdir(fig_dir)
+        if not os.path.exists(log_dir):
+            os.mkdir(log_dir)
 
     async def client_checkin(self):
         async with self.lock:
@@ -39,7 +48,7 @@ class CM_monitor(Monitor):
             str2 = f"Client manager {id}: check in {self.client_check_in_num}, ping {self.client_ping_num}, " + \
                 f"accept {self.client_accept_num}, over-assign {self.client_over_assign_num}"
 
-            with open(f'./log/CM{id}-{self.sched_alg}-{get_time()}.txt', 'w') as file:
+            with open(f'./propius/log/CM{id}-{self.sched_alg}-{get_time()}.txt', 'w') as file:
                 file.write(str1)
                 file.write("\n")
                 file.write(str2)
@@ -48,4 +57,4 @@ class CM_monitor(Monitor):
             fig = plt.gcf()
             self._plot_request()
             plt.show()
-            fig.savefig(f"./fig/CM{id}-{self.sched_alg}-{get_time()}")
+            fig.savefig(f"./propius/fig/CM{id}-{self.sched_alg}-{get_time()}")
