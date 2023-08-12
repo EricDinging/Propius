@@ -8,8 +8,6 @@ from propius.channels import propius_pb2
 import asyncio
 import yaml
 import grpc
-import logging
-
 
 _cleanup_routines = []
 
@@ -95,11 +93,12 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             constraints_denom_map[cst] = self.client_db_portal.get_irs_denominator(
                 client_size, q)
             bq = bq + f"-{this_q}"
+
         # update all score
-        print(f"{get_time()} Scheduler: starting to update scores")
+        custom_print("Scheduler: starting to update scores")
         for cst in self.constraints:
             try:
-                print(f"{get_time()} Scheduler: update score for {cst}: ")
+                custom_print(f"Scheduler: update score for {cst}: ")
                 for idx, job in enumerate(constraints_job_map[cst]):
                     groupsize = len(constraints_job_map[cst])
                     self.job_db_portal.irs_update_score(
@@ -109,9 +108,8 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                         constraints_denom_map[cst],
                         self.irs_epsilon,
                         self.std_round_time)
-            except BaseException:
-                pass
-        return propius_pb2.ack(ack=False)
+            except Exception as e:
+                custom_print(e, WARNING)
 
     async def _irs2_score(self, job_id: int):
         """Update all jobs' score in database according to IRS2, a derivant from IRS
@@ -129,12 +127,11 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             return propius_pb2.ack(ack=False)
         client_prop = self.client_db_portal.get_client_proportion(constraint)
 
-        print(f"{get_time()} Scheduler: upd score for {constraint}: ")
+        custom_print(f"Scheduler: upd score for {constraint}: ")
         for idx, job in enumerate(constraint_job_list):
             groupsize = len(constraint_job_list)
             self.job_db_portal.irs_update_score(
                 job, groupsize, idx, client_prop)
-        return propius_pb2.ack(ack=False)
 
     async def JOB_SCORE_UPDATE(self, request, context) -> propius_pb2.ack:
         """Service function that update scores of job in database
@@ -185,8 +182,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
 
 async def serve(gconfig):
     async def server_graceful_shutdown():
-        print(f"{get_time()} ==Scheduler ending==")
-        logging.info("Starting graceful shutdown...")
+        custom_print("=====Scheduler shutting down=====")
         scheduler.sc_monitor.report()
         await server.stop(5)
 
@@ -195,13 +191,14 @@ async def serve(gconfig):
     propius_pb2_grpc.add_SchedulerServicer_to_server(scheduler, server)
     server.add_insecure_port(f'{scheduler.ip}:{scheduler.port}')
     await server.start()
-    print(f"{get_time()} Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}")
+    
+    custom_print(f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}")
     _cleanup_routines.append(server_graceful_shutdown())
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    logger = logging.getLogger()
+    logging.basicConfig(level=logging.DEBUG, filename='./propius/scheduler/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:
@@ -213,8 +210,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print(e)
-            logger.error(str(e))
+            custom_print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_routines)
             loop.close()

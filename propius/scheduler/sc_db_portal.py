@@ -9,8 +9,7 @@ import redis.commands.search.reducers as reducers
 from redis.commands.json.path import Path
 import redis
 import sys
-sys.path.append('..')
-
+from propius.util.commons import *
 
 class SC_job_db_portal(Job_db):
     def __init__(self, gconfig):
@@ -42,8 +41,8 @@ class SC_job_db_portal(Job_db):
                 constraint_list.append(int(self.r.json().get(
                     id, f"$.job.public_constraint.{name}")[0]))
             return tuple(constraint_list)
-        except BaseException:
-            return None
+        except Exception as e:
+            custom_print(e, WARNING)
 
     def get_job_list(self, public_constraint: tuple,
                      constraints_job_list: list) -> bool:
@@ -105,9 +104,9 @@ class SC_job_db_portal(Job_db):
         try:
             self.r.execute_command(
                 'JSON.SET', f"job:{job_id}", "$.job.score", score)
-            print(f"-------job:{job_id} {score:.3f} ")
-        except BaseException:
-            pass
+            custom_print(f"-------job:{job_id} {score:.3f} ")
+        except Exception as e:
+            custom_print(e, WARNING)
 
     def fifo_update_all_job_score(self):
         """Give every job which doesn't have a score yet a score of -timestamp
@@ -119,7 +118,7 @@ class SC_job_db_portal(Job_db):
         for doc in result.docs:
             id = doc.id
             score = -json.loads(doc.json)["job"]["timestamp"]
-            print(f"-------{id} {score:.3f} ")
+            custom_print(f"-------{id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def random_update_all_job_score(self):
@@ -133,9 +132,8 @@ class SC_job_db_portal(Job_db):
             return
         for doc in result.docs:
             id = doc.id
-            job_size = self.get_job_size()
             score = random.uniform(0, 10)
-            print(f"-------{id} {score:.3f} ")
+            custom_print(f"-------{id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def srdf_update_all_job_score(self):
@@ -156,7 +154,7 @@ class SC_job_db_portal(Job_db):
             # if remain_demand == 0:
             #     remain_demand = job_dict['total_demand']
             score = -remain_demand
-            print(f"-------{id} {score:.3f} ")
+            custom_print(f"-------{id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def srtf_update_all_job_score(self, std_round_time: float):
@@ -181,7 +179,7 @@ class SC_job_db_portal(Job_db):
                     time.time() - job_dict['timestamp']) / past_round
             remain_time = remain_round * avg_round_time
             score = -remain_time
-            print(f"-------{id} {score:.3f} ")
+            custom_print(f"-------{id} {score:.3f} ")
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def _get_job_time(self, job_id: int) -> float:
@@ -189,7 +187,8 @@ class SC_job_db_portal(Job_db):
         try:
             timestamp = float(self.r.json().get(id, "$.job.timestamp")[0])
             return time.time() - timestamp
-        except BaseException:
+        except Exception as e:
+            custom_print(e, WARNING)
             return 0
 
     def _get_est_JCT(self, job_id: int, std_round_time: float) -> float:
@@ -197,7 +196,8 @@ class SC_job_db_portal(Job_db):
         try:
             total_round = int(self.r.json().get(id, ".job.total_round")[0])
             return total_round * std_round_time
-        except BaseException:
+        except Exception as e:
+            custom_print(e, WARNING)
             return 1000 * std_round_time
 
 

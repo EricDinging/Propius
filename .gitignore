@@ -47,3 +47,4 @@ experiment/*
 *.csv
 *.txt
 *.png
+*.log

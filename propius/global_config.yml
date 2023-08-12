@@ -53,6 +53,7 @@ job_private_constraint: []
 # Define the scale of the specifications
 metric_scale: 100
 
+verbose: True
 
 #####################################################################
 # ---Simulation---
