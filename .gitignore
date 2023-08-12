@@ -43,7 +43,8 @@ fedscale/tmp*
 fedscale/*.tflite
 fedscale/*.ckpt
 fedscale/cloud/aggregation/cache
-fig/*
-log/*
+./propius/fig/*
+./propius/log/*
 experiment/*
 *.csv
+*.txt

@@ -21,7 +21,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.worker = Worker(config)
         self.gconfig = gconfig
 
-        result_dict = "./evaluation/result"
+        result_dict = f"./evaluation/result_{self.gconfig['sched_alg']}"
         if not os.path.exists(result_dict):
             os.mkdir(result_dict)
 
@@ -131,8 +131,8 @@ if __name__ == '__main__':
                 loop.run_until_complete(run(config, gconfig))
         except KeyboardInterrupt:
             pass
-        # except Exception as e:
-        #     print(e)
+        except Exception as e:
+            print(e)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

@@ -10,6 +10,8 @@ from evaluation.commons import *
 from collections import deque
 from evaluation.executor.channels import executor_pb2
 from evaluation.executor.channels import executor_pb2_grpc
+import os
+import csv
 
 _cleanup_coroutines = []
 
@@ -39,6 +41,12 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.executor_stub = None
         self._connect_to_executor()
         self.config = config
+
+        result_dict = "./evaluation/ps_result"
+        if not os.path.exists(result_dict):
+            os.mkdir(result_dict)
+        
+        self.round_time_stamp = {}
 
     def _connect_to_executor(self):
         self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
@@ -115,6 +123,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                             )
 
                             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+                            self.round_time_stamp[self.cur_round] = time.time()
 
                             self.propius_stub.round_end_request()
                             self.execution_start = True
@@ -162,9 +171,20 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 if self.round_result_cnt >= self.demand:
                     self._close_round()
                 return server_response_msg
+            
+    def gen_report(self):
+        csv_file_name = f"./evaluation/ps_result/{self.propius_stub.id}.csv"
+        fieldnames = ["round", "round_finish_time"]
+        with open(csv_file_name, "w", newline="") as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(fieldnames)
+            start_time = self.round_time_stamp[0]
+            for round, time in self.round_time_stamp.items():
+                writer.writerow([round, time-start_time])
 
 async def run(config):
     async def server_graceful_shutdown():
+        ps.gen_report()
         ps.propius_stub.complete_job()
         ps.propius_stub.close()
         
@@ -198,6 +218,7 @@ async def run(config):
     job_info_msg = executor_pb2.job_info(job_id=ps.propius_stub.id, 
                                          job_meta=pickle.dumps(job_meta))
     await ps.executor_stub.JOB_REGISTER(job_info_msg)
+    ps.round_time_stamp[0] = time.time()
 
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
     server.add_insecure_port(f"{config['ip']}:{config['port']}")
