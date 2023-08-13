@@ -16,6 +16,8 @@ client_num: 1000
 # Client check in distribution over time
 client_is_uniform: False
 
+client_speed_path: './propius/datasets/device_info/client_device_capacity'
+
 # Job profile number
 job_profile_num : 9
 # Job total number

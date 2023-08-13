@@ -6,6 +6,7 @@ import random
 import asyncio
 import yaml
 import logging
+import pickle
 from evaluation.client.client import *
 
 async def run(gconfig):
@@ -16,6 +17,10 @@ async def run(gconfig):
     public_constraint_name = gconfig['job_public_constraint']
     private_constraint_name = gconfig['job_private_constraint']
     start_time_list = [0] * total_time
+
+    client_speed_dict = None
+    with open(gconfig['client_speed_path'], 'rb') as client_file:
+        client_speed_dict = pickle.load(client_file)
 
     if not is_uniform:
         for i in range(num):
@@ -28,6 +33,7 @@ async def run(gconfig):
             time = random.randint(0, total_time - 1)
             start_time_list[int(time)] += 1
 
+    client_idx = 0
     for i in range(total_time):
         for _ in range(start_time_list[i]):
             bench_mark = max(20, min(random.normalvariate(60, 20), 100))
@@ -44,10 +50,14 @@ async def run(gconfig):
                 "public_specifications": public_specs,
                 "private_specifications": private_specs,
                 "load_balancer_ip": gconfig['load_balancer_ip'],
-                "load_balancer_port": gconfig['load_balancer_port']
+                "load_balancer_port": gconfig['load_balancer_port'],
+                "computation_speed": client_speed_dict[client_idx % len(client_speed_dict)]['computation'],
+                "communication_speed": client_speed_dict[client_idx % len(client_speed_dict)]['communication']
             }
             asyncio.ensure_future(
                 Client(client_config).run())
+            
+            client_idx += 1
 
         await asyncio.sleep(1)
 

@@ -25,6 +25,9 @@ class Client:
         self.data_queue = deque()
 
         self.lock = asyncio.Lock()
+
+        self.comp_speed = client_config["computation_speed"]
+        self.comm_speed = client_config["communication_speed"]
     
     async def _connect_to_ps(self, ps_ip: str, ps_port: int):
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
@@ -68,10 +71,15 @@ class Client:
         
         #TODO execute
         print(f"Client {self.id}: Recieve {event} event")
+
         if event == CLIENT_TRAIN:
-            await asyncio.sleep(self.execution_duration)
+            train_time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
+            comm_time = (meta["upload_size"] + meta["download_size"]) / float(self.comm_speed) 
+            await asyncio.sleep(train_time + comm_time)
+
         elif event == SHUT_DOWN:
             return False
+        
         compl_event = event
         status = True
         compl_meta = DUMMY_RESPONSE
