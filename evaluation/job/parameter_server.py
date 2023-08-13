@@ -219,7 +219,7 @@ async def run(config):
         job_task_info_msg = executor_pb2.job_task_info(
             job_id=ps.propius_stub.id,
             client_id=-1,
-            round=-1,
+            round=ps.total_round,
             event=JOB_FINISH,
             task_meta=pickle.dumps(task_meta)
         )

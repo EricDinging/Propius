@@ -41,9 +41,20 @@ class Task_pool:
             assert job_id in self.job_meta_dict
             assert job_id in self.job_task_dict
 
+            test_task_meta = {
+                    "client_id": random.randint(0, 10000),
+                    "round": task_meta["round"],
+                    "event": MODEL_TEST,
+                    "test_ratio": self.config["test_ratio"],
+                    "test_bsz": self.config["test_bsz"]
+                }
+            
+            if event == JOB_FINISH:
+                self.job_task_dict[job_id].append(test_task_meta)
+
             self.job_task_dict[job_id].append(task_meta)
 
-            if event == AGGREGATE:
+            if event == AGGREGATE and round % self.config["eval_interval"] == 0:
                 test_task_meta = {
                     "client_id": random.randint(0, 10000),
                     "round": task_meta["round"],

@@ -238,7 +238,12 @@ class Worker:
                     num_classes=out_put_class[dataset_name],
                     in_channels=1
                 )
-                model_adapter = Torch_model_adapter(model)
+            elif model_name == "mobilenet":
+                from fedscale.utils.models.specialized.resnet_speech import \
+                mobilenet_v2
+                model = mobilenet_v2(num_classes=out_put_class[dataset_name])
+
+            model_adapter = Torch_model_adapter(model)
                 # model_adapter.set_weights(model_weights)
             model_size = sys.getsizeof(pickle.dumps(model_adapter)) / 1024.0 * 8.  # kbits
             self.job_id_model_adapter_map[job_id] = model_adapter
