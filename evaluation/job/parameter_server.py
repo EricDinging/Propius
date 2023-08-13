@@ -19,7 +19,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def __init__(self, config):
         self.total_round = config['total_round']
         self.demand = config['demand']
-        
+        self.over_demand = self.demand
+        if "over_selection" in config:
+            self.over_demand = int(self.over_demand * config["over_selection"])
         self.lock = asyncio.Lock()
         self.cv = asyncio.Condition(self.lock)
 
@@ -101,7 +103,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             )
         async with self.lock:
             if client_id not in self.client_event_dict:
-                if self.round_client_num < self.demand and self.cur_round <= self.total_round:
+                if self.round_client_num < self.over_demand and self.cur_round <= self.total_round:
                     #TODO job train task register to executor
                     self._init_event_queue(client_id)
                     event_dict = self.client_event_dict[client_id].popleft()
@@ -115,7 +117,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
                     self.round_client_num += 1
 
-                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, issue {event_dict['event']} event, {self.round_client_num}/{self.demand}")
+                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, issue {event_dict['event']} event, {self.round_client_num}/{self.over_demand}")
 
                     #TODO send training task to executor
                     task_meta = {
@@ -134,7 +136,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     )
                     await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
 
-                    if self.round_client_num >= self.demand:
+                    if self.round_client_num >= self.over_demand:
                         #TODO job aggregation task register to executor
                         if not self.execution_start:
                             #TODO send agg task to executor
