@@ -48,6 +48,7 @@ class Client:
     async def client_ping(self):
         client_id_msg = parameter_server_pb2.client_id(id=self.id)
         server_response = await self.ps_stub.CLIENT_PING(client_id_msg)
+
         await self.handle_server_response(server_response)
     
     async def client_execute_complete(self, compl_event: str, status: bool, meta: str, data: str):
@@ -68,17 +69,19 @@ class Client:
             event = self.event_queue.popleft()
             meta = self.meta_queue.popleft()
             data = self.data_queue.popleft()
-        
-        #TODO execute
-        print(f"Client {self.id}: Recieve {event} event")
-
+    
+        time = 0
         if event == CLIENT_TRAIN:
-            train_time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
-            comm_time = (meta["upload_size"] + meta["download_size"]) / float(self.comm_speed) 
-            await asyncio.sleep(train_time + comm_time)
-
+            time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
         elif event == SHUT_DOWN:
             return False
+        elif event == UPDATE_MODEL:
+            time = meta["download_size"] / float(self.comm_speed)    
+        elif event == UPLOAD_MODEL:
+            time = meta["upload_size"] / float(self.comm_speed)
+        
+        print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds")
+        await asyncio.sleep(time)
         
         compl_event = event
         status = True

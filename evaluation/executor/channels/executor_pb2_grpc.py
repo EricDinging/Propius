@@ -4,7 +4,6 @@ import grpc
 
 import evaluation.executor.channels.executor_pb2 as executor__pb2
 
-
 class ExecutorStub(object):
     """Missing associated documentation comment in .proto file."""
 
@@ -17,17 +16,12 @@ class ExecutorStub(object):
         self.JOB_REGISTER = channel.unary_unary(
                 '/executor.Executor/JOB_REGISTER',
                 request_serializer=executor__pb2.job_info.SerializeToString,
-                response_deserializer=executor__pb2.ack.FromString,
+                response_deserializer=executor__pb2.register_ack.FromString,
                 )
         self.JOB_REGISTER_TASK = channel.unary_unary(
                 '/executor.Executor/JOB_REGISTER_TASK',
                 request_serializer=executor__pb2.job_task_info.SerializeToString,
                 response_deserializer=executor__pb2.ack.FromString,
-                )
-        self.MONITOR_PING = channel.unary_unary(
-                '/executor.Executor/MONITOR_PING',
-                request_serializer=executor__pb2.job_id.SerializeToString,
-                response_deserializer=executor__pb2.job_result.FromString,
                 )
 
 
@@ -46,29 +40,18 @@ class ExecutorServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def MONITOR_PING(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_ExecutorServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'JOB_REGISTER': grpc.unary_unary_rpc_method_handler(
                     servicer.JOB_REGISTER,
                     request_deserializer=executor__pb2.job_info.FromString,
-                    response_serializer=executor__pb2.ack.SerializeToString,
+                    response_serializer=executor__pb2.register_ack.SerializeToString,
             ),
             'JOB_REGISTER_TASK': grpc.unary_unary_rpc_method_handler(
                     servicer.JOB_REGISTER_TASK,
                     request_deserializer=executor__pb2.job_task_info.FromString,
                     response_serializer=executor__pb2.ack.SerializeToString,
-            ),
-            'MONITOR_PING': grpc.unary_unary_rpc_method_handler(
-                    servicer.MONITOR_PING,
-                    request_deserializer=executor__pb2.job_id.FromString,
-                    response_serializer=executor__pb2.job_result.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -93,7 +76,7 @@ class Executor(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/executor.Executor/JOB_REGISTER',
             executor__pb2.job_info.SerializeToString,
-            executor__pb2.ack.FromString,
+            executor__pb2.register_ack.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -111,22 +94,5 @@ class Executor(object):
         return grpc.experimental.unary_unary(request, target, '/executor.Executor/JOB_REGISTER_TASK',
             executor__pb2.job_task_info.SerializeToString,
             executor__pb2.ack.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def MONITOR_PING(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/executor.Executor/MONITOR_PING',
-            executor__pb2.job_id.SerializeToString,
-            executor__pb2.job_result.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

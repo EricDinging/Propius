@@ -31,12 +31,12 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
 
         #TODO get model weights
         await self.task_pool.init_job(job_id, job_meta)
-        await self.worker.init_job(job_id=job_id, 
+        model_size = await self.worker.init_job(job_id=job_id, 
                                    dataset_name=job_meta["dataset"],
                                    model_name=job_meta["model"],
                                    )
 
-        return executor_pb2.ack(ack=True)
+        return executor_pb2.register_ack(ack=True, model_size=model_size)
     
     async def JOB_REGISTER_TASK(self, request, context):
         job_id, client_id = request.job_id, request.client_id

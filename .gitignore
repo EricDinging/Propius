@@ -10,7 +10,6 @@
 dist
 logs/
 pymp*
-./benchmark/dataset/data/*
 .DS_Store
 *.egg-info
 *logging
@@ -48,4 +47,3 @@ experiment/*
 *.txt
 *.png
 *.log
-./evaluation/datasets/*

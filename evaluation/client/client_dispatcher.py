@@ -51,8 +51,8 @@ async def run(gconfig):
                 "private_specifications": private_specs,
                 "load_balancer_ip": gconfig['load_balancer_ip'],
                 "load_balancer_port": gconfig['load_balancer_port'],
-                "computation_speed": client_speed_dict[client_idx % len(client_speed_dict)]['computation'],
-                "communication_speed": client_speed_dict[client_idx % len(client_speed_dict)]['communication']
+                "computation_speed": client_speed_dict[client_idx % len(client_speed_dict) + 1]['computation'],
+                "communication_speed": client_speed_dict[client_idx % len(client_speed_dict) + 1]['communication']
             }
             asyncio.ensure_future(
                 Client(client_config).run())

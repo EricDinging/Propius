@@ -47,6 +47,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             os.mkdir(result_dict)
         
         self.round_time_stamp = {}
+        self.model_size = 0
 
     def _connect_to_executor(self):
         self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
@@ -62,10 +63,33 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         # locked
         #TODO other task
         event_q = deque()
-        event_q.append(UPDATE_MODEL)
-        event_q.append(CLIENT_TRAIN)
-        event_q.append(UPLOAD_MODEL)
-        event_q.append(SHUT_DOWN)
+        event_q.append({
+            "event": UPDATE_MODEL,
+            "meta": {
+                "download_size": self.model_size
+            },
+            "data": {}
+        })
+        event_q.append({
+            "event": CLIENT_TRAIN,
+            "meta": {
+                "batch_size": self.config["batch_size"],
+                "local_steps": self.config["local_steps"]
+            },
+            "data": {}
+        })
+        event_q.append({
+            "event": UPLOAD_MODEL,
+            "meta": {
+                "upload_size": self.model_size,
+            },
+            "data": {}
+        })
+        event_q.append({
+            "event": SHUT_DOWN,
+            "meta": {},
+            "data": {}
+        })
         self.client_event_dict[client_id] = event_q
     
     async def CLIENT_PING(self, request, context):
@@ -80,16 +104,18 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 if self.round_client_num < self.demand and self.cur_round <= self.total_round:
                     #TODO job train task register to executor
                     self._init_event_queue(client_id)
-                    event = self.client_event_dict[client_id].popleft()
+                    event_dict = self.client_event_dict[client_id].popleft()
+                    print(event_dict)
+
                     server_response_msg = parameter_server_pb2.server_response(
-                        event=event,
-                        meta=pickle.dumps(DUMMY_RESPONSE),
-                        data=pickle.dumps(DUMMY_RESPONSE)
+                        event=event_dict["event"],
+                        meta=pickle.dumps(event_dict["meta"]),
+                        data=pickle.dumps(event_dict["data"])
                     )
 
                     self.round_client_num += 1
 
-                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, issue {event} event, {self.round_client_num}/{self.demand}")
+                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, issue {event_dict['event']} event, {self.round_client_num}/{self.demand}")
 
                     #TODO send training task to executor
                     task_meta = {
@@ -155,16 +181,17 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 if len(self.client_event_dict[client_id]) == 0:
                     del self.client_event_dict[client_id]
                 else:
-                    next_event = self.client_event_dict[client_id].popleft()
+                    next_event_dict = self.client_event_dict[client_id].popleft()
                     if len(self.client_event_dict[client_id]) == 0:
                         del self.client_event_dict[client_id]
+                   
                     server_response_msg = parameter_server_pb2.server_response(
-                        event=next_event,
-                        meta=pickle.dumps(DUMMY_RESPONSE),
-                        data=pickle.dumps(DUMMY_RESPONSE)
+                        event=next_event_dict["event"],
+                        meta=pickle.dumps(next_event_dict["meta"]),
+                        data=pickle.dumps(next_event_dict["data"])
                     )
 
-                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event} event")
+                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event")
 
 
                 #TODO handling compl event
@@ -217,7 +244,8 @@ async def run(config):
     }
     job_info_msg = executor_pb2.job_info(job_id=ps.propius_stub.id, 
                                          job_meta=pickle.dumps(job_meta))
-    await ps.executor_stub.JOB_REGISTER(job_info_msg)
+    executor_ack = await ps.executor_stub.JOB_REGISTER(job_info_msg)
+    ps.model_size = executor_ack.model_size
     ps.round_time_stamp[0] = time.time()
 
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)

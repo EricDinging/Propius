@@ -6,7 +6,7 @@ syntax = "proto3";
 package executor;
 
 service Executor {
-    rpc JOB_REGISTER (job_info) returns (ack) {}
+    rpc JOB_REGISTER (job_info) returns (register_ack) {}
     rpc JOB_REGISTER_TASK (job_task_info) returns (ack) {}
 }
 
@@ -25,6 +25,11 @@ message job_task_info {
 
 message job_id {
     int32 id = 1;
+}
+
+message register_ack {
+    bool ack = 1;
+    float model_size = 2;
 }
 
 message ack {

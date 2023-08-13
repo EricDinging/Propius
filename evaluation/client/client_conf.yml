@@ -12,3 +12,6 @@ load_balancer_port: 50000
 # TODO
 task: cv
 memory_capacity: 1
+
+computation_speed: 64.0
+communication_speed: 3345.714

@@ -12,6 +12,8 @@ import random
 from typing import List
 
 import asyncio
+import sys
+import pickle
 
 class Worker:
     def __init__(self, config):
@@ -194,7 +196,7 @@ class Worker:
                     del self.test_data_partition_dict[dataset_name]
                     del self.data_partitioner_ref_cnt_dict[dataset_name]
 
-    async def init_job(self, job_id: int, dataset_name: str, model_name: str):
+    async def init_job(self, job_id: int, dataset_name: str, model_name: str)->float:
         async with self.lock:
             self.job_id_data_map[job_id] = dataset_name
 
@@ -238,9 +240,11 @@ class Worker:
                 )
                 model_adapter = Torch_model_adapter(model)
                 # model_adapter.set_weights(model_weights)
+            model_size = sys.getsizeof(pickle.dumps(model_adapter)) / 1024.0 * 8.  # kbits
             self.job_id_model_adapter_map[job_id] = model_adapter
             self.job_id_agg_weight_map[job_id] = []
             self.job_id_agg_cnt[job_id] = 0
+            return model_size
 
     async def execute(self, event: str, job_id: int, client_id: int, args: dict)->dict:
         async with self.lock:
