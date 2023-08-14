@@ -37,8 +37,12 @@ class Worker:
 
         self._setup_seed()
 
-        #TODO GPU
-        self.device = torch.device('cpu')
+        if torch.cuda.is_available():
+            self.device = torch.device(config["cuda_device"]) if config["use_cuda"] else torch.device(
+            'cpu')
+        else:
+            self.device = torch.device('cpu')
+        print(f"Worker: use {self.device}")
 
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4

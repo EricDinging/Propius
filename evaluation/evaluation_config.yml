@@ -32,7 +32,8 @@ total_running_second: 1200
 
 
 # ---Execution---
-use_cuda: False
+use_cuda: True
+cuda_device: cuda:0
 
 executor_ip: localhost
 executor_port: 49999
