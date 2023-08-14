@@ -11,7 +11,7 @@ job_private_constraint: []
 
 # ---Simulation---
 # Client simulation number
-client_num: 1000
+client_num: 10000
 
 # Client check in distribution over time
 client_is_uniform: False
@@ -33,7 +33,9 @@ total_running_second: 1200
 
 # ---Execution---
 use_cuda: True
-cuda_device: cuda:0
+cuda_device:
+  - cuda:0
+  - cuda:1
 
 executor_ip: localhost
 executor_port: 49999
@@ -48,6 +50,9 @@ test_ratio: 1
 eval_interval: 10
 
 #FEMNIST
-femnist_data_dir: ./evaluation/datasets/femnist
-femnist_data_map_file: ./evaluation/datasets/femnist/client_data_mapping/train.csv
-femnist_test_data_map_file: ./evaluation/datasets/femnist/client_data_mapping/test.csv
+# femnist_data_dir: ./evaluation/datasets/femnist
+# femnist_data_map_file: ./evaluation/datasets/femnist/client_data_mapping/train.csv
+# femnist_test_data_map_file: ./evaluation/datasets/femnist/client_data_mapping/test.csv
+femnist_data_dir: /data/FedScale/benchmark/dataset/data/femnist
+femnist_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/train.csv
+femnist_test_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/test.csv

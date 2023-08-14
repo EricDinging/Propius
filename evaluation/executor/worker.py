@@ -37,12 +37,15 @@ class Worker:
 
         self._setup_seed()
 
-        if torch.cuda.is_available():
-            self.device = torch.device(config["cuda_device"]) if config["use_cuda"] else torch.device(
-            'cpu')
+        #TODO use other device
+        if config["use_cuda"]:
+            self.device_list = [torch.device(device) for device in config["cuda_device"]]
         else:
-            self.device = torch.device('cpu')
-        print(f"Worker: use {self.device}")
+            self.device_list = [torch.device("cpu")]
+        self.cur_device_idx = 0
+        self.device = self.device_list[self.cur_device_idx]
+       
+        print(f"Worker: use {self.device_list}")
 
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4

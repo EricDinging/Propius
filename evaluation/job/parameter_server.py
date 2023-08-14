@@ -20,7 +20,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def __init__(self, config):
         self.total_round = config['total_round']
         self.demand = config['demand']
-        self.over_demand = self.demand
+        self.over_demand = self.demand if "over_selection" not in config else \
+            int(config["over_selection"] * config["demand"])
 
         job_config = {
             "public_constraint": config["public_constraint"],
@@ -119,7 +120,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     #TODO job train task register to executor
                     self._init_event_queue(client_id)
                     event_dict = self.client_event_dict[client_id].popleft()
-                    print(event_dict)
 
                     server_response_msg = parameter_server_pb2.server_response(
                         event=event_dict["event"],
@@ -156,6 +156,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         async with self.lock:
             if compl_event == UPLOAD_MODEL:
+                print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} complete, issue {SHUT_DOWN} event, {self.round_result_cnt}/{self.demand}")
                 self.round_result_cnt += 1
                 task_meta = {
                     "local_steps": self.config["local_steps"],
