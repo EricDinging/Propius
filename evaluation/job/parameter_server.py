@@ -12,6 +12,7 @@ from evaluation.executor.channels import executor_pb2
 from evaluation.executor.channels import executor_pb2_grpc
 import os
 import csv
+import copy
 
 _cleanup_coroutines = []
 
@@ -20,8 +21,19 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.total_round = config['total_round']
         self.demand = config['demand']
         self.over_demand = self.demand
-        if "over_selection" in config:
-            self.over_demand = int(self.over_demand * config["over_selection"])
+
+        job_config = {
+            "public_constraint": config["public_constraint"],
+            "private_constraint": config["private_constraint"],
+            "total_round": config["total_round"],
+            "demand": config["demand"] if "over_selection" not in config else \
+                    int(config["over_selection"] * config["demand"]),
+            "job_manager_ip": config["job_manager_ip"],
+            "job_manager_port": config["job_manager_port"],
+            "ip": config["ip"],
+            "port": config["port"]
+        }
+
         self.lock = asyncio.Lock()
         self.cv = asyncio.Condition(self.lock)
 
@@ -33,7 +45,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         self.execution_start = False #indicating whether the scheduling phase has passed
 
-        self.propius_stub = Propius_job(job_config=config, verbose=True)
+        self.propius_stub = Propius_job(job_config=job_config, verbose=True)
 
         self.propius_stub.connect()
 
@@ -117,42 +129,11 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
                     self.round_client_num += 1
 
-                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, issue {event_dict['event']} event, {self.round_client_num}/{self.over_demand}")
-
-                    #TODO send training task to executor
-                    task_meta = {
-                        "local_steps": self.config["local_steps"],
-                        "learning_rate": self.config["learning_rate"],
-                        "batch_size": self.config["batch_size"],
-                        "num_loaders": self.config["num_loaders"],
-                        "loss_decay": self.config["loss_decay"]
-                    }
-                    job_task_info_msg = executor_pb2.job_task_info(
-                        job_id=self.propius_stub.id,
-                        client_id=client_id,
-                        round=self.cur_round,
-                        event=CLIENT_TRAIN,
-                        task_meta=pickle.dumps(task_meta)
-                    )
-                    await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, issue {event_dict['event']} event, {self.round_client_num}/{self.demand}")
 
                     if self.round_client_num >= self.over_demand:
-                        #TODO job aggregation task register to executor
                         if not self.execution_start:
-                            #TODO send agg task to executor
-                            task_meta = {}
-
-                            job_task_info_msg = executor_pb2.job_task_info(
-                                job_id=self.propius_stub.id,
-                                client_id=-1,
-                                round=self.cur_round,
-                                event=AGGREGATE,
-                                task_meta=pickle.dumps(task_meta)
-                            )
-
-                            await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
                             self.round_time_stamp[self.cur_round] = time.time()
-
                             self.propius_stub.round_end_request()
                             self.execution_start = True
             else:
@@ -176,6 +157,21 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         async with self.lock:
             if compl_event == UPLOAD_MODEL:
                 self.round_result_cnt += 1
+                task_meta = {
+                    "local_steps": self.config["local_steps"],
+                    "learning_rate": self.config["learning_rate"],
+                    "batch_size": self.config["batch_size"],
+                    "num_loaders": self.config["num_loaders"],
+                    "loss_decay": self.config["loss_decay"]
+                }
+                job_task_info_msg = executor_pb2.job_task_info(
+                    job_id=self.propius_stub.id,
+                    client_id=client_id,
+                    round=self.cur_round,
+                    event=CLIENT_TRAIN,
+                    task_meta=pickle.dumps(task_meta)
+                )
+                await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
                 
             if client_id not in self.client_event_dict:
                 return server_response_msg
@@ -198,6 +194,16 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
                 #TODO handling compl event
                 if self.round_result_cnt >= self.demand:
+                    task_meta = {}
+                    job_task_info_msg = executor_pb2.job_task_info(
+                        job_id=self.propius_stub.id,
+                        client_id=-1,
+                        round=self.cur_round,
+                        event=AGGREGATE,
+                        task_meta=pickle.dumps(task_meta)
+                    )
+                    await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+
                     self._close_round()
                 return server_response_msg
             

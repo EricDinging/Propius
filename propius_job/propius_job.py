@@ -70,7 +70,6 @@ class Propius_job():
                 private_constraint
                 total_round
                 demand
-                over_selection: optional
                 job_manager_ip
                 job_manager_port
                 ip
@@ -88,8 +87,6 @@ class Propius_job():
             self.private_constraint = tuple(job_config['private_constraint'])
             self.est_total_round = job_config['total_round']
             self.demand = job_config['demand']
-            if "over_selection" in job_config:
-                self.demand = int(self.demand * job_config["over_selection"])
             self._jm_ip = job_config['job_manager_ip']
             self._jm_port = job_config['job_manager_port']
             self._jm_channel = None
