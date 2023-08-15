@@ -5,6 +5,11 @@ import grpc
 import time
 from datetime import datetime
 
+CPU_F = "cpu_f"
+RAM = "ram"
+FP16_MEM = "fp16_mem"
+ANDROID_OS = "android_os"
+DATASET_SIZE = "dataset_size"
 
 def get_time() -> str:
     current_time = datetime.now()
@@ -13,8 +18,7 @@ def get_time() -> str:
 
 
 def encode_constraints(**kargs) -> tuple[list, list]:
-    """Encode job constraints. Eg. encode_constraints(cpu=50, memory=50).
-    Currently supported keys are {cpu, memory, os}
+    """Encode job constraints. Eg. encode_constraints(CPU_F=18, RAM=8).
 
     Args:
         Keyword arguments
@@ -24,11 +28,15 @@ def encode_constraints(**kargs) -> tuple[list, list]:
     """
 
     public_constraint_dict = {
-        "cpu": 0,
-        "memory": 0,
-        "os": 0,
+        CPU_F: 0,
+        RAM: 0,
+        FP16_MEM: 0,
+        ANDROID_OS: 0,
     }
-    private_constraint_dict = {}
+
+    private_constraint_dict = {
+        DATASET_SIZE: 0
+    }
 
     for key in public_constraint_dict.keys():
         if key in kargs:
@@ -45,7 +53,7 @@ def encode_constraints(**kargs) -> tuple[list, list]:
     # TODO encoding, value check
 
     return (list(public_constraint_dict.values()),
-            list(private_constraint_dict))
+            list(private_constraint_dict.values()))
 
 
 def gen_job_config(constraint: tuple[list, list],
@@ -66,8 +74,8 @@ class Propius_job():
 
         Args:
             job_config:
-                public_constraint
-                private_constraint
+                public_constraint: dict
+                private_constraint: dict
                 total_round
                 demand
                 job_manager_ip
@@ -83,8 +91,9 @@ class Propius_job():
         try:
             # TODO arguments check
             # TODO add state flow check
-            self.public_constraint = tuple(job_config['public_constraint'])
-            self.private_constraint = tuple(job_config['private_constraint'])
+            public, private = encode_constraints(**job_config['public_constraint'], **job_config['private_constraint'])
+            self.public_constraint = tuple(public)
+            self.private_constraint = tuple(private)
             self.est_total_round = job_config['total_round']
             self.demand = job_config['demand']
             self._jm_ip = job_config['job_manager_ip']

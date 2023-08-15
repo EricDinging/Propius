@@ -30,7 +30,9 @@ batch_size: 10
 
 # Client constraints
 public_constraint:
-    - 28
-    - 28
-    - 28
-private_constraint: []
+    cpu_f: 10
+    ram: 8
+    fp16_mem: 800
+    android_os: 6
+private_constraint:
+    dataset_size: 100
