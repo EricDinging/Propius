@@ -1,14 +1,6 @@
 load_balancer_ip: localhost
 load_balancer_port: 50000
 
-job_public_constraint:
-  - cpu
-  - memory
-  - os
-job_private_constraint: []
-  # - datasetsize
-
-
 # ---Simulation---
 # Client simulation number
 client_num: 10000

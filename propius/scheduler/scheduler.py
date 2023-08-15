@@ -22,7 +22,6 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                 scheduler_port
                 sched_alg
                 irs_epsilon (apply to IRS algorithm)
-                metric_scale
                 standard_round_time: default round execution time for SRTF
                 job_public_constraint: name for constraint
                 job_db_ip
@@ -30,7 +29,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                 sched_alg
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
-                metric_scale: upper bound of the score
+                public_max: upper bound of the score
                 job_expire_time
                 client_manager: list of client manager address
                     ip:
@@ -46,7 +45,8 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         self.job_db_portal = SC_job_db_portal(gconfig)
         self.client_db_portal = SC_client_db_portal(gconfig)
 
-        self.metric_scale = gconfig['metric_scale']
+        self.public_max = gconfig['public_max']
+
         self.std_round_time = gconfig['standard_round_time']
         self.constraints = []
         self.public_constraint_name = gconfig['job_public_constraint']
@@ -89,7 +89,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         for cst in self.constraints:
             this_q = ""
             for idx, name in enumerate(self.public_constraint_name):
-                this_q += f"@{name}: [{cst[idx]}, {self.metric_scale}] "
+                this_q += f"@{name}: [{cst[idx]}, {self.public_max[name]}] "
 
             q = this_q + bq
             constraints_denom_map[cst] = self.client_db_portal.get_irs_denominator(

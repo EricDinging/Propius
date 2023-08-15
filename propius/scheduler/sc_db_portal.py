@@ -208,7 +208,7 @@ class SC_client_db_portal(Client_db):
 
         Args:
             gconfig: config dictionary
-                metric_scale: upper bound of the score
+                public_max: upper bound of the score
                 client_manager: list of client manager address
                     ip:
                     client_db_port
@@ -217,7 +217,7 @@ class SC_client_db_portal(Client_db):
         """
         # TODO determine which client db to connect
         super().__init__(gconfig, 0, False)
-        self.metric_scale = gconfig['metric_scale']
+        self.public_max = gconfig['public_max']
 
     def get_client_size(self) -> int:
         """Get client dataset size
@@ -240,7 +240,7 @@ class SC_client_db_portal(Client_db):
 
         qstr = ""
         for idx, name in enumerate(self.public_constraint_name):
-            qstr += f"@{name}: [{public_constraint[idx]}, {self.metric_scale}] "
+            qstr += f"@{name}: [{public_constraint[idx]}, {self.public_max[name]}] "
 
         q = Query(qstr).no_content()
         size = int(self.r.ft('client').search(q).total)

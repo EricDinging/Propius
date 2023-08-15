@@ -4,7 +4,6 @@ from propius.channels import propius_pb2
 import grpc
 import time
 from datetime import datetime
-import math
 
 CPU_F = "cpu_f"
 RAM = "ram"
@@ -34,28 +33,18 @@ def encode_constraints(**kargs) -> tuple[list, list]:
         FP16_MEM: 0,
         ANDROID_OS: 0,
     }
-    public_constraint_max_dict = {
-        CPU_F: 24.8,
-        RAM: 16,
-        FP16_MEM: 2800,
-        ANDROID_OS: 15
-    }
 
     private_constraint_dict = {
         DATASET_SIZE: 0
     }
 
-    private_constraint_max_dict = {
-        DATASET_SIZE: 1000,
-    }
-
     for key in public_constraint_dict.keys():
         if key in kargs:
-            public_constraint_dict[key] = math.ceil(kargs[key] / public_constraint_max_dict[key] * 100)
+            public_constraint_dict[key] = kargs[key]
 
     for key in private_constraint_dict.keys():
         if key in kargs:
-            private_constraint_dict[key] = math.ceil(kargs[key] / private_constraint_max_dict[key] * 100)
+            private_constraint_dict[key] = kargs[key]
 
     for key in kargs.keys():
         if key not in public_constraint_dict and key not in private_constraint_dict:

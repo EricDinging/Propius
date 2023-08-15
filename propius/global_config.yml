@@ -51,8 +51,14 @@ job_public_constraint:
 job_private_constraint:
   - dataset_size
 
-# Define the scale of the specifications
-metric_scale: 100
+public_max:
+  cpu_f: 24.8
+  ram: 16
+  fp16_mem: 2800
+  android_os: 15
+
+# private_max:
+#   dataset_size: 1000
 
 verbose: True
 

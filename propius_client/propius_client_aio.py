@@ -3,31 +3,10 @@ from propius.channels import propius_pb2
 import pickle
 import grpc
 import asyncio
-from datetime import datetime
+from propius_client.commons import *
 
 #TODO state flow check
 #TODO add value check
-
-def geq(t1: tuple, t2: tuple) -> bool:
-    """Compare two tuples. Return True only if every values in t1 is greater than t2
-
-    Args:
-        t1
-        t2
-    """
-
-    for idx in range(len(t1)):
-        if t1[idx] < t2[idx]:
-            return False
-    return True
-
-def get_time() -> str:
-    current_time = datetime.now()
-    format_time = current_time.strftime("%Y-%m-%d:%H:%M:%S:%f")[:-4]
-    return format_time
-
-def encode_specification(**kargs) -> tuple[list, list]:
-    pass
 
 def gen_client_config():
     pass
@@ -38,8 +17,8 @@ class Propius_client_aio():
 
         Args:
             client_config:
-                public_specifications
-                private_specifications
+                public_specifications: dict
+                private_specifications: dict
                 load_balancer_ip
                 load_balancer_port
             verbose: whether to print or not
@@ -52,8 +31,9 @@ class Propius_client_aio():
         try:
             # TODO arguments check
             # TODO add state flow check
-            self.public_specifications = tuple(client_config['public_specifications'])
-            self.private_specifications = tuple(client_config['private_specifications'])
+            public, private = encode_specs(**client_config['public_specifications'], **client_config['private_specifications'])
+            self.public_specifications = tuple(public)
+            self.private_specifications = tuple(private)
             
             self._lb_ip = client_config['load_balancer_ip']
             self._lb_port = client_config['load_balancer_port']
