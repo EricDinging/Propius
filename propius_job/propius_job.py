@@ -6,11 +6,11 @@ import time
 from datetime import datetime
 import math
 
-CPU_F = "CPU_F"
-RAM = "RAM"
-FP16_MEM = "FP16_MEM"
-ANDROID_OS = "ANDROID_OS"
-DATASET_SIZE = "DATASET_SIZE"
+CPU_F = "cpu_f"
+RAM = "ram"
+FP16_MEM = "fp16_mem"
+ANDROID_OS = "android_os"
+DATASET_SIZE = "dataset_size"
 
 def get_time() -> str:
     current_time = datetime.now()

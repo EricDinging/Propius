@@ -44,12 +44,12 @@ job_expire_time: 604800 # a week
 # ---Constraint/spec setting---
 # Job constraint
 job_public_constraint:
-  - CPU_F
-  - RAM
-  - FP16_MEM
-  - ANDROID_OS
-job_private_constraint: []
-  - DATASET_SIZE
+  - cpu_f
+  - ram
+  - fp16_mem
+  - android_os
+job_private_constraint:
+  - dataset_size
 
 # Define the scale of the specifications
 metric_scale: 100
@@ -75,8 +75,3 @@ job_driver_starting_port: 53000
 
 # Total simulation time
 total_running_second: 1200
-
-# ---Fedscale---
-num_executors: 100
-num_clients: 100
-data_dir: ./benchmark/dataset/data/femnist

@@ -61,6 +61,7 @@ class SC_job_db_portal(Job_db):
             qstr += f"@{name}: [{public_constraint[idx]}, {public_constraint[idx]}] "
 
         q = Query(qstr)
+        print(f"DBUGGGGG {qstr}")
         result = self.r.ft('job').search(q)
         if result.total == 0:
             return False
