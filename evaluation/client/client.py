@@ -25,6 +25,7 @@ class Client:
         self.data_queue = deque()
 
         self.lock = asyncio.Lock()
+        self.round = 0
 
         self.comp_speed = client_config["computation_speed"]
         self.comm_speed = client_config["communication_speed"]
@@ -71,22 +72,26 @@ class Client:
             data = self.data_queue.popleft()
     
         time = 0
+
         if event == CLIENT_TRAIN:
             time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
         elif event == SHUT_DOWN:
             return False
         elif event == UPDATE_MODEL:
-            time = meta["download_size"] / float(self.comm_speed)    
+            self.round = meta["round"]
+            time = meta["download_size"] / float(self.comm_speed)
+
         elif event == UPLOAD_MODEL:
             time = meta["upload_size"] / float(self.comm_speed)
         
         print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds")
         await asyncio.sleep(time)
-        
+
         compl_event = event
         status = True
-        compl_meta = DUMMY_RESPONSE
+        compl_meta = {"round": self.round}
         compl_data = DUMMY_RESPONSE
+        
         await self.client_execute_complete(compl_event, status, compl_meta, compl_data)
         return True
 

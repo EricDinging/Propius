@@ -81,7 +81,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         event_q.append({
             "event": UPDATE_MODEL,
             "meta": {
-                "download_size": self.model_size
+                "download_size": self.model_size,
+                "round": self.cur_round
             },
             "data": {}
         })
@@ -145,7 +146,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     async def CLIENT_EXECUTE_COMPLETION(self, request, context):
         client_id = request.id
         compl_event, status = request.event, request.status
-        meta, data = request.meta, request.data
+        meta, data = pickle.loads(request.meta), pickle.loads(request.data)
 
         #TODO result handling
         server_response_msg = parameter_server_pb2.server_response(
@@ -155,6 +156,13 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             )
 
         async with self.lock:
+            if meta["round"] != self.cur_round:
+                return server_response_msg
+            if client_id not in self.client_event_dict:
+                return server_response_msg
+            if self.round_result_cnt > self.demand:
+                return server_response_msg
+            
             if compl_event == UPLOAD_MODEL:
                 print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} complete, issue {SHUT_DOWN} event, {self.round_result_cnt}/{self.demand}")
                 self.round_result_cnt += 1
@@ -174,39 +182,35 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 )
                 await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
                 
-            if client_id not in self.client_event_dict:
-                return server_response_msg
+            # Get next event
+            if len(self.client_event_dict[client_id]) == 0:
+                del self.client_event_dict[client_id]
             else:
+                next_event_dict = self.client_event_dict[client_id].popleft()
                 if len(self.client_event_dict[client_id]) == 0:
                     del self.client_event_dict[client_id]
-                else:
-                    next_event_dict = self.client_event_dict[client_id].popleft()
-                    if len(self.client_event_dict[client_id]) == 0:
-                        del self.client_event_dict[client_id]
-                   
-                    server_response_msg = parameter_server_pb2.server_response(
-                        event=next_event_dict["event"],
-                        meta=pickle.dumps(next_event_dict["meta"]),
-                        data=pickle.dumps(next_event_dict["data"])
-                    )
+                
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=next_event_dict["event"],
+                    meta=pickle.dumps(next_event_dict["meta"]),
+                    data=pickle.dumps(next_event_dict["data"])
+                )
 
-                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event")
+                print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event")
 
+            if self.round_result_cnt >= self.demand:
+                task_meta = {}
+                job_task_info_msg = executor_pb2.job_task_info(
+                    job_id=self.propius_stub.id,
+                    client_id=-1,
+                    round=self.cur_round,
+                    event=AGGREGATE,
+                    task_meta=pickle.dumps(task_meta)
+                )
+                await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
 
-                #TODO handling compl event
-                if self.round_result_cnt >= self.demand:
-                    task_meta = {}
-                    job_task_info_msg = executor_pb2.job_task_info(
-                        job_id=self.propius_stub.id,
-                        client_id=-1,
-                        round=self.cur_round,
-                        event=AGGREGATE,
-                        task_meta=pickle.dumps(task_meta)
-                    )
-                    await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
-
-                    self._close_round()
-                return server_response_msg
+                self._close_round()
+            return server_response_msg
             
     def gen_report(self):
         csv_file_name = f"./evaluation/ps_result/{self.propius_stub.id}.csv"
