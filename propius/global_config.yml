@@ -44,11 +44,12 @@ job_expire_time: 604800 # a week
 # ---Constraint/spec setting---
 # Job constraint
 job_public_constraint:
-  - cpu
-  - memory
-  - os
+  - CPU_F
+  - RAM
+  - FP16_MEM
+  - ANDROID_OS
 job_private_constraint: []
-  # - datasetsize
+  - DATASET_SIZE
 
 # Define the scale of the specifications
 metric_scale: 100

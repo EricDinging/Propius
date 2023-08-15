@@ -4,7 +4,13 @@ from propius.channels import propius_pb2
 import grpc
 import time
 from datetime import datetime
+import math
 
+CPU_F = "CPU_F"
+RAM = "RAM"
+FP16_MEM = "FP16_MEM"
+ANDROID_OS = "ANDROID_OS"
+DATASET_SIZE = "DATASET_SIZE"
 
 def get_time() -> str:
     current_time = datetime.now()
@@ -13,8 +19,7 @@ def get_time() -> str:
 
 
 def encode_constraints(**kargs) -> tuple[list, list]:
-    """Encode job constraints. Eg. encode_constraints(cpu=50, memory=50).
-    Currently supported keys are {cpu, memory, os}
+    """Encode job constraints. Eg. encode_constraints(CPU_F=18, RAM=8).
 
     Args:
         Keyword arguments
@@ -24,19 +29,33 @@ def encode_constraints(**kargs) -> tuple[list, list]:
     """
 
     public_constraint_dict = {
-        "cpu": 0,
-        "memory": 0,
-        "os": 0,
+        CPU_F: 0,
+        RAM: 0,
+        FP16_MEM: 0,
+        ANDROID_OS: 0,
     }
-    private_constraint_dict = {}
+    public_constraint_max_dict = {
+        CPU_F: 24.8,
+        RAM: 16,
+        FP16_MEM: 2800,
+        ANDROID_OS: 15
+    }
+
+    private_constraint_dict = {
+        DATASET_SIZE: 0
+    }
+
+    private_constraint_max_dict = {
+        DATASET_SIZE: 1000,
+    }
 
     for key in public_constraint_dict.keys():
         if key in kargs:
-            public_constraint_dict[key] = kargs[key]
+            public_constraint_dict[key] = math.ceil(kargs[key] / public_constraint_max_dict[key] * 100)
 
     for key in private_constraint_dict.keys():
         if key in kargs:
-            private_constraint_dict[key] = kargs[key]
+            private_constraint_dict[key] = math.ceil(kargs[key] / private_constraint_max_dict[key] * 100)
 
     for key in kargs.keys():
         if key not in public_constraint_dict and key not in private_constraint_dict:
@@ -45,7 +64,7 @@ def encode_constraints(**kargs) -> tuple[list, list]:
     # TODO encoding, value check
 
     return (list(public_constraint_dict.values()),
-            list(private_constraint_dict))
+            list(private_constraint_dict.values()))
 
 
 def gen_job_config(constraint: tuple[list, list],
@@ -66,8 +85,8 @@ class Propius_job():
 
         Args:
             job_config:
-                public_constraint
-                private_constraint
+                public_constraint: dict
+                private_constraint: dict
                 total_round
                 demand
                 job_manager_ip
@@ -83,8 +102,9 @@ class Propius_job():
         try:
             # TODO arguments check
             # TODO add state flow check
-            self.public_constraint = tuple(job_config['public_constraint'])
-            self.private_constraint = tuple(job_config['private_constraint'])
+            public, private = encode_constraints(**job_config['public_constraint'], **job_config['private_constraint'])
+            self.public_constraint = tuple(public)
+            self.private_constraint = tuple(private)
             self.est_total_round = job_config['total_round']
             self.demand = job_config['demand']
             self._jm_ip = job_config['job_manager_ip']

@@ -47,3 +47,4 @@ experiment/*
 *.txt
 *.png
 *.log
+datasets/
