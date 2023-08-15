@@ -31,14 +31,7 @@ for exe_res_name in os.listdir(executor_folder):
         time_stamp_list = []
         acc_list = []
         acc_5_list = []
-
-        with open(ps_result_file_path, "r") as ps_file:
-            reader = csv.reader(ps_file)
-            header = next(reader)
-
-            idx = header.index("round_finish_time")
-            for row in reader:
-                time_stamp_list.append(float(row[idx]))
+        round_list = []
 
         with open(exe_res_file_path, "r") as exe_file:
             reader = csv.reader(exe_file)
@@ -46,10 +39,24 @@ for exe_res_name in os.listdir(executor_folder):
 
             acc_idx = header.index("acc")
             acc_5_idx = header.index("acc_5")
-            
+            round_idx = header.index("round")
             for row in reader:
+                round_list.append(int(row[round_idx]))
                 acc_list.append(float(row[acc_idx]))
                 acc_5_list.append(float(row[acc_5_idx]))
+
+        with open(ps_result_file_path, "r") as ps_file:
+            reader = csv.reader(ps_file)
+            header = next(reader)
+
+            idx = header.index("round_finish_time")
+            round_idx = header.index("round")
+            for row in reader:
+                round_num = int(row[round_idx])
+                if round_num in round_list:
+                    time_stamp_list.append(float(row[idx]))
+
+        
 
         plt.figure(figsize=(10, 6))
 

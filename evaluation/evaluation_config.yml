@@ -21,9 +21,11 @@ client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
 # Job profile number
-job_profile_num : 9
+job_profile_num : 5
 # Job total number
-total_job : 25
+total_job : 5
+# Job generation config
+avg_interval: 1800
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
@@ -31,6 +33,8 @@ job_driver_starting_port: 53000
 
 # Total simulation time
 total_running_second: 1200
+
+
 
 
 # ---Execution---

@@ -279,7 +279,7 @@ async def run(config):
                 try:
                     # reset client event queue dict
                     ps.client_event_dict = {}
-                    await asyncio.wait_for(ps.cv.wait(), timeout=1000)
+                    await asyncio.wait_for(ps.cv.wait(), timeout=config["connection_timeout"])
                 except asyncio.TimeoutError:
                     print("Timeout reached, shutting down job server")
                     return
