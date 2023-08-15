@@ -8,7 +8,7 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
     port = int(gconfig['job_driver_starting_port'])
     num = gconfig['total_job']
 
-    with open(f"./evaluation/job_trace_{num}.txt", "r") as file:
+    with open(f"./evaluation/job/job_trace_{num}.txt", "r") as file:
         i = 0
         for line in file:
             line = line.strip().split(" ")

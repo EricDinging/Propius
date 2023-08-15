@@ -62,6 +62,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             os.mkdir(result_dict)
         
         self.round_time_stamp = {}
+        self.round_sched_time = {}
         self.model_size = 0
 
     def _connect_to_executor(self):
@@ -71,6 +72,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     def _close_round(self):
         # locked
+        self.round_time_stamp[self.cur_round] = time.time()
         self.cur_round += 1
         self.cv.notify()
 
@@ -134,9 +136,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
                     if self.round_client_num >= self.over_demand:
                         if not self.execution_start:
-                            self.round_time_stamp[self.cur_round] = time.time()
                             self.propius_stub.round_end_request()
                             self.execution_start = True
+                            self.round_sched_time[self.cur_round] = time.time() - self.round_sched_time[self.cur_round]
             else:
                 del self.client_event_dict[client_id]
             
@@ -214,13 +216,13 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             
     def gen_report(self):
         csv_file_name = f"./evaluation/ps_result/{self.propius_stub.id}.csv"
-        fieldnames = ["round", "round_finish_time"]
+        fieldnames = ["round", "round_finish_time", "round_sched_time"]
         with open(csv_file_name, "w", newline="") as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(fieldnames)
             start_time = self.round_time_stamp[0]
             for round, time in self.round_time_stamp.items():
-                writer.writerow([round, time-start_time])
+                writer.writerow([round, time-start_time, self.round_sched_time[round]])
 
 async def run(config):
     async def server_graceful_shutdown():
@@ -266,12 +268,14 @@ async def run(config):
     await server.start()
     print(f"Parameter server: parameter server started, listening on {config['ip']}:{config['port']}")
 
+    ps.round_sched_time[0] = 0
     round = 1
     async with ps.lock:
         while round <= ps.total_round:
             ps.execution_start = False
             ps.round_client_num = 0
             ps.round_result_cnt = 0
+            ps.round_sched_time[ps.cur_round] = time.time()
             if not ps.propius_stub.round_start_request(new_demand=False):
                 print(f"Parameter server: round start request failed")
                 return

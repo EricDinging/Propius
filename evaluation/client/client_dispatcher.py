@@ -11,12 +11,14 @@ from evaluation.client.client import *
 
 async def run(gconfig):
     # clients = []
-    num = int(gconfig['client_num'])
-    total_time = int(gconfig['total_running_second'])
+    # num = int(gconfig['client_num'])
+    # total_time = int(gconfig['total_running_second'])
     is_uniform = gconfig['client_is_uniform']
     public_constraint_name = gconfig['job_public_constraint']
     private_constraint_name = gconfig['job_private_constraint']
-    start_time_list = [0] * total_time
+    # start_time_list = [0] * total_time
+    client_rate = gconfig['avg_client_rate']
+
 
     client_comm_dict = None
     with open(gconfig['client_comm_path'], 'rb') as client_file:
@@ -30,20 +32,20 @@ async def run(gconfig):
     with open(gconfig['client_size_path'], 'rb') as client_file:
         client_size_dict = pickle.load(client_file)
     
-    if not is_uniform:
-        for i in range(num):
-            time = random.normalvariate(total_time / 2, total_time / 4)
-            while time < 0 or time >= total_time:
-                time = random.normalvariate(total_time / 2, total_time / 4)
-            start_time_list[int(time)] += 1
-    else:
-        for i in range(num):
-            time = random.randint(0, total_time - 1)
-            start_time_list[int(time)] += 1
+    # if not is_uniform:
+    #     for i in range(num):
+    #         time = random.normalvariate(total_time / 2, total_time / 4)
+    #         while time < 0 or time >= total_time:
+    #             time = random.normalvariate(total_time / 2, total_time / 4)
+    #         start_time_list[int(time)] += 1
+    # else:
+    #     for i in range(num):
+    #         time = random.randint(0, total_time - 1)
+    #         start_time_list[int(time)] += 1
 
     client_idx = 0
-    for i in range(total_time):
-        for _ in range(start_time_list[i]):
+    while True:
+        for _ in range(client_rate):
             public_specs = {
                 name: client_spec_dict[client_idx % len(client_spec_dict)][name]
                 for name in public_constraint_name}

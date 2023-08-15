@@ -1,6 +1,9 @@
 # Server setting
 connection_timeout: 3600
 
+job_manager_ip: localhost
+job_manager_port: 50002
+
 # Training and testing aggregator setting
 demand: 100
 total_round: 1000  # Total round
