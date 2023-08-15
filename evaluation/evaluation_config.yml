@@ -1,14 +1,24 @@
 load_balancer_ip: localhost
 load_balancer_port: 50000
 
+job_public_constraint:
+  - cpu_f
+  - ram
+  - fp16_mem
+  - android_os
+job_private_constraint:
+  - dataset_size
+
 # ---Simulation---
 # Client simulation number
-client_num: 10000
+client_num: 1000
 
 # Client check in distribution over time
 client_is_uniform: False
 
-client_speed_path: './datasets/device_info/client_device_capacity'
+client_comm_path: './datasets/device_info/client_device_capacity'
+client_spec_path: './datasets/device_info/client_spec_speed'
+client_size_path: './datasets/device_info/client_dataset_size'
 
 # Job profile number
 job_profile_num : 9

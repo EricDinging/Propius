@@ -18,10 +18,18 @@ async def run(gconfig):
     private_constraint_name = gconfig['job_private_constraint']
     start_time_list = [0] * total_time
 
-    client_speed_dict = None
-    with open(gconfig['client_speed_path'], 'rb') as client_file:
-        client_speed_dict = pickle.load(client_file)
+    client_comm_dict = None
+    with open(gconfig['client_comm_path'], 'rb') as client_file:
+        client_comm_dict = pickle.load(client_file)
 
+    client_spec_dict = None
+    with open(gconfig['client_spec_path'], 'rb') as client_file:
+        client_spec_dict = pickle.load(client_file)
+
+    client_size_dict = None
+    with open(gconfig['client_size_path'], 'rb') as client_file:
+        client_size_dict = pickle.load(client_file)
+    
     if not is_uniform:
         for i in range(num):
             time = random.normalvariate(total_time / 2, total_time / 4)
@@ -36,23 +44,20 @@ async def run(gconfig):
     client_idx = 0
     for i in range(total_time):
         for _ in range(start_time_list[i]):
-            bench_mark = max(20, min(random.normalvariate(60, 20), 100))
+            public_specs = {
+                name: client_spec_dict[client_idx % len(client_spec_dict)][name]
+                for name in public_constraint_name}
 
-            public_specs = [
-                int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100 - bench_mark)))
-                for _ in range(len(public_constraint_name))]
-
-            private_specs = [
-                int(bench_mark + max(-bench_mark, min(random.normalvariate(0, 5), 100 - bench_mark)))
-                for _ in range(len(private_constraint_name))]
+            private_specs = {
+                "dataset_size": client_size_dict[client_idx % len(client_size_dict)]}
 
             client_config = {
                 "public_specifications": public_specs,
                 "private_specifications": private_specs,
                 "load_balancer_ip": gconfig['load_balancer_ip'],
                 "load_balancer_port": gconfig['load_balancer_port'],
-                "computation_speed": client_speed_dict[client_idx % len(client_speed_dict) + 1]['computation'],
-                "communication_speed": client_speed_dict[client_idx % len(client_speed_dict) + 1]['communication']
+                "computation_speed": client_spec_dict[client_idx % len(client_spec_dict)]['speed'],
+                "communication_speed": client_comm_dict[client_idx % len(client_comm_dict) + 1]['communication']
             }
             asyncio.ensure_future(
                 Client(client_config).run())
@@ -77,7 +82,8 @@ if __name__ == '__main__':
             loop.run_until_complete(run(gconfig))
         except KeyboardInterrupt:
             pass
-        except Exception as e:
-            logger.error(str(e))
+        # except Exception as e:
+            # logger.error(str(e))
+
         finally:
             pass

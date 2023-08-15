@@ -117,7 +117,7 @@ class Propius_client():
                 task_private_constraint = pickle.loads(
                     cm_offer.private_constraint)
                 if self.verbose:
-                    print(f"{get_time()} Client {self.id}: checked in to Propius")
+                    print(f"{get_time()} Client {self.id}: checked in to Propius, public spec {self.public_specifications}")
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
