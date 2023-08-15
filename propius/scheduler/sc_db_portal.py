@@ -38,7 +38,7 @@ class SC_job_db_portal(Job_db):
         constraint_list = []
         try:
             for name in self.public_constraint_name:
-                constraint_list.append(int(self.r.json().get(
+                constraint_list.append(float(self.r.json().get(
                     id, f"$.job.public_constraint.{name}")[0]))
             return tuple(constraint_list)
         except Exception as e:
@@ -61,7 +61,6 @@ class SC_job_db_portal(Job_db):
             qstr += f"@{name}: [{public_constraint[idx]}, {public_constraint[idx]}] "
 
         q = Query(qstr)
-        print(f"DBUGGGGG {qstr}")
         result = self.r.ft('job').search(q)
         if result.total == 0:
             return False

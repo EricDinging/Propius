@@ -12,7 +12,7 @@ job_private_constraint:
 # ---Simulation---
 # Client check in distribution over time
 client_is_uniform: True
-avg_client_rate: 25
+avg_client_rate: 15
 
 client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
@@ -31,9 +31,6 @@ job_driver_starting_port: 53000
 
 # Total simulation time
 # total_running_second: 1200
-
-
-
 
 # ---Execution---
 use_cuda: False

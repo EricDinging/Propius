@@ -69,14 +69,14 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             return propius_pb2.ack(ack=False)
         if constraints not in self.constraints:
             self.constraints.append(constraints)
-        print(f"Debug ==={self.constraints}")
+
         # search job for each group, remove if empty
         for cst in self.constraints:
             constraints_job_map[cst] = []
             if not self.job_db_portal.get_job_list(
                     cst, constraints_job_map[cst]):
                 self.constraints.remove(cst)
-        print(f"Debug2 ==={self.constraints}")
+
         # search elig client size for each group
         for cst in self.constraints:
             constraints_client_map[cst] = self.client_db_portal.\

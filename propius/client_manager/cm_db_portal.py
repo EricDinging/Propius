@@ -197,7 +197,7 @@ class CM_client_db_portal(Client_db):
         specs = [0] * len(self.public_constraint_name)
         try:
             for idx, name in enumerate(self.public_constraint_name):
-                spec = int(self.r.json().get(id, f"$.client.{name}")[0])
+                spec = float(self.r.json().get(id, f"$.client.{name}")[0])
                 specs[idx] = spec
         except Exception as e:
             custom_print(e, WARNING)
