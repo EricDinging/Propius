@@ -13,17 +13,10 @@ service Executor {
 service Worker {
     rpc INIT (job_info) returns (ack) {}
     rpc REMOVE (job_info) returns (ack) {}
-    rpc TRAIN (worker_task_info) returns (ack) {}
-    rpc TEST (worker_task_info) returns (ack) {}
-    rpc PING (worker_task_info) returns (task_result) {}
+    rpc TRAIN (job_task_info) returns (ack) {}
+    rpc TEST (job_task_info) returns (ack) {}
+    rpc PING (job_task_info) returns (task_result) {}
     rpc HEART_BEAT (empty) returns (worker_status) {}
-}
-
-message worker_task_info {
-    int32 client_id = 1;
-    string event = 2;
-    bytes data = 3;
-    bytes conf = 4;
 }
 
 message worker_status {
@@ -47,6 +40,7 @@ message job_task_info {
     int32 round = 3;
     string event = 4;
     bytes task_meta = 5;
+    bytes task_data = 6;
 }
 
 message job_id {
