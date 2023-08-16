@@ -111,12 +111,15 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.client_event_dict[client_id] = event_q
 
     async def heartbeat_routine(self):
-        while (True):
-            await asyncio.sleep(30)
-            try:
-                self.propius_stub.heartbeat()
-            except:
-                pass
+        try:
+            while True:
+                await asyncio.sleep(30)
+                try:
+                    self.sched_portal.HEART_BEAT(propius_pb2.empty())
+                except:
+                    pass
+        except asyncio.CancelledError:
+            pass
     
     async def CLIENT_PING(self, request, context):
         client_id = request.id

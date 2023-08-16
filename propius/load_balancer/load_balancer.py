@@ -89,12 +89,15 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         return propius_pb2.ack(ack=True)
     
     async def heartbeat_routine(self):
-        while True:
-            await asyncio.sleep(30)
-            try:
-                self.cm_stub_dict[self.idx].HEART_BEAT(propius_pb2.empty())
-            except:
-                pass
+        try:
+            while True:
+                await asyncio.sleep(30)
+                try:
+                    self.sched_portal.HEART_BEAT(propius_pb2.empty())
+                except:
+                    pass
+        except asyncio.CancelledError:
+            pass
 
 
 async def serve(gconfig):
