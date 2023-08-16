@@ -141,7 +141,9 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
         await self.jm_monitor.request()
         return propius_pb2.empty()
-
+    
+    async def HEART_BEAT(self, request, context):
+        return propius_pb2.ack(ack=True)
 
 async def serve(gconfig):
     async def server_graceful_shutdown():

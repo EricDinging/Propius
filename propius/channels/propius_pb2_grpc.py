@@ -34,6 +34,11 @@ class Job_managerStub(object):
                 request_serializer=propius__pb2.job_id.SerializeToString,
                 response_deserializer=propius__pb2.empty.FromString,
                 )
+        self.HEART_BEAT = channel.unary_unary(
+                '/propius.Job_manager/HEART_BEAT',
+                request_serializer=propius__pb2.empty.SerializeToString,
+                response_deserializer=propius__pb2.ack.FromString,
+                )
 
 
 class Job_managerServicer(object):
@@ -63,6 +68,12 @@ class Job_managerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def HEART_BEAT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_Job_managerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -85,6 +96,11 @@ def add_Job_managerServicer_to_server(servicer, server):
                     servicer.JOB_FINISH,
                     request_deserializer=propius__pb2.job_id.FromString,
                     response_serializer=propius__pb2.empty.SerializeToString,
+            ),
+            'HEART_BEAT': grpc.unary_unary_rpc_method_handler(
+                    servicer.HEART_BEAT,
+                    request_deserializer=propius__pb2.empty.FromString,
+                    response_serializer=propius__pb2.ack.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -161,6 +177,23 @@ class Job_manager(object):
         return grpc.experimental.unary_unary(request, target, '/propius.Job_manager/JOB_FINISH',
             propius__pb2.job_id.SerializeToString,
             propius__pb2.empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def HEART_BEAT(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Job_manager/HEART_BEAT',
+            propius__pb2.empty.SerializeToString,
+            propius__pb2.ack.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

@@ -10,6 +10,7 @@ service Job_manager {
     rpc JOB_REQUEST (job_round_info) returns (ack) {}
     rpc JOB_END_REQUEST (job_id) returns (ack) {}
     rpc JOB_FINISH (job_id) returns (empty) {}
+    rpc HEART_BEAT (empty) returns (ack) {}
 }
 
 service Scheduler {

@@ -136,7 +136,7 @@ class Propius_job():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                time.sleep(5)
 
         raise RuntimeError(
             "Unable to connect to Propius job manager at the moment")
@@ -185,7 +185,9 @@ class Propius_job():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                self._cleanup_routine()
+                time.sleep(5)
+                self.connect()
 
         raise RuntimeError(
             "Unable to register to Propius job manager at the moment")
@@ -237,7 +239,9 @@ class Propius_job():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                self._cleanup_routine()
+                time.sleep(5)
+                self.connect()
 
         raise RuntimeError(
             "Unable to send round start request to Propius job manager at the moment")
@@ -268,7 +272,9 @@ class Propius_job():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                self._cleanup_routine()
+                time.sleep(5)
+                self.connect()
 
         raise RuntimeError(
             "Unable to send round end request to Propius job manager at this moment")
@@ -291,7 +297,14 @@ class Propius_job():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                self._cleanup_routine()
+                time.sleep(5)
+                self.connect()
 
         raise RuntimeError(
             "Unable to send complete job request to Propius job manager at this moment")
+    
+    def heartbeat(self):
+        """Keep connection alive for long intervals during request
+        """
+        self._jm_stub.HEART_BEAT(propius_pb2.empty())
