@@ -72,7 +72,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.client_db_portal.insert(client_id, public_specification)
 
         task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
-            public_specification)
+            public_specification, self.sched_alg)
 
         await self.cm_monitor.client_checkin()
 
@@ -105,7 +105,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         public_specification = self.client_db_portal.get(request.id)
 
         task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
-            public_specification)
+            public_specification, self.sched_alg)
 
         await self.cm_monitor.client_ping()
 

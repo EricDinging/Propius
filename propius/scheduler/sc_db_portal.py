@@ -110,6 +110,9 @@ class SC_job_db_portal(Job_db):
 
     def fifo_update_all_job_score(self):
         """Give every job which doesn't have a score yet a score of -timestamp
+
+        Returns:
+            boolean indicating whether there is a score updated
         """
         q = Query('@score: [0, 0]')
         result = self.r.ft('job').search(q)

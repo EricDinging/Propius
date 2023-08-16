@@ -117,3 +117,7 @@ class Task_pool:
                             result["round"] = round
                             writer.writerow(result)
 
+    async def gen_all_report(self, sched_alg: str):
+        for job_id in self.job_meta_dict.keys():
+            await self.gen_report(job_id, sched_alg)
+

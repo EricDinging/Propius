@@ -27,7 +27,7 @@ class CM_job_db_portal(Job_db):
 
         super().__init__(gconfig, False)
 
-    def client_assign(self, specification: tuple) -> tuple[list, list, int]:
+    def client_assign(self, specification: tuple, sched_alg: str) -> tuple[list, list, int]:
         """Assign tasks to client with input specification. 
         The client public specification would satisfy returned task public constraints, 
         but client private specification might not satisfy the returned task private constraints. 
@@ -35,6 +35,7 @@ class CM_job_db_portal(Job_db):
 
         Args:
             specification: a tuple listing public spec values
+            sched_alg: str
         
         Returns:
             task_offer_list: list of job id, with size no greater than max_task_len
@@ -42,10 +43,14 @@ class CM_job_db_portal(Job_db):
                                             for client local task selection
             size: total number of jobs for analytics
         """
-
-        q = Query('*').sort_by('score', asc=False)
         try:
-            result = self.r.ft('job').search(q)
+            if sched_alg == "fifo":
+                q = Query('*').sort_by('timestamp', asc=True)                
+                result = self.r.ft('job').search(q)
+            else:
+                q = "*"
+                sortby = "score DESC timestamp ASC"
+                result = self.r.execute_command('FT.SEARCH', 'job', q, 'SORTBY', sortby)
         except Exception as e:
             custom_print(e, WARNING)
             result = None

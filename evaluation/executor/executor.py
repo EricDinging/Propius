@@ -103,6 +103,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
     
 async def run(config, gconfig):
     async def server_graceful_shutdown():
+        await executor.task_pool.gen_all_report(executor.gconfig["sched_alg"])
         print("==Executor ending==")
         #TODO handling result
         await server.stop(5)
