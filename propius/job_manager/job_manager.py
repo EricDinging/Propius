@@ -144,12 +144,25 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
     
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)
+    
+    async def heartbeat_routine(self):
+        while True:
+            await asyncio.sleep(30)
+            try:
+                self.sched_portal.HEART_BEAT(propius_pb2.empty())
+            except:
+                pass
+
 
 async def serve(gconfig):
     async def server_graceful_shutdown():
         custom_print(f"=====Job manager shutting down=====")
         job_manager.jm_monitor.report()
         job_manager.job_db_portal.flushdb()
+
+        heartbeat_task.cancel()
+        await heartbeat_task
+
         try:
             await job_manager.sched_channel.close()
         except Exception as e:
@@ -161,8 +174,12 @@ async def serve(gconfig):
     propius_pb2_grpc.add_Job_managerServicer_to_server(job_manager, server)
     server.add_insecure_port(f'{job_manager.ip}:{job_manager.port}')
     await server.start()
+
+    heartbeat_task = asyncio.create_task(job_manager.heartbeat_routine())
+
     custom_print(f"Job manager: server started, listening on {job_manager.ip}:{job_manager.port}")
     _cleanup_coroutines.append(server_graceful_shutdown())
+
     await server.wait_for_termination()
 
 if __name__ == '__main__':

@@ -84,12 +84,27 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_ACCEPT(request)
             self._next_idx()
         return return_msg
+    
+    async def HEART_BEAT(self, request, context):
+        return propius_pb2.ack(ack=True)
+    
+    async def heartbeat_routine(self):
+        while True:
+            await asyncio.sleep(30)
+            try:
+                self.cm_stub_dict[self.idx].HEART_BEAT(propius_pb2.empty())
+            except:
+                pass
 
 
 async def serve(gconfig):
     async def server_graceful_shutdown():
         custom_print(f"=====Load balancer shutting down=====")
         load_balancer.lb_analyzer.report()
+
+        heartbeat_task.cancel()
+        await heartbeat_task
+
         await load_balancer._disconnect_cm()
         await server.stop(5)
 
@@ -100,6 +115,9 @@ async def serve(gconfig):
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.start()
     custom_print(f"Load balancer: server started, listening on {load_balancer.ip}:{load_balancer.port}")
+
+    heartbeat_task = asyncio.create_task(load_balancer.heartbeat_routine())
+
     await server.wait_for_termination()
 
 if __name__ == '__main__':

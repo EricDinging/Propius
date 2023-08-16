@@ -150,7 +150,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}")
         return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]),
                                   job_port=result[1])
-
+    
+    async def HEART_BEAT(self, request, context):
+        return propius_pb2.ack(ack=True)
 
 async def serve(gconfig, cm_id: int):
     async def server_graceful_shutdown():

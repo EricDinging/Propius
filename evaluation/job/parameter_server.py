@@ -112,8 +112,11 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     async def heartbeat_routine(self):
         while (True):
-            self.propius_stub.heartbeat()
             await asyncio.sleep(30)
+            try:
+                self.propius_stub.heartbeat()
+            except:
+                pass
     
     async def CLIENT_PING(self, request, context):
         client_id = request.id
@@ -233,6 +236,10 @@ async def run(config):
     async def server_graceful_shutdown():
         ps.gen_report()
         ps.propius_stub.complete_job()
+
+        heartbeat_task.cancel()
+        await heartbeat_task
+        
         ps.propius_stub.close()
         
         task_meta = {}
@@ -276,8 +283,8 @@ async def run(config):
     ps.round_sched_time[0] = 0
     round = 1
 
-    asyncio.create_task(ps.heartbeat_routine())
-    
+    heartbeat_task = asyncio.create_task(ps.heartbeat_routine())
+
     async with ps.lock:
         while round <= ps.total_round:
             ps.execution_start = False

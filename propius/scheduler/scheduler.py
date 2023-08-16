@@ -180,6 +180,9 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         await self.sc_monitor.request_end(job_id, job_size)
 
         return propius_pb2.ack(ack=True)
+    
+    async def HEART_BEAT(self, request, context):
+        return propius_pb2.ack(ack=True)
 
 
 async def serve(gconfig):

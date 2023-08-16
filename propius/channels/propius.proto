@@ -15,12 +15,14 @@ service Job_manager {
 
 service Scheduler {
     rpc JOB_SCORE_UPDATE (job_id) returns (ack) {}
+    rpc HEART_BEAT (empty) returns (ack) {}
 }
 
 service Client_manager {
     rpc CLIENT_CHECKIN (client_checkin) returns (cm_offer) {}
     rpc CLIENT_PING(client_id) returns (cm_offer) {}
     rpc CLIENT_ACCEPT (client_accept) returns (cm_ack) {}
+    rpc HEART_BEAT (empty) returns (ack) {}
     //TODO rpc HEALTH_CHECK (empty) returns (cm_ack) {}
 }
 
@@ -28,6 +30,7 @@ service Load_balancer {
     rpc CLIENT_CHECKIN (client_checkin) returns (cm_offer) {}
     rpc CLIENT_PING(client_id) returns (cm_offer) {}
     rpc CLIENT_ACCEPT (client_accept) returns (cm_ack) {}
+    rpc HEART_BEAT (empty) returns (ack) {}
 }
 
 message client_checkin {
