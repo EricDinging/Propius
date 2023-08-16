@@ -21,6 +21,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.worker = Worker(config)
         self.gconfig = gconfig
 
+        self.job_task_dict = {}
+
         result_dict = f"./evaluation/result_{self.gconfig['sched_alg']}"
         if not os.path.exists(result_dict):
             os.mkdir(result_dict)
@@ -35,7 +37,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                    dataset_name=job_meta["dataset"],
                                    model_name=job_meta["model"],
                                    )
-
+        
         return executor_pb2.register_ack(ack=True, model_size=model_size)
     
     async def JOB_REGISTER_TASK(self, request, context):
@@ -49,6 +51,22 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                              event=event,
                                              task_meta=task_meta)
         return executor_pb2.ack(ack=True)
+    
+    async def wait_for_training_task(self, job_id:int, round: int):
+        if job_id not in self.job_task_dict:
+            return
+        completed, pending = await asyncio.wait(self.job_task_dict[job_id], 
+                                                return_when=asyncio.ALL_COMPLETED)
+        
+        for task in completed:
+            try:
+                results = await task
+                await self.task_pool.report_result(job_id=job_id,
+                                                    round=round,
+                                                    result=results)
+            except:
+                pass
+
     
     async def execute(self):
         #TODO
@@ -68,37 +86,57 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                 sched_alg=self.gconfig["sched_alg"])
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
+                
+                try:
+                    del self.job_task_dict[job_id]
+                except:
+                    pass
+
                 continue
             
             elif execute_meta['event'] == CLIENT_TRAIN:
+                # create asyncio task for training task
+                if job_id not in self.job_task_dict:
+                    self.job_task_dict[job_id] = []
+                    
                 client_id = execute_meta['client_id']
-                results = await self.worker.execute(event=CLIENT_TRAIN,
+                task = asyncio.create_task(
+                    self.worker.execute(event=CLIENT_TRAIN,
                                           job_id=job_id,
                                           client_id=client_id,
                                           args=execute_meta)
-                
-                results = {CLIENT_TRAIN+str(client_id): results}
+                )
+
+                self.job_task_dict[job_id].append(task)
 
             elif execute_meta['event'] == MODEL_TEST:
+
+                await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
+
                 results = await self.worker.execute(
                     event=MODEL_TEST,
                     job_id=job_id,
                     client_id=execute_meta['client_id'],
                     args=execute_meta
                 )
-                results = {
-                    MODEL_TEST: results
-                }
+
+                await self.task_pool.report_result(job_id=job_id,
+                                                    round=execute_meta['round'],
+                                                    result=results)
 
             elif execute_meta['event'] == AGGREGATE:
+                # wait for all pending training task to complete
+                
+                await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
+
                 results = await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
                                                     client_id=-1,
                                                     args=execute_meta)
-                results = {AGGREGATE: results}
-            await self.task_pool.report_result(job_id=job_id,
-                                                round=execute_meta['round'],
-                                                result=results)
+                
+                await self.task_pool.report_result(job_id=job_id,
+                                                    round=execute_meta['round'],
+                                                    result=results)
 
     
 async def run(config, gconfig):

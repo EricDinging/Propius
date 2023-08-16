@@ -44,7 +44,6 @@ class Worker:
             self.device_list = [torch.device("cpu")]
         self.cur_device_idx = 0
         self.device = self.device_list[self.cur_device_idx]
-       
         print(f"Worker: use {self.device_list}")
 
         self._completed_steps = 0
@@ -275,6 +274,8 @@ class Worker:
                     agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
                 self.job_id_agg_weight_map[job_id] = agg_weight
 
+                results = {CLIENT_TRAIN+str(client_id): results}
+
             elif event == AGGREGATE:
                 agg_weight = self.job_id_agg_weight_map[job_id]
                 agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]
@@ -285,6 +286,8 @@ class Worker:
                 }
                 self.job_id_agg_cnt[job_id] = 0
 
+                results = {AGGREGATE: results}
+
             elif event == MODEL_TEST:
                 results = self._test(
                     client_id=client_id,
@@ -292,6 +295,10 @@ class Worker:
                     model=self.job_id_model_adapter_map[job_id].get_model(),
                     conf=args,
                 )
+
+                results = {
+                    MODEL_TEST: results
+                }
             
             return results
             
