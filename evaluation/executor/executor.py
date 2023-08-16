@@ -7,7 +7,7 @@ import pickle
 from evaluation.executor.channels import executor_pb2
 from evaluation.executor.channels import executor_pb2_grpc
 from evaluation.executor.task_pool import *
-from evaluation.executor.worker import *
+from evaluation.executor.worker_manager import *
 from evaluation.commons import *
 import os
 
@@ -18,7 +18,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.ip = config['executor_ip']
         self.port = config['executor_port']
         self.task_pool = Task_pool(config)
-        self.worker = Worker(config)
+        self.worker = Worker_manager(config)
         self.gconfig = gconfig
 
         self.job_task_dict = {}

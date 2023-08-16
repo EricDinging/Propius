@@ -10,6 +10,32 @@ service Executor {
     rpc JOB_REGISTER_TASK (job_task_info) returns (ack) {}
 }
 
+service Worker {
+    rpc INIT (job_info) returns (ack) {}
+    rpc REMOVE (job_info) returns (ack) {}
+    rpc TRAIN (worker_task_info) returns (ack) {}
+    rpc TEST (worker_task_info) returns (ack) {}
+    rpc PING (worker_task_info) returns (task_result) {}
+    rpc HEART_BEAT (empty) returns (worker_status) {}
+}
+
+message worker_task_info {
+    int32 client_id = 1;
+    string event = 2;
+    bytes data = 3;
+    bytes conf = 4;
+}
+
+message worker_status {
+    int32 task_size = 1;
+}
+
+message task_result {
+    bool ack = 1;
+    bytes result = 2;
+    bytes data = 3;
+}
+
 message job_info {
     int32 job_id = 1;
     bytes job_meta = 2;
@@ -36,6 +62,6 @@ message ack {
     bool ack = 1;
 }
 
-message job_result {
-    bytes data = 1;
+
+message empty {
 }
