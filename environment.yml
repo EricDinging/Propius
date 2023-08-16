@@ -12,3 +12,4 @@ dependencies:
   - redis-py
   - pytorch
   - torchvision
+  - pandas

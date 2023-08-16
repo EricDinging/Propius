@@ -1,30 +1,35 @@
 //  python -m grpc_tools.protoc --proto_path=. ./executor.proto --python_out=. --grpc_python_out=. 
-//  import channels.executor_pb2 as executor__pb2
+//  import evaluation.executor.channels.executor_pb2 as executor__pb2
 
 syntax = "proto3";
 
 package executor;
 
 service Executor {
-    rpc JOB_REGISTER (job_info) returns (ack) {}
+    rpc JOB_REGISTER (job_info) returns (register_ack) {}
     rpc JOB_REGISTER_TASK (job_task_info) returns (ack) {}
-    rpc MONITOR_PING (job_id) returns (job_result) {} 
 }
 
 message job_info {
     int32 job_id = 1;
-    string job_type = 2;
+    bytes job_meta = 2;
 }
 
 message job_task_info {
     int32 job_id = 1;
     int32 client_id = 2;
-    string event = 3;
-    bytes meta = 4;
+    int32 round = 3;
+    string event = 4;
+    bytes task_meta = 5;
 }
 
 message job_id {
     int32 id = 1;
+}
+
+message register_ack {
+    bool ack = 1;
+    float model_size = 2;
 }
 
 message ack {

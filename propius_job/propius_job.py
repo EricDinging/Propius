@@ -5,6 +5,11 @@ import grpc
 import time
 from datetime import datetime
 
+CPU_F = "cpu_f"
+RAM = "ram"
+FP16_MEM = "fp16_mem"
+ANDROID_OS = "android_os"
+DATASET_SIZE = "dataset_size"
 
 def get_time() -> str:
     current_time = datetime.now()
@@ -13,8 +18,7 @@ def get_time() -> str:
 
 
 def encode_constraints(**kargs) -> tuple[list, list]:
-    """Encode job constraints. Eg. encode_constraints(cpu=50, memory=50).
-    Currently supported keys are {cpu, memory, os}
+    """Encode job constraints. Eg. encode_constraints(CPU_F=18, RAM=8).
 
     Args:
         Keyword arguments
@@ -24,11 +28,15 @@ def encode_constraints(**kargs) -> tuple[list, list]:
     """
 
     public_constraint_dict = {
-        "cpu": 0,
-        "memory": 0,
-        "os": 0,
+        CPU_F: 0,
+        RAM: 0,
+        FP16_MEM: 0,
+        ANDROID_OS: 0,
     }
-    private_constraint_dict = {}
+
+    private_constraint_dict = {
+        DATASET_SIZE: 0
+    }
 
     for key in public_constraint_dict.keys():
         if key in kargs:
@@ -45,7 +53,7 @@ def encode_constraints(**kargs) -> tuple[list, list]:
     # TODO encoding, value check
 
     return (list(public_constraint_dict.values()),
-            list(private_constraint_dict))
+            list(private_constraint_dict.values()))
 
 
 def gen_job_config(constraint: tuple[list, list],
@@ -66,8 +74,8 @@ class Propius_job():
 
         Args:
             job_config:
-                public_constraint
-                private_constraint
+                public_constraint: dict
+                private_constraint: dict
                 total_round
                 demand
                 job_manager_ip
@@ -83,8 +91,9 @@ class Propius_job():
         try:
             # TODO arguments check
             # TODO add state flow check
-            self.public_constraint = tuple(job_config['public_constraint'])
-            self.private_constraint = tuple(job_config['private_constraint'])
+            public, private = encode_constraints(**job_config['public_constraint'], **job_config['private_constraint'])
+            self.public_constraint = tuple(public)
+            self.private_constraint = tuple(private)
             self.est_total_round = job_config['total_round']
             self.demand = job_config['demand']
             self._jm_ip = job_config['job_manager_ip']
@@ -120,14 +129,14 @@ class Propius_job():
         Raise:
             RuntimeError: if can't establish connection after multiple trial
         """
-        for _ in range(10):
+        for _ in range(3):
             try:
                 self._connect_jm()
                 return
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                time.sleep(5)
 
         raise RuntimeError(
             "Unable to connect to Propius job manager at the moment")
@@ -160,7 +169,7 @@ class Propius_job():
             port=self.port,
         )
 
-        for _ in range(10):
+        for _ in range(3):
             try:
                 ack_msg = self._jm_stub.JOB_REGIST(job_info_msg)
                 self.id = ack_msg.id
@@ -174,13 +183,16 @@ class Propius_job():
                         print(f"{get_time()} Job {self.id}: register success")
                     return True
             except Exception as e:
-                print(f"{get_time()} {e}")
-                time.sleep(2)
+                if self.verbose:
+                    print(f"{get_time()} {e}")
+                self._cleanup_routine()
+                time.sleep(5)
+                self.connect()
 
         raise RuntimeError(
             "Unable to register to Propius job manager at the moment")
 
-    def round_start_request(self, new_demand: bool, demand: int = 0) -> bool:
+    def round_start_request(self, new_demand: bool = False, demand: int = 0) -> bool:
         """Send round start request to Propius job manager. Client will be routed to parameter server after this call
         until the number of clients has reached specified demand, or round_end_request is called.
         Note that though Propius provide the guarantee that the requested demand will be satisfied,
@@ -211,7 +223,7 @@ class Propius_job():
             demand=this_round_demand
         )
 
-        for _ in range(10):
+        for _ in range(3):
             try:
                 ack_msg = self._jm_stub.JOB_REQUEST(request_msg)
                 if not ack_msg.ack:
@@ -227,7 +239,9 @@ class Propius_job():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                self._cleanup_routine()
+                time.sleep(5)
+                self.connect()
 
         raise RuntimeError(
             "Unable to send round start request to Propius job manager at the moment")
@@ -242,7 +256,7 @@ class Propius_job():
 
         request_msg = propius_pb2.job_id(id=self.id)
 
-        for _ in range(10):
+        for _ in range(3):
             try:
                 ack_msg = self._jm_stub.JOB_END_REQUEST(request_msg)
                 if not ack_msg.ack:
@@ -258,7 +272,9 @@ class Propius_job():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                self._cleanup_routine()
+                time.sleep(5)
+                self.connect()
 
         raise RuntimeError(
             "Unable to send round end request to Propius job manager at this moment")
@@ -272,7 +288,7 @@ class Propius_job():
 
         req_msg = propius_pb2.job_id(id=self.id)
 
-        for _ in range(10):
+        for _ in range(3):
             try:
                 self._jm_stub.JOB_FINISH(req_msg)
                 if self.verbose:
@@ -281,7 +297,14 @@ class Propius_job():
             except Exception as e:
                 if self.verbose:
                     print(f"{get_time()} {e}")
-                time.sleep(2)
+                self._cleanup_routine()
+                time.sleep(5)
+                self.connect()
 
         raise RuntimeError(
             "Unable to send complete job request to Propius job manager at this moment")
+    
+    def heartbeat(self):
+        """Keep connection alive for long intervals during request
+        """
+        self._jm_stub.HEART_BEAT(propius_pb2.empty())

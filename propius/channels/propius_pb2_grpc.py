@@ -34,6 +34,11 @@ class Job_managerStub(object):
                 request_serializer=propius__pb2.job_id.SerializeToString,
                 response_deserializer=propius__pb2.empty.FromString,
                 )
+        self.HEART_BEAT = channel.unary_unary(
+                '/propius.Job_manager/HEART_BEAT',
+                request_serializer=propius__pb2.empty.SerializeToString,
+                response_deserializer=propius__pb2.ack.FromString,
+                )
 
 
 class Job_managerServicer(object):
@@ -63,6 +68,12 @@ class Job_managerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def HEART_BEAT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_Job_managerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -85,6 +96,11 @@ def add_Job_managerServicer_to_server(servicer, server):
                     servicer.JOB_FINISH,
                     request_deserializer=propius__pb2.job_id.FromString,
                     response_serializer=propius__pb2.empty.SerializeToString,
+            ),
+            'HEART_BEAT': grpc.unary_unary_rpc_method_handler(
+                    servicer.HEART_BEAT,
+                    request_deserializer=propius__pb2.empty.FromString,
+                    response_serializer=propius__pb2.ack.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -164,6 +180,23 @@ class Job_manager(object):
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
+    @staticmethod
+    def HEART_BEAT(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Job_manager/HEART_BEAT',
+            propius__pb2.empty.SerializeToString,
+            propius__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
 
 class SchedulerStub(object):
     """Missing associated documentation comment in .proto file."""
@@ -179,6 +212,11 @@ class SchedulerStub(object):
                 request_serializer=propius__pb2.job_id.SerializeToString,
                 response_deserializer=propius__pb2.ack.FromString,
                 )
+        self.HEART_BEAT = channel.unary_unary(
+                '/propius.Scheduler/HEART_BEAT',
+                request_serializer=propius__pb2.empty.SerializeToString,
+                response_deserializer=propius__pb2.ack.FromString,
+                )
 
 
 class SchedulerServicer(object):
@@ -190,12 +228,23 @@ class SchedulerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def HEART_BEAT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SchedulerServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'JOB_SCORE_UPDATE': grpc.unary_unary_rpc_method_handler(
                     servicer.JOB_SCORE_UPDATE,
                     request_deserializer=propius__pb2.job_id.FromString,
+                    response_serializer=propius__pb2.ack.SerializeToString,
+            ),
+            'HEART_BEAT': grpc.unary_unary_rpc_method_handler(
+                    servicer.HEART_BEAT,
+                    request_deserializer=propius__pb2.empty.FromString,
                     response_serializer=propius__pb2.ack.SerializeToString,
             ),
     }
@@ -225,6 +274,23 @@ class Scheduler(object):
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
+    @staticmethod
+    def HEART_BEAT(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Scheduler/HEART_BEAT',
+            propius__pb2.empty.SerializeToString,
+            propius__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
 
 class Client_managerStub(object):
     """Missing associated documentation comment in .proto file."""
@@ -250,6 +316,11 @@ class Client_managerStub(object):
                 request_serializer=propius__pb2.client_accept.SerializeToString,
                 response_deserializer=propius__pb2.cm_ack.FromString,
                 )
+        self.HEART_BEAT = channel.unary_unary(
+                '/propius.Client_manager/HEART_BEAT',
+                request_serializer=propius__pb2.empty.SerializeToString,
+                response_deserializer=propius__pb2.ack.FromString,
+                )
 
 
 class Client_managerServicer(object):
@@ -273,6 +344,12 @@ class Client_managerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def HEART_BEAT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_Client_managerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -290,6 +367,11 @@ def add_Client_managerServicer_to_server(servicer, server):
                     servicer.CLIENT_ACCEPT,
                     request_deserializer=propius__pb2.client_accept.FromString,
                     response_serializer=propius__pb2.cm_ack.SerializeToString,
+            ),
+            'HEART_BEAT': grpc.unary_unary_rpc_method_handler(
+                    servicer.HEART_BEAT,
+                    request_deserializer=propius__pb2.empty.FromString,
+                    response_serializer=propius__pb2.ack.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -352,6 +434,23 @@ class Client_manager(object):
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
+    @staticmethod
+    def HEART_BEAT(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Client_manager/HEART_BEAT',
+            propius__pb2.empty.SerializeToString,
+            propius__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
 
 class Load_balancerStub(object):
     """Missing associated documentation comment in .proto file."""
@@ -377,6 +476,11 @@ class Load_balancerStub(object):
                 request_serializer=propius__pb2.client_accept.SerializeToString,
                 response_deserializer=propius__pb2.cm_ack.FromString,
                 )
+        self.HEART_BEAT = channel.unary_unary(
+                '/propius.Load_balancer/HEART_BEAT',
+                request_serializer=propius__pb2.empty.SerializeToString,
+                response_deserializer=propius__pb2.ack.FromString,
+                )
 
 
 class Load_balancerServicer(object):
@@ -400,6 +504,12 @@ class Load_balancerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def HEART_BEAT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_Load_balancerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -417,6 +527,11 @@ def add_Load_balancerServicer_to_server(servicer, server):
                     servicer.CLIENT_ACCEPT,
                     request_deserializer=propius__pb2.client_accept.FromString,
                     response_serializer=propius__pb2.cm_ack.SerializeToString,
+            ),
+            'HEART_BEAT': grpc.unary_unary_rpc_method_handler(
+                    servicer.HEART_BEAT,
+                    request_deserializer=propius__pb2.empty.FromString,
+                    response_serializer=propius__pb2.ack.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -476,5 +591,22 @@ class Load_balancer(object):
         return grpc.experimental.unary_unary(request, target, '/propius.Load_balancer/CLIENT_ACCEPT',
             propius__pb2.client_accept.SerializeToString,
             propius__pb2.cm_ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def HEART_BEAT(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Load_balancer/HEART_BEAT',
+            propius__pb2.empty.SerializeToString,
+            propius__pb2.ack.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

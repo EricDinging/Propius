@@ -8,6 +8,7 @@ import time
 import json
 from propius.util.db import *
 import random
+from propius.util.commons import *
 
 
 class CM_job_db_portal(Job_db):
@@ -26,7 +27,7 @@ class CM_job_db_portal(Job_db):
 
         super().__init__(gconfig, False)
 
-    def client_assign(self, specification: tuple) -> tuple[list, list, int]:
+    def client_assign(self, specification: tuple, sched_alg: str) -> tuple[list, list, int]:
         """Assign tasks to client with input specification. 
         The client public specification would satisfy returned task public constraints, 
         but client private specification might not satisfy the returned task private constraints. 
@@ -34,6 +35,7 @@ class CM_job_db_portal(Job_db):
 
         Args:
             specification: a tuple listing public spec values
+            sched_alg: str
         
         Returns:
             task_offer_list: list of job id, with size no greater than max_task_len
@@ -41,11 +43,16 @@ class CM_job_db_portal(Job_db):
                                             for client local task selection
             size: total number of jobs for analytics
         """
-
-        q = Query('*').sort_by('score', asc=False)
         try:
-            result = self.r.ft('job').search(q)
-        except BaseException:
+            if sched_alg == "fifo":
+                q = Query('*').sort_by('timestamp', asc=True)                
+                result = self.r.ft('job').search(q)
+            else:
+                q = "*"
+                sortby = "score DESC timestamp ASC"
+                result = self.r.execute_command('FT.SEARCH', 'job', q, 'SORTBY', sortby)
+        except Exception as e:
+            custom_print(e, WARNING)
             result = None
         if result:
             size = result.total
@@ -195,8 +202,8 @@ class CM_client_db_portal(Client_db):
         specs = [0] * len(self.public_constraint_name)
         try:
             for idx, name in enumerate(self.public_constraint_name):
-                spec = int(self.r.json().get(id, f"$.client.{name}")[0])
+                spec = float(self.r.json().get(id, f"$.client.{name}")[0])
                 specs[idx] = spec
-        except BaseException:
-            pass
+        except Exception as e:
+            custom_print(e, WARNING)
         return tuple(specs)
