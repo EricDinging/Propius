@@ -44,10 +44,10 @@ executor_port: 49999
 worker:
   - ip: localhost
     port: 49998
-    device: cuda:0
-  - ip: localhost
-    port: 49997
-    device: cuda:0
+    device: cpu
+  # - ip: localhost
+  #   port: 49997
+  #   device: cuda:0
 
 num_worker: 1
 

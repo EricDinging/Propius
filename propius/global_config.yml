@@ -7,14 +7,12 @@ load_balancer_port: 50000
 client_manager_num: 2
 client_manager_id_weight: 1000000 # for client id assignment
 client_manager:
-  - 0:
-    ip: localhost
+  - ip: localhost
     port: 50004
     client_db_port: 6380
-  - 1:
-    ip: localhost
-    port: 50005
-    client_db_port: 6381
+  # - ip: localhost
+  #   port: 50005
+  #   client_db_port: 6381
 
 job_db_ip: localhost
 job_db_port: 6379

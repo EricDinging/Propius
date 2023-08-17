@@ -39,10 +39,14 @@ class Worker_manager:
         self.cur_worker = 0
 
     def _connect_worker(self):
+        channel_options = [
+            ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH),
+            ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH)
+        ]
         for worker_id, worker_addr in enumerate(self.worker_addr_list):
             worker_ip = worker_addr["ip"]
-            worker_port = worker_port["port"]
-            self.worker_channel_dict[worker_id] = grpc.aio.insecure_channel(f"{worker_ip}:{worker_port}")
+            worker_port = worker_addr["port"]
+            self.worker_channel_dict[worker_id] = grpc.aio.insecure_channel(f"{worker_ip}:{worker_port}", options=channel_options)
             self.worker_stub_dict[worker_id] = executor_pb2_grpc.WorkerStub(
                 self.worker_channel_dict[worker_id]
             )
@@ -110,7 +114,9 @@ class Worker_manager:
             for worker_stub in self.worker_stub_dict.values():
                 await worker_stub.INIT(job_info_msg)
 
-            return model_size
+        print(f"Worker manager: init job {job_id} success")
+
+        return model_size
         
     async def heartbeat_routine(self):
         try:

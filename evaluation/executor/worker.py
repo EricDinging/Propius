@@ -133,6 +133,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 self.data_partitioner_ref_cnt_dict[dataset_name] = 0
             
             self.data_partitioner_ref_cnt_dict[dataset_name] += 1
+            print(f"Worker {self.id}: recieve job {job_id} init")
 
         return executor_pb2.ack(ack=True)
     
@@ -149,6 +150,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     del self.data_partitioner_ref_cnt_dict[dataset_name]
             if job_id in self.task_finished:
                 del self.task_finished[job_id]
+            print(f"Worker {self.id}: recieve job {job_id} remove")
         return executor_pb2.ack(ack=True)  
     
     async def TASK_REGIST(self, request, context):
@@ -165,7 +167,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         conf["model_weight"] = model
         async with self.lock:
             self.task_to_do.append(conf)
-
+        
+        print(f"Worker {self.id}: recieve job {job_id} task register")
         return executor_pb2.ack(ack=True)
     
     async def PING(self, request, context):
@@ -345,11 +348,12 @@ async def run(config):
     if len(sys.argv) != 2:
         print("Usage: python evaluation/executor/worker.py <id>")
 
-    id = sys.argv[1]
+    id = int(sys.argv[1])
     worker = Worker(id, config)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     executor_pb2_grpc.add_WorkerServicer_to_server(worker, server)
+    
     server.add_insecure_port(f"{worker.ip}:{worker.port}")
     await server.start()
     print(f"Worker {worker.id}: started, listening on {worker.ip}:{worker.port}")

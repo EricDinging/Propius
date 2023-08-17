@@ -47,3 +47,5 @@ result_dict = {
 out_put_class = {'Mnist': 10, 'cifar10': 10, "imagenet": 1000, 'emnist': 47, 'amazon': 5,
                'openImg': 596, 'google_speech': 35, 'femnist': 62, 'yelp': 5, 'inaturalist': 1010
                }
+
+MAX_MESSAGE_LENGTH = 1 * 1024 * 1024 * 1024  # 1GB

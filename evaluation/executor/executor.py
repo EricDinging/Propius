@@ -37,7 +37,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                    dataset_name=job_meta["dataset"],
                                    model_name=job_meta["model"],
                                    )
-        
+        print(f"Executor: job {job_id} registered")
         return executor_pb2.register_ack(ack=True, model_size=model_size)
     
     async def JOB_REGISTER_TASK(self, request, context):

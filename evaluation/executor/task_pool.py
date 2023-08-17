@@ -104,6 +104,8 @@ class Task_pool:
         async with self.lock:
             test_csv_file_name = f"./evaluation/result_{sched_alg}/test_{job_id}.csv"
             fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
+            if job_id not in self.result_dict:
+                return
             with open(test_csv_file_name, "w", newline="") as test_csv:
                 writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
                 writer.writeheader()

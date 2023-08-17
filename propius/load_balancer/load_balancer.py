@@ -22,12 +22,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.idx = 0
         self.lock = asyncio.Lock()
 
-        if len(sys.argv) == 2:
-            self.cm_num = int(sys.argv[1])
-        else:
-            custom_print("Usage: python propius/load_balancer/load_balancer.py <cm_num>", ERROR)
-            exit(1)
-
+        self.cm_num = len(gconfig['client_manager'])
         self.cm_addr_list = gconfig['client_manager']
         self.cm_channel_dict = {}
         self.cm_stub_dict = {}
