@@ -169,13 +169,49 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         return executor_pb2.ack(ack=True)
     
     async def TRAIN(self, request, context):
-        return await self.task_register_helper
+        return await self.task_register_helper(request)
     
     async def TEST(self, request, context):
-        return await self.task_register_helper
+        return await self.task_register_helper(request)
     
     async def PING(self, request, context):
-        return super().PING(request, context)
+        job_id, client_id = request.job_id, request.client_id
+        event = request.event
+
+        if event == MODEL_TEST:
+            key = event
+        elif event == CLIENT_TRAIN:
+            key = f"{event}{client_id}"
+
+        async with self.lock:
+            if job_id in self.task_finished:
+                if key in self.task_finished[job_id]:
+                    result = self.task_finished[job_id][key]
+                    
+                    if event == MODEL_TEST:
+                        result_msg = executor_pb2.task_result(
+                            ack=True,
+                            result=pickle.dumps(result),
+                            data=pickle.dumps(DUMMY_RESPONSE)
+                        )
+                    elif event == CLIENT_TRAIN:
+                        model_weight = result["model_weight"]
+                        del result["model_weight"]
+                        result_msg = executor_pb2.task_result(
+                            ack=True,
+                            result=pickle.dumps(result),
+                            data=pickle.dumps(model_weight)
+                        )
+                    del self.task_finished[job_id][key]
+
+                    return result_msg
+                
+            result_msg = executor_pb2.task_result(
+                ack=False,
+                result=pickle.dumps(DUMMY_RESPONSE),
+                data=pickle.dumps(DUMMY_RESPONSE)
+            )
+            return result_msg
     
     async def HEART_BEAT(self, request, context):
         async with self.lock:
@@ -283,21 +319,32 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     partition = self.data_partitioner_dict[self.job_id_data_map[task_conf["job_id"]]]
                 
                     event = task_conf["event"]
+                    model_weight = task_conf["model_weight"]
+                    client_id = task_conf["client_id"]
+                    job_id = task_conf["job_id"]
+
+                    del task_conf["event"]
+                    del task_conf["model_weight"]
+                    del task_conf["client_id"]
+                    del task_conf["job_id"]
+
                     if event == CLIENT_TRAIN:
-                        results = self._train(client_id=task_conf["client_id"],
+                        results = self._train(client_id=client_id,
                                     partition=partition,
-                                    model=task_conf["model_weight"],
+                                    model=model_weight,
                                     conf=task_conf)
+                        key = f"{event}{task_conf['client_id']}"
                     elif event == MODEL_TEST:
-                        results = self._test(client_id=task_conf["client_id"],
+                        results = self._test(client_id=client_id,
                                              partition=partition,
-                                             model=task_conf["model_weight"],
+                                             model=model_weight,
                                              conf=task_conf
                                              )
+                        key = event
 
-                    if task_conf["job_id"] not in self.task_finished:
-                        self.task_finished[task_conf["job_id"]] = {}
-                    self.task_finished[task_conf["job_id"]][f"{event}{task_conf['client_id']}"] = results
+                    if job_id not in self.task_finished:
+                        self.task_finished[job_id] = {}
+                    self.task_finished[job_id][key] = results
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except:
@@ -305,8 +352,9 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     
 async def run(config):
     async def server_graceful_shutdown():
-        pass
-
+        print(f"===Worker {worker.id} ending===")
+        await server.stop(5)
+        
     server = grpc.aio.server()
 
     if len(sys.argv) != 2:
