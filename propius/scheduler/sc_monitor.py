@@ -3,7 +3,7 @@ from propius.util.monitor import *
 import time
 import asyncio
 import sys
-sys.path.append('..')
+import os
 
 
 class SC_monitor(Monitor):
@@ -13,6 +13,14 @@ class SC_monitor(Monitor):
         self.job_request_map = {}
         self.lock = asyncio.Lock()
         self.sched_alg = sched_alg
+
+        fig_dir = "./propius/fig"
+        log_dir = "./propius/log"
+
+        if not os.path.exists(fig_dir):
+            os.mkdir(fig_dir)
+        if not os.path.exists(log_dir):
+            os.mkdir(log_dir)
 
     async def request_start(self, job_id: int):
         async with self.lock:
@@ -45,7 +53,7 @@ class SC_monitor(Monitor):
         if len(lists) > 0:
             x, y = zip(*lists)
             str1 = self._gen_report()
-            with open(f'./log/SC-{self.sched_alg}-{get_time()}.txt', 'w') as file:
+            with open(f'./propius/log/SC-{self.sched_alg}-{get_time()}.txt', 'w') as file:
                 file.write(str1)
                 file.write("\n")
                 for idx, job_size in enumerate(x):
@@ -58,4 +66,4 @@ class SC_monitor(Monitor):
             self._plot_request()
             plt.tight_layout()
             plt.show()
-            fig.savefig(f"./fig/SC-{self.sched_alg}-{get_time()}")
+            fig.savefig(f"./propius/fig/SC-{self.sched_alg}-{get_time()}")

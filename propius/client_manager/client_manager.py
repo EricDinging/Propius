@@ -42,11 +42,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.sched_alg = gconfig['sched_alg']
         self.client_db_portal = CM_client_db_portal(gconfig, self.cm_id)
         self.job_db_portal = CM_job_db_portal(gconfig)
-        self.cm_monitor = CM_monitor(self.sched_alg)
+        self.cm_monitor = CM_monitor(self.sched_alg) if gconfig['use_monitor'] else None
         self.max_client_num = gconfig['client_manager_id_weight']
-        print(
-            f"{get_time()} Client manager {self.cm_id} started, running {self.sched_alg}")
-
         self.lock = asyncio.Lock()
         self.client_num = 0
 
@@ -75,13 +72,14 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.client_db_portal.insert(client_id, public_specification)
 
         task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
-            public_specification)
-
-        await self.cm_monitor.client_checkin()
+            public_specification, self.sched_alg)
+        
+        if self.cm_monitor:
+            await self.cm_monitor.client_checkin()
 
         if task_offer_list:
-            print(
-                f"{get_time()} Client manager {self.cm_id}: client {client_id} check in, offer: {task_offer_list}")
+            custom_print(
+                f"Client manager {self.cm_id}: client {client_id} check in, offer: {task_offer_list}")
 
         return propius_pb2.cm_offer(
             client_id=client_id,
@@ -108,13 +106,14 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         public_specification = self.client_db_portal.get(request.id)
 
         task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
-            public_specification)
+            public_specification, self.sched_alg)
 
-        await self.cm_monitor.client_ping()
+        if self.cm_monitor:
+            await self.cm_monitor.client_ping()
 
         if task_offer_list:
-            print(
-                f"{get_time()} Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}")
+            custom_print(
+                f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}")
 
         return propius_pb2.cm_offer(
             client_id=-1,
@@ -142,24 +141,28 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         client_id, task_id = request.client_id, request.task_id
         result = self.job_db_portal.incr_amount(task_id)
 
-        await self.cm_monitor.client_accept(result != None)
+        if self.cm_monitor:
+            await self.cm_monitor.client_accept(result != None)
 
         if not result:
-            print(
-                f"{get_time()} Client manager {self.cm_id}: job {task_id} over-assign")
+            custom_print(
+                f"Client manager {self.cm_id}: job {task_id} over-assign")
             return propius_pb2.cm_ack(
                 ack=False, job_ip=pickle.dumps(""), job_port=-1)
-        print(
-            f"{get_time()} Client manager {self.cm_id}: ack client {client_id}, job addr {result}")
+        custom_print(
+            f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}")
         return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]),
                                   job_port=result[1])
-
+    
+    async def HEART_BEAT(self, request, context):
+        return propius_pb2.ack(ack=True)
 
 async def serve(gconfig, cm_id: int):
     async def server_graceful_shutdown():
-        client_manager.cm_monitor.report(client_manager.cm_id)
+        if client_manager.cm_monitor:
+            client_manager.cm_monitor.report(client_manager.cm_id)
         client_manager.client_db_portal.flushdb()
-        print(f"{get_time()} Starting graceful shutdown...")
+        custom_print(f"=====Client manager shutting down=====")
         await server.stop(5)
 
     server = grpc.aio.server()
@@ -169,29 +172,28 @@ async def serve(gconfig, cm_id: int):
     server.add_insecure_port(f'{client_manager.ip}:{client_manager.port}')
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.start()
-    print(f"{get_time()} Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}")
+    custom_print(f"Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}")
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    logger = logging.getLogger()
+    logging.basicConfig(level=logging.INFO, filename='./propius/client_manager/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
     global_setup_file = './propius/global_config.yml'
 
     if len(sys.argv) != 2:
-        print("Usage: python propius/client_manager/client_manager.py <cm_id>")
+        custom_print("Usage: python propius/client_manager/client_manager.py <cm_id>", ERROR)
         exit(1)
 
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
             cm_id = int(sys.argv[1])
-            print(f"{get_time()} Client manager {cm_id} read config successfully")
+            custom_print(f"Client manager {cm_id} read config successfully")
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, cm_id))
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            logger.error(str(e))
+            custom_print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

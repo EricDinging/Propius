@@ -37,7 +37,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.ip = gconfig['job_manager_ip']
         self.port = int(gconfig['job_manager_port'])
         self.job_db_portal = JM_job_db_portal(gconfig)
-        self.jm_monitor = JM_monitor(gconfig['sched_alg'])
+        self.jm_monitor = JM_monitor(gconfig['sched_alg']) if gconfig['use_monitor'] else None
         self.sched_channel = None
         self.sched_portal = None
         self._connect_sched(
@@ -52,8 +52,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.sched_channel = grpc.aio.insecure_channel(
             f'{sched_ip}:{sched_port}')
         self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
-        print(
-            f"{get_time()} Job manager: connecting to scheduler at {sched_ip}:{sched_port}")
+        custom_print(
+            f"Job manager: connecting to scheduler at {sched_ip}:{sched_port}")
 
     async def JOB_REGIST(self, request, context):
         """Insert job registration into database, return job_id assignment, and ack
@@ -72,7 +72,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             job_id = self.job_total_num
             self.job_total_num += 1
 
-        print(f"{get_time()} Job manager: job {job_id} check in, "
+        custom_print(f"Job manager: job {job_id} check in, "
               f"public constraint: {public_constraint}, "
               f"private constraint: {private_constraint}")
         ack = self.job_db_portal.register(
@@ -84,12 +84,14 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             total_demand=est_demand *
             est_total_round,
             total_round=est_total_round)
-        print(f"{get_time()} Job manager: ack job {job_id} register: {ack}")
+        custom_print(f"Job manager: ack job {job_id} register: {ack}")
         if ack:
-            await self.jm_monitor.job_register()
+            if self.jm_monitor:
+                await self.jm_monitor.job_register()
             await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
-        await self.jm_monitor.request()
+        if self.jm_monitor:
+            await self.jm_monitor.request()
         return propius_pb2.job_register_ack(id=job_id, ack=ack)
 
     async def JOB_REQUEST(self, request, context):
@@ -103,11 +105,13 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         job_id, demand = request.id, request.demand
         ack = self.job_db_portal.request(job_id=job_id, demand=demand)
         # await self.client_db_portal.cleanup()
-        print(f"{get_time()} Job manager: ack job {job_id} round request: {ack}")
+        custom_print(f"Job manager: ack job {job_id} round request: {ack}")
         if ack:
-            await self.jm_monitor.job_request()
+            if self.jm_monitor:
+                await self.jm_monitor.job_request()
 
-        await self.jm_monitor.request()
+        if self.jm_monitor:
+            await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
 
     async def JOB_END_REQUEST(self, request, context):
@@ -120,8 +124,9 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         job_id = request.id
         ack = self.job_db_portal.end_request(job_id=job_id)
-        print(f"{get_time()} Job manager: ack job {job_id} end round request: {ack}")
-        await self.jm_monitor.request()
+        custom_print(f"Job manager: ack job {job_id} end round request: {ack}")
+        if self.jm_monitor:
+            await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
 
     async def JOB_FINISH(self, request, context):
@@ -133,26 +138,46 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         """
 
         job_id = request.id
-        print(f"{get_time()} Job manager: job {job_id} completed")
+        custom_print(f"Job manager: job {job_id} completed")
         (constraints, demand, total_round, runtime, sched_latency) = \
             self.job_db_portal.finish(job_id)
 
         if runtime:
-            await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
-        await self.jm_monitor.request()
+            if self.jm_monitor:
+                await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
+        if self.jm_monitor:
+            await self.jm_monitor.request()
         return propius_pb2.empty()
+    
+    async def HEART_BEAT(self, request, context):
+        return propius_pb2.ack(ack=True)
+    
+    async def heartbeat_routine(self):
+        try:
+            while True:
+                await asyncio.sleep(30)
+                try:
+                    self.sched_portal.HEART_BEAT(propius_pb2.empty())
+                except:
+                    pass
+        except asyncio.CancelledError:
+            pass
 
 
 async def serve(gconfig):
     async def server_graceful_shutdown():
-        print(f"{get_time()} ==Job manager ending==")
-        logging.info("Starting graceful shutdown...")
-        job_manager.jm_monitor.report()
+        custom_print(f"=====Job manager shutting down=====")
+        if job_manager.jm_monitor:
+            job_manager.jm_monitor.report()
         job_manager.job_db_portal.flushdb()
+
+        heartbeat_task.cancel()
+        await heartbeat_task
+
         try:
             await job_manager.sched_channel.close()
-        except BaseException:
-            pass
+        except Exception as e:
+            custom_print(e, WARNING)
         await server.stop(5)
 
     server = grpc.aio.server()
@@ -160,25 +185,28 @@ async def serve(gconfig):
     propius_pb2_grpc.add_Job_managerServicer_to_server(job_manager, server)
     server.add_insecure_port(f'{job_manager.ip}:{job_manager.port}')
     await server.start()
-    print(f"{get_time()} Job manager: server started, listening on {job_manager.ip}:{job_manager.port}")
+
+    heartbeat_task = asyncio.create_task(job_manager.heartbeat_routine())
+
+    custom_print(f"Job manager: server started, listening on {job_manager.ip}:{job_manager.port}")
     _cleanup_coroutines.append(server_graceful_shutdown())
+
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    logger = logging.getLogger()
+    logging.basicConfig(level=logging.INFO, filename='./propius/job_manager/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            print(f"{get_time()} Job manager read config successfully")
+            custom_print(f"Job manager read config successfully")
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig))
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            logger.error(str(e))
+            custom_print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

@@ -200,10 +200,10 @@ class JM_job_db_portal(Job_db):
 
                     constraint_list = []
                     for name in self.public_constraint_name:
-                        constraint_list.append(int(self.r.json().get(
+                        constraint_list.append(float(self.r.json().get(
                             id, f"$.job.public_constraint.{name}")[0]))
                     for name in self.private_constraint_name:
-                        constraint_list.append(int(self.r.json().get(
+                        constraint_list.append(float(self.r.json().get(
                             id, f"$.job.private_constraint.{name}")[0]))
 
                     runtime = time.time() - start_time

@@ -3,31 +3,10 @@ from propius.channels import propius_pb2
 import pickle
 import grpc
 import asyncio
-from datetime import datetime
+from propius_client.commons import *
 
 #TODO state flow check
 #TODO add value check
-
-def geq(t1: tuple, t2: tuple) -> bool:
-    """Compare two tuples. Return True only if every values in t1 is greater than t2
-
-    Args:
-        t1
-        t2
-    """
-
-    for idx in range(len(t1)):
-        if t1[idx] < t2[idx]:
-            return False
-    return True
-
-def get_time() -> str:
-    current_time = datetime.now()
-    format_time = current_time.strftime("%Y-%m-%d:%H:%M:%S:%f")[:-4]
-    return format_time
-
-def encode_specification(**kargs) -> tuple[list, list]:
-    pass
 
 def gen_client_config():
     pass
@@ -38,8 +17,8 @@ class Propius_client_aio():
 
         Args:
             client_config:
-                public_specifications
-                private_specifications
+                public_specifications: dict
+                private_specifications: dict
                 load_balancer_ip
                 load_balancer_port
             verbose: whether to print or not
@@ -52,8 +31,9 @@ class Propius_client_aio():
         try:
             # TODO arguments check
             # TODO add state flow check
-            self.public_specifications = tuple(client_config['public_specifications'])
-            self.private_specifications = tuple(client_config['private_specifications'])
+            public, private = encode_specs(**client_config['public_specifications'], **client_config['private_specifications'])
+            self.public_specifications = tuple(public)
+            self.private_specifications = tuple(private)
             
             self._lb_ip = client_config['load_balancer_ip']
             self._lb_port = client_config['load_balancer_port']
@@ -61,8 +41,8 @@ class Propius_client_aio():
             self._lb_stub = None
 
             self.verbose = verbose
-        except Exception:
-            raise ValueError("Missing config arguments")
+        except Exception as e:
+            raise ValueError("Invalid config arguments")
         
     def _cleanup_routine(self):
         try:
@@ -137,7 +117,7 @@ class Propius_client_aio():
                 task_private_constraint = pickle.loads(
                     cm_offer.private_constraint)
                 if self.verbose:
-                    print(f"{get_time()} Client {self.id}: checked in to Propius")
+                    print(f"{get_time()} Client {self.id}: checked in to Propius, public spec {self.public_specifications}")
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
@@ -239,7 +219,7 @@ class Propius_client_aio():
         
         raise RuntimeError("Unable to connect to Propius at the moment")
 
-    async def auto_assign(self, ttl:int=0)->tuple[int, bool, int, str, int]:
+    async def auto_assign(self, ttl: int=0)->tuple[int, bool, int, str, int]:
         """Automate client register, client ping, and client task selection process
 
         Args:
@@ -274,7 +254,7 @@ class Propius_client_aio():
                 task_ids = []
                 task_private_constraint = []
                 if ttl <= 0:
-                    return (self.id, False, -1, None, None)
+                    return self.id, False, -1, None, None
                 else:
                     continue
 
@@ -284,7 +264,7 @@ class Propius_client_aio():
                 task_ids = []
                 task_private_constraint = []
                 if ttl <= 0:
-                    return (self.id, False, -1, None, None)
+                    return self.id, False, -1, None, None
                 else:
                     continue
             else:
@@ -292,7 +272,7 @@ class Propius_client_aio():
                     print(f"{get_time()} Client {self.id}: scheduled with {task_id}")
                 break
         
-        return (self.id, True, task_id, result[0], result[1])
+        return self.id, True, task_id, result[0], result[1]
     
 
 

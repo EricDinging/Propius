@@ -10,7 +10,6 @@
 dist
 logs/
 pymp*
-./benchmark/dataset/data/*
 .DS_Store
 *.egg-info
 *logging
@@ -43,6 +42,9 @@ fedscale/tmp*
 fedscale/*.tflite
 fedscale/*.ckpt
 fedscale/cloud/aggregation/cache
-fig/*
-log/*
 experiment/*
+*.csv
+*.txt
+*.png
+*.log
+datasets/

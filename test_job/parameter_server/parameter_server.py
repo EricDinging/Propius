@@ -87,13 +87,14 @@ async def run(config):
     print(f"Parameter server: parameter server started, listening on {config['ip']}:{config['port']}")
 
     round = 1
-    while round <= ps.est_total_round:
-        #TODO error handling
-        ps.execution_start = False
-        if not ps.propius_stub.round_start_request(new_demand=False):
-            print(f"Parameter server: round start request failed")
-            return
-        async with ps.lock:
+    async with ps.lock:
+        while round <= ps.est_total_round:
+            #TODO error handling
+            ps.execution_start = False
+            if not ps.propius_stub.round_start_request(new_demand=False):
+                print(f"Parameter server: round start request failed")
+                return
+        
             while ps.cur_round != round + 1:
                 try:
                     ps.round_client_num = 0

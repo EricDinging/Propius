@@ -32,10 +32,6 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
         $ redis-cli -h localhost -p 6381 ping
         ...
         ```
-- If you want the system performance metrics and plot
-    ```
-    $ mkdir fig log
-    ```
 
 ## RoadMap
 - Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more info
@@ -59,19 +55,22 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
     ```
 - Load balancer:
     ```bash
-    $ python propius/load_balancer/load_balancer.py <num of client manager>
+    $ python propius/load_balancer/load_balancer.py
     ```
 ### Interface
 - Propius' job interface is defined in `propius_job/propius_job.py`
 - Propius' client interface is defined in `propius_client/propius_client.py`
 - Refer to `test_job/parameter_server/parameter_server.py` and `test_client/client.py` to get an idea how your FL job and FL client can utilize Propius
+
+### Propius Simulator
+- Under construction
 ### Evaluation
 - Try out new scheduling algorithm
 - Large evaluation framework is under construction
-### FedScale Integration
-- Under construction
+
 ### Testing
-- Job:
+- Under construction
+<!-- - Job:
     - Edit `test_job/parameter_server/test_profile.yml` file
     -   ```bash
         $ python test_job/parameter_server/parameter_server.py test_job/parameter_server/test_profile.yml <ip> <port>
@@ -80,7 +79,7 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
     - Edit `test_client/test_profile.yml` file
     -   ```bash
         $ python test_client/client.py
-        ```
+        ``` -->
 <!-- ### Propius (scheduling)
 - Make changes to `global_config.yml`
 - Scheduler, job manager, client manager, and load balancer launches are the same as above

@@ -4,17 +4,17 @@ import asyncio
 import random
 import yaml
 import pickle
-from job.channels import parameter_server_pb2_grpc
-from job.channels import parameter_server_pb2
-from propius_client.propius_client import *
-from commons import *
+from evaluation.job.channels import parameter_server_pb2_grpc
+from evaluation.job.channels import parameter_server_pb2
+from propius_client.propius_client_aio import *
+from evaluation.commons import *
 from collections import deque
 
 class Client:
     def __init__(self, client_config: dict):
         self.id = -1
         self.task_id = -1
-        self.propius_client_stub = Propius_client(client_config=client_config)
+        self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=True)
         self.ps_channel = None
         self.ps_stub = None
         
@@ -25,6 +25,10 @@ class Client:
         self.data_queue = deque()
 
         self.lock = asyncio.Lock()
+        self.round = 0
+
+        self.comp_speed = client_config["computation_speed"]
+        self.comm_speed = client_config["communication_speed"]
     
     async def _connect_to_ps(self, ps_ip: str, ps_port: int):
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
@@ -44,7 +48,8 @@ class Client:
         
     async def client_ping(self):
         client_id_msg = parameter_server_pb2.client_id(id=self.id)
-        server_response = self.ps_stub.CLIENT_PING(client_id_msg)
+        server_response = await self.ps_stub.CLIENT_PING(client_id_msg)
+
         await self.handle_server_response(server_response)
     
     async def client_execute_complete(self, compl_event: str, status: bool, meta: str, data: str):
@@ -55,7 +60,7 @@ class Client:
             meta=pickle.dumps(meta),
             data=pickle.dumps(data)
         )
-        server_response = self.ps_stub.CLIENT_EXECUTE_COMPLETION(client_complete_msg)
+        server_response = await self.ps_stub.CLIENT_EXECUTE_COMPLETION(client_complete_msg)
         await self.handle_server_response(server_response)
 
     async def execute(self)->bool:
@@ -65,36 +70,53 @@ class Client:
             event = self.event_queue.popleft()
             meta = self.meta_queue.popleft()
             data = self.data_queue.popleft()
-        
-        #TODO execute
+    
+        time = 0
+
         if event == CLIENT_TRAIN:
-            await asyncio.sleep(self.execution_duration)
+            time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
         elif event == SHUT_DOWN:
             return False
+        elif event == UPDATE_MODEL:
+            self.round = meta["round"]
+            time = meta["download_size"] / float(self.comm_speed)
+
+        elif event == UPLOAD_MODEL:
+            time = meta["upload_size"] / float(self.comm_speed)
+        
+        print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds")
+        
+        time = 1
+        await asyncio.sleep(time)
+
         compl_event = event
         status = True
-        compl_meta = DUMMY_RESPONSE
+        compl_meta = {"round": self.round}
         compl_data = DUMMY_RESPONSE
+        
         await self.client_execute_complete(compl_event, status, compl_meta, compl_data)
         return True
 
     async def event_monitor(self):
+        print(f"Client {self.id}: ping")
         await self.client_ping()
         while await self.execute():
             await asyncio.sleep(1)
 
     async def cleanup_routines(self):
         try:
-            self.propius_client_stub.close()
+            await self.propius_client_stub.close()
             await self.ps_channel.close()
         except Exception:
             pass
 
     async def run(self):
         try:
-            self.propius_client_stub.connect()
+            await self.propius_client_stub.connect()
             
-            self.id, status, self.task_id, ps_ip, ps_port = await self.propius_client_stub.auto_assign(10)
+            result = await self.propius_client_stub.auto_assign(0)
+
+            self.id, status, self.task_id, ps_ip, ps_port = result
 
             await self.propius_client_stub.close()
             

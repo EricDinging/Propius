@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import channels.executor_pb2 as executor__pb2
+import evaluation.executor.channels.executor_pb2 as executor__pb2
 
 
 class ExecutorStub(object):
@@ -17,17 +17,12 @@ class ExecutorStub(object):
         self.JOB_REGISTER = channel.unary_unary(
                 '/executor.Executor/JOB_REGISTER',
                 request_serializer=executor__pb2.job_info.SerializeToString,
-                response_deserializer=executor__pb2.ack.FromString,
+                response_deserializer=executor__pb2.register_ack.FromString,
                 )
         self.JOB_REGISTER_TASK = channel.unary_unary(
                 '/executor.Executor/JOB_REGISTER_TASK',
                 request_serializer=executor__pb2.job_task_info.SerializeToString,
                 response_deserializer=executor__pb2.ack.FromString,
-                )
-        self.MONITOR_PING = channel.unary_unary(
-                '/executor.Executor/MONITOR_PING',
-                request_serializer=executor__pb2.job_id.SerializeToString,
-                response_deserializer=executor__pb2.job_result.FromString,
                 )
 
 
@@ -46,29 +41,18 @@ class ExecutorServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def MONITOR_PING(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_ExecutorServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'JOB_REGISTER': grpc.unary_unary_rpc_method_handler(
                     servicer.JOB_REGISTER,
                     request_deserializer=executor__pb2.job_info.FromString,
-                    response_serializer=executor__pb2.ack.SerializeToString,
+                    response_serializer=executor__pb2.register_ack.SerializeToString,
             ),
             'JOB_REGISTER_TASK': grpc.unary_unary_rpc_method_handler(
                     servicer.JOB_REGISTER_TASK,
                     request_deserializer=executor__pb2.job_task_info.FromString,
                     response_serializer=executor__pb2.ack.SerializeToString,
-            ),
-            'MONITOR_PING': grpc.unary_unary_rpc_method_handler(
-                    servicer.MONITOR_PING,
-                    request_deserializer=executor__pb2.job_id.FromString,
-                    response_serializer=executor__pb2.job_result.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -93,7 +77,7 @@ class Executor(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/executor.Executor/JOB_REGISTER',
             executor__pb2.job_info.SerializeToString,
-            executor__pb2.ack.FromString,
+            executor__pb2.register_ack.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -114,8 +98,116 @@ class Executor(object):
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
+
+class WorkerStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.INIT = channel.unary_unary(
+                '/executor.Worker/INIT',
+                request_serializer=executor__pb2.job_info.SerializeToString,
+                response_deserializer=executor__pb2.ack.FromString,
+                )
+        self.REMOVE = channel.unary_unary(
+                '/executor.Worker/REMOVE',
+                request_serializer=executor__pb2.job_info.SerializeToString,
+                response_deserializer=executor__pb2.ack.FromString,
+                )
+        self.TASK_REGIST = channel.unary_unary(
+                '/executor.Worker/TASK_REGIST',
+                request_serializer=executor__pb2.job_task_info.SerializeToString,
+                response_deserializer=executor__pb2.ack.FromString,
+                )
+        self.PING = channel.unary_unary(
+                '/executor.Worker/PING',
+                request_serializer=executor__pb2.job_task_info.SerializeToString,
+                response_deserializer=executor__pb2.task_result.FromString,
+                )
+        self.HEART_BEAT = channel.unary_unary(
+                '/executor.Worker/HEART_BEAT',
+                request_serializer=executor__pb2.empty.SerializeToString,
+                response_deserializer=executor__pb2.worker_status.FromString,
+                )
+
+
+class WorkerServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def INIT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def REMOVE(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def TASK_REGIST(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def PING(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def HEART_BEAT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_WorkerServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'INIT': grpc.unary_unary_rpc_method_handler(
+                    servicer.INIT,
+                    request_deserializer=executor__pb2.job_info.FromString,
+                    response_serializer=executor__pb2.ack.SerializeToString,
+            ),
+            'REMOVE': grpc.unary_unary_rpc_method_handler(
+                    servicer.REMOVE,
+                    request_deserializer=executor__pb2.job_info.FromString,
+                    response_serializer=executor__pb2.ack.SerializeToString,
+            ),
+            'TASK_REGIST': grpc.unary_unary_rpc_method_handler(
+                    servicer.TASK_REGIST,
+                    request_deserializer=executor__pb2.job_task_info.FromString,
+                    response_serializer=executor__pb2.ack.SerializeToString,
+            ),
+            'PING': grpc.unary_unary_rpc_method_handler(
+                    servicer.PING,
+                    request_deserializer=executor__pb2.job_task_info.FromString,
+                    response_serializer=executor__pb2.task_result.SerializeToString,
+            ),
+            'HEART_BEAT': grpc.unary_unary_rpc_method_handler(
+                    servicer.HEART_BEAT,
+                    request_deserializer=executor__pb2.empty.FromString,
+                    response_serializer=executor__pb2.worker_status.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'executor.Worker', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+ # This class is part of an EXPERIMENTAL API.
+class Worker(object):
+    """Missing associated documentation comment in .proto file."""
+
     @staticmethod
-    def MONITOR_PING(request,
+    def INIT(request,
             target,
             options=(),
             channel_credentials=None,
@@ -125,8 +217,76 @@ class Executor(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/executor.Executor/MONITOR_PING',
-            executor__pb2.job_id.SerializeToString,
-            executor__pb2.job_result.FromString,
+        return grpc.experimental.unary_unary(request, target, '/executor.Worker/INIT',
+            executor__pb2.job_info.SerializeToString,
+            executor__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def REMOVE(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/executor.Worker/REMOVE',
+            executor__pb2.job_info.SerializeToString,
+            executor__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def TASK_REGIST(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/executor.Worker/TASK_REGIST',
+            executor__pb2.job_task_info.SerializeToString,
+            executor__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def PING(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/executor.Worker/PING',
+            executor__pb2.job_task_info.SerializeToString,
+            executor__pb2.task_result.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def HEART_BEAT(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/executor.Worker/HEART_BEAT',
+            executor__pb2.empty.SerializeToString,
+            executor__pb2.worker_status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

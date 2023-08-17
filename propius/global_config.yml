@@ -7,14 +7,12 @@ load_balancer_port: 50000
 client_manager_num: 2
 client_manager_id_weight: 1000000 # for client id assignment
 client_manager:
-  - 0:
-    ip: localhost
+  - ip: localhost
     port: 50004
     client_db_port: 6380
-  - 1:
-    ip: localhost
-    port: 50005
-    client_db_port: 6381
+  # - ip: localhost
+  #   port: 50005
+  #   client_db_port: 6381
 
 job_db_ip: localhost
 job_db_port: 6379
@@ -27,7 +25,7 @@ scheduler_port: 50003
 
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2']
-sched_alg: 'irs'
+sched_alg: 'fifo'
 
 max_task_offer_list_len: 10
 
@@ -44,35 +42,21 @@ job_expire_time: 604800 # a week
 # ---Constraint/spec setting---
 # Job constraint
 job_public_constraint:
-  - cpu
-  - memory
-  - os
-job_private_constraint: []
-  # - datasetsize
+  - cpu_f
+  - ram
+  - fp16_mem
+  - android_os
+job_private_constraint:
+  - dataset_size
 
-# Define the scale of the specifications
-metric_scale: 100
+public_max:
+  cpu_f: 24.8
+  ram: 16
+  fp16_mem: 2800
+  android_os: 15
 
-# ---Simulation---
-# Client simulation number
-client_num: 60000
+# private_max:
+#   dataset_size: 1000
 
-# Client check in distribution over time
-client_is_uniform: False
-
-# Job profile number
-job_profile_num : 9
-# Job total number
-total_job : 200
-
-# If job number is 20, there will be 20 job addresses, starting from the defined port number
-job_driver_ip: localhost
-job_driver_starting_port: 53000
-
-# Total simulation time
-total_running_second: 1200
-
-# ---Fedscale---
-num_executors: 100
-num_clients: 100
-data_dir: ./benchmark/dataset/data/femnist
+verbose: True
+use_monitor: False

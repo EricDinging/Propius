@@ -1,36 +1,60 @@
 //  python -m grpc_tools.protoc --proto_path=. ./executor.proto --python_out=. --grpc_python_out=. 
-//  import channels.executor_pb2 as executor__pb2
+//  import evaluation.executor.channels.executor_pb2 as executor__pb2
 
 syntax = "proto3";
 
 package executor;
 
 service Executor {
-    rpc JOB_REGISTER (job_info) returns (ack) {}
+    rpc JOB_REGISTER (job_info) returns (register_ack) {}
     rpc JOB_REGISTER_TASK (job_task_info) returns (ack) {}
-    rpc MONITOR_PING (job_id) returns (job_result) {} 
+}
+
+service Worker {
+    rpc INIT (job_info) returns (ack) {}
+    rpc REMOVE (job_info) returns (ack) {}
+    rpc TASK_REGIST (job_task_info) returns (ack) {}
+    rpc PING (job_task_info) returns (task_result) {}
+    rpc HEART_BEAT (empty) returns (worker_status) {}
+}
+
+message worker_status {
+    int32 task_size = 1;
+}
+
+message task_result {
+    bool ack = 1;
+    bytes result = 2;
+    bytes data = 3;
 }
 
 message job_info {
     int32 job_id = 1;
-    string job_type = 2;
+    bytes job_meta = 2;
 }
 
 message job_task_info {
     int32 job_id = 1;
     int32 client_id = 2;
-    string event = 3;
-    bytes meta = 4;
+    int32 round = 3;
+    string event = 4;
+    bytes task_meta = 5;
+    bytes task_data = 6;
 }
 
 message job_id {
     int32 id = 1;
 }
 
+message register_ack {
+    bool ack = 1;
+    float model_size = 2;
+}
+
 message ack {
     bool ack = 1;
 }
 
-message job_result {
-    bytes data = 1;
+
+message empty {
 }
