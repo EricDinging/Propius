@@ -118,13 +118,8 @@ class WorkerStub(object):
                 request_serializer=executor__pb2.job_info.SerializeToString,
                 response_deserializer=executor__pb2.ack.FromString,
                 )
-        self.TRAIN = channel.unary_unary(
-                '/executor.Worker/TRAIN',
-                request_serializer=executor__pb2.job_task_info.SerializeToString,
-                response_deserializer=executor__pb2.ack.FromString,
-                )
-        self.TEST = channel.unary_unary(
-                '/executor.Worker/TEST',
+        self.TASK_REGIST = channel.unary_unary(
+                '/executor.Worker/TASK_REGIST',
                 request_serializer=executor__pb2.job_task_info.SerializeToString,
                 response_deserializer=executor__pb2.ack.FromString,
                 )
@@ -155,13 +150,7 @@ class WorkerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def TRAIN(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def TEST(self, request, context):
+    def TASK_REGIST(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -192,13 +181,8 @@ def add_WorkerServicer_to_server(servicer, server):
                     request_deserializer=executor__pb2.job_info.FromString,
                     response_serializer=executor__pb2.ack.SerializeToString,
             ),
-            'TRAIN': grpc.unary_unary_rpc_method_handler(
-                    servicer.TRAIN,
-                    request_deserializer=executor__pb2.job_task_info.FromString,
-                    response_serializer=executor__pb2.ack.SerializeToString,
-            ),
-            'TEST': grpc.unary_unary_rpc_method_handler(
-                    servicer.TEST,
+            'TASK_REGIST': grpc.unary_unary_rpc_method_handler(
+                    servicer.TASK_REGIST,
                     request_deserializer=executor__pb2.job_task_info.FromString,
                     response_serializer=executor__pb2.ack.SerializeToString,
             ),
@@ -257,7 +241,7 @@ class Worker(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def TRAIN(request,
+    def TASK_REGIST(request,
             target,
             options=(),
             channel_credentials=None,
@@ -267,24 +251,7 @@ class Worker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/executor.Worker/TRAIN',
-            executor__pb2.job_task_info.SerializeToString,
-            executor__pb2.ack.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def TEST(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/executor.Worker/TEST',
+        return grpc.experimental.unary_unary(request, target, '/executor.Worker/TASK_REGIST',
             executor__pb2.job_task_info.SerializeToString,
             executor__pb2.ack.FromString,
             options, channel_credentials,

@@ -149,9 +149,9 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     del self.data_partitioner_ref_cnt_dict[dataset_name]
             if job_id in self.task_finished:
                 del self.task_finished[job_id]
-        return executor_pb2.ack(ack=True)
+        return executor_pb2.ack(ack=True)  
     
-    async def task_register_helper(self, request):
+    async def TASK_REGIST(self, request, context):
         job_id, client_id = request.job_id, request.client_id
         event = request.event
         task_meta = pickle.loads(request.task_meta)
@@ -168,12 +168,6 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
         return executor_pb2.ack(ack=True)
     
-    async def TRAIN(self, request, context):
-        return await self.task_register_helper(request)
-    
-    async def TEST(self, request, context):
-        return await self.task_register_helper(request)
-    
     async def PING(self, request, context):
         job_id, client_id = request.job_id, request.client_id
         event = request.event
@@ -187,20 +181,11 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             if job_id in self.task_finished:
                 if key in self.task_finished[job_id]:
                     result = self.task_finished[job_id][key]
-                    
-                    if event == MODEL_TEST:
-                        result_msg = executor_pb2.task_result(
+
+                    result_msg = executor_pb2.task_result(
                             ack=True,
                             result=pickle.dumps(result),
                             data=pickle.dumps(DUMMY_RESPONSE)
-                        )
-                    elif event == CLIENT_TRAIN:
-                        model_weight = result["model_weight"]
-                        del result["model_weight"]
-                        result_msg = executor_pb2.task_result(
-                            ack=True,
-                            result=pickle.dumps(result),
-                            data=pickle.dumps(model_weight)
                         )
                     del self.task_finished[job_id][key]
 
@@ -354,7 +339,7 @@ async def run(config):
     async def server_graceful_shutdown():
         print(f"===Worker {worker.id} ending===")
         await server.stop(5)
-        
+
     server = grpc.aio.server()
 
     if len(sys.argv) != 2:

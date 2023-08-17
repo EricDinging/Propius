@@ -143,12 +143,16 @@ async def run(config, gconfig):
     async def server_graceful_shutdown():
         await executor.task_pool.gen_all_report(executor.gconfig["sched_alg"])
         print("==Executor ending==")
-        #TODO handling result
+        heartbeat_task.cancel()
+        await heartbeat_task
+        await executor.worker._disconnect()
         await server.stop(5)
 
     server = grpc.aio.server()
     executor = Executor(config, gconfig)
     _cleanup_coroutines.append(server_graceful_shutdown())
+
+    heartbeat_task = asyncio.create_task(executor.worker.heartbeat_routine())
 
     executor_pb2_grpc.add_ExecutorServicer_to_server(executor, server)
     server.add_insecure_port(f"{executor.ip}:{executor.port}")

@@ -13,8 +13,7 @@ service Executor {
 service Worker {
     rpc INIT (job_info) returns (ack) {}
     rpc REMOVE (job_info) returns (ack) {}
-    rpc TRAIN (job_task_info) returns (ack) {}
-    rpc TEST (job_task_info) returns (ack) {}
+    rpc TASK_REGIST (job_task_info) returns (ack) {}
     rpc PING (job_task_info) returns (task_result) {}
     rpc HEART_BEAT (empty) returns (worker_status) {}
 }

@@ -1,19 +1,18 @@
 from evaluation.executor.task_pool import *
 from evaluation.executor.internal.torch_module_adapter import *
-from evaluation.executor.internal.dataset_handler import *
-from evaluation.executor.internal.test_helper import *
 
-import math
-import torch
-from torch.autograd import Variable
-from torch.nn import CTCLoss
+
 import numpy as np
 import random
-from typing import List
+import torch
 
 import asyncio
 import sys
 import pickle
+import grpc
+from evaluation.executor.channels import executor_pb2
+from evaluation.executor.channels import executor_pb2_grpc
+
 
 class Worker_manager:
     def __init__(self, config):
@@ -22,16 +21,37 @@ class Worker_manager:
         Args:
             config:
         """
-  
         self.job_id_model_adapter_map = {}
         self.job_id_agg_weight_map = {}
         self.job_id_agg_cnt = {}
-        # self.num_worker = config['num_worker']
+
         self.lock = asyncio.Lock()
 
         self._setup_seed()
 
         self.config = config
+
+        self.worker_num = len(config["worker"])
+        self.worker_addr_list = config["worker"]
+        self.worker_channel_dict = {}
+        self.worker_stub_dict = {}
+        self._connect_worker()
+        self.cur_worker = 0
+
+    def _connect_worker(self):
+        for worker_id, worker_addr in enumerate(self.worker_addr_list):
+            worker_ip = worker_addr["ip"]
+            worker_port = worker_port["port"]
+            self.worker_channel_dict[worker_id] = grpc.aio.insecure_channel(f"{worker_ip}:{worker_port}")
+            self.worker_stub_dict[worker_id] = executor_pb2_grpc.WorkerStub(
+                self.worker_channel_dict[worker_id]
+            )
+            print(f"Worker manager: connecting to worker {worker_id} at {worker_ip}:{worker_port}")
+    
+    async def _disconnect(self):
+        async with self.lock:
+            for worker_channel in self.worker_channel_dict.values():
+                await worker_channel.close()
 
     def _setup_seed(self, seed=1):
         torch.manual_seed(seed)
@@ -47,50 +67,122 @@ class Worker_manager:
                 del self.job_id_model_adapter_map[job_id]
                 del self.job_id_agg_weight_map[job_id]
                 del self.job_id_agg_cnt[job_id]
+        
+        job_info_msg = executor_pb2.job_info(
+            job_id=job_id,
+            job_meta=pickle.dumps(DUMMY_RESPONSE)
+        )
+
+        async with self.lock:
+            # broadcast
+            for worker_stub in self.worker_stub_dict.values():
+                await worker_stub.REMOVE(job_info_msg)
 
 
     async def init_job(self, job_id: int, dataset_name: str, model_name: str)->float:
+        model = None
+        if model_name == "resnet18":
+            from fedscale.utils.models.specialized.resnet_speech import resnet18
+            model = resnet18(
+                num_classes=out_put_class[dataset_name],
+                in_channels=1
+            )
+        elif model_name == "mobilenet":
+            from fedscale.utils.models.specialized.resnet_speech import \
+            mobilenet_v2
+            model = mobilenet_v2(num_classes=out_put_class[dataset_name])
+
+        model_adapter = Torch_model_adapter(model)
+            # model_adapter.set_weights(model_weights)
+        model_size = sys.getsizeof(pickle.dumps(model_adapter)) / 1024.0 * 8.  # kbits
+
         async with self.lock:
-            
-
-            model = None
-            if model_name == "resnet18":
-                from fedscale.utils.models.specialized.resnet_speech import resnet18
-                model = resnet18(
-                    num_classes=out_put_class[dataset_name],
-                    in_channels=1
-                )
-            elif model_name == "mobilenet":
-                from fedscale.utils.models.specialized.resnet_speech import \
-                mobilenet_v2
-                model = mobilenet_v2(num_classes=out_put_class[dataset_name])
-
-            model_adapter = Torch_model_adapter(model)
-                # model_adapter.set_weights(model_weights)
-            model_size = sys.getsizeof(pickle.dumps(model_adapter)) / 1024.0 * 8.  # kbits
             self.job_id_model_adapter_map[job_id] = model_adapter
             self.job_id_agg_weight_map[job_id] = []
             self.job_id_agg_cnt[job_id] = 0
+
+            # broadcast
+            job_meta = {"dataset": dataset_name}
+            job_info_msg = executor_pb2.job_info(
+                job_id=job_id,
+                job_meta=pickle.dumps(job_meta)
+            )
+            for worker_stub in self.worker_stub_dict.values():
+                await worker_stub.INIT(job_info_msg)
+
             return model_size
+        
+    async def heartbeat_routine(self):
+        try:
+            while True:
+                await asyncio.sleep(30)
+                
+                status_list = []
+                async with self.lock:
+                    try:
+                        for id, worker_stub in self.worker_stub_dict.items():
+                            worker_status_msg = await worker_stub.HEART_BEAT(executor_pb2.empty())
+                            status_list.append(worker_status_msg.task_size)
+                    except:
+                        del self.worker_stub_dict[id]
+                        del self.worker_channel_dict[id]
+                
+                self.cur_worker = status_list.index(min(status_list))
+                print(f"Worker manager: current worker {self.cur_worker}")
+        except asyncio.CancelledError:
+            pass
 
     async def execute(self, event: str, job_id: int, client_id: int, args: dict)->dict:
         async with self.lock:
-            if event == CLIENT_TRAIN:
-                model_param, results = self._train(client_id=client_id, 
-                            partition=self.data_partitioner_dict[self.job_id_data_map[job_id]],
-                            model=self.job_id_model_adapter_map[job_id].get_model(),
-                            conf=args)
+            if event == CLIENT_TRAIN or event == MODEL_TEST:
+                task_data = {
+                    "model_weight": self.job_id_model_adapter_map[job_id].get_model()
+                }
+                job_task_msg = executor_pb2.job_task_info(
+                    job_id=job_id,
+                    client_id=client_id,
+                    round=0,
+                    event=event,
+                    task_meta=pickle.dumps({"config":args}),
+                    task_data=pickle.dumps(task_data)
+                )
+
+                await self.worker_stub_dict[self.cur_worker].TASK_REGIST(job_task_msg)
+
+                while True:
+                    ping_msg = executor_pb2.job_task_info(
+                        job_id=job_id,
+                        client_id=client_id,
+                        round=0,
+                        event=event,
+                        task_meta=pickle.dumps(DUMMY_RESPONSE),
+                        task_data=pickle.dumps(DUMMY_RESPONSE)
+                    )
+                    task_result_msg = await self.worker_stub_dict[self.cur_worker].PING(ping_msg)
+
+                    if task_result_msg.ack:
+                        results = pickle.loads(task_result_msg.result)
+                        break
+
+                    await asyncio.sleep(5)
+
+                if event == CLIENT_TRAIN:
+                    model_param = results["model_weight"]
+                    self.job_id_agg_cnt[job_id] += 1
+
+                    agg_weight = self.job_id_agg_weight_map[job_id]
+                    if self.job_id_agg_cnt[job_id] == 1:
+                        agg_weight = model_param
+                    else:
+                        agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
+                    self.job_id_agg_weight_map[job_id] = agg_weight
+
+                    results = {CLIENT_TRAIN+str(client_id): results}
                 
-                self.job_id_agg_cnt[job_id] += 1
-
-                agg_weight = self.job_id_agg_weight_map[job_id]
-                if self.job_id_agg_cnt[job_id] == 1:
-                    agg_weight = model_param
                 else:
-                    agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
-                self.job_id_agg_weight_map[job_id] = agg_weight
-
-                results = {CLIENT_TRAIN+str(client_id): results}
+                    results = {
+                        MODEL_TEST: results
+                    }
 
             elif event == AGGREGATE:
                 agg_weight = self.job_id_agg_weight_map[job_id]
@@ -104,18 +196,6 @@ class Worker_manager:
 
                 results = {AGGREGATE: results}
 
-            elif event == MODEL_TEST:
-                results = self._test(
-                    client_id=client_id,
-                    partition=self.test_data_partition_dict[self.job_id_data_map[job_id]],
-                    model=self.job_id_model_adapter_map[job_id].get_model(),
-                    conf=args,
-                )
-
-                results = {
-                    MODEL_TEST: results
-                }
-            
             return results
             
 

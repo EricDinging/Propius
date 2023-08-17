@@ -48,9 +48,6 @@ class Task_pool:
                     "test_ratio": self.config["test_ratio"],
                     "test_bsz": self.config["test_bsz"]
                 }
-            
-            if event == JOB_FINISH:
-                self.job_task_dict[job_id].append(test_task_meta)
 
             self.job_task_dict[job_id].append(task_meta)
 
