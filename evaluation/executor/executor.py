@@ -21,6 +21,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.worker = Worker_manager(config)
         self.gconfig = gconfig
 
+        self.lock = asyncio.Lock()
+
         self.job_task_dict = {}
 
         result_dict = f"./evaluation/result_{self.gconfig['sched_alg']}"
@@ -53,9 +55,13 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         return executor_pb2.ack(ack=True)
     
     async def wait_for_training_task(self, job_id:int, round: int):
-        if job_id not in self.job_task_dict:
-            return
-        completed, pending = await asyncio.wait(self.job_task_dict[job_id], 
+        async with self.lock:
+            if job_id not in self.job_task_dict:
+                return
+            task_list = self.job_task_dict[job_id]
+            del self.job_task_dict[job_id]
+
+        completed, pending = await asyncio.wait(task_list, 
                                                 return_when=asyncio.ALL_COMPLETED)
         
         for task in completed:
@@ -67,7 +73,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             except:
                 pass
 
-    
     async def execute(self):
         #TODO
         while True:
@@ -88,23 +93,22 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             print(f"Executor: execute job {job_id} {event}")
 
             if event == JOB_FINISH:
+                await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
+
                 await self.task_pool.gen_report(job_id=job_id,
                                                 sched_alg=self.gconfig["sched_alg"])
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 
-                try:
-                    del self.job_task_dict[job_id]
-                except:
-                    pass
+                async with self.lock:
+                    if job_id in self.job_task_dict:
+                        del self.job_task_dict[job_id]
 
                 continue
             
             elif event == CLIENT_TRAIN:
                 # create asyncio task for training task
-                if job_id not in self.job_task_dict:
-                    self.job_task_dict[job_id] = []
-                    
+     
                 task = asyncio.create_task(
                     self.worker.execute(event=CLIENT_TRAIN,
                                           job_id=job_id,
@@ -112,7 +116,10 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                           args=execute_meta)
                 )
 
-                self.job_task_dict[job_id].append(task)
+                async with self.lock:
+                    if job_id not in self.job_task_dict:
+                        self.job_task_dict[job_id] = []
+                    self.job_task_dict[job_id].append(task)
 
             elif event == MODEL_TEST:
                 

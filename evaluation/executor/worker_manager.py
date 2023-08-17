@@ -53,9 +53,8 @@ class Worker_manager:
             print(f"Worker manager: connecting to worker {worker_id} at {worker_ip}:{worker_port}")
     
     async def _disconnect(self):
-        async with self.lock:
-            for worker_channel in self.worker_channel_dict.values():
-                await worker_channel.close()
+        for worker_channel in self.worker_channel_dict.values():
+            await worker_channel.close()
 
     def _setup_seed(self, seed=1):
         torch.manual_seed(seed)
@@ -77,10 +76,9 @@ class Worker_manager:
             job_meta=pickle.dumps(DUMMY_RESPONSE)
         )
 
-        async with self.lock:
-            # broadcast
-            for worker_stub in self.worker_stub_dict.values():
-                await worker_stub.REMOVE(job_info_msg)
+        # broadcast
+        for worker_stub in self.worker_stub_dict.values():
+            await worker_stub.REMOVE(job_info_msg)
 
 
     async def init_job(self, job_id: int, dataset_name: str, model_name: str)->float:
@@ -105,14 +103,14 @@ class Worker_manager:
             self.job_id_agg_weight_map[job_id] = []
             self.job_id_agg_cnt[job_id] = 0
 
-            # broadcast
-            job_meta = {"dataset": dataset_name}
-            job_info_msg = executor_pb2.job_info(
-                job_id=job_id,
-                job_meta=pickle.dumps(job_meta)
-            )
-            for worker_stub in self.worker_stub_dict.values():
-                await worker_stub.INIT(job_info_msg)
+        # broadcast
+        job_meta = {"dataset": dataset_name}
+        job_info_msg = executor_pb2.job_info(
+            job_id=job_id,
+            job_meta=pickle.dumps(job_meta)
+        )
+        for worker_stub in self.worker_stub_dict.values():
+            await worker_stub.INIT(job_info_msg)
 
         print(f"Worker manager: init job {job_id} success")
 
@@ -121,27 +119,27 @@ class Worker_manager:
     async def heartbeat_routine(self):
         try:
             while True:
-                await asyncio.sleep(30)
+                await asyncio.sleep(5)
                 
                 status_list = []
-                async with self.lock:
-                    try:
-                        for id, worker_stub in self.worker_stub_dict.items():
-                            worker_status_msg = await worker_stub.HEART_BEAT(executor_pb2.empty())
-                            status_list.append(worker_status_msg.task_size)
-                    except:
-                        del self.worker_stub_dict[id]
-                        del self.worker_channel_dict[id]
+
+                for worker_stub in self.worker_stub_dict.values():
+                    worker_status_msg = await worker_stub.HEART_BEAT(executor_pb2.empty())
+                    status_list.append(worker_status_msg.task_size)
                 
-                self.cur_worker = status_list.index(min(status_list))
+                # self.cur_worker = status_list.index(min(status_list))
                 print(f"Worker manager: current worker {self.cur_worker}")
         except asyncio.CancelledError:
             pass
 
     async def execute(self, event: str, job_id: int, client_id: int, args: dict)->dict:
-        async with self.lock:
-            if event == CLIENT_TRAIN or event == MODEL_TEST:
+        if event == CLIENT_TRAIN or event == MODEL_TEST:
+            async with self.lock:
+                self.cur_worker = (self.cur_worker + 1) % self.worker_num
+
+                cur_worker = self.cur_worker
                 task_data = self.job_id_model_adapter_map[job_id].get_model()
+
                 job_task_msg = executor_pb2.job_task_info(
                     job_id=job_id,
                     client_id=client_id,
@@ -151,27 +149,28 @@ class Worker_manager:
                     task_data=pickle.dumps(task_data)
                 )
 
-                await self.worker_stub_dict[self.cur_worker].TASK_REGIST(job_task_msg)
+            await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
 
-                while True:
-                    ping_msg = executor_pb2.job_task_info(
-                        job_id=job_id,
-                        client_id=client_id,
-                        round=0,
-                        event=event,
-                        task_meta=pickle.dumps(DUMMY_RESPONSE),
-                        task_data=pickle.dumps(DUMMY_RESPONSE)
-                    )
-                    task_result_msg = await self.worker_stub_dict[self.cur_worker].PING(ping_msg)
+            while True:
+                ping_msg = executor_pb2.job_task_info(
+                    job_id=job_id,
+                    client_id=client_id,
+                    round=0,
+                    event=event,
+                    task_meta=pickle.dumps(DUMMY_RESPONSE),
+                    task_data=pickle.dumps(DUMMY_RESPONSE)
+                )
+                task_result_msg = await self.worker_stub_dict[cur_worker].PING(ping_msg)
 
-                    if task_result_msg.ack:
-                        results = pickle.loads(task_result_msg.result)
-                        break
+                if task_result_msg.ack:
+                    results = pickle.loads(task_result_msg.result)
+                    break
 
-                    await asyncio.sleep(5)
+                await asyncio.sleep(5)
 
-                if event == CLIENT_TRAIN:
-                    model_param = results["model_weight"]
+            if event == CLIENT_TRAIN:
+                model_param = results["model_weight"]
+                async with self.lock:
                     self.job_id_agg_cnt[job_id] += 1
 
                     agg_weight = self.job_id_agg_weight_map[job_id]
@@ -181,14 +180,15 @@ class Worker_manager:
                         agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
                     self.job_id_agg_weight_map[job_id] = agg_weight
 
-                    results = {CLIENT_TRAIN+str(client_id): results}
-                
-                else:
-                    results = {
-                        MODEL_TEST: results
-                    }
+                results = {CLIENT_TRAIN+str(client_id): results}
+            
+            else:
+                results = {
+                    MODEL_TEST: results
+                }
 
-            elif event == AGGREGATE:
+        elif event == AGGREGATE:
+            async with self.lock:
                 agg_weight = self.job_id_agg_weight_map[job_id]
                 agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]
 
@@ -198,8 +198,8 @@ class Worker_manager:
                 }
                 self.job_id_agg_cnt[job_id] = 0
 
-                results = {AGGREGATE: results}
+            results = {AGGREGATE: results}
 
-            return results
+        return results
             
 

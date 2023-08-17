@@ -203,7 +203,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             status_msg = executor_pb2.worker_status(task_size=len(self.task_to_do))
             return status_msg
         
-    def _train(self, client_id, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->dict:
+    async def _train(self, client_id, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->dict:
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
 
@@ -247,7 +247,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
         return results
     
-    def _test(self, client_id: int, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->dict:
+    async def _test(self, client_id: int, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->dict:
         test_data = select_dataset(
             client_id=client_id, 
             partition=partition, 
@@ -313,19 +313,19 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     del task_conf["model_weight"]
 
                     if event == CLIENT_TRAIN:
-                        results = self._train(client_id=client_id,
+                        results = await self._train(client_id=client_id,
                                     partition=partition,
                                     model=model_weight,
                                     conf=task_conf)
                         key = f"{event}{task_conf['client_id']}"
                     elif event == MODEL_TEST:
-                        results = self._test(client_id=client_id,
-                                             partition=partition,
-                                             model=model_weight,
-                                             conf=task_conf
-                                             )
+                        results = await self._test(client_id=client_id,
+                                                partition=partition,
+                                                model=model_weight,
+                                                conf=task_conf
+                                                )
                         key = event
-
+                
                     if job_id not in self.task_finished:
                         self.task_finished[job_id] = {}
                     self.task_finished[job_id][key] = results

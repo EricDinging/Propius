@@ -45,9 +45,9 @@ worker:
   - ip: localhost
     port: 49998
     device: cpu
-  # - ip: localhost
-  #   port: 49997
-  #   device: cuda:0
+  - ip: localhost
+    port: 49997
+    device: cpu
 
 num_worker: 1
 
