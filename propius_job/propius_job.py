@@ -168,12 +168,13 @@ class Propius_job():
             ip=pickle.dumps(self.ip),
             port=self.port,
         )
-
         for _ in range(3):
+            self.connect()
             try:
                 ack_msg = self._jm_stub.JOB_REGIST(job_info_msg)
                 self.id = ack_msg.id
                 ack = ack_msg.ack
+                self._cleanup_routine()
                 if not ack:
                     if self.verbose:
                         print(f"{get_time()} Job {self.id}: register failed")
@@ -187,7 +188,6 @@ class Propius_job():
                     print(f"{get_time()} {e}")
                 self._cleanup_routine()
                 time.sleep(5)
-                self.connect()
 
         raise RuntimeError(
             "Unable to register to Propius job manager at the moment")
@@ -224,8 +224,10 @@ class Propius_job():
         )
 
         for _ in range(3):
+            self.connect()
             try:
                 ack_msg = self._jm_stub.JOB_REQUEST(request_msg)
+                self._cleanup_routine()
                 if not ack_msg.ack:
                     if self.verbose:
                         print(
@@ -241,7 +243,6 @@ class Propius_job():
                     print(f"{get_time()} {e}")
                 self._cleanup_routine()
                 time.sleep(5)
-                self.connect()
 
         raise RuntimeError(
             "Unable to send round start request to Propius job manager at the moment")
@@ -257,8 +258,10 @@ class Propius_job():
         request_msg = propius_pb2.job_id(id=self.id)
 
         for _ in range(3):
+            self.connect()
             try:
                 ack_msg = self._jm_stub.JOB_END_REQUEST(request_msg)
+                self._cleanup_routine()
                 if not ack_msg.ack:
                     if self.verbose:
                         print(
@@ -274,7 +277,6 @@ class Propius_job():
                     print(f"{get_time()} {e}")
                 self._cleanup_routine()
                 time.sleep(5)
-                self.connect()
 
         raise RuntimeError(
             "Unable to send round end request to Propius job manager at this moment")
@@ -289,8 +291,10 @@ class Propius_job():
         req_msg = propius_pb2.job_id(id=self.id)
 
         for _ in range(3):
+            self.connect()
             try:
                 self._jm_stub.JOB_FINISH(req_msg)
+                self._cleanup_routine()
                 if self.verbose:
                     print(f"{get_time()} Job {self.id}: job completed")
                 return
@@ -299,7 +303,6 @@ class Propius_job():
                     print(f"{get_time()} {e}")
                 self._cleanup_routine()
                 time.sleep(5)
-                self.connect()
 
         raise RuntimeError(
             "Unable to send complete job request to Propius job manager at this moment")
