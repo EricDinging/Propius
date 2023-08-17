@@ -59,3 +59,4 @@ public_max:
 #   dataset_size: 1000
 
 verbose: True
+use_monitor: False

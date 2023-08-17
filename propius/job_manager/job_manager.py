@@ -37,7 +37,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.ip = gconfig['job_manager_ip']
         self.port = int(gconfig['job_manager_port'])
         self.job_db_portal = JM_job_db_portal(gconfig)
-        self.jm_monitor = JM_monitor(gconfig['sched_alg'])
+        self.jm_monitor = JM_monitor(gconfig['sched_alg']) if gconfig['use_monitor'] else None
         self.sched_channel = None
         self.sched_portal = None
         self._connect_sched(
@@ -86,10 +86,12 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             total_round=est_total_round)
         custom_print(f"Job manager: ack job {job_id} register: {ack}")
         if ack:
-            await self.jm_monitor.job_register()
+            if self.jm_monitor:
+                await self.jm_monitor.job_register()
             await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
-        await self.jm_monitor.request()
+        if self.jm_monitor:
+            await self.jm_monitor.request()
         return propius_pb2.job_register_ack(id=job_id, ack=ack)
 
     async def JOB_REQUEST(self, request, context):
@@ -105,9 +107,11 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         # await self.client_db_portal.cleanup()
         custom_print(f"Job manager: ack job {job_id} round request: {ack}")
         if ack:
-            await self.jm_monitor.job_request()
+            if self.jm_monitor:
+                await self.jm_monitor.job_request()
 
-        await self.jm_monitor.request()
+        if self.jm_monitor:
+            await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
 
     async def JOB_END_REQUEST(self, request, context):
@@ -121,7 +125,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         job_id = request.id
         ack = self.job_db_portal.end_request(job_id=job_id)
         custom_print(f"Job manager: ack job {job_id} end round request: {ack}")
-        await self.jm_monitor.request()
+        if self.jm_monitor:
+            await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
 
     async def JOB_FINISH(self, request, context):
@@ -138,8 +143,10 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             self.job_db_portal.finish(job_id)
 
         if runtime:
-            await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
-        await self.jm_monitor.request()
+            if self.jm_monitor:
+                await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
+        if self.jm_monitor:
+            await self.jm_monitor.request()
         return propius_pb2.empty()
     
     async def HEART_BEAT(self, request, context):
@@ -160,7 +167,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 async def serve(gconfig):
     async def server_graceful_shutdown():
         custom_print(f"=====Job manager shutting down=====")
-        job_manager.jm_monitor.report()
+        if job_manager.jm_monitor:
+            job_manager.jm_monitor.report()
         job_manager.job_db_portal.flushdb()
 
         heartbeat_task.cancel()

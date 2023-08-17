@@ -48,7 +48,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         self.propius_stub = Propius_job(job_config=job_config, verbose=True)
 
-        self.propius_stub.connect()
+        # self.propius_stub.connect()
 
         self.executor_ip = config['executor_ip']
         self.executor_port = config['executor_port']
@@ -245,7 +245,7 @@ async def run(config):
         heartbeat_task.cancel()
         await heartbeat_task
         
-        ps.propius_stub.close()
+        #ps.propius_stub.close()
         
         task_meta = {}
         job_task_info_msg = executor_pb2.job_task_info(

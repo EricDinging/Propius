@@ -27,7 +27,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.cm_channel_dict = {}
         self.cm_stub_dict = {}
         self._connect_cm()
-        self.lb_analyzer = LB_analyzer(gconfig['sched_alg'])
+        self.lb_monitor = LB_monitor(gconfig['sched_alg']) if gconfig['use_monitor'] else None
 
     def _connect_cm(self):
         for cm_id, cm_addr in enumerate(self.cm_addr_list):
@@ -53,7 +53,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
 
     async def CLIENT_CHECKIN(self, request, context):
         async with self.lock:
-            await self.lb_analyzer.request()
+            if self.lb_monitor:
+                await self.lb_monitor.request()
             self.idx %= len(self.cm_channel_dict)
             custom_print(
                 f"Load balancer: client check in, route to client manager {self.idx}")
@@ -63,7 +64,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
 
     async def CLIENT_PING(self, request, context):
         async with self.lock:
-            await self.lb_analyzer.request()
+            if self.lb_monitor:
+                await self.lb_monitor.request()
             idx = int(request.id / self.id_weight)
             custom_print(
                 f"Load balancer: client ping, route to client manager {idx}")
@@ -72,7 +74,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
 
     async def CLIENT_ACCEPT(self, request, context):
         async with self.lock:
-            await self.lb_analyzer.request()
+            if self.lb_monitor:
+                await self.lb_monitor.request()
             self.idx %= len(self.cm_channel_dict)
             custom_print(
                 f"Load balancer: client accept, route to client manager {self.idx}")
@@ -98,7 +101,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
 async def serve(gconfig):
     async def server_graceful_shutdown():
         custom_print(f"=====Load balancer shutting down=====")
-        load_balancer.lb_analyzer.report()
+        if load_balancer.lb_monitor:
+            load_balancer.lb_monitor.report()
 
         heartbeat_task.cancel()
         await heartbeat_task

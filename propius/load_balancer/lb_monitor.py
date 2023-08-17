@@ -4,7 +4,7 @@ import asyncio
 import os
 
 
-class LB_analyzer(Monitor):
+class LB_monitor(Monitor):
     def __init__(self, sched_alg: str):
         super().__init__("Load balancer")
         self.sched_alg = sched_alg

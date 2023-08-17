@@ -11,8 +11,8 @@ with open(global_config_file, 'r') as gconfig:
 
 sched_alg = gconfig['sched_alg']
 
-ps_folder = f'./evaluation/ps_result'
-executor_folder = f'./evaluation/result_{sched_alg}'
+ps_folder = f'./evaluation_result/ps_result'
+executor_folder = f'./evaluation_result/result_{sched_alg}'
 
 plot_folder = f'./evaluation/analyze/plot'
 

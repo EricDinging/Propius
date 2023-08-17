@@ -33,7 +33,7 @@ job_driver_starting_port: 53000
 # total_running_second: 1200
 
 # ---Execution---
-use_cuda: False
+use_cuda: True
 cuda_device:
   - cuda:0
   - cuda:1
@@ -59,9 +59,9 @@ test_ratio: 1
 eval_interval: 10
 
 #FEMNIST
-femnist_data_dir: ./datasets/femnist
-femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
-femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
-# femnist_data_dir: /data/FedScale/benchmark/dataset/data/femnist
-# femnist_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/train.csv
-# femnist_test_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/test.csv
+# femnist_data_dir: ./datasets/femnist
+# femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
+# femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
+femnist_data_dir: /data/FedScale/benchmark/dataset/data/femnist
+femnist_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/train.csv
+femnist_test_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/test.csv
