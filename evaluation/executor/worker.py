@@ -156,15 +156,12 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def TASK_REGIST(self, request, context):
         job_id, client_id = request.job_id, request.client_id
         event = request.event
-        task_meta = pickle.loads(request.task_meta)
-        task_data = pickle.loads(request.task_data)
-        model = task_data["model_weight"]
-        conf = task_meta["config"]
-
+        conf = pickle.loads(request.task_meta)
+        model = pickle.loads(request.task_data)
+        conf["model_weight"] = model
         conf["job_id"] = job_id
         conf["client_id"] = client_id
         conf["event"] = event
-        conf["model_weight"] = model
         async with self.lock:
             self.task_to_do.append(conf)
         
@@ -216,7 +213,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                                      args=conf,
                                      is_test=False,
                                      )
-        print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: === Starting to train ===")
+
         model = model.to(device=self.device)
         model.train()
 
@@ -243,7 +240,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             'trained_size': self._completed_steps * conf['batch_size'],
         }  
 
-        print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: training complete, {results}===")
+        print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: training complete===")
 
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
@@ -297,6 +294,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             "acc_5": acc_5,
             "test_len": test_len
         }
+
+        print(f"Worker {self.id}: Job {conf['job_id']}: testing complete, {results}===")
         return results
         
     async def execute(self):
@@ -310,11 +309,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     model_weight = task_conf["model_weight"]
                     client_id = task_conf["client_id"]
                     job_id = task_conf["job_id"]
-
-                    del task_conf["event"]
+                    
                     del task_conf["model_weight"]
-                    del task_conf["client_id"]
-                    del task_conf["job_id"]
 
                     if event == CLIENT_TRAIN:
                         results = self._train(client_id=client_id,
@@ -343,7 +339,12 @@ async def run(config):
         print(f"===Worker {worker.id} ending===")
         await server.stop(5)
 
-    server = grpc.aio.server()
+    channel_options = [
+        ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH),
+        ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH)
+    ]
+
+    server = grpc.aio.server(options=channel_options)
 
     if len(sys.argv) != 2:
         print("Usage: python evaluation/executor/worker.py <id>")

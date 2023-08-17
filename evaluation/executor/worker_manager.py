@@ -141,15 +141,13 @@ class Worker_manager:
     async def execute(self, event: str, job_id: int, client_id: int, args: dict)->dict:
         async with self.lock:
             if event == CLIENT_TRAIN or event == MODEL_TEST:
-                task_data = {
-                    "model_weight": self.job_id_model_adapter_map[job_id].get_model()
-                }
+                task_data = self.job_id_model_adapter_map[job_id].get_model()
                 job_task_msg = executor_pb2.job_task_info(
                     job_id=job_id,
                     client_id=client_id,
                     round=0,
                     event=event,
-                    task_meta=pickle.dumps({"config":args}),
+                    task_meta=pickle.dumps(args),
                     task_data=pickle.dumps(task_data)
                 )
 

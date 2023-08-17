@@ -78,10 +78,16 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 continue
             
             job_id = execute_meta['job_id']
+            client_id = execute_meta['client_id']
+            event = execute_meta['event']
 
-            print(f"Executor: execute job {job_id} {execute_meta['event']}")
+            del execute_meta['job_id']
+            del execute_meta['client_id']
+            del execute_meta['event']
 
-            if execute_meta['event'] == JOB_FINISH:
+            print(f"Executor: execute job {job_id} {event}")
+
+            if event == JOB_FINISH:
                 await self.task_pool.gen_report(job_id=job_id,
                                                 sched_alg=self.gconfig["sched_alg"])
                 await self.task_pool.remove_job(job_id=job_id)
@@ -94,12 +100,11 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
 
                 continue
             
-            elif execute_meta['event'] == CLIENT_TRAIN:
+            elif event == CLIENT_TRAIN:
                 # create asyncio task for training task
                 if job_id not in self.job_task_dict:
                     self.job_task_dict[job_id] = []
                     
-                client_id = execute_meta['client_id']
                 task = asyncio.create_task(
                     self.worker.execute(event=CLIENT_TRAIN,
                                           job_id=job_id,
@@ -109,14 +114,14 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
 
                 self.job_task_dict[job_id].append(task)
 
-            elif execute_meta['event'] == MODEL_TEST:
-
+            elif event == MODEL_TEST:
+                
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 
                 results = await self.worker.execute(
                     event=MODEL_TEST,
                     job_id=job_id,
-                    client_id=execute_meta['client_id'],
+                    client_id=client_id,
                     args=execute_meta
                 )
 
@@ -124,7 +129,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     round=execute_meta['round'],
                                                     result=results)
 
-            elif execute_meta['event'] == AGGREGATE:
+            elif event == AGGREGATE:
                 # wait for all pending training task to complete
                 
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
