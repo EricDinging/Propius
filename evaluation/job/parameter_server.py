@@ -70,11 +70,21 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.executor_stub = executor_pb2_grpc.ExecutorStub(self.executor_channel)
         print(f"PS: connecting to executor on {self.executor_ip}: {self.executor_port}")
 
-    def _close_round(self):
+    async def _close_round(self):
         # locked
+        task_meta = {}
+        job_task_info_msg = executor_pb2.job_task_info(
+            job_id=self.propius_stub.id,
+            client_id=-1,
+            round=self.cur_round,
+            event=AGGREGATE,
+            task_meta=pickle.dumps(task_meta),
+            task_data=pickle.dumps(DUMMY_RESPONSE)
+        )
+        await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+
         self.round_time_stamp[self.cur_round] = time.time()
         self.cur_round += 1
-        self.cv.notify()
 
     def _init_event_queue(self, client_id:int):
         # locked
@@ -213,18 +223,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event")
 
             if self.round_result_cnt >= self.demand:
-                task_meta = {}
-                job_task_info_msg = executor_pb2.job_task_info(
-                    job_id=self.propius_stub.id,
-                    client_id=-1,
-                    round=self.cur_round,
-                    event=AGGREGATE,
-                    task_meta=pickle.dumps(task_meta),
-                    task_data=pickle.dumps(DUMMY_RESPONSE)
-                )
-                await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
-
-                self._close_round()
+                await self._close_round()
+                self.cv.notify()
             return server_response_msg
             
     def gen_report(self):
@@ -306,8 +306,9 @@ async def run(config):
                     ps.client_event_dict = {}
                     await asyncio.wait_for(ps.cv.wait(), timeout=config["connection_timeout"])
                 except asyncio.TimeoutError:
-                    print("Timeout reached, shutting down job server")
-                    return
+                    await ps._close_round()
+                    break
+
             round += 1
 
     print(

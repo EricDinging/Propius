@@ -1,5 +1,5 @@
 # Server setting
-connection_timeout: 3600
+connection_timeout: 800
 
 job_manager_ip: localhost
 job_manager_port: 50002
