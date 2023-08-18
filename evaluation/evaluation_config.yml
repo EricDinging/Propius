@@ -14,9 +14,9 @@ job_private_constraint:
 client_is_uniform: True
 avg_client_rate: 10
 
-client_comm_path: './datasets/device_info/client_device_capacity'
-client_spec_path: './datasets/device_info/client_spec_speed'
-client_size_path: './datasets/device_info/client_dataset_size'
+client_comm_path: '/data/device_info/client_device_capacity'
+client_spec_path: '/data/device_info/client_spec_speed'
+client_size_path: '/data/device_info/client_dataset_size'
 
 # Job profile number
 job_profile_num : 5
@@ -34,9 +34,6 @@ job_driver_starting_port: 53000
 
 # ---Execution---
 use_cuda: True
-cuda_device:
-  - cuda:0
-  - cuda:1
 
 executor_ip: localhost
 executor_port: 49999
@@ -44,13 +41,13 @@ executor_port: 49999
 worker:
   - ip: localhost
     port: 49998
-    device: cpu
+    device: cuda:0
   - ip: localhost
     port: 49997
-    device: cpu
+    device: cuda:0
   - ip: localhost
     port: 49996
-    device: cpu
+    device: cuda:0
 
 num_worker: 1
 
@@ -62,9 +59,9 @@ test_ratio: 1
 eval_interval: 10
 
 #FEMNIST
-femnist_data_dir: ./datasets/femnist
-femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
-femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
-# femnist_data_dir: /data/FedScale/benchmark/dataset/data/femnist
-# femnist_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/train.csv
-# femnist_test_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/test.csv
+# femnist_data_dir: ./datasets/femnist
+# femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
+# femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
+femnist_data_dir: /data/FedScale/benchmark/dataset/data/femnist
+femnist_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/train.csv
+femnist_test_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/test.csv

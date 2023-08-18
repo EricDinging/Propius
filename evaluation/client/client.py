@@ -86,7 +86,6 @@ class Client:
         
         print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds")
         
-        time = 1
         await asyncio.sleep(time)
 
         compl_event = event

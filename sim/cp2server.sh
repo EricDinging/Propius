@@ -15,10 +15,13 @@
 # scp -r ./propius EricD16@clgpu011.clemson.cloudlab.us:~/Propius/
 # scp -r ./propius_job EricD16@clgpu011.clemson.cloudlab.us:~/Propius/
 
-scp -r ./docker EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
-scp -r ./evaluation EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
-scp -r ./fedscale* EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
-scp -r ./propius* EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
-scp -r ./sim EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
-scp ./*.yml EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
-scp ./*.py EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
+# scp -r ./docker EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
+# scp -r ./evaluation EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
+# scp -r ./fedscale* EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
+# scp -r ./propius* EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
+# scp -r ./sim EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
+# scp ./*.yml EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
+# scp ./*.py EricD16@c240g5-110115.wisc.cloudlab.us:~/Propius
+
+# scp -r ../FedScale EricD16@c240g5-110115.wisc.cloudlab.us:~
+# scp -r ./datasets/device_info EricD16@c240g5-110115.wisc.cloudlab.us:~

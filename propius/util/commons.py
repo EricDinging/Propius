@@ -16,11 +16,9 @@ ERROR = 4
 verbose = True
 
 def custom_print(message: str, level: int=PRINT):
-    if level == PRINT:
-        if verbose:
-            print(f"{get_time()} {message}")
-        # logging.info(message)
-    elif level == DEBUG:
+    if verbose:
+        print(f"{get_time()} {message}")
+    if level == DEBUG:
         logging.debug(message)
     elif level == INFO:
         logging.info(message)
