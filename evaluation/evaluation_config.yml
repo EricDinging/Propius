@@ -14,7 +14,7 @@ job_private_constraint:
 # client_is_uniform: True
 # avg_client_rate: 10
 
-client_num: 1000
+client_num: 100
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
@@ -44,9 +44,9 @@ worker:
   - ip: localhost
     port: 49998
     device: cpu
-  # - ip: localhost
-  #   port: 49997
-  #   device: cuda:0
+  - ip: localhost
+    port: 49997
+    device: cuda:0
   # - ip: localhost
   #   port: 49996
   #   device: cuda:0
