@@ -100,7 +100,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
 
 async def serve(gconfig):
     async def server_graceful_shutdown():
-        custom_print(f"=====Load balancer shutting down=====")
+        custom_print(f"=====Load balancer shutting down=====", WARNING)
         if load_balancer.lb_monitor:
             load_balancer.lb_monitor.report()
 
@@ -116,14 +116,14 @@ async def serve(gconfig):
     server.add_insecure_port(f'{load_balancer.ip}:{load_balancer.port}')
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.start()
-    custom_print(f"Load balancer: server started, listening on {load_balancer.ip}:{load_balancer.port}")
+    custom_print(f"Load balancer: server started, listening on {load_balancer.ip}:{load_balancer.port}", INFO)
 
     heartbeat_task = asyncio.create_task(load_balancer.heartbeat_routine())
 
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, filename='./propius/load_balancer/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.DEBUG, filename='./propius/load_balancer/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:

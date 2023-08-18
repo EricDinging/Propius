@@ -7,20 +7,23 @@ def get_time() -> str:
     format_time = current_time.strftime("%Y-%m-%d:%H:%M:%S:%f")[:-4]
     return format_time
 
-DEBUG = 0
-INFO = 1
-WARNING = 2
-ERROR = 3
+PRINT = 0
+DEBUG = 1
+INFO = 2
+WARNING = 3
+ERROR = 4
 
 verbose = True
 
-def custom_print(message: str, level: int=INFO):
-    if level == INFO:
+def custom_print(message: str, level: int=PRINT):
+    if level == PRINT:
         if verbose:
             print(f"{get_time()} {message}")
         # logging.info(message)
     elif level == DEBUG:
         logging.debug(message)
+    elif level == INFO:
+        logging.info(message)
     elif level == WARNING:
         logging.warning(message)
     else:
