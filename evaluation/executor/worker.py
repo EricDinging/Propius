@@ -348,6 +348,7 @@ async def run(config):
 
     if len(sys.argv) != 2:
         print("Usage: python evaluation/executor/worker.py <id>")
+        exit(1)
 
     id = int(sys.argv[1])
     worker = Worker(id, config)

@@ -190,9 +190,10 @@ class Worker_manager:
         elif event == AGGREGATE:
             async with self.lock:
                 agg_weight = self.job_id_agg_weight_map[job_id]
-                agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]
+                if self.job_id_agg_cnt[job_id] > 0:
+                    agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]
 
-                self.job_id_model_adapter_map[job_id].set_weights(copy.deepcopy(agg_weight))
+                    self.job_id_model_adapter_map[job_id].set_weights(copy.deepcopy(agg_weight))
                 results = {
                     "agg_number": self.job_id_agg_cnt[job_id]
                 }

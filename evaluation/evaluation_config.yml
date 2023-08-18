@@ -11,12 +11,14 @@ job_private_constraint:
 
 # ---Simulation---
 # Client check in distribution over time
-client_is_uniform: True
-avg_client_rate: 10
+# client_is_uniform: True
+# avg_client_rate: 10
 
-client_comm_path: '/data/device_info/client_device_capacity'
-client_spec_path: '/data/device_info/client_spec_speed'
-client_size_path: '/data/device_info/client_dataset_size'
+client_num: 1000
+client_avail_path: './datasets/device_info/client_behave_trace'
+client_comm_path: './datasets/device_info/client_device_capacity'
+client_spec_path: './datasets/device_info/client_spec_speed'
+client_size_path: './datasets/device_info/client_dataset_size'
 
 # Job profile number
 job_profile_num : 5
@@ -33,7 +35,7 @@ job_driver_starting_port: 53000
 # total_running_second: 1200
 
 # ---Execution---
-use_cuda: True
+use_cuda: False
 
 executor_ip: localhost
 executor_port: 49999
@@ -41,13 +43,13 @@ executor_port: 49999
 worker:
   - ip: localhost
     port: 49998
-    device: cuda:0
-  - ip: localhost
-    port: 49997
-    device: cuda:0
-  - ip: localhost
-    port: 49996
-    device: cuda:0
+    device: cpu
+  # - ip: localhost
+  #   port: 49997
+  #   device: cuda:0
+  # - ip: localhost
+  #   port: 49996
+  #   device: cuda:0
 
 num_worker: 1
 
@@ -59,9 +61,9 @@ test_ratio: 1
 eval_interval: 10
 
 #FEMNIST
-# femnist_data_dir: ./datasets/femnist
-# femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
-# femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
-femnist_data_dir: /data/FedScale/benchmark/dataset/data/femnist
-femnist_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/train.csv
-femnist_test_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/test.csv
+femnist_data_dir: ./datasets/femnist
+femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
+femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
+# femnist_data_dir: /data/FedScale/benchmark/dataset/data/femnist
+# femnist_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/train.csv
+# femnist_test_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/test.csv

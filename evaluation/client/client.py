@@ -9,6 +9,7 @@ from evaluation.job.channels import parameter_server_pb2
 from propius_client.propius_client_aio import *
 from evaluation.commons import *
 from collections import deque
+import time
 
 class Client:
     def __init__(self, client_config: dict):
@@ -29,6 +30,12 @@ class Client:
 
         self.comp_speed = client_config["computation_speed"]
         self.comm_speed = client_config["communication_speed"]
+
+        self.eval_start_time = client_config["eval_start_time"] if "eval_start_time" in client_config else time.time()
+        self.cur_time = time.time() - self.eval_start_time
+        self.active_time = client_config["active"]
+        self.inactive_time = client_config["inactive"]
+        self.cur_period = 0
     
     async def _connect_to_ps(self, ps_ip: str, ps_port: int):
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
@@ -102,36 +109,63 @@ class Client:
         while await self.execute():
             await asyncio.sleep(1)
 
-    async def cleanup_routines(self):
+    async def cleanup_routines(self, propius=False):
         try:
-            await self.propius_client_stub.close()
+            if propius:
+                await self.propius_client_stub.close()
             await self.ps_channel.close()
         except Exception:
             pass
 
     async def run(self):
         try:
-            await self.propius_client_stub.connect()
-            
-            result = await self.propius_client_stub.auto_assign(0)
+            while True:
+                if self.cur_period >= len(self.active_time):
+                    print(f"Client {self.id}: ==shutting down==")
+                    break
+                self.cur_time = time.time() - self.eval_start_time
+                if self.cur_time < self.active_time[self.cur_period]:
+                    sleep_time = self.active_time[self.cur_period] - self.cur_time
+                    print(f"Client {self.id}: sleep for {sleep_time}")
+                    await asyncio.sleep(self.active_time[self.cur_period] - self.cur_time)
+                    continue
+                elif self.cur_time >= self.inactive_time[self.cur_period]:
+                    self.cur_period += 1
+                    continue
+                
+                await self.propius_client_stub.connect()
+                
+                result = await self.propius_client_stub.auto_assign(0)
 
-            self.id, status, self.task_id, ps_ip, ps_port = result
+                self.id, status, self.task_id, ps_ip, ps_port = result
 
-            await self.propius_client_stub.close()
-            
-            if not status:
-                return
-            
-            await self._connect_to_ps(ps_ip, ps_port)
+                await self.propius_client_stub.close()
+                
+                if not status:
+                    await asyncio.sleep(10)
+                    continue
 
-            await self.event_monitor()
+                self.cur_time = time.time() - self.eval_start_time
+                remain_time = self.inactive_time[self.cur_period] - self.cur_time
+                if remain_time <= 0:
+                    continue
+                
+                await self._connect_to_ps(ps_ip, ps_port)
+                try:
+                    task = asyncio.create_task(self.event_monitor())
+                    await asyncio.wait_for(task, 
+                                           timeout=remain_time)
+                except asyncio.TimeoutError:
+                    print(f"Client {self.id}: timeout, abort")
+                    pass
+                await self.cleanup_routines()
 
         except KeyboardInterrupt:
             pass
         except Exception as e:
             print(f"Client {self.id}: {e}")
         finally:
-            await self.cleanup_routines()
+            await self.cleanup_routines(True)
         
 if __name__ == '__main__':
     config_file = './evaluation/client/client_conf.yml'
