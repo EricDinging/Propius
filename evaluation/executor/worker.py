@@ -302,6 +302,10 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         while True:
             try:
                 async with self.lock:
+                    if len(self.task_to_do) == 0:
+                        await asyncio.sleep(5)
+                        custom_print(f"Worker {self.id}: no task, sleeping")
+                        continue
                     task_conf = self.task_to_do.popleft()
                     partition = self.data_partitioner_dict[self.job_id_data_map[task_conf["job_id"]]]
                 
