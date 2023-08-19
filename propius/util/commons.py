@@ -24,7 +24,7 @@ def custom_print(message: str, level: int=PRINT):
         logging.info(message)
     elif level == WARNING:
         logging.warning(message)
-    else:
+    elif level == ERROR:
         logging.error(message)
 
 

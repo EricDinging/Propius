@@ -207,7 +207,7 @@ async def serve(gconfig):
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG, filename='./propius/scheduler/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO, filename='./propius/scheduler/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
     global_setup_file = './propius/global_config.yml'
 
