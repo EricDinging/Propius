@@ -34,7 +34,7 @@
 #     fi
 # fi
 
-scp EricD16@clgpu011.clemson.cloudlab.us:~/Propius/evaluation/result_fifo/* ./evaluation_result/result_fifo
-scp EricD16@clgpu011.clemson.cloudlab.us:~/Propius/evaluation/ps_result/* ./evaluation_result/ps_result
-scp EricD16@clgpu011.clemson.cloudlab.us:~/Propius/propius/fig/* ./evaluation_result/fig
-scp EricD16@clgpu011.clemson.cloudlab.us:~/Propius/propius/log/* ./evaluation_result/log
+scp -r EricD16@clgpu011.clemson.cloudlab.us:~/Propius/evaluation/result_fifo/ ./evaluation_result/run_1/
+scp -r EricD16@clgpu011.clemson.cloudlab.us:~/Propius/evaluation/ps_result/ ./evaluation_result/run_1/
+scp -r EricD16@clgpu011.clemson.cloudlab.us:~/Propius/propius/fig/ ./evaluation_result/run_1/
+scp -r EricD16@clgpu011.clemson.cloudlab.us:~/Propius/propius/log/ ./evaluation_result/run_1/

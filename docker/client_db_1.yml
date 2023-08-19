@@ -6,7 +6,7 @@ services:
     ports:
       - "6381:6379"
     volumes:
-        - redis_data:/data
+        - client_1_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "-h", "localhost", "-p", "6381", "ping"]
       interval: 2s
@@ -15,4 +15,4 @@ services:
       start_period: 5s
 
 volumes:
-  redis_data:
+  client_1_data:
