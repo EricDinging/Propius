@@ -152,6 +152,7 @@ class Worker_manager:
             await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
 
             while True:
+                await asyncio.sleep(10)
                 ping_msg = executor_pb2.job_task_info(
                     job_id=job_id,
                     client_id=client_id,
@@ -165,8 +166,6 @@ class Worker_manager:
                 if task_result_msg.ack:
                     results = pickle.loads(task_result_msg.result)
                     break
-
-                await asyncio.sleep(5)
 
             if event == CLIENT_TRAIN:
                 model_param = results["model_weight"]
