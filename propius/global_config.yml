@@ -25,7 +25,6 @@ scheduler_port: 50003
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2']
 sched_alg: 'fifo'
-
 max_task_offer_list_len: 10
 
 # Scheduling context
@@ -35,11 +34,11 @@ irs_epsilon: 0
 # ---Client---
 # Client data expiration time in Redis DB
 client_expire_time: 100
+
 # ---Job---
 job_expire_time: 604800 # a week
 
 # ---Constraint/spec setting---
-# Job constraint
 job_public_constraint:
   - cpu_f
   - ram
@@ -54,8 +53,6 @@ public_max:
   fp16_mem: 2800
   android_os: 15
 
-# private_max:
-#   dataset_size: 1000
-
+# ---General---
 verbose: True
 use_monitor: False

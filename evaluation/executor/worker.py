@@ -309,6 +309,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     model_weight = task_conf["model_weight"]
                     client_id = task_conf["client_id"]
                     job_id = task_conf["job_id"]
+
+                    print(f"Worker {self.id}: executing job {job_id} {event}")
                     
                     del task_conf["model_weight"]
 
@@ -331,7 +333,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     self.task_finished[job_id][key] = results
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
-            except:
+            except Exception as e:
+                print(e)
                 await asyncio.sleep(5)
     
 async def run(config):

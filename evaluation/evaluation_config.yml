@@ -10,11 +10,8 @@ job_private_constraint:
   - dataset_size
 
 # ---Simulation---
-# Client check in distribution over time
-# client_is_uniform: True
-# avg_client_rate: 10
 
-client_num: 100
+client_num: 1000
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
@@ -62,6 +59,3 @@ eval_interval: 10
 femnist_data_dir: ./datasets/femnist
 femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
 femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
-# femnist_data_dir: /data/FedScale/benchmark/dataset/data/femnist
-# femnist_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/train.csv
-# femnist_test_data_map_file: /data/FedScale/benchmark/dataset/data/femnist/client_data_mapping/test.csv

@@ -14,6 +14,7 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
     $ cd Propius
     $ conda env create -f environment.yml
     $ conda activate propius
+    $ conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=10.2 -c pytorch
     ```
 - Install docker and docker-compose
     - [docker installation guide (step 1)](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04)
