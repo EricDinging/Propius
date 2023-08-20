@@ -26,6 +26,7 @@ class SC_job_db_portal(Job_db):
         """
 
         super().__init__(gconfig, False)
+        self.start_time = time.time()
 
     def get_job_constraints(self, job_id: int) -> tuple:
         """Get job constraint values of the job in a tuple
@@ -120,7 +121,8 @@ class SC_job_db_portal(Job_db):
             return
         for doc in result.docs:
             id = doc.id
-            score = -json.loads(doc.json)["job"]["timestamp"]
+            job_time = json.loads(doc.json)["job"]["timestamp"]
+            score  = -int(job_time - self.start_time)
             custom_print(f"-------{id} {score:.3f} ", INFO)
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
