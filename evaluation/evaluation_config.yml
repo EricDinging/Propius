@@ -48,9 +48,6 @@ worker:
   # - ip: localhost
   #   port: 49996
   #   device: cuda:0
-
-num_loaders: 5
-
 test_bsz: 20
 test_ratio: 1
 
