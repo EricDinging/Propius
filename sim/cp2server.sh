@@ -18,7 +18,7 @@ scp -r ./propius ${NODENAME}:~/Propius/
 scp -r ./propius_job ${NODENAME}:~/Propius/
 
 scp -r ./docker ${NODENAME}:~/Propius
-scp -r ./evaluation ${NODENAME}:~/Propius
+scp -r ./single_evaluation ${NODENAME}:~/Propius
 scp -r ./fedscale* ${NODENAME}:~/Propius
 scp -r ./propius* ${NODENAME}:~/Propius
 scp -r ./sim ${NODENAME}:~/Propius
