@@ -34,6 +34,7 @@ isDockerNotInstalled() {
     apt-cache policy docker-ce
     sudo apt-get install -y docker-ce
     sudo systemctl status docker
+  fi
 }
 
 isDockerComposeNotInstalled() {
@@ -46,6 +47,7 @@ isDockerComposeNotInstalled() {
     curl -SL https://github.com/docker/compose/releases/download/v2.20.3/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
     chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
     docker compose version
+  fi
 }
 
 
@@ -55,7 +57,6 @@ conda init bash
 . ~/.bashrc
 conda env create -f environment.yml
 conda activate propius
-
 conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
 
 if [ "$1" == "--cuda" ]; then
@@ -67,7 +68,6 @@ if [ "$1" == "--cuda" ]; then
     export PATH=$PATH:/usr/local/cuda-10.2/
     conda install cudatoolkit=10.2 -y
 fi
-
 
 isDockerNotInstalled
 isDockerComposeNotInstalled

@@ -26,23 +26,27 @@ conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit
 - Install docker and docker-compose
     - [docker installation guide (step 1)](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04)
     - [docker compose](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)
-- Launch `redis-stack-search` docker image (for system distribution, lanuch a database instance on a specific node)
-```bash
-docker compose -f docker/job_db.yml up -d
-docker compose -f docker/client_db_0.yml up -d
-```
-- If there is an error saying that you cannot connect to docker daemon, try [this](https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue)
-    
-- Additionally, check redis server is running
-    - [Install redis-cli](https://stackoverflow.com/questions/21795340/linux-install-redis-cli-only)
-```bash
-$ redis-cli -h localhost -p 6379 ping
-$ redis-cli -h localhost -p 6380 ping
-```
+
 
 ## RoadMap
 - Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more info
 ## Usage
+### Launch Redis Database
+```bash
+source init.sh
+```
+- If there is an error saying that you cannot connect to docker daemon, try [this](https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue)
+    
+- Additionally, check Redis server is running
+    - [Install redis-cli](https://stackoverflow.com/questions/21795340/linux-install-redis-cli-only)
+```bash
+redis-cli -h localhost -p 6379 ping
+redis-cli -h localhost -p 6380 ping
+```
+### Download Dataset
+```bash
+source ./datasets/download.sh
+```
 ### Propius
 - Download dataset using FedScale (will be included in this library later)
 - Make changes to `propius/global_config.yml`
