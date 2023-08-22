@@ -60,6 +60,7 @@ async def run(gconfig):
                     "dataset_size": client_size_dict[client_idx % len(client_size_dict)]}
             
             client_config = {
+                    "id": client_idx,
                     "public_specifications": public_specs,
                     "private_specifications": private_specs,
                     "load_balancer_ip": gconfig['load_balancer_ip'],

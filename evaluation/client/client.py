@@ -13,7 +13,7 @@ import time
 
 class Client:
     def __init__(self, client_config: dict):
-        self.id = -1
+        self.id = client_config["id"]
         self.task_id = -1
         self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=True)
         self.ps_channel = None
@@ -137,7 +137,7 @@ class Client:
                 
                 result = await self.propius_client_stub.auto_assign(0)
 
-                self.id, status, self.task_id, ps_ip, ps_port = result
+                _, status, self.task_id, ps_ip, ps_port = result
 
                 await self.propius_client_stub.close()
                 
