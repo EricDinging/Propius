@@ -122,10 +122,11 @@ class Worker:
         
         while self._completed_steps < conf['local_steps']:
             try:
-                #TODO 
+                #TODO
+                custom_print(f"Worker: Client {client_id}: step {self._completed_steps}")
                 self._train_step(client_data, conf, model, optimizer, criterion)
             except Exception as ex:
-                print(ex)
+                custom_print(ex, ERROR)
                 break
         
         state_dict = model.state_dict()
