@@ -44,11 +44,11 @@ class CM_job_db_portal(Job_db):
             size: total number of jobs for analytics
         """
         try:
-            q = Query('*').sort_by('score', asc=False)
-            result = self.r.ft('job').search(q)
-
-            if result.total == 0:
+            if self.sched_alg == 'fifo':
                 q = Query('*').sort_by('timestamp', asc=True)
+                result = self.r.ft('job').search(q)
+            else: 
+                q = Query('*').sort_by('score', asc=False)
                 result = self.r.ft('job').search(q)
                 
         except Exception as e:

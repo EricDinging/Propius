@@ -44,6 +44,5 @@ fedscale/*.ckpt
 fedscale/cloud/aggregation/cache
 experiment/*
 *.csv
-*.txt
 *.png
 *.log
