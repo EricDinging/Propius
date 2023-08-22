@@ -23,12 +23,40 @@ isPackageNotInstalled() {
   fi
 }
 
+isDockerNotInstalled() {
+  docker --version &> /dev/null
+  if [ $? -eq 0 ]; then
+    echo "docker: Already installed"
+  else
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    sudo apt-get update
+    apt-cache policy docker-ce
+    sudo apt-get install -y docker-ce
+    sudo systemctl status docker
+}
+
+isDockerComposeNotInstalled() {
+  docker compose version &> /dev/null
+  if [ $? -eq 0 ]; then
+    echo "docker compose: Already installed"
+  else
+    DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+    mkdir -p $DOCKER_CONFIG/cli-plugins
+    curl -SL https://github.com/docker/compose/releases/download/v2.20.3/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+    chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+    docker compose version
+}
+
+
 isPackageNotInstalled conda
 
 conda init bash
 . ~/.bashrc
 conda env create -f environment.yml
 conda activate propius
+
+conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
 
 if [ "$1" == "--cuda" ]; then
     wget https://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_440.33.01_linux.run
@@ -40,13 +68,7 @@ if [ "$1" == "--cuda" ]; then
     conda install cudatoolkit=10.2 -y
 fi
 
-echo "Downloading FEMNIST dataset(about 327M)..."
-wget -O ./datasets/femnist.tar.gz https://fedscale.eecs.umich.edu/dataset/femnist.tar.gz
 
-echo "Dataset downloaded, now decompressing..."
-tar -xf ./datasets/femnist.tar.gz -C ./datasets
+isDockerNotInstalled
+isDockerComposeNotInstalled
 
-echo "Removing compressed file..."
-rm -f ./datasets/femnist.tar.gz
-
-echo -e "${GREEN}FEMNIST dataset downloaded!${NC}"
