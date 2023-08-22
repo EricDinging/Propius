@@ -48,26 +48,23 @@ redis-cli -h localhost -p 6380 ping
 source ./datasets/download.sh
 ```
 ### Propius
-- Download dataset using FedScale (will be included in this library later)
 - Make changes to `propius/global_config.yml`
 - Scheduler:
-    ```bash
-    $ python propius/scheduler/scheduler.py
-    ```
+```bash
+python propius/scheduler/scheduler.py
+```
 - Job manager:
-    ```bash
-    $ python propius/job_manager/job_manager.py
-    ```
+```bash
+python propius/job_manager/job_manager.py
+```
 - Client manager:
-    ```bash
-    $ python propius/client_manager/client_manager.py 0
-    $ python propius/client_manager/client_manager.py 1
-    ...
-    ```
+```bash
+python propius/client_manager/client_manager.py 0 # <id>
+```
 - Load balancer:
-    ```bash
-    $ python propius/load_balancer/load_balancer.py
-    ```
+```bash
+python propius/load_balancer/load_balancer.py
+```
 ### Interface
 - Propius' job interface is defined in `propius_job/propius_job.py`
 - Propius' client interface is defined in `propius_client/propius_client.py`
@@ -76,9 +73,24 @@ source ./datasets/download.sh
 ### Propius Simulator
 - Under construction
 ### Evaluation
-- Try out new scheduling algorithm
-- Large evaluation framework is under construction
-
+- Make changes to `evaluation/single_evaluation_config.yml`
+- Generate job trace based on the previous configuration. Only need to do it once after you change the configuration as the generated job trace will be stored in a file
+```bash
+python ./evaluation/job/generator.py
+```
+- Edit job profile in `evaluation/job/profile/`. Make sure the number of profiles matches the number specified in the configuration file.
+- Launch executor:
+```bash
+python ./evaluation/single_executor/executor.py
+```
+- Launch client dispatcher:
+```bash
+python ./evaluation/client/client_dispatcher.py
+```
+- Launch job dispatcher:
+```bash
+python ./evaluation/job/job_dispatcher.py
+```
 ### Testing
 - Under construction
 <!-- - Job:

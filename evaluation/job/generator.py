@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
         with open(f"./evaluation/job/job_trace_{total_job}.txt", "w") as file:
             job_id = 0
-            file.write(f'60 0\n')
+            file.write(f'0 0\n')
             job_id += 1
             for i in time_intervals:
                 file.write(f'{int(i)} {job_id % job_profile_num}\n')

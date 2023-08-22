@@ -1,6 +1,7 @@
 load_balancer_ip: localhost
 load_balancer_port: 50000
 
+# Make sure the constraint name is the same as configured in propius/global_config.yml
 job_public_constraint:
   - cpu_f
   - ram
@@ -28,9 +29,6 @@ avg_interval: 1800
 job_driver_ip: localhost
 job_driver_starting_port: 50010
 
-# Total simulation time
-# total_running_second: 1200
-
 # ---Execution---
 use_cuda: True
 cuda_device: cuda:0
@@ -38,10 +36,10 @@ cuda_device: cuda:0
 executor_ip: localhost
 executor_port: 49999
 
+# ---Test Setting
 test_bsz: 20
 test_ratio: 1
-
-eval_interval: 10
+eval_interval: 10 # the number of training rounds between two tests
 
 #FEMNIST
 femnist_data_dir: ./datasets/femnist
