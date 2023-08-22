@@ -10,6 +10,7 @@ from evaluation.executor.task_pool import *
 from evaluation.executor.worker_manager import *
 from evaluation.commons import *
 import os
+import logging
 
 _cleanup_coroutines = []
 
@@ -20,6 +21,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.task_pool = Task_pool(config)
         self.worker = Worker_manager(config)
         self.gconfig = gconfig
+        self.round_timeout = config['round_timeout']
 
         self.lock = asyncio.Lock()
 
@@ -39,7 +41,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                    dataset_name=job_meta["dataset"],
                                    model_name=job_meta["model"],
                                    )
-        print(f"Executor: job {job_id} registered")
+        custom_print(f"Executor: job {job_id} registered", INFO)
         return executor_pb2.register_ack(ack=True, model_size=model_size)
     
     async def JOB_REGISTER_TASK(self, request, context):
@@ -61,8 +63,12 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             task_list = self.job_task_dict[job_id]
             del self.job_task_dict[job_id]
 
-        completed, pending = await asyncio.wait(task_list, 
+        try:
+            completed, pending = await asyncio.wait(task_list,
+                                                timeout=self.round_timeout,
                                                 return_when=asyncio.ALL_COMPLETED)
+        except Exception as e:
+            custom_print(e, ERROR)
         
         for task in completed:
             try:
@@ -70,8 +76,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 await self.task_pool.report_result(job_id=job_id,
                                                     round=round,
                                                     result=results)
-            except:
-                pass
+            except Exception as e:
+                custom_print(e, ERROR)
 
     async def execute(self):
         #TODO
@@ -90,7 +96,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             del execute_meta['client_id']
             del execute_meta['event']
 
-            print(f"Executor: execute job {job_id} {event}")
+            custom_print(f"Executor: execute job {job_id} {event}", INFO)
 
             if event == JOB_FINISH:
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
@@ -174,20 +180,20 @@ async def run(config, gconfig):
     await executor.execute()
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, filename='./evaluation/executor/ex_app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
     config_file = './evaluation/evaluation_config.yml'
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
-            print("Executor read config successfully")
+            custom_print("Executor read config successfully")
             with open('./propius/global_config.yml', 'r') as gconfig:
                 gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
-                
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(run(config, gconfig))
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print(e)
+            custom_print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

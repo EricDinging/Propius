@@ -72,9 +72,6 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             job_id = self.job_total_num
             self.job_total_num += 1
 
-        custom_print(f"Job manager: job {job_id} check in, "
-              f"public constraint: {public_constraint}, "
-              f"private constraint: {private_constraint}")
         ack = self.job_db_portal.register(
             job_id=job_id,
             public_constraint=public_constraint,
@@ -84,7 +81,9 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             total_demand=est_demand *
             est_total_round,
             total_round=est_total_round)
-        custom_print(f"Job manager: ack job {job_id} register: {ack}")
+        custom_print(f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
+                     f"private constraint: {private_constraint}"
+                     , INFO)
         if ack:
             if self.jm_monitor:
                 await self.jm_monitor.job_register()
@@ -105,7 +104,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         job_id, demand = request.id, request.demand
         ack = self.job_db_portal.request(job_id=job_id, demand=demand)
         # await self.client_db_portal.cleanup()
-        custom_print(f"Job manager: ack job {job_id} round request: {ack}")
+        custom_print(f"Job manager: ack job {job_id} round request: {ack}", INFO)
         if ack:
             if self.jm_monitor:
                 await self.jm_monitor.job_request()
@@ -124,7 +123,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         job_id = request.id
         ack = self.job_db_portal.end_request(job_id=job_id)
-        custom_print(f"Job manager: ack job {job_id} end round request: {ack}")
+        custom_print(f"Job manager: ack job {job_id} end round request: {ack}", INFO)
         if self.jm_monitor:
             await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
@@ -138,7 +137,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         """
 
         job_id = request.id
-        custom_print(f"Job manager: job {job_id} completed")
+        custom_print(f"Job manager: job {job_id} completed", INFO)
         (constraints, demand, total_round, runtime, sched_latency) = \
             self.job_db_portal.finish(job_id)
 
@@ -166,7 +165,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
 async def serve(gconfig):
     async def server_graceful_shutdown():
-        custom_print(f"=====Job manager shutting down=====")
+        custom_print(f"=====Job manager shutting down=====", WARNING)
         if job_manager.jm_monitor:
             job_manager.jm_monitor.report()
         job_manager.job_db_portal.flushdb()
@@ -188,7 +187,7 @@ async def serve(gconfig):
 
     heartbeat_task = asyncio.create_task(job_manager.heartbeat_routine())
 
-    custom_print(f"Job manager: server started, listening on {job_manager.ip}:{job_manager.port}")
+    custom_print(f"Job manager: server started, listening on {job_manager.ip}:{job_manager.port}", INFO)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     await server.wait_for_termination()

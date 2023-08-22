@@ -97,10 +97,10 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             bq = bq + f"-{this_q}"
 
         # update all score
-        custom_print("Scheduler: starting to update scores")
+        custom_print("Scheduler: starting to update scores", INFO)
         for cst in self.constraints:
             try:
-                custom_print(f"Scheduler: update score for {cst}: ")
+                custom_print(f"Scheduler: update score for {cst}: ", INFO)
                 for idx, job in enumerate(constraints_job_map[cst]):
                     groupsize = len(constraints_job_map[cst])
                     self.job_db_portal.irs_update_score(
@@ -129,7 +129,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             return propius_pb2.ack(ack=False)
         client_prop = self.client_db_portal.get_client_proportion(constraint)
 
-        custom_print(f"Scheduler: upd score for {constraint}: ")
+        custom_print(f"Scheduler: upd score for {constraint}: ". INFO)
         for idx, job in enumerate(constraint_job_list):
             groupsize = len(constraint_job_list)
             self.job_db_portal.irs_update_score(
@@ -190,7 +190,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
 
 async def serve(gconfig):
     async def server_graceful_shutdown():
-        custom_print("=====Scheduler shutting down=====")
+        custom_print("=====Scheduler shutting down=====", WARNING)
         if scheduler.sc_monitor:
             scheduler.sc_monitor.report()
         await server.stop(5)
@@ -201,7 +201,8 @@ async def serve(gconfig):
     server.add_insecure_port(f'{scheduler.ip}:{scheduler.port}')
     await server.start()
     
-    custom_print(f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}")
+    custom_print(f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}",
+                 INFO)
     _cleanup_routines.append(server_graceful_shutdown())
     await server.wait_for_termination()
 

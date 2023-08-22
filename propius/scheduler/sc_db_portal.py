@@ -26,6 +26,7 @@ class SC_job_db_portal(Job_db):
         """
 
         super().__init__(gconfig, False)
+        self.start_time = time.time()
 
     def get_job_constraints(self, job_id: int) -> tuple:
         """Get job constraint values of the job in a tuple
@@ -104,7 +105,7 @@ class SC_job_db_portal(Job_db):
         try:
             self.r.execute_command(
                 'JSON.SET', f"job:{job_id}", "$.job.score", score)
-            custom_print(f"-------job:{job_id} {score:.3f} ")
+            custom_print(f"-------job:{job_id} {score:.3f} ", INFO)
         except Exception as e:
             custom_print(e, WARNING)
 
@@ -120,8 +121,9 @@ class SC_job_db_portal(Job_db):
             return
         for doc in result.docs:
             id = doc.id
-            score = -json.loads(doc.json)["job"]["timestamp"]
-            custom_print(f"-------{id} {score:.3f} ")
+            job_time = json.loads(doc.json)["job"]["timestamp"]
+            score  = -int(job_time - self.start_time)
+            custom_print(f"-------{id} {score:.3f} ", INFO)
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def random_update_all_job_score(self):
@@ -136,7 +138,7 @@ class SC_job_db_portal(Job_db):
         for doc in result.docs:
             id = doc.id
             score = random.uniform(0, 10)
-            custom_print(f"-------{id} {score:.3f} ")
+            custom_print(f"-------{id} {score:.3f} ", INFO)
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def srdf_update_all_job_score(self):
@@ -157,7 +159,7 @@ class SC_job_db_portal(Job_db):
             # if remain_demand == 0:
             #     remain_demand = job_dict['total_demand']
             score = -remain_demand
-            custom_print(f"-------{id} {score:.3f} ")
+            custom_print(f"-------{id} {score:.3f} ", INFO)
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def srtf_update_all_job_score(self, std_round_time: float):
@@ -182,7 +184,7 @@ class SC_job_db_portal(Job_db):
                     time.time() - job_dict['timestamp']) / past_round
             remain_time = remain_round * avg_round_time
             score = -remain_time
-            custom_print(f"-------{id} {score:.3f} ")
+            custom_print(f"-------{id} {score:.3f} ", INFO)
             self.r.execute_command('JSON.SET', id, "$.job.score", score)
 
     def _get_job_time(self, job_id: int) -> float:

@@ -2,7 +2,7 @@ import subprocess
 import yaml
 import time
 
-with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
+with open('./evaluation/single_evaluation_config.yml', 'r') as gyamlfile:
     gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
     ip = gconfig['job_driver_ip']
     port = int(gconfig['job_driver_starting_port'])

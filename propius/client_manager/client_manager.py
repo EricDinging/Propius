@@ -77,7 +77,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         if self.cm_monitor:
             await self.cm_monitor.client_checkin()
 
-        if task_offer_list:
+        if len(task_offer_list) > 0:
             custom_print(
                 f"Client manager {self.cm_id}: client {client_id} check in, offer: {task_offer_list}")
 
@@ -111,7 +111,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         if self.cm_monitor:
             await self.cm_monitor.client_ping()
 
-        if task_offer_list:
+        if len(task_offer_list) > 0:
             custom_print(
                 f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}")
 
@@ -146,7 +146,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         if not result:
             custom_print(
-                f"Client manager {self.cm_id}: job {task_id} over-assign")
+                f"Client manager {self.cm_id}: job {task_id} over-assign", WARNING)
             return propius_pb2.cm_ack(
                 ack=False, job_ip=pickle.dumps(""), job_port=-1)
         custom_print(
@@ -162,7 +162,7 @@ async def serve(gconfig, cm_id: int):
         if client_manager.cm_monitor:
             client_manager.cm_monitor.report(client_manager.cm_id)
         client_manager.client_db_portal.flushdb()
-        custom_print(f"=====Client manager shutting down=====")
+        custom_print(f"=====Client manager shutting down=====", WARNING)
         await server.stop(5)
 
     server = grpc.aio.server()
@@ -172,7 +172,8 @@ async def serve(gconfig, cm_id: int):
     server.add_insecure_port(f'{client_manager.ip}:{client_manager.port}')
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.start()
-    custom_print(f"Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}")
+    custom_print(f"Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}",
+                 INFO)
     await server.wait_for_termination()
 
 if __name__ == '__main__':

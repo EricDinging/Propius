@@ -11,6 +11,20 @@
 #     scp -r ./amg EricD16@clnode244.clemson.cloudlab.us:~/
 # fi
 
-scp -r ./evaluation EricD16@clgpu011.clemson.cloudlab.us:~/Propius/
-scp -r ./propius EricD16@clgpu011.clemson.cloudlab.us:~/Propius/
-scp -r ./propius_job EricD16@clgpu011.clemson.cloudlab.us:~/Propius/
+NODENAME="EricD16@clgpu011.clemson.cloudlab.us"
+
+scp -r ./evaluation ${NODENAME}:~/Propius/
+scp -r ./propius ${NODENAME}:~/Propius/
+scp -r ./propius_job ${NODENAME}:~/Propius/
+
+scp -r ./docker ${NODENAME}:~/Propius
+scp -r ./fedscale* ${NODENAME}:~/Propius
+scp -r ./propius* ${NODENAME}:~/Propius
+scp -r ./sim ${NODENAME}:~/Propius
+scp ./*.yml ${NODENAME}:~/Propius
+scp ./*.py ${NODENAME}:~/Propius
+scp ./*.sh ${NODENAME}:~/Propius
+scp -r ./datasets/device_info ${NODENAME}:~/Propius/datasets
+scp ./datasets/download.sh ${NODENAME}:~/Propius/datasets
+
+# scp -r ./datasets/device_info ${NODENAME}:~/Propius/datasets

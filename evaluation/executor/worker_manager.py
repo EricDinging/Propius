@@ -50,7 +50,7 @@ class Worker_manager:
             self.worker_stub_dict[worker_id] = executor_pb2_grpc.WorkerStub(
                 self.worker_channel_dict[worker_id]
             )
-            print(f"Worker manager: connecting to worker {worker_id} at {worker_ip}:{worker_port}")
+            custom_print(f"Worker manager: connecting to worker {worker_id} at {worker_ip}:{worker_port}", INFO)
     
     async def _disconnect(self):
         for worker_channel in self.worker_channel_dict.values():
@@ -112,7 +112,7 @@ class Worker_manager:
         for worker_stub in self.worker_stub_dict.values():
             await worker_stub.INIT(job_info_msg)
 
-        print(f"Worker manager: init job {job_id} success")
+        custom_print(f"Worker manager: init job {job_id} success", INFO)
 
         return model_size
         
@@ -128,7 +128,7 @@ class Worker_manager:
                     status_list.append(worker_status_msg.task_size)
                 
                 # self.cur_worker = status_list.index(min(status_list))
-                print(f"Worker manager: current worker {self.cur_worker}")
+                custom_print(f"Worker manager: current worker {self.cur_worker}", INFO)
         except asyncio.CancelledError:
             pass
 
@@ -152,6 +152,7 @@ class Worker_manager:
             await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
 
             while True:
+                await asyncio.sleep(10)
                 ping_msg = executor_pb2.job_task_info(
                     job_id=job_id,
                     client_id=client_id,
@@ -166,19 +167,20 @@ class Worker_manager:
                     results = pickle.loads(task_result_msg.result)
                     break
 
-                await asyncio.sleep(5)
-
             if event == CLIENT_TRAIN:
                 model_param = results["model_weight"]
                 async with self.lock:
-                    self.job_id_agg_cnt[job_id] += 1
+                    try:
+                        self.job_id_agg_cnt[job_id] += 1
 
-                    agg_weight = self.job_id_agg_weight_map[job_id]
-                    if self.job_id_agg_cnt[job_id] == 1:
-                        agg_weight = model_param
-                    else:
-                        agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
-                    self.job_id_agg_weight_map[job_id] = agg_weight
+                        agg_weight = self.job_id_agg_weight_map[job_id]
+                        if self.job_id_agg_cnt[job_id] == 1:
+                            agg_weight = model_param
+                        else:
+                            agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
+                        self.job_id_agg_weight_map[job_id] = agg_weight
+                    except Exception as e:
+                        custom_print(e, ERROR)
 
                 results = {CLIENT_TRAIN+str(client_id): results}
             
@@ -189,14 +191,18 @@ class Worker_manager:
 
         elif event == AGGREGATE:
             async with self.lock:
-                agg_weight = self.job_id_agg_weight_map[job_id]
-                agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]
+                try:
+                    agg_weight = self.job_id_agg_weight_map[job_id]
+                    if self.job_id_agg_cnt[job_id] > 0:
+                        agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]
 
-                self.job_id_model_adapter_map[job_id].set_weights(copy.deepcopy(agg_weight))
-                results = {
-                    "agg_number": self.job_id_agg_cnt[job_id]
-                }
-                self.job_id_agg_cnt[job_id] = 0
+                        self.job_id_model_adapter_map[job_id].set_weights(copy.deepcopy(agg_weight))
+                    results = {
+                        "agg_number": self.job_id_agg_cnt[job_id]
+                    }
+                    self.job_id_agg_cnt[job_id] = 0
+                except Exception as e:
+                    custom_print(e, ERROR)
 
             results = {AGGREGATE: results}
 

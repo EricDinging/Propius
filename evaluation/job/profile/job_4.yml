@@ -1,5 +1,5 @@
 # Server setting
-connection_timeout: 3600
+connection_timeout: 800
 
 job_manager_ip: localhost
 job_manager_port: 50002
@@ -14,7 +14,7 @@ engine: pytorch
 model: mobilenet
 dataset: femnist
 learning_rate: 0.05
-num_loaders: 6
+num_loaders: 1
 local_steps: 10
 loss_decay: 0.95
 batch_size: 20

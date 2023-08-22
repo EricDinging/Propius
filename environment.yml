@@ -10,6 +10,4 @@ dependencies:
   - numpy
   - matplotlib
   - redis-py
-  - pytorch
-  - torchvision
   - pandas
