@@ -94,6 +94,7 @@ class Worker:
             loss.backward()
             optimizer.step()
 
+            custom_print(f"Worker: step {self._completed_steps} completed")
             self._completed_steps += 1
 
             if self._completed_steps == conf['local_steps']:
@@ -122,8 +123,6 @@ class Worker:
         
         while self._completed_steps < conf['local_steps']:
             try:
-                #TODO
-                custom_print(f"Worker: Client {client_id}: step {self._completed_steps}")
                 self._train_step(client_data, conf, model, optimizer, criterion)
             except Exception as ex:
                 custom_print(ex, ERROR)

@@ -74,7 +74,7 @@ python propius/load_balancer/load_balancer.py
 - Under construction
 ### Evaluation
 - Make changes to `evaluation/single_evaluation_config.yml`
-- Generate job trace based on the previous configuration. Only need to do it once after you change the configuration as the generated job trace will be stored in a file
+- Generate job trace based on the previous configuration
 ```bash
 python ./evaluation/job/generator.py
 ```
