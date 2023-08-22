@@ -1,0 +1,1 @@
+Load balancer: avg request per second: 0.192, max request per second: 5
