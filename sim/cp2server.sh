@@ -11,7 +11,7 @@
 #     scp -r ./amg EricD16@clnode244.clemson.cloudlab.us:~/
 # fi
 
-NODENAME="EricD16@clgpu011.clemson.cloudlab.us"
+NODENAME="ericding@ampere05.eecs.umich.edu"
 
 scp -r ./evaluation ${NODENAME}:~/Propius/
 scp -r ./propius ${NODENAME}:~/Propius/
@@ -24,7 +24,5 @@ scp -r ./sim ${NODENAME}:~/Propius
 scp ./*.yml ${NODENAME}:~/Propius
 scp ./*.py ${NODENAME}:~/Propius
 scp ./*.sh ${NODENAME}:~/Propius
-# scp -r ./datasets/device_info ${NODENAME}:~/Propius/datasets
-# scp ./datasets/download.sh ${NODENAME}:~/Propius/datasets
-
-# scp -r ./datasets/device_info ${NODENAME}:~/Propius/datasets
+scp -r ./datasets/device_info ${NODENAME}:~/Propius/datasets
+scp ./datasets/download.sh ${NODENAME}:~/Propius/datasets

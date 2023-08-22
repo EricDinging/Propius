@@ -79,7 +79,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         if len(task_offer_list) > 0:
             custom_print(
-                f"Client manager {self.cm_id}: client {client_id} check in, offer: {task_offer_list}")
+                f"Client manager {self.cm_id}: client {client_id} check in, offer: {task_offer_list}", INFO)
 
         return propius_pb2.cm_offer(
             client_id=client_id,
