@@ -1,6 +1,6 @@
 name: propius
 channels:
-  - main
+  - conda-forge
 dependencies:
   - python=3.9
   - pip
