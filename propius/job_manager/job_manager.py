@@ -180,10 +180,10 @@ async def serve(gconfig):
             custom_print(e, WARNING)
         await server.stop(5)
 
-    def sigterm_handler(signum, frame):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(server_graceful_shutdown())
-        loop.stop()
+    # def sigterm_handler(signum, frame):
+    #     loop = asyncio.get_event_loop()
+    #     loop.run_until_complete(server_graceful_shutdown())
+    #     loop.stop()
 
     server = grpc.aio.server()
     job_manager = Job_manager(gconfig)
@@ -196,7 +196,7 @@ async def serve(gconfig):
     custom_print(f"Job manager: server started, listening on {job_manager.ip}:{job_manager.port}", INFO)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
-    signal.signal(signal.SIGTERM, sigterm_handler)
+    # signal.signal(signal.SIGTERM, sigterm_handler)
 
     await server.wait_for_termination()
 

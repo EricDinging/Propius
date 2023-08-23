@@ -196,10 +196,10 @@ async def serve(gconfig):
             scheduler.sc_monitor.report()
         await server.stop(5)
 
-    def sigterm_handler(signum, frame):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(server_graceful_shutdown())
-        loop.stop()
+    # def sigterm_handler(signum, frame):
+    #     loop = asyncio.get_event_loop()
+    #     loop.run_until_complete(server_graceful_shutdown())
+    #     loop.stop()
     
     server = grpc.aio.server()
     scheduler = Scheduler(gconfig)
@@ -210,7 +210,7 @@ async def serve(gconfig):
     custom_print(f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}",
                  INFO)
     _cleanup_routines.append(server_graceful_shutdown())
-    signal.signal(signal.SIGTERM, sigterm_handler)
+    # signal.signal(signal.SIGTERM, sigterm_handler)
     await server.wait_for_termination()
 
 if __name__ == '__main__':

@@ -7,6 +7,9 @@ services:
       dockerfile: ./propius/scheduler/Dockerfile
     volumes:
       - ./propius/scheduler:/propius/scheduler
+    depends_on:
+      - job_db
+      - client_db_0
     stop_signal: SIGINT
 
   job_manager:
@@ -17,8 +20,33 @@ services:
       - "50002:50002"
     volumes:
       - ./propius/job_manager:/propius/job_manager
+    depends_on:
+      - scheduler
+    stop_signal: SIGINT
+
+  client_manager_0:
+    build:
+      context: .
+      dockerfile: ./propius/client_manager/Dockerfile
+    volumes:
+      - ./propius/client_manager:/propius/client_manager
+    depends_on:
+      - job_db
+      - client_db_0
     stop_signal: SIGINT
   
+  load_balancer:
+    build:
+      context: .
+      dockerfile: ./propius/load_balancer/Dockerfile
+    ports:
+      - "50000:50000"
+    volumes:
+      - ./propius/load_balancer:/propius/load_balancer
+    depends_on:
+      - client_manager_0
+    stop_signal: SIGINT
+
   job_db:
     image: redis/redis-stack-server:latest
     ports:

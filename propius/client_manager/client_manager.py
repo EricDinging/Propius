@@ -114,7 +114,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         if len(task_offer_list) > 0:
             custom_print(
-                f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}")
+                f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}", INFO)
 
         return propius_pb2.cm_offer(
             client_id=-1,
@@ -151,7 +151,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             return propius_pb2.cm_ack(
                 ack=False, job_ip=pickle.dumps(""), job_port=-1)
         custom_print(
-            f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}")
+            f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}", INFO)
         return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]),
                                   job_port=result[1])
     
@@ -193,7 +193,7 @@ if __name__ == '__main__':
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
             cm_id = int(sys.argv[1])
-            custom_print(f"Client manager {cm_id} read config successfully")
+            custom_print(f"Client manager {cm_id} read config successfully", INFO)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, cm_id))
         except KeyboardInterrupt:

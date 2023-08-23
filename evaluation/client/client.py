@@ -134,7 +134,7 @@ class Client:
                     continue
                 
                 await self.propius_client_stub.connect()
-                
+
                 result = await self.propius_client_stub.auto_assign(0)
 
                 _, status, self.task_id, ps_ip, ps_port = result
