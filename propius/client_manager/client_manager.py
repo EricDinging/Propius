@@ -10,6 +10,7 @@ import yaml
 import grpc
 import logging
 import asyncio
+import time
 
 _cleanup_coroutines = []
 
@@ -177,7 +178,11 @@ async def serve(gconfig, cm_id: int):
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, filename='./propius/client_manager/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO,
+                        filename='./propius/client_manager/app.log',
+                        filemode='w',
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',)
     global_setup_file = './propius/global_config.yml'
 
     if len(sys.argv) != 2:

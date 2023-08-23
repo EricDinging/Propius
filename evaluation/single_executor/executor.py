@@ -10,6 +10,7 @@ from evaluation.single_executor.task_pool import *
 from evaluation.single_executor.worker import *
 from evaluation.commons import *
 import os
+import time
 
 _cleanup_coroutines = []
 
@@ -121,7 +122,11 @@ async def run(config, gconfig):
 
 if __name__ == '__main__':
     config_file = './evaluation/single_evaluation_config.yml'
-    logging.basicConfig(level=logging.INFO, filename='./evaluation/single_executor/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO,
+                        filename='./evaluation/single_executor/app.log',
+                        filemode='w', 
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',)
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)

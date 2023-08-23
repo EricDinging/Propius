@@ -1,6 +1,2 @@
-services:
-  scheduler:
-    build: ./propius/scheduler
-    volumes:
-      - ./propius/scheduler:/propius/scheduler
+
   
