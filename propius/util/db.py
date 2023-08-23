@@ -6,6 +6,7 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from redis.commands.search.query import NumericFilter, Query
 import time
 import json
+from commons import *
 
 
 class Job_db:
@@ -67,7 +68,7 @@ class Job_db:
                     schema, definition=IndexDefinition(
                         prefix=["job:"], index_type=IndexType.JSON))
             except Exception as e:
-                print(e)
+                custom_print(e, ERROR)
                 pass
 
     def flushdb(self):

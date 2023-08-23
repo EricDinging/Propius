@@ -7,13 +7,17 @@ services:
       dockerfile: ./propius/scheduler/Dockerfile
     volumes:
       - ./propius/scheduler:/propius/scheduler
+    stop_signal: SIGINT
 
   job_manager:
     build:
       context: .
       dockerfile: ./propius/job_manager/Dockerfile
+    ports:
+      - "50002:50002"
     volumes:
       - ./propius/job_manager:/propius/job_manager
+    stop_signal: SIGINT
   
   job_db:
     image: redis/redis-stack-server:latest
@@ -27,6 +31,7 @@ services:
       timeout: 1m30s
       retries: 5
       start_period: 5s
+
   client_db_0:
     image: redis/redis-stack-server:latest
     ports:
