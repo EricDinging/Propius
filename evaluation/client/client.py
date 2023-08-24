@@ -53,11 +53,13 @@ class Client:
             self.meta_queue.append(meta)
             self.data_queue.append(data)
         
-    async def client_ping(self):
+    async def client_ping(self)->bool:
         client_id_msg = parameter_server_pb2.client_id(id=self.id)
         server_response = await self.ps_stub.CLIENT_PING(client_id_msg)
-
+        if server_response.event == DUMMY_EVENT:
+            return True
         await self.handle_server_response(server_response)
+        return False
     
     async def client_execute_complete(self, compl_event: str, status: bool, meta: str, data: str):
         client_complete_msg = parameter_server_pb2.client_complete(
@@ -105,7 +107,8 @@ class Client:
 
     async def event_monitor(self):
         print(f"Client {self.id}: ping")
-        await self.client_ping()
+        while await self.client_ping():
+            await asyncio.sleep(3)
         while await self.execute():
             await asyncio.sleep(1)
 
