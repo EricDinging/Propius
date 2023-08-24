@@ -38,6 +38,10 @@ We use docker compose to containerize components (job manager, scheduler, client
 ```bash
 docker compose -f compose.yml up # -d if want to run Propius in background
 ```
+- Shut down
+```bash
+docker compose -f compose.yml down
+```
 ### Launch Redis Database
 ```bash
 source init.sh
