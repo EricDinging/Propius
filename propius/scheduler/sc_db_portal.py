@@ -44,6 +44,7 @@ class SC_job_db_portal(Job_db):
             return tuple(constraint_list)
         except Exception as e:
             custom_print(e, ERROR)
+            return None
 
     def get_job_list(self, public_constraint: tuple,
                      constraints_job_list: list) -> bool:
@@ -134,7 +135,6 @@ class SC_job_db_portal(Job_db):
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
             custom_print(e, ERROR)
-            return
 
     def random_update_all_job_score(self):
         """Give every job which doesn't have a score yet a score of
@@ -154,7 +154,6 @@ class SC_job_db_portal(Job_db):
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
             custom_print(e, ERROR)
-            return
 
     def srdf_update_all_job_score(self):
         """Give every job a score of -remaining demand.
@@ -178,7 +177,6 @@ class SC_job_db_portal(Job_db):
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
             custom_print(e, ERROR)
-            return
 
     def srtf_update_all_job_score(self, std_round_time: float):
         """Give every job a score of -remaining time
@@ -206,7 +204,6 @@ class SC_job_db_portal(Job_db):
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
             custom_print(e, ERROR)
-            return
 
     def _get_job_time(self, job_id: int) -> float:
         id = f"job:{job_id}"
@@ -247,12 +244,12 @@ class SC_client_db_portal(Client_db):
     def get_client_size(self) -> int:
         """Get client dataset size
         """
+        num = 0
         try:
             info = self.r.ft('client').info()
             num = int(info['num_docs'])
         except Exception as e:
             custom_print(e, ERROR)
-            return 0
 
         return num
 
