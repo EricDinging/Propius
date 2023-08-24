@@ -21,11 +21,13 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.task_pool = Task_pool(config)
         self.worker = Worker_manager(config)
         self.gconfig = gconfig
+        self.config = config
         self.round_timeout = config['round_timeout']
 
         self.lock = asyncio.Lock()
 
-        self.job_task_dict = {}
+        self.job_train_task_dict = {}
+        self.job_test_task_dict = {}
 
         result_dict = f"./evaluation/result_{self.gconfig['sched_alg']}"
         if not os.path.exists(result_dict):
@@ -55,13 +57,51 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                              event=event,
                                              task_meta=task_meta)
         return executor_pb2.ack(ack=True)
+
+    async def wait_for_testing_task(self, job_id:int, round: int):
+        async with self.lock:
+            if job_id not in self.job_test_task_dict:
+                return
+            task_list = self.job_test_task_dict[job_id]
+            del self.job_test_task_dict[job_id]
+
+        try:
+            completed, pending = await asyncio.wait(task_list,
+                                                    timeout=self.round_timeout,
+                                                    return_when=asyncio.ALL_COMPLETED)
+        except Exception as e:
+            custom_print(e, ERROR)
+        
+        aggregate_test_result = {
+            "test_loss": 0,
+            "acc": 0,
+            "acc_5": 0,
+            "test_len": 0
+        }
+
+        for task in completed:
+            try:
+                results = await task
+                for key in aggregate_test_result.keys():
+                    aggregate_test_result[key] += results[key]
+                
+            except Exception as e:
+                custom_print(e, ERROR)
+        
+        for key in aggregate_test_result.keys():
+            if key != "test_len":
+                aggregate_test_result[key] /= aggregate_test_result["test_len"]
+        
+        await self.task_pool.report_result(job_id=job_id,
+                                            round=round,
+                                            result=results)
     
     async def wait_for_training_task(self, job_id:int, round: int):
         async with self.lock:
-            if job_id not in self.job_task_dict:
+            if job_id not in self.job_train_task_dict:
                 return
-            task_list = self.job_task_dict[job_id]
-            del self.job_task_dict[job_id]
+            task_list = self.job_train_task_dict[job_id]
+            del self.job_train_task_dict[job_id]
 
         try:
             completed, pending = await asyncio.wait(task_list,
@@ -131,16 +171,17 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 
-                results = await self.worker.execute(
-                    event=MODEL_TEST,
-                    job_id=job_id,
-                    client_id=client_id,
-                    args=execute_meta
-                )
-
-                await self.task_pool.report_result(job_id=job_id,
-                                                    round=execute_meta['round'],
-                                                    result=results)
+                async with self.lock:
+                    if job_id not in self.job_task_dict:
+                        self.job_task_dict[job_id] = []
+                    for i in range(self.config["client_test_num"]):
+                        task = asyncio.create_task(
+                            self.worker.execute(event=MODEL_TEST,
+                                                job_id=job_id,
+                                                client_id=i,
+                                                args=execute_meta)
+                        )
+                        self.job_task_dict[job_id].append(task)
 
             elif event == AGGREGATE:
                 # wait for all pending training task to complete
