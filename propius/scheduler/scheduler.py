@@ -52,7 +52,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         self.constraints = []
         self.public_constraint_name = gconfig['job_public_constraint']
 
-        self.sc_monitor = SC_monitor(self.sched_alg) if gconfig["use_monitor"] else None
+        self.sc_monitor = SC_monitor(self.sched_alg, gconfig['plot'])
 
     async def _irs_score(self, job_id: int):
         """Update all jobs' score in database according to IRS
@@ -145,8 +145,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         """
         job_id = request.id
         
-        if self.sc_monitor:
-            await self.sc_monitor.request_start(job_id)
+        await self.sc_monitor.request(job_id)
 
         job_size = self.job_db_portal.get_job_size()
 
@@ -180,9 +179,6 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             # Prioritize job with the shortest remaining demand
             self.job_db_portal.srtf_update_all_job_score(self.std_round_time)
 
-        if self.sc_monitor:
-            await self.sc_monitor.request_end(job_id, job_size)
-
         return propius_pb2.ack(ack=True)
     
     async def HEART_BEAT(self, request, context):
@@ -192,8 +188,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
 async def serve(gconfig):
     async def server_graceful_shutdown():
         custom_print("=====Scheduler shutting down=====", WARNING)
-        if scheduler.sc_monitor:
-            scheduler.sc_monitor.report()
+        scheduler.sc_monitor.report()
         await server.stop(5)
 
     # def sigterm_handler(signum, frame):

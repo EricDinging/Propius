@@ -43,7 +43,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.sched_alg = gconfig['sched_alg']
         self.client_db_portal = CM_client_db_portal(gconfig, self.cm_id)
         self.job_db_portal = CM_job_db_portal(gconfig)
-        self.cm_monitor = CM_monitor(self.sched_alg) if gconfig['use_monitor'] else None
+        self.cm_monitor = CM_monitor(self.sched_alg, gconfig['plot'])
         self.max_client_num = gconfig['client_manager_id_weight']
         self.lock = asyncio.Lock()
         self.client_num = 0
@@ -75,8 +75,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
             public_specification, self.sched_alg)
         
-        if self.cm_monitor:
-            await self.cm_monitor.client_checkin()
+        await self.cm_monitor.client_checkin()
 
         if len(task_offer_list) > 0:
             custom_print(
@@ -109,8 +108,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
             public_specification, self.sched_alg)
 
-        if self.cm_monitor:
-            await self.cm_monitor.client_ping()
+        await self.cm_monitor.client_ping()
 
         if len(task_offer_list) > 0:
             custom_print(
@@ -142,8 +140,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         client_id, task_id = request.client_id, request.task_id
         result = self.job_db_portal.incr_amount(task_id)
 
-        if self.cm_monitor:
-            await self.cm_monitor.client_accept(result != None)
+        await self.cm_monitor.client_accept(result != None)
 
         if not result:
             custom_print(
@@ -160,10 +157,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
 async def serve(gconfig, cm_id: int):
     async def server_graceful_shutdown():
-        if client_manager.cm_monitor:
-            client_manager.cm_monitor.report(client_manager.cm_id)
-        client_manager.client_db_portal.flushdb()
         custom_print(f"=====Client manager shutting down=====", WARNING)
+        client_manager.cm_monitor.report(client_manager.cm_id)
+        client_manager.client_db_portal.flushdb()
         await server.stop(5)
 
     server = grpc.aio.server()

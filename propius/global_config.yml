@@ -56,4 +56,4 @@ public_max:
 
 # ---General---
 verbose: True
-use_monitor: False
+plot: False
