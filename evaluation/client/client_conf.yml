@@ -9,7 +9,7 @@ public_specifications:
 private_specifications:
     dataset_size: 101
 
-load_balancer_ip: 
+load_balancer_ip: localhost
 load_balancer_port: 50000 
 # TODO
 task: cv

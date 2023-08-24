@@ -23,9 +23,12 @@ class Job_db:
                 job_expire_time:
             is_jm: a bool indicating whether the user of the database is job manager
         """
-
-        host = gconfig['job_db_ip']
-        port = int(gconfig['job_db_port'])
+        if gconfig['use_docker']:
+            host = 'job_db'
+            port = 6379
+        else:
+            host = gconfig['job_db_ip']
+            port = int(gconfig['job_db_port'])
         self.r = redis.Redis(host=host, port=port)
         self.sched_alg = gconfig['sched_alg']
         self.gconfig = gconfig
@@ -94,9 +97,12 @@ class Client_db:
             cm_id: id of the client manager is the user is client manager
             is_cm: bool indicating whether the user is client manager
         """
-
-        host = gconfig['client_manager'][cm_id]['ip']
-        port = gconfig['client_manager'][cm_id]['client_db_port']
+        if gconfig['use_docker']:
+            host = f'client_db_{cm_id}'
+            port = 6379
+        else:
+            host = gconfig['client_manager'][cm_id]['ip']
+            port = gconfig['client_manager'][cm_id]['client_db_port']
         self.r = redis.Redis(host=host, port=port)
         self.start_time = int(time.time())
         self.client_exp_time = int(gconfig['client_expire_time'])

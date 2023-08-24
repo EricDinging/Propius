@@ -34,7 +34,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
                 scheduler_ip
                 scheduler_port
         """
-
+        self.gconfig = gconfig
         self.ip = gconfig['job_manager_ip']
         self.port = int(gconfig['job_manager_port'])
         self.job_db_portal = JM_job_db_portal(gconfig)
@@ -50,6 +50,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.job_total_num = 0
 
     def _connect_sched(self, sched_ip: str, sched_port: int) -> None:
+        if self.gconfig['use_docker']:
+            sched_ip = 'scheduler'
         self.sched_channel = grpc.aio.insecure_channel(
             f'{sched_ip}:{sched_port}')
         self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
