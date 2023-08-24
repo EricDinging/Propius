@@ -140,6 +140,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
 
             if event == JOB_FINISH:
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
+                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
 
                 await self.task_pool.gen_report(job_id=job_id,
                                                 sched_alg=self.gconfig["sched_alg"])
@@ -154,7 +155,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             
             elif event == CLIENT_TRAIN:
                 # create asyncio task for training task
-     
+                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round']-1)
+
                 task = asyncio.create_task(
                     self.worker.execute(event=CLIENT_TRAIN,
                                           job_id=job_id,
