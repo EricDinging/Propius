@@ -31,6 +31,13 @@ conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit
 ## RoadMap
 - Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more info
 ## Usage
+### Quick setup
+We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network. The config is specified in `./compose.yml`.
+- Edit `./compose.yml`. By default, the interfacing port of load balancer (client interface) is `50000`, and the interfacing port of job manager (job interface) is `50002`
+- Run docker compose
+```bash
+docker compose -f compose.yml up # -d if want to run Propius in background
+```
 ### Launch Redis Database
 ```bash
 source init.sh
@@ -65,14 +72,12 @@ python propius/client_manager/client_manager.py 0 # <id>
 ```bash
 python propius/load_balancer/load_balancer.py
 ```
-### Interface
+## Interface
 - Propius' job interface is defined in `propius_job/propius_job.py`
 - Propius' client interface is defined in `propius_client/propius_client.py`
 - Refer to `test_job/parameter_server/parameter_server.py` and `test_client/client.py` to get an idea how your FL job and FL client can utilize Propius
 
-### Propius Simulator
-- Under construction
-### Evaluation
+## Evaluation
 - Make changes to `evaluation/single_evaluation_config.yml`
 - Generate job trace based on the previous configuration. The trace file won't be generated if it already exists
 ```bash
@@ -91,7 +96,7 @@ python ./evaluation/client/client_dispatcher.py
 ```bash
 python ./evaluation/job/job_dispatcher.py
 ```
-### Testing
+## Testing
 - Under construction
 <!-- - Job:
     - Edit `test_job/parameter_server/test_profile.yml` file
