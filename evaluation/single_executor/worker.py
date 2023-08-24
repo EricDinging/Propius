@@ -284,13 +284,26 @@ class Worker:
                 self.job_id_agg_cnt[job_id] = 0
 
             elif event == MODEL_TEST:
-                results = self._test(
-                    client_id=client_id,
-                    partition=self.test_data_partition_dict[self.job_id_data_map[job_id]],
-                    model=self.job_id_model_adapter_map[job_id].get_model(),
-                    conf=args,
-                )
+                aggregate_test_result = {
+                    "test_loss": 0,
+                    "acc": 0,
+                    "acc_5": 0,
+                    "test_len": 0
+                }
+
+                for i in range(self.config['client_test_num']):
+                    results = self._test(
+                        client_id=i,
+                        partition=self.test_data_partition_dict[self.job_id_data_map[job_id]],
+                        model=self.job_id_model_adapter_map[job_id].get_model(),
+                        conf=args,
+                    )
+                    for key in aggregate_test_result.keys():
+                        aggregate_test_result[key] += results[key]
             
-            return results
-            
+                for key in aggregate_test_result.keys():
+                    if key != "test_len":
+                        aggregate_test_result[key] /= aggregate_test_result["test_len"]
+        
+            return aggregate_test_result
 

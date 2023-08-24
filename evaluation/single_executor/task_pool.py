@@ -21,15 +21,14 @@ class Task_pool:
 
             self.job_task_dict[job_id] = deque()
             test_task_meta = {
-                "client_id": random.randint(0, 10000),
+                "client_id": -1,
                 "round": 0,
                 "event": MODEL_TEST,
                 "test_ratio": self.config["test_ratio"],
                 "test_bsz": self.config["test_bsz"]
             }
             self.job_task_dict[job_id].append(test_task_meta)
-            
-    
+
     async def insert_job_task(self, job_id: int, client_id: int, round: int, event: str, task_meta: dict):
         """event: {CLIENT_TRAIN, AGGREGATE, FINISH}
         """
@@ -42,7 +41,7 @@ class Task_pool:
             assert job_id in self.job_task_dict
 
             test_task_meta = {
-                    "client_id": random.randint(0, 10000),
+                    "client_id": -1,
                     "round": task_meta["round"],
                     "event": MODEL_TEST,
                     "test_ratio": self.config["test_ratio"],
@@ -56,7 +55,7 @@ class Task_pool:
 
             if event == AGGREGATE and round % self.config["eval_interval"] == 0:
                 test_task_meta = {
-                    "client_id": random.randint(0, 10000),
+                    "client_id": -1,
                     "round": task_meta["round"],
                     "event": MODEL_TEST,
                     "test_ratio": self.config["test_ratio"],
