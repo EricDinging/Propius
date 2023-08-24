@@ -96,6 +96,9 @@ class JM_job_db_portal(Job_db):
                     return True
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    custom_print(e, ERROR)
+                    return False
 
     def request(self, job_id: int, demand: int) -> bool:
         """Update job metadata based on request. 
@@ -135,6 +138,9 @@ class JM_job_db_portal(Job_db):
                     return True
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    custom_print(e, ERROR)
+                    return False
 
     def end_request(self, job_id: int) -> bool:
         """Update job metadata based on end request. 
@@ -171,6 +177,9 @@ class JM_job_db_portal(Job_db):
                     return True
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    custom_print(e, ERROR)
+                    return False
 
     def finish(self, job_id: int) -> tuple[tuple, int, int, float, float]:
         """Remove the job from database. 
@@ -218,3 +227,6 @@ class JM_job_db_portal(Job_db):
                         sched_latency)
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    custom_print(e, ERROR)
+                    return (None, None, None, None, None)
