@@ -40,7 +40,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
             self.cm_stub_dict[cm_id] = propius_pb2_grpc.Client_managerStub(
                 self.cm_channel_dict[cm_id])
             custom_print(
-                f"Load balancer: connecting to client manager {cm_id} at {cm_ip}:{cm_port}")
+                f"Load balancer: connecting to client manager {cm_id} at {cm_ip}:{cm_port}", INFO)
 
     async def _disconnect_cm(self):
         async with self.lock:
@@ -57,7 +57,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
                 await self.lb_monitor.request()
             self.idx %= len(self.cm_channel_dict)
             custom_print(
-                f"Load balancer: client check in, route to client manager {self.idx}")
+                f"Load balancer: client check in, route to client manager {self.idx}", INFO)
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
             self._next_idx()
         return return_msg
@@ -68,7 +68,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
                 await self.lb_monitor.request()
             idx = int(request.id / self.id_weight)
             custom_print(
-                f"Load balancer: client ping, route to client manager {idx}")
+                f"Load balancer: client ping, route to client manager {idx}", INFO)
             return_msg = await self.cm_stub_dict[idx].CLIENT_PING(request)
         return return_msg
 
@@ -123,13 +123,18 @@ async def serve(gconfig):
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, filename='./propius/load_balancer/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO,
+                        filename='./propius/load_balancer/app.log',
+                        filemode='w',
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',)
+    
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            custom_print(f"Load balancer read config successfully")
+            custom_print(f"Load balancer read config successfully", INFO)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig))
         except KeyboardInterrupt:

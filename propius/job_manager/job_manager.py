@@ -11,6 +11,7 @@ import pickle
 import yaml
 import grpc
 import logging
+import signal
 
 _cleanup_coroutines = []
 
@@ -53,7 +54,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             f'{sched_ip}:{sched_port}')
         self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
         custom_print(
-            f"Job manager: connecting to scheduler at {sched_ip}:{sched_port}")
+            f"Job manager: connecting to scheduler at {sched_ip}:{sched_port}", INFO)
 
     async def JOB_REGIST(self, request, context):
         """Insert job registration into database, return job_id assignment, and ack
@@ -179,6 +180,11 @@ async def serve(gconfig):
             custom_print(e, WARNING)
         await server.stop(5)
 
+    # def sigterm_handler(signum, frame):
+    #     loop = asyncio.get_event_loop()
+    #     loop.run_until_complete(server_graceful_shutdown())
+    #     loop.stop()
+
     server = grpc.aio.server()
     job_manager = Job_manager(gconfig)
     propius_pb2_grpc.add_Job_managerServicer_to_server(job_manager, server)
@@ -190,16 +196,22 @@ async def serve(gconfig):
     custom_print(f"Job manager: server started, listening on {job_manager.ip}:{job_manager.port}", INFO)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
+    # signal.signal(signal.SIGTERM, sigterm_handler)
+
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, filename='./propius/job_manager/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO,
+                        filename='./propius/job_manager/app.log',
+                        filemode='w',
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',)
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            custom_print(f"Job manager read config successfully")
+            custom_print(f"Job manager read config successfully", INFO)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig))
         except KeyboardInterrupt:

@@ -1,0 +1,2 @@
+Client manager: avg request per second: 10.567, max request per second: 24
+Client manager 0: check in 298450, ping 0, accept 44507, over-assign 0

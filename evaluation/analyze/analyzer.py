@@ -11,10 +11,10 @@ with open(global_config_file, 'r') as gconfig:
 
 sched_alg = gconfig['sched_alg']
 
-ps_folder = f'./evaluation_result/ps_result'
-executor_folder = f'./evaluation_result/result_{sched_alg}'
+ps_folder = f'./evaluation_result/run_1_fifo/ps_result'
+executor_folder = f'./evaluation_result/run_1_fifo/'
 
-plot_folder = f'./evaluation/analyze/plot'
+plot_folder = f'./evaluation_result/run_1_fifo/plot'
 
 # test
 pattern = r"_(\d+)\.csv"

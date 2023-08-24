@@ -8,6 +8,7 @@ from propius.channels import propius_pb2
 import asyncio
 import yaml
 import grpc
+import signal
 
 _cleanup_routines = []
 
@@ -195,6 +196,11 @@ async def serve(gconfig):
             scheduler.sc_monitor.report()
         await server.stop(5)
 
+    # def sigterm_handler(signum, frame):
+    #     loop = asyncio.get_event_loop()
+    #     loop.run_until_complete(server_graceful_shutdown())
+    #     loop.stop()
+    
     server = grpc.aio.server()
     scheduler = Scheduler(gconfig)
     propius_pb2_grpc.add_SchedulerServicer_to_server(scheduler, server)
@@ -204,10 +210,16 @@ async def serve(gconfig):
     custom_print(f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}",
                  INFO)
     _cleanup_routines.append(server_graceful_shutdown())
+    # signal.signal(signal.SIGTERM, sigterm_handler)
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, filename='./propius/scheduler/app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO, 
+                        filename='./propius/scheduler/app.log', 
+                        filemode='w',
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        )
 
     global_setup_file = './propius/global_config.yml'
 

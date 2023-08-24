@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  scheduler:
+    build: 
+      context: .
+      dockerfile: ./propius/scheduler/Dockerfile
+    volumes:
+      - ./propius/scheduler:/propius/scheduler
+    depends_on:
+      - job_db
+      - client_db_0
+    stop_signal: SIGINT
+
+  job_manager:
+    build:
+      context: .
+      dockerfile: ./propius/job_manager/Dockerfile
+    ports:
+      - "50002:50002"
+    volumes:
+      - ./propius/job_manager:/propius/job_manager
+    depends_on:
+      - scheduler
+    stop_signal: SIGINT
+
+  client_manager_0:
+    build:
+      context: .
+      dockerfile: ./propius/client_manager/Dockerfile
+    volumes:
+      - ./propius/client_manager:/propius/client_manager
+    depends_on:
+      - job_db
+      - client_db_0
+    stop_signal: SIGINT
+  
+  load_balancer:
+    build:
+      context: .
+      dockerfile: ./propius/load_balancer/Dockerfile
+    ports:
+      - "50000:50000"
+    volumes:
+      - ./propius/load_balancer:/propius/load_balancer
+    depends_on:
+      - client_manager_0
+    stop_signal: SIGINT
+
+  job_db:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6379:6379"
+    volumes:
+        - job_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "-p", "6379", "ping"]
+      interval: 2s
+      timeout: 1m30s
+      retries: 5
+      start_period: 5s
+
+  client_db_0:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6380:6379"
+    volumes:
+        - client_0_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "-p", "6380", "ping"]
+      interval: 2s
+      timeout: 1m30s
+      retries: 5
+      start_period: 5s
+
+volumes:
+
+  job_redis_data:
+  client_0_data:
+  client_1_data:
