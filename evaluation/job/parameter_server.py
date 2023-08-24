@@ -139,30 +139,46 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             data=pickle.dumps(DUMMY_RESPONSE)
             )
         async with self.lock:
-            if client_id not in self.client_event_dict:
-                if self.round_client_num < self.over_demand and self.cur_round <= self.total_round:
-                    #TODO job train task register to executor
-                    self._init_event_queue(client_id)
+            if self.execution_start:
+                if client_id in self.client_event_dict:
                     event_dict = self.client_event_dict[client_id].popleft()
-
                     server_response_msg = parameter_server_pb2.server_response(
                         event=event_dict["event"],
                         meta=pickle.dumps(event_dict["meta"]),
                         data=pickle.dumps(event_dict["data"])
                     )
-
-                    self.round_client_num += 1
-
-                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, issue {event_dict['event']} event, {self.round_client_num}/{self.demand}")
-
-                    if self.round_client_num >= self.over_demand:
-                        if not self.execution_start:
-                            self.propius_stub.round_end_request()
-                            self.execution_start = True
-                            self.round_sched_time[self.cur_round] = time.time() - self.round_sched_time[self.cur_round]
+                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
+                        f"issue {event_dict['event']} event")
+                    
             else:
-                del self.client_event_dict[client_id]
-            
+                if client_id not in self.client_event_dict:
+                    if self.round_client_num < self.over_demand and self.cur_round <= self.total_round:
+                        #TODO job train task register to executor
+                        self._init_event_queue(client_id)
+
+                        server_response_msg = parameter_server_pb2.server_response(
+                            event=DUMMY_EVENT,
+                            meta=pickle.dumps(DUMMY_RESPONSE),
+                            data=pickle.dumps(DUMMY_RESPONSE)
+                        )
+
+                        self.round_client_num += 1
+
+                        print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
+                            f"issue dummy event, {self.round_client_num}/{self.demand}")
+
+                        if self.round_client_num >= self.over_demand:
+                            if not self.execution_start:
+                                print(f"PS {self.propius_stub.id}-{self.cur_round}: start execution")
+                                self.propius_stub.round_end_request()
+                                self.execution_start = True
+                                self.round_sched_time[self.cur_round] = time.time() - self.round_sched_time[self.cur_round]
+                else:
+                    server_response_msg = parameter_server_pb2.server_response(
+                        event=DUMMY_EVENT,
+                        meta=pickle.dumps(DUMMY_RESPONSE),
+                        data=pickle.dumps(DUMMY_RESPONSE)
+                    )
             return server_response_msg
 
     
