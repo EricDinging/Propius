@@ -148,6 +148,9 @@ class CM_job_db_portal(Job_db):
                     return (ip, port)
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    custom_print(e, ERROR)
+                    return None
 
 
 class CM_client_db_portal(Client_db):
@@ -177,7 +180,7 @@ class CM_client_db_portal(Client_db):
         """
 
         if len(specifications) != len(self.public_constraint_name):
-            raise ValueError("Specification length does not match required")
+            custom_print("Specification length does not match required", ERROR)
         client_dict = {"timestamp": int(time.time())}
         spec_dict = {self.public_constraint_name[i]: specifications[i]
                      for i in range(len(specifications))}
@@ -185,8 +188,11 @@ class CM_client_db_portal(Client_db):
         client = {
             "client": client_dict
         }
-        self.r.json().set(f"client:{id}", Path.root_path(), client)
-        self.r.expire(f"client:{id}", self.client_exp_time)
+        try:
+            self.r.json().set(f"client:{id}", Path.root_path(), client)
+            self.r.expire(f"client:{id}", self.client_exp_time)
+        except Exception as e:
+            custom_print(e, ERROR)
 
     def get(self, id: int) -> tuple:
         """Get client public spec values
@@ -205,5 +211,5 @@ class CM_client_db_portal(Client_db):
                 spec = float(self.r.json().get(id, f"$.client.{name}")[0])
                 specs[idx] = spec
         except Exception as e:
-            custom_print(e, WARNING)
+            custom_print(e, ERROR)
         return tuple(specs)
