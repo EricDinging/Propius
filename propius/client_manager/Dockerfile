@@ -8,6 +8,6 @@ COPY ./propius/util /propius/util
 COPY ./propius/global_config.yml /propius/global_config.yml
 COPY ./propius/requirements.txt /propius/requirements.txt
 
-RUN pip install --no-cache-dir -r /propius/requirements.txt
+RUN pip3 install --no-cache-dir -r /propius/requirements.txt
 
 CMD ["python", "./propius/client_manager/client_manager.py", "0"]
