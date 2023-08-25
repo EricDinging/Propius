@@ -87,7 +87,7 @@ if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger()
 
-    global_setup_file = './evaluation/single_evaluation_config.yml'
+    global_setup_file = './evaluation/evaluation_config.yml'
 
     random.seed(42)
 

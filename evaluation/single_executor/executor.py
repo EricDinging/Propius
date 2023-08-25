@@ -121,7 +121,7 @@ async def run(config, gconfig):
     await executor.execute()
 
 if __name__ == '__main__':
-    config_file = './evaluation/single_evaluation_config.yml'
+    config_file = './evaluation/evaluation_config.yml'
     logging.basicConfig(level=logging.INFO,
                         filename='./evaluation/single_executor/app.log',
                         filemode='w', 
