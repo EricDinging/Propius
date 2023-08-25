@@ -43,8 +43,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
                 f'{cm_ip}:{cm_port}')
             self.cm_stub_dict[cm_id] = propius_pb2_grpc.Client_managerStub(
                 self.cm_channel_dict[cm_id])
-            custom_print(
-                f"Load balancer: connecting to client manager {cm_id} at {cm_ip}:{cm_port}")
+            # custom_print(
+            #     f"Load balancer: connecting to client manager {cm_id} at {cm_ip}:{cm_port}")
 
     async def _disconnect_cm(self):
         async with self.lock:
@@ -59,8 +59,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         async with self.lock:
             await self.lb_monitor.request()
             self.idx %= len(self.cm_channel_dict)
-            custom_print(
-                f"Load balancer: client check in, route to client manager {self.idx}")
+            # custom_print(
+            #     f"Load balancer: client check in, route to client manager {self.idx}")
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
             self._next_idx()
         return return_msg
@@ -69,8 +69,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         async with self.lock:
             await self.lb_monitor.request()
             idx = int(request.id / self.id_weight)
-            custom_print(
-                f"Load balancer: client ping, route to client manager {idx}")
+            # custom_print(
+            #     f"Load balancer: client ping, route to client manager {idx}")
             return_msg = await self.cm_stub_dict[idx].CLIENT_PING(request)
         return return_msg
 
@@ -78,8 +78,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         async with self.lock:
             await self.lb_monitor.request()
             self.idx %= len(self.cm_channel_dict)
-            custom_print(
-                f"Load balancer: client accept, route to client manager {self.idx}")
+            # custom_print(
+            #     f"Load balancer: client accept, route to client manager {self.idx}")
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_ACCEPT(request)
             self._next_idx()
         return return_msg

@@ -55,11 +55,11 @@ isPackageNotInstalled conda
 
 conda init bash
 . ~/.bashrc
-conda env create -f environment.yml
-conda activate propius
-conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
 
 if [ "$1" == "--cuda" ]; then
+    conda env create -f environment_cuda.yml
+    conda activate propius
+    conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
     wget https://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_440.33.01_linux.run
     sudo apt-get purge nvidia-* -y
     sudo sh -c "echo 'blacklist nouveau\noptions nouveau modeset=0' > /etc/modprobe.d/blacklist-nouveau.conf"
@@ -67,6 +67,9 @@ if [ "$1" == "--cuda" ]; then
     sudo sh cuda_10.2.89_440.33.01_linux.run --override --driver --toolkit --samples --silent
     export PATH=$PATH:/usr/local/cuda-10.2/
     conda install cudatoolkit=10.2 -y
+else
+    conda env create -f environment.yml
+    conda activate propius
 fi
 
 isDockerNotInstalled

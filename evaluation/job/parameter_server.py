@@ -203,7 +203,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 return server_response_msg
             
             if compl_event == UPLOAD_MODEL:
-                print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} complete, issue {SHUT_DOWN} event, {self.round_result_cnt}/{self.demand}")
+                print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} complete, issue SHUT_DOWN event, {self.round_result_cnt}/{self.demand}")
                 self.round_result_cnt += 1
                 task_meta = {
                     "local_steps": self.config["local_steps"],
