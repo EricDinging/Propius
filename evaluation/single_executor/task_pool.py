@@ -54,13 +54,6 @@ class Task_pool:
             self.job_task_dict[job_id].append(task_meta)
 
             if event == AGGREGATE and round % self.config["eval_interval"] == 0:
-                test_task_meta = {
-                    "client_id": -1,
-                    "round": task_meta["round"],
-                    "event": MODEL_TEST,
-                    "test_ratio": self.config["test_ratio"],
-                    "test_bsz": self.config["test_bsz"]
-                }
                 self.job_task_dict[job_id].append(test_task_meta)
 
 

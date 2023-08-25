@@ -1,26 +1,26 @@
 # Global config
-use_docker: True
+use_docker: False
 # ---Addresses---
 
-load_balancer_ip: 0.0.0.0
+load_balancer_ip: localhost
 load_balancer_port: 50000
 
 client_manager_id_weight: 100000 # for client id assignment
 client_manager:
-  - ip: 0.0.0.0
+  - ip: localhost
     port: 50004
     client_db_port: 6380
   # - ip: localhost
   #   port: 50005
   #   client_db_port: 6381
 
-job_db_ip: 0.0.0.0
+job_db_ip: localhost
 job_db_port: 6379
 
-job_manager_ip: 0.0.0.0
+job_manager_ip: localhost
 job_manager_port: 50002
 
-scheduler_ip: 0.0.0.0
+scheduler_ip: localhost
 scheduler_port: 50003
 
 # ---Scheduling---

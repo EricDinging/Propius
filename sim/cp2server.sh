@@ -13,15 +13,15 @@
 
 NODENAME="EricD16@clgpu011.clemson.cloudlab.us"
 
-# scp -r ./evaluation ${NODENAME}:~/Propius/
-# scp -r ./propius ${NODENAME}:~/Propius/
-# scp -r ./propius_job ${NODENAME}:~/Propius/
+scp -r ./evaluation ${NODENAME}:~/Propius/
+scp -r ./propius ${NODENAME}:~/Propius/
+scp -r ./propius_job ${NODENAME}:~/Propius/
 
-# scp -r ./fedscale* ${NODENAME}:~/Propius
+scp -r ./fedscale* ${NODENAME}:~/Propius
 scp -r ./propius* ${NODENAME}:~/Propius
-# scp -r ./sim ${NODENAME}:~/Propius
-# scp ./*.yml ${NODENAME}:~/Propius
-# scp ./*.py ${NODENAME}:~/Propius
-# scp ./*.sh ${NODENAME}:~/Propius
+scp -r ./sim ${NODENAME}:~/Propius
+scp ./*.yml ${NODENAME}:~/Propius
+scp ./*.py ${NODENAME}:~/Propius
+scp ./*.sh ${NODENAME}:~/Propius
 # scp -r ./datasets/device_info ${NODENAME}:~/Propius/datasets
 # scp ./datasets/download.sh ${NODENAME}:~/Propius/datasets

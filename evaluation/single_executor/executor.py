@@ -97,6 +97,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     client_id=-1,
                                                     args=execute_meta)
                 results = {AGGREGATE: results}
+                
             await self.task_pool.report_result(job_id=job_id,
                                                 round=execute_meta['round'],
                                                 result=results)

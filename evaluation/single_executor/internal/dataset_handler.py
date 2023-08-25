@@ -114,10 +114,7 @@ def select_dataset(client_id: int, partition: Partition, batch_size: int, args: 
 
     drop_last = False if is_test else True
 
-    if is_test:
-        num_loaders = 0
-    else:
-        num_loaders = min(int(len(partition)/batch_size/2), args['num_loaders'])
+    num_loaders = min(int(len(partition)/batch_size/2), args['num_loaders'])
 
     if num_loaders == 0:
         time_out = 0

@@ -148,8 +148,10 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 await self.worker.remove_job(job_id=job_id)
                 
                 async with self.lock:
-                    if job_id in self.job_task_dict:
-                        del self.job_task_dict[job_id]
+                    if job_id in self.job_train_task_dict:
+                        del self.job_train_task_dict[job_id]
+                    if job_id in self.job_test_task_dict:
+                        del self.job_test_task_dict[job_id]
 
                 continue
             
@@ -165,17 +167,17 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 )
 
                 async with self.lock:
-                    if job_id not in self.job_task_dict:
-                        self.job_task_dict[job_id] = []
-                    self.job_task_dict[job_id].append(task)
+                    if job_id not in self.job_train_task_dict:
+                        self.job_train_task_dict[job_id] = []
+                    self.job_train_task_dict[job_id].append(task)
 
             elif event == MODEL_TEST:
                 
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 
                 async with self.lock:
-                    if job_id not in self.job_task_dict:
-                        self.job_task_dict[job_id] = []
+                    if job_id not in self.job_test_task_dict:
+                        self.job_test_task_dict[job_id] = []
                     for i in range(self.config["client_test_num"]):
                         task = asyncio.create_task(
                             self.worker.execute(event=MODEL_TEST,
@@ -183,7 +185,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                 client_id=i,
                                                 args=execute_meta)
                         )
-                        self.job_task_dict[job_id].append(task)
+                        self.job_test_task_dict[job_id].append(task)
 
             elif event == AGGREGATE:
                 # wait for all pending training task to complete
