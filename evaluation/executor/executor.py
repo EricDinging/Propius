@@ -38,12 +38,12 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         job_meta = pickle.loads(request.job_meta)
 
         #TODO get model weights
-        await self.task_pool.init_job(job_id, job_meta)
         model_size = await self.worker.init_job(job_id=job_id, 
                                    dataset_name=job_meta["dataset"],
                                    model_name=job_meta["model"],
                                    )
         custom_print(f"Executor: job {job_id} registered", INFO)
+        await self.task_pool.init_job(job_id, job_meta)
         return executor_pb2.register_ack(ack=True, model_size=model_size)
     
     async def JOB_REGISTER_TASK(self, request, context):
@@ -91,10 +91,14 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         for key in aggregate_test_result.keys():
             if key != "test_len":
                 aggregate_test_result[key] /= aggregate_test_result["test_len"]
+            
+        aggregate_test_result = {
+            MODEL_TEST: aggregate_test_result
+        }
         
         await self.task_pool.report_result(job_id=job_id,
                                             round=round,
-                                            result=results)
+                                            result=aggregate_test_result)
     
     async def wait_for_training_task(self, job_id:int, round: int):
         async with self.lock:

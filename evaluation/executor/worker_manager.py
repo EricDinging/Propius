@@ -183,11 +183,7 @@ class Worker_manager:
                         custom_print(e, ERROR)
 
                 results = {CLIENT_TRAIN+str(client_id): results}
-            
-            else:
-                results = {
-                    MODEL_TEST: results
-                }
+        
 
         elif event == AGGREGATE:
             async with self.lock:

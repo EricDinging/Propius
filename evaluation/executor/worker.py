@@ -165,17 +165,14 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         async with self.lock:
             self.task_to_do.append(conf)
         
-        custom_print(f"Worker {self.id}: recieve job {job_id} {event}", INFO)
+        custom_print(f"Worker {self.id}: recieve job {job_id} {event}{client_id}", INFO)
         return executor_pb2.ack(ack=True)
     
     async def PING(self, request, context):
         job_id, client_id = request.job_id, request.client_id
         event = request.event
 
-        if event == MODEL_TEST:
-            key = event
-        elif event == CLIENT_TRAIN:
-            key = f"{event}{client_id}"
+        key = f"{event}{client_id}"
 
         async with self.lock:
             if job_id in self.task_finished:
@@ -314,23 +311,24 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     client_id = task_conf["client_id"]
                     job_id = task_conf["job_id"]
 
-                    custom_print(f"Worker {self.id}: executing job {job_id} {event}", INFO)
+                    custom_print(f"Worker {self.id}: executing job {job_id} {event}, Client {client_id}", INFO)
                     
                     del task_conf["model_weight"]
+
+                    key = f"{event}{task_conf['client_id']}"
 
                     if event == CLIENT_TRAIN:
                         results = await self._train(client_id=client_id,
                                     partition=partition,
                                     model=model_weight,
                                     conf=task_conf)
-                        key = f"{event}{task_conf['client_id']}"
+
                     elif event == MODEL_TEST:
                         results = await self._test(client_id=client_id,
                                                 partition=partition,
                                                 model=model_weight,
                                                 conf=task_conf
                                                 )
-                        key = event
                 
                     if job_id not in self.task_finished:
                         self.task_finished[job_id] = {}
@@ -381,7 +379,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print(e)
+            custom_print(e)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

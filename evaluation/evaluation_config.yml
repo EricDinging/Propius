@@ -33,7 +33,9 @@ job_driver_starting_port: 50010
 # total_running_second: 1200
 
 # ---Execution---
-use_cuda: True
+use_cuda: False
+
+# ---Single worker
 cuda_device: cpu
 
 executor_ip: localhost

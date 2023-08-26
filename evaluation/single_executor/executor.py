@@ -31,11 +31,11 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         job_meta = pickle.loads(request.job_meta)
 
         #TODO get model weights
-        await self.task_pool.init_job(job_id, job_meta)
         model_size = await self.worker.init_job(job_id=job_id, 
                                    dataset_name=job_meta["dataset"],
                                    model_name=job_meta["model"],
                                    )
+        await self.task_pool.init_job(job_id, job_meta)
 
         return executor_pb2.register_ack(ack=True, model_size=model_size)
     
