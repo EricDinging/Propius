@@ -178,9 +178,13 @@ if __name__ == '__main__':
             print(f"Usage: python evaluation/client/client.py <id>")
             exit(1)
         config["id"] = int(sys.argv[1])
-        client = Client(config)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(client.run())
-        loop.close()
+        eval_config_file = './evaluation/evaluation_config.yml'
+        with open(eval_config_file, 'r') as eval_config:
+            config["load_balancer_ip"] = eval_config["load_balancer_ip"]
+            config["load_balancer_port"] = eval_config["load_balancer_port"]
+            client = Client(config)
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(client.run())
+            loop.close()
      
 
