@@ -15,14 +15,14 @@ import time
 _cleanup_coroutines = []
 
 class Executor(executor_pb2_grpc.ExecutorServicer):
-    def __init__(self, config: dict, gconfig: dict):
-        self.ip = config['executor_ip']
+    def __init__(self, config: dict):
+        self.ip = config['executor_ip'] if not config['use_docker'] else '0.0.0.0'
         self.port = config['executor_port']
         self.task_pool = Task_pool(config)
         self.worker = Worker(config)
-        self.gconfig = gconfig
+        self.sched_alg = config['sched_alg']
 
-        result_dict = f"./evaluation/result_{self.gconfig['sched_alg']}"
+        result_dict = f"./evaluation/single_executor/result_{self.sched_alg}"
         if not os.path.exists(result_dict):
             os.mkdir(result_dict)
 
@@ -66,7 +66,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
 
             if execute_meta['event'] == JOB_FINISH:
                 await self.task_pool.gen_report(job_id=job_id,
-                                                sched_alg=self.gconfig["sched_alg"])
+                                                sched_alg=self.sched_alg)
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 continue
@@ -103,15 +103,15 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                 result=results)
 
     
-async def run(config, gconfig):
+async def run(config):
     async def server_graceful_shutdown():
-        await executor.task_pool.gen_all_report(executor.gconfig["sched_alg"])
+        await executor.task_pool.gen_all_report(executor.sched_alg)
         custom_print("==Executor ending==", INFO)
         #TODO handling result
         await server.stop(5)
 
     server = grpc.aio.server()
-    executor = Executor(config, gconfig)
+    executor = Executor(config)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     executor_pb2_grpc.add_ExecutorServicer_to_server(executor, server)
@@ -132,11 +132,9 @@ if __name__ == '__main__':
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
             custom_print("Executor read config successfully")
-            with open('./propius/global_config.yml', 'r') as gconfig:
-                gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
                 
-                loop = asyncio.get_event_loop()
-                loop.run_until_complete(run(config, gconfig))
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(run(config))
         except KeyboardInterrupt:
             pass
         except Exception as e:

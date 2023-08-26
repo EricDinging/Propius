@@ -15,12 +15,12 @@ import logging
 _cleanup_coroutines = []
 
 class Executor(executor_pb2_grpc.ExecutorServicer):
-    def __init__(self, config: dict, gconfig: dict):
-        self.ip = config['executor_ip']
+    def __init__(self, config: dict):
+        self.ip = config['executor_ip'] if not config['use_docker'] else '0.0.0.0'
         self.port = config['executor_port']
         self.task_pool = Task_pool(config)
         self.worker = Worker_manager(config)
-        self.gconfig = gconfig
+        self.sched_alg = config['sched_alg']
         self.config = config
         self.round_timeout = config['round_timeout']
 
@@ -29,7 +29,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.job_train_task_dict = {}
         self.job_test_task_dict = {}
 
-        result_dict = f"./evaluation/result_{self.gconfig['sched_alg']}"
+        result_dict = f"./evaluation/executor/result_{self.sched_alg}"
         if not os.path.exists(result_dict):
             os.mkdir(result_dict)
 
@@ -206,9 +206,9 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     result=results)
 
     
-async def run(config, gconfig):
+async def run(config):
     async def server_graceful_shutdown():
-        await executor.task_pool.gen_all_report(executor.gconfig["sched_alg"])
+        await executor.task_pool.gen_all_report(executor.sched_alg)
         print("==Executor ending==")
         heartbeat_task.cancel()
         await heartbeat_task
@@ -216,7 +216,7 @@ async def run(config, gconfig):
         await server.stop(5)
 
     server = grpc.aio.server()
-    executor = Executor(config, gconfig)
+    executor = Executor(config)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     heartbeat_task = asyncio.create_task(executor.worker.heartbeat_routine())
@@ -235,10 +235,9 @@ if __name__ == '__main__':
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
             custom_print("Executor read config successfully")
-            with open('./propius/global_config.yml', 'r') as gconfig:
-                gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
-                loop = asyncio.get_event_loop()
-                loop.run_until_complete(run(config, gconfig))
+            
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(run(config))
         except KeyboardInterrupt:
             pass
         except Exception as e:

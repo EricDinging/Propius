@@ -4,6 +4,8 @@ load_balancer_port: 50000
 job_manager_ip: localhost
 job_manager_port: 50002
 
+sched_alg: fifo
+
 job_public_constraint:
   - cpu_f
   - ram

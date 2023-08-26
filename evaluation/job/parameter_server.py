@@ -50,14 +50,14 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         # self.propius_stub.connect()
 
-        self.executor_ip = config['executor_ip'] if not config['use_docker'] else 'executor'
+        self.executor_ip = config['executor_ip']
         self.executor_port = config['executor_port']
         self.executor_channel = None
         self.executor_stub = None
         self._connect_to_executor()
         self.config = config
 
-        result_dict = "./evaluation/ps_result"
+        result_dict = f"./evaluation/job/ps_result_{config['sched_alg']}"
         if not os.path.exists(result_dict):
             os.mkdir(result_dict)
         
@@ -68,7 +68,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def _connect_to_executor(self):
         self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
         self.executor_stub = executor_pb2_grpc.ExecutorStub(self.executor_channel)
-        print(f"PS: connecting to executor on {self.executor_ip}: {self.executor_port}")
+        print(f"PS: connecting to executor on {self.executor_ip}:{self.executor_port}")
 
     async def _close_round(self):
         # locked
@@ -244,7 +244,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             return server_response_msg
             
     def gen_report(self):
-        csv_file_name = f"./evaluation/ps_result/{self.propius_stub.id}.csv"
+        csv_file_name = f"./evaluation/job/ps_result_{self.config['sched_alg']}/{self.propius_stub.id}.csv"
         fieldnames = ["round", "round_finish_time", "round_sched_time"]
         with open(csv_file_name, "w", newline="") as csv_file:
             writer = csv.writer(csv_file)
@@ -355,6 +355,8 @@ if __name__ == '__main__':
                 config['executor_port'] = eval_config['executor_port']
                 config['job_manager_ip'] = eval_config['job_manager_ip']
                 config['job_manager_port'] = eval_config['job_manager_port']
+                config['use_docker'] = eval_config['use_docker']
+                config['sched_alg'] = eval_config['sched_alg']
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(run(config))
                 

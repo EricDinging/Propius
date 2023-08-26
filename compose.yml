@@ -7,6 +7,7 @@ services:
       dockerfile: ./propius/scheduler/Dockerfile
     volumes:
       - ./propius/scheduler:/propius/scheduler
+      - ./propius/global_config.yml:/propius/global_config.yml
     depends_on:
       - job_db
       - client_db_0
@@ -20,6 +21,7 @@ services:
       - "50002:50002"
     volumes:
       - ./propius/job_manager:/propius/job_manager
+      - ./propius/global_config.yml:/propius/global_config.yml
     depends_on:
       - scheduler
     stop_signal: SIGINT
@@ -30,6 +32,7 @@ services:
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
       - ./propius/client_manager:/propius/client_manager
+      - ./propius/global_config.yml:/propius/global_config.yml
     depends_on:
       - job_db
       - client_db_0
@@ -43,6 +46,7 @@ services:
       - "50000:50000"
     volumes:
       - ./propius/load_balancer:/propius/load_balancer
+      - ./propius/global_config.yml:/propius/global_config.yml
     depends_on:
       - client_manager_0
     stop_signal: SIGINT

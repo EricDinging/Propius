@@ -15,7 +15,7 @@ _cleanup_coroutines = []
 class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
     def __init__(self, gconfig):
         self.gconfig = gconfig
-        self.ip = gconfig['load_balancer_ip']
+        self.ip = gconfig['load_balancer_ip'] if not gconfig['use_docker'] else '0.0.0.0'
         self.port = gconfig['load_balancer_port']
         self.id_weight = gconfig['client_manager_id_weight']
 

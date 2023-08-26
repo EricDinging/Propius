@@ -38,7 +38,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                 client_expire_time: expiration time of clients in the db
         """
 
-        self.ip = gconfig['scheduler_ip']
+        self.ip = gconfig['scheduler_ip'] if not gconfig['use_docker'] else '0.0.0.0'
         self.port = gconfig['scheduler_port']
         self.sched_alg = gconfig['sched_alg']
         if self.sched_alg == 'irs':

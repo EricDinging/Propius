@@ -9,8 +9,9 @@ RUN mkdir /evaluation
 COPY ./evaluation/evaluation_config.yml /evaluation/evaluation_config.yml
 COPY ./evaluation/single_executor /evaluation/single_executor
 COPY ./evaluation/commons.py /evaluation/commons.py
-
+COPY ./fedscale /fedscale
+COPY ./datasets /datasets
 COPY ./evaluation/requirements.txt /evaluation/requirements.txt
-
-RUN pip3 install -r /propius/requirements.txt
-CMD ["python", "./evaluation/single_executor/single_executor.py"]
+RUN pip install --upgrade pip
+RUN pip install -r /evaluation/requirements.txt
+CMD ["python", "./evaluation/single_executor/executor.py"]
