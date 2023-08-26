@@ -151,6 +151,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         f"issue {event_dict['event']} event")
                     
             else:
+                print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
+                            f"issue dummy event, {self.round_client_num}/{self.demand}")
+                
                 if client_id not in self.client_event_dict:
                     if self.round_client_num < self.over_demand and self.cur_round <= self.total_round:
                         #TODO job train task register to executor
@@ -163,9 +166,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         )
 
                         self.round_client_num += 1
-
-                        print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
-                            f"issue dummy event, {self.round_client_num}/{self.demand}")
 
                         if self.round_client_num >= self.over_demand:
                             if not self.execution_start:

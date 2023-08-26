@@ -174,6 +174,10 @@ if __name__ == '__main__':
     config_file = './evaluation/client/client_conf.yml'
     with open(config_file, 'r') as config:
         config = yaml.load(config, Loader=yaml.FullLoader)
+        if len(sys.argv) != 2:
+            print(f"Usage: python evaluation/client/client.py <id>")
+            exit(1)
+        config["id"] = int(sys.argv[1])
         client = Client(config)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(client.run())
