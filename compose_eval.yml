@@ -8,6 +8,7 @@ services:
     volumes:
       - ./evaluation/single_executor:/evaluation/single_executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets:/datasets
     ports:
       - "49999:49999"
     stop_signal: SIGINT

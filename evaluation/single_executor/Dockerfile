@@ -6,11 +6,8 @@ FROM python:3.9
 
 WORKDIR /
 RUN mkdir /evaluation
-COPY ./evaluation/evaluation_config.yml /evaluation/evaluation_config.yml
-COPY ./evaluation/single_executor /evaluation/single_executor
 COPY ./evaluation/commons.py /evaluation/commons.py
 COPY ./fedscale /fedscale
-COPY ./datasets /datasets
 COPY ./evaluation/requirements.txt /evaluation/requirements.txt
 RUN pip install --upgrade pip
 RUN pip install -r /evaluation/requirements.txt
