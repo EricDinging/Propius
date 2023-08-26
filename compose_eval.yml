@@ -4,7 +4,8 @@ services:
   executor:
     build: 
       context: .
-      dockerfile: ./evaluation/single_executor/Dockerfile
+      dockerfile: ./evaluation/single_executor/Dockerfile_gpu
+    runtime: nvidia
     volumes:
       - ./evaluation/single_executor:/evaluation/single_executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
