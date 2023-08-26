@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  executor:
+    build: 
+      context: ..
+      dockerfile: ./evaluation/single_executor/Dockerfile_gpu
+    volumes:
+      - ./evaluation/single_executor:/evaluation/single_executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets:/datasets
+    ports:
+      - "49999:49999"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 4
+              capabilities: [gpu]
+
+    stop_signal: SIGINT

@@ -1,8 +1,8 @@
 load_balancer_ip: localhost
-load_balancer_port: 50000
+load_balancer_port: 50002
 
 job_manager_ip: localhost
-job_manager_port: 50002
+job_manager_port: 50001
 
 sched_alg: fifo
 
@@ -34,20 +34,18 @@ avg_interval: 1800
 job_driver_ip: localhost
 job_driver_starting_port: 50010
 
-# Total simulation time
-# total_running_second: 1200
-
 # ---Execution---
 use_cuda: False
 use_docker: True
 
 # ---Single worker
-cuda_device: cpu
+cuda_device: cuda:0
 
 executor_ip: localhost
 executor_port: 49999
 round_timeout: 1000
 
+# ---Multi worker
 worker:
   - ip: localhost
     port: 49998
@@ -55,9 +53,6 @@ worker:
   - ip: localhost
     port: 49997
     device: cuda:0
-  # - ip: localhost
-  #   port: 49996
-  #   device: cuda:0
 
 # ---Testing---
 test_bsz: 20
