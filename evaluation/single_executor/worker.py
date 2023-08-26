@@ -100,7 +100,7 @@ class Worker:
             if self._completed_steps == conf['local_steps']:
                 break
 
-    def _train(self, client_id, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->tuple[dict, dict]:
+    def _train(self, client_id, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->tuple:
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
 

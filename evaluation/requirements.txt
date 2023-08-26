@@ -1,6 +1,6 @@
 grpcio
 grpcio-tools
-pyyaml
+PyYAML==5.4.1
 numpy
 matplotlib
 pandas

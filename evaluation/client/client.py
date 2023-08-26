@@ -180,6 +180,7 @@ if __name__ == '__main__':
         config["id"] = int(sys.argv[1])
         eval_config_file = './evaluation/evaluation_config.yml'
         with open(eval_config_file, 'r') as eval_config:
+            eval_config = yaml.load(eval_config, Loader=yaml.FullLoader)
             config["load_balancer_ip"] = eval_config["load_balancer_ip"]
             config["load_balancer_port"] = eval_config["load_balancer_port"]
             client = Client(config)
