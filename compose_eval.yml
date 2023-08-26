@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  executor:
+    build: 
+      context: .
+      dockerfile: ./evaluation/single_executor/Dockerfile
+    volumes:
+      - ./evaluation/single_executor:/evaluation/single_executor
+    ports:
+      - "49999:49999"
+    stop_signal: SIGINT

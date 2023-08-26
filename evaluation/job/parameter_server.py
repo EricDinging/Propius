@@ -50,7 +50,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         # self.propius_stub.connect()
 
-        self.executor_ip = config['executor_ip']
+        self.executor_ip = config['executor_ip'] if not config['use_docker'] else 'executor'
         self.executor_port = config['executor_port']
         self.executor_channel = None
         self.executor_stub = None
@@ -353,6 +353,8 @@ if __name__ == '__main__':
                 eval_config = yaml.load(eval_config, Loader=yaml.FullLoader)
                 config['executor_ip'] = eval_config['executor_ip']
                 config['executor_port'] = eval_config['executor_port']
+                config['job_manager_ip'] = eval_config['job_manager_ip']
+                config['job_manager_port'] = eval_config['job_manager_port']
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(run(config))
                 
