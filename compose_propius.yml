@@ -56,7 +56,7 @@ services:
     volumes:
         - job_redis_data:/data
     logging:
-      driver: none
+      driver: none  
 
   client_db_0:
     image: redis/redis-stack-server:latest

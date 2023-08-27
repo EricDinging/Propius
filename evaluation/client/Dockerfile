@@ -5,7 +5,6 @@ RUN mkdir evaluation
 RUN mkdir evaluation/job
 RUN mkdir propius
 
-COPY ./evaluation/client evaluation/client
 COPY ./evaluation/job/channels evaluation/job/channels
 COPY ./evaluation/requirements_peripheral.txt evaluation/requirements_peripheral.txt
 COPY ./propius_client propius_client

@@ -20,7 +20,7 @@ class Client:
         if self.use_docker:
             client_config["load_balancer_ip"] = "load_balancer"
             
-        self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=True)
+        self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=False)
         self.ps_channel = None
         self.ps_stub = None
         
@@ -158,9 +158,6 @@ class Client:
                 if remain_time <= 0:
                     continue
                 
-                if self.use_docker:
-                    ps_ip = "jobs"
-
                 await self._connect_to_ps(ps_ip, ps_port)
                 try:
                     task = asyncio.create_task(self.event_monitor())

@@ -3,13 +3,14 @@ import yaml
 import time
 
 with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
-    gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-    ip = gconfig['job_driver_ip']
-    port = int(gconfig['job_driver_starting_port'])
-    num = gconfig['total_job']
+    config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
+    ip = config['job_driver_ip']
+    port = int(config['job_driver_starting_port'])
+    num = config['total_job']
 
     with open(f"./evaluation/job/job_trace_{num}.txt", "r") as file:
         i = 0
+
         for line in file:
             line = line.strip().split(" ")
             time.sleep(int(line[0]))
@@ -20,5 +21,5 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
                 f"{ip}",
                 f"{port + i}"]
             print(command)
-            subprocess.Popen(command)
+            subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             i += 1

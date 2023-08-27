@@ -3,7 +3,6 @@ FROM python:3.9
 WORKDIR /
 RUN mkdir propius
 
-COPY ./propius/job_manager propius/job_manager
 COPY ./propius/channels propius/channels
 COPY ./propius/util propius/util
 

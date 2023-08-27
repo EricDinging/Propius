@@ -3,7 +3,6 @@ FROM python:3.9
 WORKDIR /
 RUN mkdir propius
 
-COPY ./propius/load_balancer propius/load_balancer
 COPY ./propius/channels propius/channels
 COPY ./propius/util propius/util
 

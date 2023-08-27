@@ -23,14 +23,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.over_demand = self.demand if "over_selection" not in config else \
             int(config["over_selection"] * config["demand"])
 
-        if config["use_docker"]:
-            config["job_manager_ip"] = "job_manager"
-            config["ip"] = "0.0.0.0"
-            config["executor_ip"] = "executor"
-
-        self.ip = config["ip"]
-        self.port = config["port"]
-
         job_config = {
             "public_constraint": config["public_constraint"],
             "private_constraint": config["private_constraint"],
@@ -39,9 +31,17 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     int(config["over_selection"] * config["demand"]),
             "job_manager_ip": config["job_manager_ip"],
             "job_manager_port": config["job_manager_port"],
-            "ip": config["ip"],
+            "ip": config["ip"] if not config["use_docker"] else "jobs",
             "port": config["port"]
         }
+
+        if config["use_docker"]:
+            config["job_manager_ip"] = "job_manager"
+            config["ip"] = "0.0.0.0"
+            config["executor_ip"] = "executor"
+
+        self.ip = config["ip"]
+        self.port = config["port"]
 
         self.lock = asyncio.Lock()
         self.cv = asyncio.Condition(self.lock)
@@ -76,7 +76,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def _connect_to_executor(self):
         self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
         self.executor_stub = executor_pb2_grpc.ExecutorStub(self.executor_channel)
-        print(f"PS: connecting to executor on {self.executor_ip}:{self.executor_port}")
+        custom_print(f"PS: connecting to executor on {self.executor_ip}:{self.executor_port}", INFO)
 
     async def _close_round(self):
         # locked
@@ -155,12 +155,12 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         meta=pickle.dumps(event_dict["meta"]),
                         data=pickle.dumps(event_dict["data"])
                     )
-                    print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
-                        f"issue {event_dict['event']} event")
+                    custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
+                        f"issue {event_dict['event']} event", INFO)
                     
             else:
-                print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
-                            f"issue dummy event, {self.round_client_num}/{self.demand}")
+                custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
+                            f"issue dummy event, {self.round_client_num}/{self.demand}", INFO)
                 
                 if client_id not in self.client_event_dict:
                     if self.round_client_num < self.over_demand and self.cur_round <= self.total_round:
@@ -177,7 +177,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
                         if self.round_client_num >= self.over_demand:
                             if not self.execution_start:
-                                print(f"PS {self.propius_stub.id}-{self.cur_round}: start execution")
+                                custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: start execution", INFO)
                                 self.propius_stub.round_end_request()
                                 self.execution_start = True
                                 self.round_sched_time[self.cur_round] = time.time() - self.round_sched_time[self.cur_round]
@@ -211,7 +211,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 return server_response_msg
             
             if compl_event == UPLOAD_MODEL:
-                print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} complete, issue SHUT_DOWN event, {self.round_result_cnt}/{self.demand}")
+                custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} complete, issue SHUT_DOWN event, {self.round_result_cnt}/{self.demand}", INFO)
                 self.round_result_cnt += 1
                 task_meta = {
                     "local_steps": self.config["local_steps"],
@@ -244,7 +244,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     data=pickle.dumps(next_event_dict["data"])
                 )
 
-                print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event")
+                custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event", INFO)
 
             if self.round_result_cnt >= self.demand:
                 await self._close_round()
@@ -282,7 +282,7 @@ async def run(config):
         )
         await ps.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
         await ps.executor_channel.close()
-        print("==Parameter server ending==")
+        custom_print("==Parameter server ending==", WARNING)
         await server.stop(5)
     
     server = grpc.aio.server()
@@ -291,7 +291,7 @@ async def run(config):
 
     # Register
     if not ps.propius_stub.register():
-        print(f"Parameter server: register failed")
+        custom_print(f"Parameter server: register failed", ERROR)
         return
     
     #TODO Register to executor
@@ -308,7 +308,7 @@ async def run(config):
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
     server.add_insecure_port(f"{ps.ip}:{ps.port}")
     await server.start()
-    print(f"Parameter server: parameter server started, listening on {config['ip']}:{config['port']}")
+    custom_print(f"Parameter server: parameter server started, listening on {config['ip']}:{config['port']}", INFO)
 
     ps.round_sched_time[0] = 0
     round = 1
@@ -322,7 +322,7 @@ async def run(config):
             ps.round_result_cnt = 0
             ps.round_sched_time[ps.cur_round] = time.time()
             if not ps.propius_stub.round_start_request(new_demand=False):
-                print(f"Parameter server: round start request failed")
+                custom_print(f"Parameter server: round start request failed", WARNING)
                 return
             while ps.cur_round != round + 1:
                 try:
@@ -335,23 +335,29 @@ async def run(config):
 
             round += 1
 
-    print(
-        f"Parameter server: All round finished")
+    custom_print(
+        f"Parameter server: All round finished", INFO)
     
 if __name__ == '__main__':
     
     if len(sys.argv) != 4:
-        print("Usage: python test_job/parameter_server/parameter_server.py <config> <ip> <port>")
+        custom_print("Usage: python test_job/parameter_server/parameter_server.py <config> <ip> <port>", ERROR)
         exit(1)
         
     config_file = sys.argv[1]
     ip = sys.argv[2]
     port = int(sys.argv[3])
 
+    logging.basicConfig(level=logging.INFO,
+                        filename=f'./evaluation/job/log/app_{port}.log',
+                        filemode='w',
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',)
+
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
-            print("Parameter server read config successfully")
+            custom_print("Parameter server read config successfully", INFO)
             config["ip"] = ip
             config["port"] = port
 
@@ -371,7 +377,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print(e)
+            custom_print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

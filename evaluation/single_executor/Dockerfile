@@ -2,7 +2,7 @@ FROM python:3.9
 
 WORKDIR /
 RUN mkdir evaluation
-COPY ./evaluation/single_executor evaluation/single_executor
+
 COPY ./evaluation/commons.py evaluation/commons.py
 COPY ./fedscale fedscale
 COPY ./evaluation/requirements.txt evaluation/requirements.txt
