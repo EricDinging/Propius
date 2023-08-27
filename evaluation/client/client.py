@@ -23,7 +23,7 @@ class Client:
         self.propius_client_stub = Propius_client_aio(
             client_config=client_config, 
             verbose=False,
-            logging=True)
+            logging=False)
         
         self.ps_channel = None
         self.ps_stub = None
