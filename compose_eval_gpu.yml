@@ -3,7 +3,7 @@ version: "3.9"
 services:
   executor:
     build: 
-      context: ..
+      context: .
       dockerfile: ./evaluation/single_executor/Dockerfile_gpu
     volumes:
       - ./evaluation/single_executor:/evaluation/single_executor

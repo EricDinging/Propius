@@ -3,7 +3,7 @@ version: "3.9"
 services:
   scheduler:
     build: 
-      context: ..
+      context: .
       dockerfile: ./propius/scheduler/Dockerfile
     volumes:
       - ./propius/scheduler:/propius/scheduler
@@ -15,7 +15,7 @@ services:
 
   job_manager:
     build:
-      context: ..
+      context: .
       dockerfile: ./propius/job_manager/Dockerfile
     ports:
       - "50001:50001"
@@ -28,7 +28,7 @@ services:
 
   client_manager_0:
     build:
-      context: ..
+      context: .
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
       - ./propius/client_manager:/propius/client_manager
@@ -40,7 +40,7 @@ services:
   
   load_balancer:
     build:
-      context: ..
+      context: .
       dockerfile: ./propius/load_balancer/Dockerfile
     ports:
       - "50002:50002"
@@ -66,7 +66,6 @@ services:
       driver: none
 
 volumes:
-
   job_redis_data:
   client_0_data:
   client_1_data:

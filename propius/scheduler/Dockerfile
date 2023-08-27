@@ -1,13 +1,14 @@
 FROM python:3.9
 
 WORKDIR /
-RUN mkdir /propius
+RUN mkdir propius
 
-COPY ./propius/channels /propius/channels
-COPY ./propius/util /propius/util
+COPY ./propius/scheduler propius/scheduler
+COPY ./propius/channels propius/channels
+COPY ./propius/util propius/util
 
-COPY ./propius/requirements.txt /propius/requirements.txt
+COPY ./propius/requirements.txt propius/requirements.txt
 
-RUN pip3 install -r /propius/requirements.txt
+RUN pip3 install -r propius/requirements.txt
 
-CMD ["python", "./propius/scheduler/scheduler.py"]
+CMD ["python", "propius/scheduler/scheduler.py"]

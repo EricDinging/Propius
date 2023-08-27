@@ -1,10 +1,11 @@
 FROM python:3.9
 
 WORKDIR /
-RUN mkdir /evaluation
-COPY ./evaluation/commons.py /evaluation/commons.py
-COPY ./fedscale /fedscale
-COPY ./evaluation/requirements.txt /evaluation/requirements.txt
+RUN mkdir evaluation
+COPY ./evaluation/single_executor evaluation/single_executor
+COPY ./evaluation/commons.py evaluation/commons.py
+COPY ./fedscale fedscale
+COPY ./evaluation/requirements.txt evaluation/requirements.txt
 RUN pip install --upgrade pip
-RUN pip install -r /evaluation/requirements.txt
-CMD ["python", "./evaluation/single_executor/executor.py"]
+RUN pip install -r evaluation/requirements.txt
+CMD ["python", "evaluation/single_executor/executor.py"]
