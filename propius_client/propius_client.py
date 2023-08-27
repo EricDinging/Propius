@@ -129,7 +129,7 @@ class Propius_client():
                 task_private_constraint = pickle.loads(
                     cm_offer.private_constraint)
                 
-                self._custom_print(f"Client {self.id}: checked in to Propius, public spec {self.public_specifications}", INFO)
+                self._custom_print(f"Client {self.id}: checked in to Propius, public spec {self.public_specifications}")
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
@@ -184,7 +184,7 @@ class Propius_client():
                 raise ValueError(
                     "client private specification len does not match required")
             if geq(self.private_specifications, private_constraints[idx]):
-                self._custom_print(f"Client {self.id}: select task {task_id}", INFO)
+                self._custom_print(f"Client {self.id}: select task {task_id}")
                 return task_id
 
         self._custom_print(f"Client {self.id}: not eligible")
@@ -244,7 +244,7 @@ class Propius_client():
         task_ids, task_private_constraint = self.client_check_in()
         
         self._custom_print(
-                f"Client {self.id}: recieve client manager offer: {task_ids}", INFO)
+                f"Client {self.id}: recieve client manager offer: {task_ids}")
             
         while True:
             while ttl > 0:

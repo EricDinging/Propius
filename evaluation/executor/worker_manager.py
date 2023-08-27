@@ -44,7 +44,7 @@ class Worker_manager:
             ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH)
         ]
         for worker_id, worker_addr in enumerate(self.worker_addr_list):
-            worker_ip = worker_addr["ip"]
+            worker_ip = worker_addr["ip"] if not self.config["use_docker"] else f"worker_{worker_id}"
             worker_port = worker_addr["port"]
             self.worker_channel_dict[worker_id] = grpc.aio.insecure_channel(f"{worker_ip}:{worker_port}", options=channel_options)
             self.worker_stub_dict[worker_id] = executor_pb2_grpc.WorkerStub(

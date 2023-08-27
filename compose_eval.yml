@@ -1,15 +1,39 @@
 version: "3.9"
 
 services:
+  worker_0:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets"/datasets
+    stop_signal: SIGINT
+    command: ["0"]
+
+  worker_1:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets"/datasets
+    stop_signal: SIGINT
+    command: ["1"]
+  
   executor:
     build: 
       context: .
-      dockerfile: ./evaluation/single_executor/Dockerfile
+      dockerfile: ./evaluation/executor/Dockerfile_executor
     volumes:
-      - ./evaluation/single_executor:/evaluation/single_executor
+      - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-      - ./datasets:/datasets
     stop_signal: SIGINT
+    depends_on:
+      - worker_0
+      - worker_1
   
   clients:
     build:

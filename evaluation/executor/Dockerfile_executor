@@ -1,0 +1,11 @@
+FROM python:3.9
+
+WORKDIR /
+RUN mkdir /evaluation
+COPY ./evaluation/commons.py /evaluation/commons.py
+COPY ./evaluation/requirements.txt /evaluation/requirements.txt
+COPY ./fedscale /fedscale
+
+RUN pip install --upgrade pip
+RUN pip install -r /evaluation/requirements.txt
+CMD ["python", "./evaluation/executor/executor.py"]

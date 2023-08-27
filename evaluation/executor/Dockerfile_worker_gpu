@@ -1,0 +1,18 @@
+FROM nvidia/cuda:11.6.2-devel-ubuntu20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip
+
+WORKDIR /
+RUN mkdir /evaluation
+COPY ./evaluation/commons.py /evaluation/commons.py
+COPY ./fedscale /fedscale
+COPY ./evaluation/requirements.txt /evaluation/requirements.txt
+
+RUN pip3 install --upgrade pip
+RUN pip3 install -r /evaluation/requirements.txt
+RUN chmod +x /evaluation/executor/entrypoint.sh 
+
+ENTRYPOINT ["/evaluation/executor/entrypoint.sh"]

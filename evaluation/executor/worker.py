@@ -26,7 +26,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         if id >= len(config["worker"]):
             raise ValueError("Invalid worker ID")
         
-        self.ip = config["worker"][id]["ip"]
+        self.ip = config["worker"][id]["ip"] if not config["use_docker"] else "0.0.0.0"
         self.port = config["worker"][id]["port"]
         device = config["worker"][id]["device"] if config["use_cuda"] else "cpu"
         self.device = torch.device(device)
