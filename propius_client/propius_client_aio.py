@@ -73,7 +73,7 @@ class Propius_client_aio():
         self._lb_channel = grpc.insecure_channel(f'{self._lb_ip}:{self._lb_port}')
         self._lb_stub = propius_pb2_grpc.Load_balancerStub(self._lb_channel)
 
-        self._custom_print(f"Client: connecting to load balancer at {self._lb_ip}:{self._lb_port}", INFO)
+        self._custom_print(f"Client: connecting to load balancer at {self._lb_ip}:{self._lb_port}")
 
     async def connect(self, num_trial: int=1):
         """Connect to Propius load balancer
@@ -88,7 +88,7 @@ class Propius_client_aio():
         for _ in range(num_trial):
             try:
                 self._connect_lb()
-                self._custom_print(f"Client: connected to Propius", INFO)
+                self._custom_print(f"Client: connected to Propius")
                 return
             except Exception as e:
                 self._custom_print(e, ERROR)
@@ -102,7 +102,7 @@ class Propius_client_aio():
         """
 
         self._cleanup_routine()
-        self._custom_print(f"Client {self.id}: closing connection to Propius", INFO)
+        self._custom_print(f"Client {self.id}: closing connection to Propius")
     
     async def client_check_in(self, num_trial: int=1) -> tuple[list, list]:
         """Client check in. Send client public spec to Propius client manager. Propius will return task offer list for client to select a task locally.
@@ -157,7 +157,7 @@ class Propius_client_aio():
                 task_ids = pickle.loads(cm_offer.task_offer)
                 task_private_constraint = pickle.loads(
                     cm_offer.private_constraint)
-                self._custom_print(f"Client {self.id}: pinged Propius", INFO)
+                self._custom_print(f"Client {self.id}: pinged Propius")
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
@@ -187,7 +187,7 @@ class Propius_client_aio():
                 self._custom_print(f"Client {self.id}: select task {task_id}", INFO)
                 return task_id
  
-        self._custom_print(f"Client {self.id}: not eligible", INFO)
+        self._custom_print(f"Client {self.id}: not eligible")
         return -1
     
     async def client_accept(self, task_id: int, num_trial: int=1)->tuple[str, int]:
@@ -213,7 +213,7 @@ class Propius_client_aio():
                 cm_ack = self._lb_stub.CLIENT_ACCEPT(client_accept_msg)
                 
                 if cm_ack.ack:
-                    self._custom_print(f"Client {self.id}: client task selection is recieved", INFO)
+                    self._custom_print(f"Client {self.id}: client task selection is recieved")
                     return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
                 else:
                     self._custom_print(f"Client {self.id}: client task selection is rejected", WARNING)

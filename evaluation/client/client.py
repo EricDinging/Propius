@@ -20,7 +20,11 @@ class Client:
         if self.use_docker:
             client_config["load_balancer_ip"] = "load_balancer"
             
-        self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=False)
+        self.propius_client_stub = Propius_client_aio(
+            client_config=client_config, 
+            verbose=False,
+            logging=True)
+        
         self.ps_channel = None
         self.ps_stub = None
         
@@ -46,7 +50,7 @@ class Client:
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
         self.ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(self.ps_channel)
         custom_print(
-            f"Client {self.id}: connecting to parameter server on {ps_ip}:{ps_port}", INFO)
+            f"Client {self.id}: connecting to parameter server on {ps_ip}:{ps_port}")
         
     async def handle_server_response(self, server_response: parameter_server_pb2.server_response):
         event = server_response.event
@@ -111,7 +115,7 @@ class Client:
         return True
 
     async def event_monitor(self):
-        custom_print(f"Client {self.id}: ping to jobs", INFO)
+        custom_print(f"Client {self.id}: ping to jobs")
         while await self.client_ping():
             await asyncio.sleep(3)
         while await self.execute():
@@ -134,7 +138,7 @@ class Client:
                 self.cur_time = time.time() - self.eval_start_time
                 if self.cur_time < self.active_time[self.cur_period]:
                     sleep_time = self.active_time[self.cur_period] - self.cur_time
-                    custom_print(f"Client {self.id}: sleep for {sleep_time}", INFO)
+                    custom_print(f"Client {self.id}: sleep for {sleep_time}")
                     await asyncio.sleep(self.active_time[self.cur_period] - self.cur_time)
                     continue
                 elif self.cur_time >= self.inactive_time[self.cur_period]:
@@ -180,7 +184,7 @@ if __name__ == '__main__':
     with open(config_file, 'r') as config:
         config = yaml.load(config, Loader=yaml.FullLoader)
         if len(sys.argv) != 2:
-            custom_print(f"Usage: python evaluation/client/client.py <id>", INFO)
+            custom_print(f"Usage: python evaluation/client/client.py <id>", ERROR)
             exit(1)
         config["id"] = int(sys.argv[1])
         eval_config_file = './evaluation/evaluation_config.yml'
