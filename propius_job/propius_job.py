@@ -4,12 +4,19 @@ from propius.channels import propius_pb2
 import grpc
 import time
 from datetime import datetime
+import logging
 
 CPU_F = "cpu_f"
 RAM = "ram"
 FP16_MEM = "fp16_mem"
 ANDROID_OS = "android_os"
 DATASET_SIZE = "dataset_size"
+PRINT = 0
+DEBUG = 1
+INFO = 2
+WARNING = 3
+ERROR = 4
+
 
 def get_time() -> str:
     current_time = datetime.now()
@@ -69,7 +76,7 @@ def gen_job_config(constraint: tuple[list, list],
 
 
 class Propius_job():
-    def __init__(self, job_config: dict, verbose: bool = False):
+    def __init__(self, job_config: dict, verbose: bool = False, logging: bool = False):
         """Init Propius_job class
 
         Args:
@@ -103,6 +110,7 @@ class Propius_job():
             self.ip = job_config['ip']
             self.port = job_config['port']
             self.verbose = verbose
+            self.logging = logging
             self.id = -1
         except BaseException:
             raise ValueError("Missing config arguments")
@@ -113,6 +121,19 @@ class Propius_job():
         except BaseException:
             pass
 
+    def _custom_print(self, message: str, level: int=PRINT):
+        if self.verbose:
+            print(f"{get_time()} {message}")
+        if self.logging:
+            if level == DEBUG:
+                logging.debug(message)
+            elif level == INFO:
+                logging.info(message)
+            elif level == WARNING:
+                logging.warning(message)
+            elif level == ERROR:
+                logging.error(message)
+
     def __del__(self):
         self._cleanup_routine()
 
@@ -120,8 +141,7 @@ class Propius_job():
         self._jm_channel = grpc.insecure_channel(f'{self._jm_ip}:{self._jm_port}')
         self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
 
-        if self.verbose:
-            print(f"{get_time()} Job: connecting to job manager at {self._jm_ip}:{self._jm_port}")
+        self._custom_print(f"Job: connecting to job manager at {self._jm_ip}:{self._jm_port}", INFO)
 
     def connect(self):
         """Connect to Propius job manager
@@ -134,8 +154,7 @@ class Propius_job():
                 self._connect_jm()
                 return
             except Exception as e:
-                if self.verbose:
-                    print(f"{get_time()} {e}")
+                self._custom_print(e, ERROR)
                 time.sleep(5)
 
         raise RuntimeError(
@@ -146,8 +165,7 @@ class Propius_job():
         """
         
         self._cleanup_routine()
-        if self.verbose:
-            print(f"{get_time()} Job {self.id}: closing connection to Propius")
+        self._custom_print(f"Job {self.id}: closing connection to Propius", INFO)
 
     def register(self) -> bool:
         """Register job. Send job config to Propius job manager. This configuration will expire
@@ -177,15 +195,15 @@ class Propius_job():
                 self._cleanup_routine()
                 if not ack:
                     if self.verbose:
-                        print(f"{get_time()} Job {self.id}: register failed")
+                        self._custom_print(f"Job {self.id}: register failed", WARNING)
                     return False
                 else:
                     if self.verbose:
-                        print(f"{get_time()} Job {self.id}: register success")
+                        self._custom_print(f"Job {self.id}: register success", INFO)
                     return True
             except Exception as e:
                 if self.verbose:
-                    print(f"{get_time()} {e}")
+                    self._custom_print(e, ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
 
@@ -229,18 +247,14 @@ class Propius_job():
                 ack_msg = self._jm_stub.JOB_REQUEST(request_msg)
                 self._cleanup_routine()
                 if not ack_msg.ack:
-                    if self.verbose:
-                        print(
-                            f"{get_time()} Job {self.id}: round request failed")
+                    self._custom_print(f"Job {self.id}: round request failed", WARNING)
                     return False
                 else:
-                    if self.verbose:
-                        print(
-                            f"{get_time()} Job {self.id}: round request succeeded")
+                    
+                    self._custom_print(f"Job {self.id}: round request succeeded", INFO)
                     return True
             except Exception as e:
-                if self.verbose:
-                    print(f"{get_time()} {e}")
+                self._custom_print(e, ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
 
@@ -263,18 +277,13 @@ class Propius_job():
                 ack_msg = self._jm_stub.JOB_END_REQUEST(request_msg)
                 self._cleanup_routine()
                 if not ack_msg.ack:
-                    if self.verbose:
-                        print(
-                            f"{get_time()} Job {self.id}: end request failed")
+                    self._custom_print(f"Job {self.id}: end request failed", WARNING)
                     return False
                 else:
-                    if self.verbose:
-                        print(
-                            f"{get_time()} Job {self.id}: end request succeeded")
+                    self._custom_print(f"Job {self.id}: end request succeeded", INFO)
                     return True
             except Exception as e:
-                if self.verbose:
-                    print(f"{get_time()} {e}")
+                self._custom_print(e, ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
 
@@ -295,12 +304,10 @@ class Propius_job():
             try:
                 self._jm_stub.JOB_FINISH(req_msg)
                 self._cleanup_routine()
-                if self.verbose:
-                    print(f"{get_time()} Job {self.id}: job completed")
+                self._custom_print(f"Job {self.id}: job completed", WARNING)
                 return
             except Exception as e:
-                if self.verbose:
-                    print(f"{get_time()} {e}")
+                self._custom_print(e, ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
 

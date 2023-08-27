@@ -52,7 +52,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         self.execution_start = False #indicating whether the scheduling phase has passed
 
-        self.propius_stub = Propius_job(job_config=job_config, verbose=True)
+        self.propius_stub = Propius_job(job_config=job_config, verbose=True, logging=True)
 
         # self.propius_stub.connect()
 
