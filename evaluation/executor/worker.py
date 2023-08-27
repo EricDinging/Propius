@@ -18,6 +18,8 @@ import torch
 from torch.autograd import Variable
 import numpy as np
 import random
+import logging
+import logging.handlers
 
 _cleanup_coroutines = []
 
@@ -359,7 +361,15 @@ async def run(config):
 
     id = int(sys.argv[1])
 
-    logging.basicConfig(level=logging.INFO, filename=f'./evaluation/executor/wk{id}_app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+    log_file = f'./evaluation/executor/wk{id}_app.log'
+    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.INFO)
+
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
     worker = Worker(id, config)
     _cleanup_coroutines.append(server_graceful_shutdown())
 

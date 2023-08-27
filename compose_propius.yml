@@ -37,6 +37,7 @@ services:
       - job_db
       - client_db_0
     stop_signal: SIGINT
+    command: ["0"]
   
   load_balancer:
     build:

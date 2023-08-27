@@ -7,6 +7,7 @@ from propius.channels import propius_pb2
 import yaml
 import grpc
 import logging
+import logging.handlers
 import asyncio
 
 _cleanup_coroutines = []
@@ -123,11 +124,15 @@ async def serve(gconfig):
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO,
-                        filename='./propius/load_balancer/app.log',
-                        filemode='w',
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S',)
+    log_file = './propius/load_balancer/app.log'
+    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.INFO)
+
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
     
     global_setup_file = './propius/global_config.yml'
 

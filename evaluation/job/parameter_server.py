@@ -12,7 +12,8 @@ from evaluation.executor.channels import executor_pb2
 from evaluation.executor.channels import executor_pb2_grpc
 import os
 import csv
-import copy
+import logging
+import logging.handlers
 
 _cleanup_coroutines = []
 
@@ -346,11 +347,16 @@ if __name__ == '__main__':
     ip = sys.argv[2]
     port = int(sys.argv[3])
 
-    logging.basicConfig(level=logging.INFO,
-                        filename=f'./evaluation/job/log/app_{port}.log',
-                        filemode='w',
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S',)
+    log_file = f'./evaluation/job/log/app_{port}.log'
+
+    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.INFO)
+
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
 
     with open(config_file, 'r') as config:
         try:

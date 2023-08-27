@@ -11,6 +11,7 @@ from evaluation.executor.worker_manager import *
 from evaluation.commons import *
 import os
 import logging
+import logging.handlers
 
 _cleanup_coroutines = []
 
@@ -228,7 +229,16 @@ async def run(config):
     await executor.execute()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, filename='./evaluation/executor/ex_app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+    log_file = './evaluation/executor/ex_app.log'
+    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.INFO)
+
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    
     config_file = './evaluation/evaluation_config.yml'
     with open(config_file, 'r') as config:
         try:

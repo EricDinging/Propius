@@ -10,7 +10,8 @@ from evaluation.single_executor.task_pool import *
 from evaluation.single_executor.worker import *
 from evaluation.commons import *
 import os
-import time
+import logging
+import logging.handlers
 
 _cleanup_coroutines = []
 
@@ -123,11 +124,15 @@ async def run(config):
 
 if __name__ == '__main__':
     config_file = './evaluation/evaluation_config.yml'
-    logging.basicConfig(level=logging.INFO,
-                        filename='./evaluation/single_executor/app.log',
-                        filemode='w', 
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S',)
+    log_file = './evaluation/single_executor/app.log'
+    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.INFO)
+
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)

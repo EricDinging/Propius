@@ -1,21 +1,62 @@
 version: "3.9"
 
 services:
+  worker_0:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets:/datasets
+    stop_signal: SIGINT
+    command: ["0"]
+
+  worker_1:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets:/datasets
+    stop_signal: SIGINT
+    command: ["1"]
+  
   executor:
     build: 
       context: .
-      dockerfile: ./evaluation/single_executor/Dockerfile_gpu
+      dockerfile: ./evaluation/executor/Dockerfile_executor
     volumes:
-      - ./evaluation/single_executor:/evaluation/single_executor
+      - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-      - ./datasets:/datasets
-    ports:
-      - "49999:49999"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 4
-              capabilities: [gpu]
     stop_signal: SIGINT
+    depends_on:
+      - worker_0
+      - worker_1
+  
+  clients:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+      - ./evaluation/client:/evaluation/client
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+      - load_balancer
+      
+
+  jobs:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+      - ./evaluation/job:/evaluation/job
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    stop_signal: SIGINT
+    depends_on:
+      - executor
+      - clients
+      - job_manager
