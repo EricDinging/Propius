@@ -10,6 +10,7 @@ RUN mkdir /evaluation
 COPY ./evaluation/commons.py /evaluation/commons.py
 COPY ./fedscale /fedscale
 COPY ./evaluation/requirements.txt /evaluation/requirements.txt
+COPY ./evaluation/executor/entrypoint.sh /evaluation/executor/entrypoint.sh
 
 RUN pip3 install --upgrade pip
 RUN pip3 install -r /evaluation/requirements.txt

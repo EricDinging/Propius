@@ -71,7 +71,7 @@ async def run(config):
                     "eval_start_time": eval_start_time,
                     "active": selected_client_avail[client_idx]['active'],
                     "inactive": selected_client_avail[client_idx]['inactive'],
-                    "use_docker": config["use_docker"]
+                    "use_docker": config["use_docker"],
                 }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)

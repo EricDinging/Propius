@@ -124,7 +124,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 custom_print(e, ERROR)
 
     async def execute(self):
-        #TODO
         while True:
             execute_meta = await self.task_pool.get_next_task()
             
@@ -240,8 +239,8 @@ if __name__ == '__main__':
             loop.run_until_complete(run(config))
         except KeyboardInterrupt:
             pass
-        except Exception as e:
-            custom_print(e, ERROR)
+        # except Exception as e:
+        #     custom_print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

@@ -17,7 +17,7 @@ class Client:
         self.task_id = -1
         self.use_docker = client_config["use_docker"]
 
-        if self.use_docker:
+        if client_config["use_docker"]:
             client_config["load_balancer_ip"] = "load_balancer"
             
         self.propius_client_stub = Propius_client_aio(

@@ -23,7 +23,10 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
                 f"{ip}",
                 f"{port + i}"]
             print(command)
-            p = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            if config["use_docker"]:
+                p = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            else:
+                p = subprocess.Popen(command)
             job_processes.append(p)
             i += 1
 

@@ -8,7 +8,7 @@ services:
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-      - ./datasets"/datasets
+      - ./datasets:/datasets
     stop_signal: SIGINT
     command: ["0"]
 
@@ -19,7 +19,7 @@ services:
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-      - ./datasets"/datasets
+      - ./datasets:/datasets
     stop_signal: SIGINT
     command: ["1"]
   

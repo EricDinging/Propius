@@ -17,7 +17,7 @@ job_private_constraint:
 # ---Simulation---
 
 client_num: 100
-client_test_num: 100
+client_test_num: 10
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
@@ -36,7 +36,7 @@ job_driver_starting_port: 50010
 
 # ---Execution---
 use_cuda: False
-use_docker: True
+use_docker: False
 
 # ---Single worker
 cuda_device: cuda:0
