@@ -64,5 +64,3 @@ eval_interval: 10
 femnist_data_dir: ./datasets/femnist
 femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
 femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
-
-verbose: True

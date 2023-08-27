@@ -10,8 +10,6 @@ from evaluation.single_executor.task_pool import *
 from evaluation.single_executor.worker import *
 from evaluation.commons import *
 import os
-import logging
-import logging.handlers
 
 _cleanup_coroutines = []
 
@@ -20,7 +18,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.ip = config['executor_ip'] if not config['use_docker'] else '0.0.0.0'
         self.port = config['executor_port']
         self.task_pool = Task_pool(config)
-        self.worker = Worker(config)
+        self.worker = Worker(config, logger)
         self.sched_alg = config['sched_alg']
 
         result_dict = f"./evaluation/single_executor/result_{self.sched_alg}"
@@ -63,7 +61,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             
             job_id = execute_meta['job_id']
 
-            custom_print(f"Executor: execute job {job_id} {execute_meta['event']}", INFO)
+            logger.print(f"Executor: execute job {job_id} {execute_meta['event']}", INFO)
 
             if execute_meta['event'] == JOB_FINISH:
                 await self.task_pool.gen_report(job_id=job_id,
@@ -104,10 +102,10 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                 result=results)
 
     
-async def run(config):
+async def run(config, logger: My_logger):
     async def server_graceful_shutdown():
         await executor.task_pool.gen_all_report(executor.sched_alg)
-        custom_print("==Executor ending==", INFO)
+        logger.print("==Executor ending==", WARNING)
         #TODO handling result
         await server.stop(5)
 
@@ -118,32 +116,26 @@ async def run(config):
     executor_pb2_grpc.add_ExecutorServicer_to_server(executor, server)
     server.add_insecure_port(f"{executor.ip}:{executor.port}")
     await server.start()
-    custom_print(f"Executor: executor started, listening on {executor.ip}:{executor.port}", INFO)
+    logger.print(f"Executor: executor started, listening on {executor.ip}:{executor.port}", INFO)
 
     await executor.execute()
 
 if __name__ == '__main__':
     config_file = './evaluation/evaluation_config.yml'
     log_file = './evaluation/single_executor/app.log'
-    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
+    logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
 
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    handler.setLevel(logging.INFO)
-
-    root_logger = logging.getLogger()
-    root_logger.addHandler(handler)
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
-            custom_print("Executor read config successfully")
+            logger.print("Executor read config successfully")
                 
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(run(config))
+            loop.run_until_complete(run(config, logger))
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            custom_print(e, ERROR)
+            logger.print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

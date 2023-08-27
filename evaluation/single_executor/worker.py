@@ -16,7 +16,7 @@ import sys
 import pickle
 
 class Worker:
-    def __init__(self, config):
+    def __init__(self, config, logger):
         """Init worker class
 
         Args:
@@ -43,7 +43,8 @@ class Worker:
         else:
             self.device = torch.device("cpu")
        
-        custom_print(f"Worker: use {self.device}", INFO)
+        self.logger = logger
+        self.logger.print(f"Worker: use {self.device}", INFO)
 
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
@@ -94,7 +95,7 @@ class Worker:
             loss.backward()
             optimizer.step()
 
-            custom_print(f"Worker: step {self._completed_steps} completed")
+            self.logger.print(f"Worker: step {self._completed_steps} completed")
             self._completed_steps += 1
 
             if self._completed_steps == conf['local_steps']:
@@ -110,7 +111,7 @@ class Worker:
                                      args=conf,
                                      is_test=False,
                                      )
-        custom_print(f"Worker: Client {client_id}: === Starting to train ===", INFO)
+        self.logger.print(f"Worker: Client {client_id}: === Starting to train ===", INFO)
         model = model.to(device=self.device)
         model.train()
 
@@ -125,7 +126,7 @@ class Worker:
             try:
                 self._train_step(client_data, conf, model, optimizer, criterion)
             except Exception as ex:
-                custom_print(ex, ERROR)
+                self.logger.print(ex, ERROR)
                 break
         
         state_dict = model.state_dict()
@@ -134,7 +135,7 @@ class Worker:
                   'trained_size': self._completed_steps * conf['batch_size'],
         }       
 
-        custom_print(f"Worker: Client {client_id}: training complete, {results}===", INFO)
+        self.logger.print(f"Worker: Client {client_id}: training complete, {results}===", INFO)
 
         return (model_param, results)
     
@@ -168,7 +169,7 @@ class Worker:
                     correct += acc[0].item()
                     top_5 += acc[1].item()
                 except Exception as ex:
-                    print(ex)
+                    self.logger.print(ex, ERROR)
                     break
                 test_len += len(target)
         
@@ -294,7 +295,7 @@ class Worker:
                 }
 
                 for i in range(self.config['client_test_num']):
-                    custom_print(f"Worker: starting client {i} test", INFO)
+                    self.logger.print(f"Worker: starting client {i} test", INFO)
                     temp_results = self._test(
                         client_id=i,
                         partition=self.test_data_partition_dict[self.job_id_data_map[job_id]],
