@@ -4,6 +4,7 @@ import pickle
 import grpc
 import asyncio
 from propius_client.commons import *
+import logging
 
 #TODO state flow check
 #TODO add value check
@@ -12,7 +13,7 @@ def gen_client_config():
     pass
 
 class Propius_client_aio():
-    def __init__(self, client_config: dict, verbose: bool = False):
+    def __init__(self, client_config: dict, verbose: bool = False, logging: bool = False):
         """Init Propius_client class
 
         Args:
@@ -22,6 +23,7 @@ class Propius_client_aio():
                 load_balancer_ip
                 load_balancer_port
             verbose: whether to print or not
+            logging: whether to log or not
 
         Raises:
             ValueError: missing config args
@@ -41,6 +43,7 @@ class Propius_client_aio():
             self._lb_stub = None
 
             self.verbose = verbose
+            self.logging = logging
         except Exception as e:
             raise ValueError("Invalid config arguments")
         
@@ -53,12 +56,24 @@ class Propius_client_aio():
     def __del__(self):
         self._cleanup_routine()
 
+    def _custom_print(self, message: str, level: int=PRINT):
+        if self.verbose:
+            print(f"{get_time()} {message}")
+        if self.logging:
+            if level == DEBUG:
+                logging.debug(message)
+            elif level == INFO:
+                logging.info(message)
+            elif level == WARNING:
+                logging.warning(message)
+            elif level == ERROR:
+                logging.error(message)
+
     def _connect_lb(self) -> None:
         self._lb_channel = grpc.insecure_channel(f'{self._lb_ip}:{self._lb_port}')
         self._lb_stub = propius_pb2_grpc.Load_balancerStub(self._lb_channel)
 
-        if self.verbose:
-            print(f"{get_time()} Client: connecting to load balancer at {self._lb_ip}:{self._lb_port}")
+        self._custom_print(f"Client: connecting to load balancer at {self._lb_ip}:{self._lb_port}", INFO)
 
     async def connect(self, num_trial: int=1):
         """Connect to Propius load balancer
@@ -73,12 +88,10 @@ class Propius_client_aio():
         for _ in range(num_trial):
             try:
                 self._connect_lb()
-                if self.verbose:
-                    print(f"{get_time()} Client: connected to Propius")
+                self._custom_print(f"Client: connected to Propius", INFO)
                 return
             except Exception as e:
-                if self.verbose:
-                    print(f"{get_time()} {e}")
+                self._custom_print(e, ERROR)
                 await asyncio.sleep(2)
 
         raise RuntimeError(
@@ -89,8 +102,7 @@ class Propius_client_aio():
         """
 
         self._cleanup_routine()
-        if self.verbose:
-            print(f"{get_time()} Client {self.id}: closing connection to Propius")
+        self._custom_print(f"Client {self.id}: closing connection to Propius", INFO)
     
     async def client_check_in(self, num_trial: int=1) -> tuple[list, list]:
         """Client check in. Send client public spec to Propius client manager. Propius will return task offer list for client to select a task locally.
@@ -116,13 +128,12 @@ class Propius_client_aio():
                 task_ids = pickle.loads(cm_offer.task_offer)
                 task_private_constraint = pickle.loads(
                     cm_offer.private_constraint)
-                if self.verbose:
-                    print(f"{get_time()} Client {self.id}: checked in to Propius, public spec {self.public_specifications}")
+               
+                self._custom_print(f"Client {self.id}: checked in to Propius, public spec {self.public_specifications}", INFO)
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
-                if self.verbose:
-                    print(f"{get_time()} {e}")
+                self._custom_print(e, ERROR)
                 await asyncio.sleep(2)
         raise RuntimeError("Unable to connect to Propius at the moment")
     
@@ -146,13 +157,11 @@ class Propius_client_aio():
                 task_ids = pickle.loads(cm_offer.task_offer)
                 task_private_constraint = pickle.loads(
                     cm_offer.private_constraint)
-                if self.verbose:
-                    print(f"{get_time()} Client {self.id}: pinged Propius")
+                self._custom_print(f"Client {self.id}: pinged Propius", INFO)
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
-                if self.verbose:
-                    print(f"{get_time()} {e}")
+                self._custom_print(e, ERROR)
                 await asyncio.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
@@ -175,12 +184,10 @@ class Propius_client_aio():
                 raise ValueError(
                     "client private specification len does not match required")
             if geq(self.private_specifications, private_constraints[idx]):
-                if self.verbose:
-                    print(f"{get_time()} Client {self.id}: select task {task_id}")
+                self._custom_print(f"Client {self.id}: select task {task_id}", INFO)
                 return task_id
-
-        if self.verbose: 
-            print(f"{get_time()} Client {self.id}: not eligible")
+ 
+        self._custom_print(f"Client {self.id}: not eligible", INFO)
         return -1
     
     async def client_accept(self, task_id: int, num_trial: int=1)->tuple[str, int]:
@@ -204,17 +211,16 @@ class Propius_client_aio():
             )
             try:
                 cm_ack = self._lb_stub.CLIENT_ACCEPT(client_accept_msg)
-                if self.verbose:
-                    if cm_ack.ack:
-                        print(f"{get_time()} Client {self.id}: client task selection is recieved")
-                        return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
-                    else:
-                        print(f"{get_time()} Client {self.id}: client task selection is rejected")
-                        return None
+                
+                if cm_ack.ack:
+                    self._custom_print(f"Client {self.id}: client task selection is recieved", INFO)
+                    return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
+                else:
+                    self._custom_print(f"Client {self.id}: client task selection is rejected", WARNING)
+                    return None
             
             except Exception as e:
-                if self.verbose:
-                    print(f"{get_time()} {e}")
+                self._custom_print(e, ERROR)
                 await asyncio.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
@@ -237,9 +243,9 @@ class Propius_client_aio():
         """
 
         task_ids, task_private_constraint = await self.client_check_in()
-        if self.verbose:
-            print(
-                f"{get_time()} Client {self.id}: recieve client manager offer: {task_ids}")
+        
+        self._custom_print(
+                f"Client {self.id}: recieve client manager offer: {task_ids}", INFO)
             
         while True:
             while ttl > 0:
@@ -268,8 +274,7 @@ class Propius_client_aio():
                 else:
                     continue
             else:
-                if self.verbose:
-                    print(f"{get_time()} Client {self.id}: scheduled with {task_id}")
+                self._custom_print(f"Client {self.id}: scheduled with {task_id}", INFO)
                 break
         
         return self.id, True, task_id, result[0], result[1]

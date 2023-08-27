@@ -1,6 +1,10 @@
 from datetime import datetime
 
-
+PRINT = 0
+DEBUG = 1
+INFO = 2
+WARNING = 3
+ERROR = 4
 CPU_F = "cpu_f"
 RAM = "ram"
 FP16_MEM = "fp16_mem"

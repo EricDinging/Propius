@@ -90,6 +90,7 @@ class Propius_job():
                 ip
                 port
             verbose: whether to print or not
+            logging: whether to log or not
 
         Raises:
             ValueError: missing config args
