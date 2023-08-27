@@ -146,7 +146,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
 
                 await self.task_pool.gen_report(job_id=job_id,
-                                                sched_alg=self.gconfig["sched_alg"])
+                                                sched_alg=self.config["sched_alg"])
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 
@@ -239,8 +239,8 @@ if __name__ == '__main__':
             loop.run_until_complete(run(config))
         except KeyboardInterrupt:
             pass
-        # except Exception as e:
-        #     custom_print(e, ERROR)
+        except Exception as e:
+            custom_print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()
