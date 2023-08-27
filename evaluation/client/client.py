@@ -15,6 +15,11 @@ class Client:
     def __init__(self, client_config: dict):
         self.id = client_config["id"]
         self.task_id = -1
+        self.use_docker = client_config["use_docker"]
+
+        if self.use_docker:
+            client_config["load_balancer_ip"] = "load_balancer"
+            
         self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=True)
         self.ps_channel = None
         self.ps_stub = None
@@ -153,6 +158,9 @@ class Client:
                 if remain_time <= 0:
                     continue
                 
+                if self.use_docker:
+                    ps_ip = "jobs"
+
                 await self._connect_to_ps(ps_ip, ps_port)
                 try:
                     task = asyncio.create_task(self.event_monitor())
@@ -183,6 +191,7 @@ if __name__ == '__main__':
             eval_config = yaml.load(eval_config, Loader=yaml.FullLoader)
             config["load_balancer_ip"] = eval_config["load_balancer_ip"]
             config["load_balancer_port"] = eval_config["load_balancer_port"]
+            config["use_docker"] = eval_config["use_docker"]
             client = Client(config)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(client.run())

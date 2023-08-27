@@ -4,8 +4,8 @@ import asyncio
 import yaml
 import grpc
 import pickle
-from evaluation.single_executor.channels import executor_pb2
-from evaluation.single_executor.channels import executor_pb2_grpc
+from evaluation.executor.channels import executor_pb2
+from evaluation.executor.channels import executor_pb2_grpc
 from evaluation.single_executor.task_pool import *
 from evaluation.single_executor.worker import *
 from evaluation.commons import *

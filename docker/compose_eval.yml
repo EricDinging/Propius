@@ -9,14 +9,23 @@ services:
       - ./evaluation/single_executor:/evaluation/single_executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./datasets:/datasets
-    ports:
-      - "49999:49999"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 4
-              capabilities: [gpu]
+    stop_signal: SIGINT
+  
+  clients:
+    build:
+      context: ..
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+      - ./evaluation/client:/evaluation/client
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
 
+  jobs:
+    build:
+      context: ..
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+      - ./evaluation/job:/evaluation/job
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     stop_signal: SIGINT

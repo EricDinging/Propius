@@ -23,6 +23,14 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.over_demand = self.demand if "over_selection" not in config else \
             int(config["over_selection"] * config["demand"])
 
+        if config["use_docker"]:
+            config["job_manager_ip"] = "job_manager"
+            config["ip"] = "0.0.0.0"
+            config["executor_ip"] = "executor"
+
+        self.ip = config["ip"]
+        self.port = config["port"]
+
         job_config = {
             "public_constraint": config["public_constraint"],
             "private_constraint": config["private_constraint"],
@@ -298,7 +306,7 @@ async def run(config):
     ps.round_time_stamp[0] = time.time()
 
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
-    server.add_insecure_port(f"{config['ip']}:{config['port']}")
+    server.add_insecure_port(f"{ps.ip}:{ps.port}")
     await server.start()
     print(f"Parameter server: parameter server started, listening on {config['ip']}:{config['port']}")
 

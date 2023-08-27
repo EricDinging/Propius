@@ -14,7 +14,7 @@ async def run(gconfig):
     # num = int(gconfig['client_num'])
     # total_time = int(gconfig['total_running_second'])
     public_constraint_name = gconfig['job_public_constraint']
-    private_constraint_name = gconfig['job_private_constraint']
+    # private_constraint_name = gconfig['job_private_constraint']
     # start_time_list = [0] * total_time
 
     client_comm_dict = None
