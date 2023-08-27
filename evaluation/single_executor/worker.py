@@ -292,7 +292,7 @@ class Worker:
                 }
 
                 for i in range(self.config['client_test_num']):
-                    custom_print(f"Worker: starting client {i} test")
+                    custom_print(f"Worker: starting client {i} test", INFO)
                     temp_results = self._test(
                         client_id=i,
                         partition=self.test_data_partition_dict[self.job_id_data_map[job_id]],

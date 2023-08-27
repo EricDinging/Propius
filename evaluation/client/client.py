@@ -45,8 +45,8 @@ class Client:
     async def _connect_to_ps(self, ps_ip: str, ps_port: int):
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
         self.ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(self.ps_channel)
-        print(
-            f"Client {self.id}: connecting to parameter server on {ps_ip}:{ps_port}")
+        custom_print(
+            f"Client {self.id}: connecting to parameter server on {ps_ip}:{ps_port}", INFO)
         
     async def handle_server_response(self, server_response: parameter_server_pb2.server_response):
         event = server_response.event
@@ -98,7 +98,7 @@ class Client:
         elif event == UPLOAD_MODEL:
             time = meta["upload_size"] / float(self.comm_speed)
         
-        print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds")
+        custom_print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds", INFO)
         
         await asyncio.sleep(time)
 
@@ -111,7 +111,7 @@ class Client:
         return True
 
     async def event_monitor(self):
-        print(f"Client {self.id}: ping")
+        custom_print(f"Client {self.id}: ping to jobs", INFO)
         while await self.client_ping():
             await asyncio.sleep(3)
         while await self.execute():
@@ -129,12 +129,12 @@ class Client:
         try:
             while True:
                 if self.cur_period >= len(self.active_time):
-                    print(f"Client {self.id}: ==shutting down==")
+                    custom_print(f"Client {self.id}: ==shutting down==", WARNING)
                     break
                 self.cur_time = time.time() - self.eval_start_time
                 if self.cur_time < self.active_time[self.cur_period]:
                     sleep_time = self.active_time[self.cur_period] - self.cur_time
-                    print(f"Client {self.id}: sleep for {sleep_time}")
+                    custom_print(f"Client {self.id}: sleep for {sleep_time}", INFO)
                     await asyncio.sleep(self.active_time[self.cur_period] - self.cur_time)
                     continue
                 elif self.cur_time >= self.inactive_time[self.cur_period]:
@@ -164,14 +164,14 @@ class Client:
                     await asyncio.wait_for(task, 
                                            timeout=remain_time)
                 except asyncio.TimeoutError:
-                    print(f"Client {self.id}: timeout, abort")
+                    custom_print(f"Client {self.id}: timeout, abort", WARNING)
                     pass
                 await self.cleanup_routines()
 
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print(f"Client {self.id}: {e}")
+            custom_print(f"Client {self.id}: {e}", ERROR)
         finally:
             await self.cleanup_routines(True)
         
@@ -180,7 +180,7 @@ if __name__ == '__main__':
     with open(config_file, 'r') as config:
         config = yaml.load(config, Loader=yaml.FullLoader)
         if len(sys.argv) != 2:
-            print(f"Usage: python evaluation/client/client.py <id>")
+            custom_print(f"Usage: python evaluation/client/client.py <id>", INFO)
             exit(1)
         config["id"] = int(sys.argv[1])
         eval_config_file = './evaluation/evaluation_config.yml'

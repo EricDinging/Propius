@@ -23,24 +23,22 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.over_demand = self.demand if "over_selection" not in config else \
             int(config["over_selection"] * config["demand"])
 
+        if config["use_docker"]:
+            config["executor_ip"] = "executor"
+
         job_config = {
             "public_constraint": config["public_constraint"],
             "private_constraint": config["private_constraint"],
             "total_round": config["total_round"],
             "demand": config["demand"] if "over_selection" not in config else \
                     int(config["over_selection"] * config["demand"]),
-            "job_manager_ip": config["job_manager_ip"],
+            "job_manager_ip": config["job_manager_ip"] if not config["use_docker"] else "job_manager",
             "job_manager_port": config["job_manager_port"],
             "ip": config["ip"] if not config["use_docker"] else "jobs",
             "port": config["port"]
         }
 
-        if config["use_docker"]:
-            config["job_manager_ip"] = "job_manager"
-            config["ip"] = "0.0.0.0"
-            config["executor_ip"] = "executor"
-
-        self.ip = config["ip"]
+        self.ip = config["ip"] if not config["use_docker"] else "0.0.0.0"
         self.port = config["port"]
 
         self.lock = asyncio.Lock()
@@ -308,7 +306,7 @@ async def run(config):
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
     server.add_insecure_port(f"{ps.ip}:{ps.port}")
     await server.start()
-    custom_print(f"Parameter server: parameter server started, listening on {config['ip']}:{config['port']}", INFO)
+    custom_print(f"Parameter server: parameter server started, listening on {ps.ip}:{ps.port}", INFO)
 
     ps.round_sched_time[0] = 0
     round = 1

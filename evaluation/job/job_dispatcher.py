@@ -10,7 +10,9 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
 
     with open(f"./evaluation/job/job_trace_{num}.txt", "r") as file:
         i = 0
+        time.sleep(10)
 
+        job_processes = []
         for line in file:
             line = line.strip().split(" ")
             time.sleep(int(line[0]))
@@ -21,5 +23,9 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
                 f"{ip}",
                 f"{port + i}"]
             print(command)
-            subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            p = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            job_processes.append(p)
             i += 1
+
+        for p in job_processes:
+            p.wait()

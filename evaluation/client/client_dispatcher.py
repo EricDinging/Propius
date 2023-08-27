@@ -50,6 +50,7 @@ async def run(config):
 
     task_list = []
 
+    await asyncio.sleep(10)
     try:
 
         for client_idx in range(client_num):
@@ -85,8 +86,11 @@ async def run(config):
         await asyncio.gather(*task_list, return_exceptions=True)
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    logger = logging.getLogger()
+    logging.basicConfig(level=logging.INFO,
+                        filename=f'./evaluation/client/app.log',
+                        filemode='w',
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',)
 
     global_setup_file = './evaluation/evaluation_config.yml'
 
