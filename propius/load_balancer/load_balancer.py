@@ -14,7 +14,7 @@ _cleanup_coroutines = []
 
 
 class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
-    def __init__(self, gconfig):
+    def __init__(self, gconfig, logger):
         self.gconfig = gconfig
         self.ip = gconfig['load_balancer_ip'] if not gconfig['use_docker'] else '0.0.0.0'
         self.port = gconfig['load_balancer_port']
@@ -29,7 +29,8 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.cm_channel_dict = {}
         self.cm_stub_dict = {}
         self._connect_cm()
-        self.lb_monitor = LB_monitor(gconfig['sched_alg'], gconfig['plot'])
+        self.lb_monitor = LB_monitor(gconfig['sched_alg'], logger, gconfig['plot'])
+        self.logger = logger
 
     def _connect_cm(self):
         for cm_id, cm_addr in enumerate(self.cm_addr_list):
@@ -44,7 +45,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
                 f'{cm_ip}:{cm_port}')
             self.cm_stub_dict[cm_id] = propius_pb2_grpc.Client_managerStub(
                 self.cm_channel_dict[cm_id])
-            # custom_print(
+            # self.logger.print(
             #     f"Load balancer: connecting to client manager {cm_id} at {cm_ip}:{cm_port}")
 
     async def _disconnect_cm(self):
@@ -60,7 +61,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         async with self.lock:
             await self.lb_monitor.request()
             self.idx %= len(self.cm_channel_dict)
-            # custom_print(
+            # self.logger.print(
             #     f"Load balancer: client check in, route to client manager {self.idx}")
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
             self._next_idx()
@@ -70,7 +71,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         async with self.lock:
             await self.lb_monitor.request()
             idx = int(request.id / self.id_weight)
-            # custom_print(
+            # self.logger.print(
             #     f"Load balancer: client ping, route to client manager {idx}")
             return_msg = await self.cm_stub_dict[idx].CLIENT_PING(request)
         return return_msg
@@ -79,7 +80,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         async with self.lock:
             await self.lb_monitor.request()
             self.idx %= len(self.cm_channel_dict)
-            # custom_print(
+            # self.logger.print(
             #     f"Load balancer: client accept, route to client manager {self.idx}")
             return_msg = await self.cm_stub_dict[self.idx].CLIENT_ACCEPT(request)
             self._next_idx()
@@ -100,9 +101,9 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
             pass
 
 
-async def serve(gconfig):
+async def serve(gconfig, logger):
     async def server_graceful_shutdown():
-        custom_print(f"=====Load balancer shutting down=====", WARNING)
+        logger.print(f"=====Load balancer shutting down=====", WARNING)
         load_balancer.lb_monitor.report()
 
         heartbeat_task.cancel()
@@ -112,12 +113,12 @@ async def serve(gconfig):
         await server.stop(5)
 
     server = grpc.aio.server()
-    load_balancer = Load_balancer(gconfig)
+    load_balancer = Load_balancer(gconfig, logger)
     propius_pb2_grpc.add_Load_balancerServicer_to_server(load_balancer, server)
     server.add_insecure_port(f'{load_balancer.ip}:{load_balancer.port}')
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.start()
-    custom_print(f"Load balancer: server started, listening on {load_balancer.ip}:{load_balancer.port}", INFO)
+    logger.print(f"Load balancer: server started, listening on {load_balancer.ip}:{load_balancer.port}", INFO)
 
     heartbeat_task = asyncio.create_task(load_balancer.heartbeat_routine())
 
@@ -125,27 +126,19 @@ async def serve(gconfig):
 
 if __name__ == '__main__':
     log_file = './propius/load_balancer/app.log'
-    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
-
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    handler.setLevel(logging.INFO)
-
-    root_logger = logging.getLogger()
-    root_logger.addHandler(handler)
-    
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            custom_print(f"Load balancer read config successfully", INFO)
+            logger = My_logger(log_file=log_file, verbose=gconfig["verbose"], use_logging=True)
+            logger.print(f"Load balancer read config successfully", INFO)
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(serve(gconfig))
+            loop.run_until_complete(serve(gconfig, logger))
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            custom_print(e, ERROR)
+            logger.print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

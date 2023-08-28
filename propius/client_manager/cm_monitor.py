@@ -5,7 +5,7 @@ import os
 
 
 class CM_monitor(Monitor):
-    def __init__(self, sched_alg: str, plot: bool=False):
+    def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
         super().__init__("Client manager", plot)
         self.sched_alg = sched_alg
         self.lock = asyncio.Lock()
@@ -36,7 +36,7 @@ class CM_monitor(Monitor):
     def report(self, id: int):
         self._gen_report()
 
-        custom_print(f"Client manager {id}: check in {self.client_check_in_num}, ping {self.client_ping_num}, " + \
+        self.logger.print(f"Client manager {id}: check in {self.client_check_in_num}, ping {self.client_ping_num}, "
         f"accept {self.client_accept_num}, over-assign {self.client_over_assign_num}", INFO)
 
         if self.plot:

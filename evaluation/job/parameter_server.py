@@ -210,7 +210,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 return server_response_msg
             
             if compl_event == UPLOAD_MODEL:
-                custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} complete, issue SHUT_DOWN event, {self.round_result_cnt}/{self.demand}", INFO)
+                custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} complete, "
+                             "issue SHUT_DOWN event, {self.round_result_cnt}/{self.demand}", INFO)
                 self.round_result_cnt += 1
                 task_meta = {
                     "local_steps": self.config["local_steps"],
@@ -353,10 +354,9 @@ if __name__ == '__main__':
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    handler.setLevel(logging.INFO)
-
     root_logger = logging.getLogger()
     root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
 
     with open(config_file, 'r') as config:
         try:

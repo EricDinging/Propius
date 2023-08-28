@@ -6,8 +6,8 @@ import os
 
 
 class JM_monitor(Monitor):
-    def __init__(self, sched_alg: str, plot: bool=False):
-        super().__init__("Job manager", plot)
+    def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
+        super().__init__("Job manager", logger, plot)
         self.lock = asyncio.Lock()
         self.sched_alg = sched_alg
 
@@ -63,7 +63,7 @@ class JM_monitor(Monitor):
 
     def report(self):
         self._gen_report()
-        custom_print(f"Job manager: total job: {self.total_job}", INFO)
+        self.logger.print(f"Job manager: total job: {self.total_job}", INFO)
 
 
         for constraint, sum_jct in self.constraint_jct_dict.items():
@@ -72,7 +72,7 @@ class JM_monitor(Monitor):
             sum_sched = self.constraint_sched_dict[constraint]
             avg_sched = sum_sched / cnt
 
-            custom_print(
+            self.logger.print(
                 f"Job group: {constraint}, num: {cnt}, avg JCT: {avg_jct:.3f}, avg sched latency: {avg_sched:.3f}\n")
         
         if self.plot:

@@ -100,3 +100,15 @@ class My_logger:
                 self.logger.warning(message)
             elif level == ERROR:
                 self.logger.error(message)
+
+def custom_print(message: str, level: int=PRINT):
+    print(f"{get_time()} {message}")
+
+    if level == DEBUG:
+        logging.debug(message)
+    elif level == INFO:
+        logging.info(message)
+    elif level == WARNING:
+        logging.warning(message)
+    elif level == ERROR:
+        logging.error(message)

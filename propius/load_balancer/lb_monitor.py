@@ -5,8 +5,8 @@ import os
 
 
 class LB_monitor(Monitor):
-    def __init__(self, sched_alg: str, plot: bool=False):
-        super().__init__("Load balancer", plot)
+    def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
+        super().__init__("Load balancer", logger, plot)
         self.sched_alg = sched_alg
         self.lock = asyncio.Lock()
         self.plot = plot

@@ -92,10 +92,9 @@ if __name__ == '__main__':
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    handler.setLevel(logging.INFO)
-
     root_logger = logging.getLogger()
     root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
 
     global_setup_file = './evaluation/evaluation_config.yml'
 
@@ -109,8 +108,7 @@ if __name__ == '__main__':
             loop.run_until_complete(run(config))
         except KeyboardInterrupt:
             pass
-        # except Exception as e:
-            # logger.error(str(e))
-
+        except Exception as e:
+            custom_print(e, ERROR)
         finally:
             pass

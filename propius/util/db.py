@@ -10,7 +10,7 @@ from propius.util.commons import *
 
 
 class Job_db:
-    def __init__(self, gconfig, is_jm: bool):
+    def __init__(self, gconfig, is_jm: bool, logger: My_logger):
         """Initialize job db portal
 
         Args:
@@ -22,6 +22,7 @@ class Job_db:
                 job_private_constraint: name of private constraint
                 job_expire_time:
             is_jm: a bool indicating whether the user of the database is job manager
+            logger
         """
         if gconfig['use_docker']:
             host = 'job_db'
@@ -34,6 +35,7 @@ class Job_db:
         self.gconfig = gconfig
         self.public_constraint_name = gconfig['job_public_constraint']
         self.private_constraint_name = gconfig['job_private_constraint']
+        self.logger = logger
     
         if is_jm:
             self.job_exp_time = gconfig['job_expire_time']
@@ -72,7 +74,7 @@ class Job_db:
                     schema, definition=IndexDefinition(
                         prefix=["job:"], index_type=IndexType.JSON))
             except Exception as e:
-                custom_print(e, ERROR)
+                self.logger.print(e, ERROR)
                 pass
 
     def flushdb(self):
@@ -84,7 +86,7 @@ class Job_db:
 
 
 class Client_db:
-    def __init__(self, gconfig, cm_id: int, is_cm: bool):
+    def __init__(self, gconfig, cm_id: int, is_cm: bool, logger: My_logger):
         """Initialize client db portal
 
         Args:
@@ -97,6 +99,7 @@ class Client_db:
 
             cm_id: id of the client manager is the user is client manager
             is_cm: bool indicating whether the user is client manager
+            logger
         """
         if gconfig['use_docker']:
             host = f'client_db_{cm_id}'

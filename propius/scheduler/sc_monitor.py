@@ -7,8 +7,8 @@ import os
 
 
 class SC_monitor(Monitor):
-    def __init__(self, sched_alg: str, plot: bool=False):
-        super().__init__("Scheduler", plot)
+    def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
+        super().__init__("Scheduler", logger, plot)
         # self.job_size_latency_map = {}
         # self.job_request_map = {}
         self.lock = asyncio.Lock()
