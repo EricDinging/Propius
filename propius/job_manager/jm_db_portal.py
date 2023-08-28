@@ -10,7 +10,7 @@ from propius.util.db import *
 
 
 class JM_job_db_portal(Job_db):
-    def __init__(self, gconfig):
+    def __init__(self, gconfig, logger):
         """Init job database portal class
 
         Args:
@@ -21,9 +21,10 @@ class JM_job_db_portal(Job_db):
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
                 job_expire_time
+            logger
         """
 
-        super().__init__(gconfig, True)
+        super().__init__(gconfig, True, logger)
 
     def register(
             self,
@@ -96,6 +97,9 @@ class JM_job_db_portal(Job_db):
                     return True
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    self.logger.print(e, ERROR)
+                    return False
 
     def request(self, job_id: int, demand: int) -> bool:
         """Update job metadata based on request. 
@@ -135,6 +139,9 @@ class JM_job_db_portal(Job_db):
                     return True
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    self.logger.print(e, ERROR)
+                    return False
 
     def end_request(self, job_id: int) -> bool:
         """Update job metadata based on end request. 
@@ -171,6 +178,9 @@ class JM_job_db_portal(Job_db):
                     return True
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    self.logger.print(e, ERROR)
+                    return False
 
     def finish(self, job_id: int) -> tuple[tuple, int, int, float, float]:
         """Remove the job from database. 
@@ -218,3 +228,6 @@ class JM_job_db_portal(Job_db):
                         sched_latency)
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    self.logger.print(e, ERROR)
+                    return (None, None, None, None, None)

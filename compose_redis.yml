@@ -1,0 +1,16 @@
+version: "3.9"
+
+services: 
+  job_db:
+    image: redis/redis-stack-server:latest
+    volumes:
+        - job_redis_data:/data
+    logging:
+      driver: none  
+
+  client_db_0:
+    image: redis/redis-stack-server:latest
+    volumes:
+        - client_0_data:/data
+    logging:
+      driver: none

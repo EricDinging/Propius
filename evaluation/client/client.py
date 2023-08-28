@@ -15,7 +15,16 @@ class Client:
     def __init__(self, client_config: dict):
         self.id = client_config["id"]
         self.task_id = -1
-        self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=True)
+        self.use_docker = client_config["use_docker"]
+
+        if client_config["use_docker"]:
+            client_config["load_balancer_ip"] = "load_balancer"
+            
+        self.propius_client_stub = Propius_client_aio(
+            client_config=client_config, 
+            verbose=False,
+            logging=True)
+        
         self.ps_channel = None
         self.ps_stub = None
         
@@ -40,7 +49,7 @@ class Client:
     async def _connect_to_ps(self, ps_ip: str, ps_port: int):
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
         self.ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(self.ps_channel)
-        print(
+        custom_print(
             f"Client {self.id}: connecting to parameter server on {ps_ip}:{ps_port}")
         
     async def handle_server_response(self, server_response: parameter_server_pb2.server_response):
@@ -53,11 +62,13 @@ class Client:
             self.meta_queue.append(meta)
             self.data_queue.append(data)
         
-    async def client_ping(self):
+    async def client_ping(self)->bool:
         client_id_msg = parameter_server_pb2.client_id(id=self.id)
         server_response = await self.ps_stub.CLIENT_PING(client_id_msg)
-
+        if server_response.event == DUMMY_EVENT:
+            return True
         await self.handle_server_response(server_response)
+        return False
     
     async def client_execute_complete(self, compl_event: str, status: bool, meta: str, data: str):
         client_complete_msg = parameter_server_pb2.client_complete(
@@ -91,7 +102,7 @@ class Client:
         elif event == UPLOAD_MODEL:
             time = meta["upload_size"] / float(self.comm_speed)
         
-        print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds")
+        custom_print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds", INFO)
         
         await asyncio.sleep(time)
 
@@ -104,8 +115,9 @@ class Client:
         return True
 
     async def event_monitor(self):
-        print(f"Client {self.id}: ping")
-        await self.client_ping()
+        custom_print(f"Client {self.id}: ping to jobs")
+        while await self.client_ping():
+            await asyncio.sleep(3)
         while await self.execute():
             await asyncio.sleep(1)
 
@@ -121,12 +133,12 @@ class Client:
         try:
             while True:
                 if self.cur_period >= len(self.active_time):
-                    print(f"Client {self.id}: ==shutting down==")
+                    custom_print(f"Client {self.id}: ==shutting down==", WARNING)
                     break
                 self.cur_time = time.time() - self.eval_start_time
                 if self.cur_time < self.active_time[self.cur_period]:
                     sleep_time = self.active_time[self.cur_period] - self.cur_time
-                    print(f"Client {self.id}: sleep for {sleep_time}")
+                    custom_print(f"Client {self.id}: sleep for {sleep_time}")
                     await asyncio.sleep(self.active_time[self.cur_period] - self.cur_time)
                     continue
                 elif self.cur_time >= self.inactive_time[self.cur_period]:
@@ -134,7 +146,7 @@ class Client:
                     continue
                 
                 await self.propius_client_stub.connect()
-                
+
                 result = await self.propius_client_stub.auto_assign(0)
 
                 _, status, self.task_id, ps_ip, ps_port = result
@@ -156,14 +168,14 @@ class Client:
                     await asyncio.wait_for(task, 
                                            timeout=remain_time)
                 except asyncio.TimeoutError:
-                    print(f"Client {self.id}: timeout, abort")
+                    custom_print(f"Client {self.id}: timeout, abort", WARNING)
                     pass
                 await self.cleanup_routines()
 
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print(f"Client {self.id}: {e}")
+            custom_print(f"Client {self.id}: {e}", ERROR)
         finally:
             await self.cleanup_routines(True)
         
@@ -171,9 +183,19 @@ if __name__ == '__main__':
     config_file = './evaluation/client/client_conf.yml'
     with open(config_file, 'r') as config:
         config = yaml.load(config, Loader=yaml.FullLoader)
-        client = Client(config)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(client.run())
-        loop.close()
+        if len(sys.argv) != 2:
+            custom_print(f"Usage: python evaluation/client/client.py <id>", ERROR)
+            exit(1)
+        config["id"] = int(sys.argv[1])
+        eval_config_file = './evaluation/evaluation_config.yml'
+        with open(eval_config_file, 'r') as eval_config:
+            eval_config = yaml.load(eval_config, Loader=yaml.FullLoader)
+            config["load_balancer_ip"] = eval_config["load_balancer_ip"]
+            config["load_balancer_port"] = eval_config["load_balancer_port"]
+            config["use_docker"] = eval_config["use_docker"]
+            client = Client(config)
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(client.run())
+            loop.close()
      
 

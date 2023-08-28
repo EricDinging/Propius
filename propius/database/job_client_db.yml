@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  job_db:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6379:6379"
+    volumes:
+        - job_redis_data:/data
+
+  client_db_0:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6380:6379"
+    volumes:
+        - client_0_data:/data
+
+  # client_db_1:
+  #   image: redis/redis-stack-server:latest
+  #   ports:
+  #     - "6381:6379"
+  #   volumes:
+  #       - client_1_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "-h", "localhost", "-p", "6381", "ping"]
+  #     interval: 2s
+  #     timeout: 1m30s
+  #     retries: 5
+  #     start_period: 5s
+
+volumes:
+  job_redis_data:
+  client_0_data:
+  client_1_data:

@@ -41,6 +41,17 @@ class Task_pool:
             assert job_id in self.job_meta_dict
             assert job_id in self.job_task_dict
 
+            test_task_meta = {
+                    "client_id": -1,
+                    "round": task_meta["round"],
+                    "event": MODEL_TEST,
+                    "test_ratio": self.config["test_ratio"],
+                    "test_bsz": self.config["test_bsz"]
+                }
+            
+            if event == JOB_FINISH:
+                self.job_task_dict[job_id].append(test_task_meta)
+
             self.job_task_dict[job_id].append(task_meta)
 
             if event == AGGREGATE and round % self.config["eval_interval"] == 0:
@@ -94,7 +105,7 @@ class Task_pool:
     
     async def gen_report(self, job_id: int, sched_alg: str):
         async with self.lock:
-            test_csv_file_name = f"./evaluation/result_{sched_alg}/test_{job_id}.csv"
+            test_csv_file_name = f"./evaluation/executor/result_{sched_alg}/test_{job_id}.csv"
             fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
             if job_id not in self.result_dict:
                 return

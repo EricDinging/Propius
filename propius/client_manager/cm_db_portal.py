@@ -12,7 +12,7 @@ from propius.util.commons import *
 
 
 class CM_job_db_portal(Job_db):
-    def __init__(self, gconfig):
+    def __init__(self, gconfig, logger):
         """Initialize job db portal
 
         Args:
@@ -23,9 +23,10 @@ class CM_job_db_portal(Job_db):
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
             is_jm: a bool indicating whether the user of the database is job manager
+            logger
         """
 
-        super().__init__(gconfig, False)
+        super().__init__(gconfig, False, logger)
 
     def client_assign(self, specification: tuple, sched_alg: str) -> tuple[list, list, int]:
         """Assign tasks to client with input specification. 
@@ -52,7 +53,7 @@ class CM_job_db_portal(Job_db):
                 result = self.r.ft('job').search(q)
                 
         except Exception as e:
-            custom_print(e, WARNING)
+            self.logger.print(e, WARNING)
             result = None
         if result:
             size = result.total
@@ -148,10 +149,13 @@ class CM_job_db_portal(Job_db):
                     return (ip, port)
                 except redis.WatchError:
                     pass
+                except Exception as e:
+                    self.logger.print(e, ERROR)
+                    return None
 
 
 class CM_client_db_portal(Client_db):
-    def __init__(self, gconfig, cm_id: int):
+    def __init__(self, gconfig, cm_id: int, logger: My_logger):
         """Initialize client db portal
 
         Args:
@@ -164,9 +168,10 @@ class CM_client_db_portal(Client_db):
 
             cm_id: id of the client manager is the user is client manager
             is_cm: bool indicating whether the user is client manager
+            logger
         """
 
-        super().__init__(gconfig, cm_id, True)
+        super().__init__(gconfig, cm_id, True, logger)
 
     def insert(self, id: int, specifications: tuple):
         """Insert client metadata to database, set expiration time and start time
@@ -177,7 +182,7 @@ class CM_client_db_portal(Client_db):
         """
 
         if len(specifications) != len(self.public_constraint_name):
-            raise ValueError("Specification length does not match required")
+            self.logger.print("Specification length does not match required", ERROR)
         client_dict = {"timestamp": int(time.time())}
         spec_dict = {self.public_constraint_name[i]: specifications[i]
                      for i in range(len(specifications))}
@@ -185,8 +190,11 @@ class CM_client_db_portal(Client_db):
         client = {
             "client": client_dict
         }
-        self.r.json().set(f"client:{id}", Path.root_path(), client)
-        self.r.expire(f"client:{id}", self.client_exp_time)
+        try:
+            self.r.json().set(f"client:{id}", Path.root_path(), client)
+            self.r.expire(f"client:{id}", self.client_exp_time)
+        except Exception as e:
+            self.logger.print(e, ERROR)
 
     def get(self, id: int) -> tuple:
         """Get client public spec values
@@ -205,5 +213,5 @@ class CM_client_db_portal(Client_db):
                 spec = float(self.r.json().get(id, f"$.client.{name}")[0])
                 specs[idx] = spec
         except Exception as e:
-            custom_print(e, WARNING)
+            self.logger.print(e, ERROR)
         return tuple(specs)

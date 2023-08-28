@@ -1,13 +1,10 @@
 # Server setting
 connection_timeout: 800
 
-job_manager_ip: localhost
-job_manager_port: 50002
-
 # Training and testing aggregator setting
-demand: 20
-total_round: 1000  # Total round
-over_selection: 1.3
+demand: 2
+total_round: 3
+over_selection: 2
 
 # Training and testing client setting
 engine: pytorch

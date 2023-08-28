@@ -1,26 +1,24 @@
 # Global config
+use_docker: True
 
 # ---Addresses---
 load_balancer_ip: localhost
-load_balancer_port: 50000
+load_balancer_port: 50002
 
 client_manager_id_weight: 100000 # for client id assignment
 client_manager:
   - ip: localhost
-    port: 50004
+    port: 50003
     client_db_port: 6380
-  # - ip: localhost
-  #   port: 50005
-  #   client_db_port: 6381
 
 job_db_ip: localhost
 job_db_port: 6379
 
 job_manager_ip: localhost
-job_manager_port: 50002
+job_manager_port: 50001
 
 scheduler_ip: localhost
-scheduler_port: 50003
+scheduler_port: 50000
 
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2']
@@ -55,4 +53,4 @@ public_max:
 
 # ---General---
 verbose: True
-use_monitor: False
+plot: False

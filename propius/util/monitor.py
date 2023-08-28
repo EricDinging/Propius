@@ -1,35 +1,48 @@
 import time
 import matplotlib.pyplot as plt
-
+from propius.util.commons import *
 
 class Monitor:
-    def __init__(self, server_name: str):
+    def __init__(self, server_name: str, logger: My_logger, plot: bool = False):
         self.start_time = int(time.time())
+        self.plot = plot
         self.request_num_log = {}
+        self.request_num = 0
         self.server_name = server_name
+        self.logger = logger
 
     def _request(self):
         """Log request for analysis
         """
-        runtime = int(time.time()) - self.start_time
-        if runtime not in self.request_num_log:
-            self.request_num_log[runtime] = 0
-        self.request_num_log[runtime] += 1
+        self.request_num += 1
+
+        if self.plot:
+            runtime = int(time.time()) - self.start_time
+            if runtime % 60 == 0:
+                if runtime not in self.request_num_log:
+                    self.request_num_log[runtime] = 0
+                self.request_num_log[runtime] += 1
 
     def _plot_request(self):
-        keys = self.request_num_log.keys()
-        values = self.request_num_log.values()
-        plt.plot(keys, values)
-        plt.title(self.server_name + ' load')
-        plt.ylabel('Number of requests')
-        plt.xlabel('Time (sec)')
+        if self.plot:
+            keys = self.request_num_log.keys()
+            values = self.request_num_log.values()
 
-    def _gen_report(self) -> str:
-        report = ""
-        if len(self.request_num_log) > 0:
-            runtime = int(time.time()) - self.start_time
-            avg_request_per_second = sum(self.request_num_log.values()) / runtime
+            plt.scatter(keys, values)
+            plt.title(self.server_name + ' load')
+            plt.ylabel('Number of requests')
+            plt.xlabel('Time (sec)')
+
+    def _gen_report(self):
+        runtime = int(time.time()) - self.start_time
+        avg_request_per_second = self.request_num / runtime
+
+        if self.plot:
             max_request_per_second = max(self.request_num_log.values())
             report = self.server_name + \
-                f": avg request per second: {avg_request_per_second:.3f}, max request per second: {max_request_per_second}"
-        return report
+                f": avg request per second: {avg_request_per_second:.3f}, max request per second sampled: {max_request_per_second}"
+        else:
+            report = self.server_name + \
+                f": avg request per second: {avg_request_per_second:.3f}"
+        
+        self.logger.print(report, INFO)

@@ -6,33 +6,34 @@ import random
 import asyncio
 import yaml
 import logging
+import logging.handlers
 import pickle
 from evaluation.client.client import *
 
-async def run(gconfig):
+async def run(config):
     # clients = []
-    # num = int(gconfig['client_num'])
-    # total_time = int(gconfig['total_running_second'])
-    public_constraint_name = gconfig['job_public_constraint']
-    private_constraint_name = gconfig['job_private_constraint']
+    # num = int(config['client_num'])
+    # total_time = int(config['total_running_second'])
+    public_constraint_name = config['job_public_constraint']
+    # private_constraint_name = config['job_private_constraint']
     # start_time_list = [0] * total_time
 
     client_comm_dict = None
-    with open(gconfig['client_comm_path'], 'rb') as client_file:
+    with open(config['client_comm_path'], 'rb') as client_file:
         client_comm_dict = pickle.load(client_file)
 
     client_spec_dict = None
-    with open(gconfig['client_spec_path'], 'rb') as client_file:
+    with open(config['client_spec_path'], 'rb') as client_file:
         client_spec_dict = pickle.load(client_file)
 
     client_size_dict = None
-    with open(gconfig['client_size_path'], 'rb') as client_file:
+    with open(config['client_size_path'], 'rb') as client_file:
         client_size_dict = pickle.load(client_file)
 
     client_avail_dict = None
-    with open(gconfig['client_avail_path'], 'rb') as client_file:
+    with open(config['client_avail_path'], 'rb') as client_file:
         client_avail_dict = pickle.load(client_file)
-    client_num = gconfig['client_num']
+    client_num = config['client_num']
     selected_client_avail = {i: client_avail_dict[i+1] for i in range(client_num)}
 
     eval_start_time = time.time()
@@ -50,6 +51,7 @@ async def run(gconfig):
 
     task_list = []
 
+    await asyncio.sleep(10)
     try:
 
         for client_idx in range(client_num):
@@ -63,13 +65,14 @@ async def run(gconfig):
                     "id": client_idx,
                     "public_specifications": public_specs,
                     "private_specifications": private_specs,
-                    "load_balancer_ip": gconfig['load_balancer_ip'],
-                    "load_balancer_port": gconfig['load_balancer_port'],
+                    "load_balancer_ip": config['load_balancer_ip'],
+                    "load_balancer_port": config['load_balancer_port'],
                     "computation_speed": client_spec_dict[client_idx % len(client_spec_dict)]['speed'],
                     "communication_speed": client_comm_dict[client_idx % len(client_comm_dict) + 1]['communication'],
                     "eval_start_time": eval_start_time,
                     "active": selected_client_avail[client_idx]['active'],
                     "inactive": selected_client_avail[client_idx]['inactive'],
+                    "use_docker": config["use_docker"],
                 }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)
@@ -84,23 +87,28 @@ async def run(gconfig):
         await asyncio.gather(*task_list, return_exceptions=True)
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    logger = logging.getLogger()
+    log_file = './evaluation/client/app.log'
+    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
 
-    global_setup_file = './evaluation/single_evaluation_config.yml'
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
+
+    global_setup_file = './evaluation/evaluation_config.yml'
 
     random.seed(42)
 
     with open(global_setup_file, "r") as gyamlfile:
         try:
-            gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
+            config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
 
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(run(gconfig))
+            loop.run_until_complete(run(config))
         except KeyboardInterrupt:
             pass
-        # except Exception as e:
-            # logger.error(str(e))
-
+        except Exception as e:
+            custom_print(e, ERROR)
         finally:
             pass

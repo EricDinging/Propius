@@ -6,10 +6,11 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from redis.commands.search.query import NumericFilter, Query
 import time
 import json
+from propius.util.commons import *
 
 
 class Job_db:
-    def __init__(self, gconfig, is_jm: bool):
+    def __init__(self, gconfig, is_jm: bool, logger: My_logger):
         """Initialize job db portal
 
         Args:
@@ -21,15 +22,20 @@ class Job_db:
                 job_private_constraint: name of private constraint
                 job_expire_time:
             is_jm: a bool indicating whether the user of the database is job manager
+            logger
         """
-
-        host = gconfig['job_db_ip']
-        port = int(gconfig['job_db_port'])
+        if gconfig['use_docker']:
+            host = 'job_db'
+            port = 6379
+        else:
+            host = gconfig['job_db_ip']
+            port = int(gconfig['job_db_port'])
         self.r = redis.Redis(host=host, port=port)
         self.sched_alg = gconfig['sched_alg']
         self.gconfig = gconfig
         self.public_constraint_name = gconfig['job_public_constraint']
         self.private_constraint_name = gconfig['job_private_constraint']
+        self.logger = logger
     
         if is_jm:
             self.job_exp_time = gconfig['job_expire_time']
@@ -63,11 +69,12 @@ class Job_db:
                                      for name in self.private_constraint_name])
 
             try:
+                self.flushdb()
                 self.r.ft("job").create_index(
                     schema, definition=IndexDefinition(
                         prefix=["job:"], index_type=IndexType.JSON))
             except Exception as e:
-                print(e)
+                self.logger.print(e, ERROR)
                 pass
 
     def flushdb(self):
@@ -79,7 +86,7 @@ class Job_db:
 
 
 class Client_db:
-    def __init__(self, gconfig, cm_id: int, is_cm: bool):
+    def __init__(self, gconfig, cm_id: int, is_cm: bool, logger: My_logger):
         """Initialize client db portal
 
         Args:
@@ -92,10 +99,14 @@ class Client_db:
 
             cm_id: id of the client manager is the user is client manager
             is_cm: bool indicating whether the user is client manager
+            logger
         """
-
-        host = gconfig['client_manager'][cm_id]['ip']
-        port = gconfig['client_manager'][cm_id]['client_db_port']
+        if gconfig['use_docker']:
+            host = f'client_db_{cm_id}'
+            port = 6379
+        else:
+            host = gconfig['client_manager'][cm_id]['ip']
+            port = gconfig['client_manager'][cm_id]['client_db_port']
         self.r = redis.Redis(host=host, port=port)
         self.start_time = int(time.time())
         self.client_exp_time = int(gconfig['client_expire_time'])
@@ -111,6 +122,7 @@ class Client_db:
                                     for name in self.public_constraint_name])
 
             try:
+                self.flushdb()
                 self.r.ft("client").create_index(
                     schema, definition=IndexDefinition(
                         prefix=["client:"], index_type=IndexType.JSON))

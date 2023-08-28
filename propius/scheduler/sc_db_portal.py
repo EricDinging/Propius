@@ -12,7 +12,7 @@ import sys
 from propius.util.commons import *
 
 class SC_job_db_portal(Job_db):
-    def __init__(self, gconfig):
+    def __init__(self, gconfig, logger):
         """Initialize job db portal
 
         Args:
@@ -23,9 +23,10 @@ class SC_job_db_portal(Job_db):
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
                 job_expire_time
+            logger
         """
 
-        super().__init__(gconfig, False)
+        super().__init__(gconfig, False, logger)
         self.start_time = time.time()
 
     def get_job_constraints(self, job_id: int) -> tuple:
@@ -43,7 +44,8 @@ class SC_job_db_portal(Job_db):
                     id, f"$.job.public_constraint.{name}")[0]))
             return tuple(constraint_list)
         except Exception as e:
-            custom_print(e, WARNING)
+            self.logger.print(e, ERROR)
+            return None
 
     def get_job_list(self, public_constraint: tuple,
                      constraints_job_list: list) -> bool:
@@ -62,8 +64,13 @@ class SC_job_db_portal(Job_db):
             qstr += f"@{name}: [{public_constraint[idx]}, {public_constraint[idx]}] "
 
         q = Query(qstr)
-        result = self.r.ft('job').search(q)
-        if result.total == 0:
+
+        try:
+            result = self.r.ft('job').search(q)
+            if result.total == 0:
+                return False
+        except Exception as e:
+            self.logger.print(e, ERROR)
             return False
 
         for doc in result.docs:
@@ -105,9 +112,9 @@ class SC_job_db_portal(Job_db):
         try:
             self.r.execute_command(
                 'JSON.SET', f"job:{job_id}", "$.job.score", score)
-            custom_print(f"-------job:{job_id} {score:.3f} ", INFO)
+            self.logger.print(f"-------job:{job_id} {score:.3f} ", INFO)
         except Exception as e:
-            custom_print(e, WARNING)
+            self.logger.print(e, ERROR)
 
     def fifo_update_all_job_score(self):
         """Give every job which doesn't have a score yet a score of -timestamp
@@ -116,15 +123,19 @@ class SC_job_db_portal(Job_db):
             boolean indicating whether there is a score updated
         """
         q = Query('@score: [0, 0]')
-        result = self.r.ft('job').search(q)
-        if result.total == 0:
-            return
-        for doc in result.docs:
-            id = doc.id
-            job_time = json.loads(doc.json)["job"]["timestamp"]
-            score  = -int(job_time - self.start_time)
-            custom_print(f"-------{id} {score:.3f} ", INFO)
-            self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        try:
+            result = self.r.ft('job').search(q)
+        
+            if result.total == 0:
+                return
+            for doc in result.docs:
+                id = doc.id
+                job_time = json.loads(doc.json)["job"]["timestamp"]
+                score  = -int(job_time - self.start_time)
+                self.logger.print(f"-------{id} {score:.3f} ", INFO)
+                self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        except Exception as e:
+            self.logger.print(e, ERROR)
 
     def random_update_all_job_score(self):
         """Give every job which doesn't have a score yet a score of
@@ -132,60 +143,68 @@ class SC_job_db_portal(Job_db):
         """
 
         q = Query('@score: [0, 0]')
-        result = self.r.ft('job').search(q)
-        if result.total == 0:
-            return
-        for doc in result.docs:
-            id = doc.id
-            score = random.uniform(0, 10)
-            custom_print(f"-------{id} {score:.3f} ", INFO)
-            self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        try:
+            result = self.r.ft('job').search(q)
+        
+            if result.total == 0:
+                return
+            for doc in result.docs:
+                id = doc.id
+                score = random.uniform(0, 10)
+                self.logger.print(f"-------{id} {score:.3f} ", INFO)
+                self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        except Exception as e:
+            self.logger.print(e, ERROR)
 
     def srdf_update_all_job_score(self):
         """Give every job a score of -remaining demand.
             remaining demand = remaining round * current round demand
             Prioritize job with the smallest remaining demand.
         """
-
-        q = Query('*')
-        result = self.r.ft('job').search(q)
-        if result.total == 0:
-            return
-        for doc in result.docs:
-            id = doc.id
-            job_dict = json.loads(doc.json)['job']
-            remain_round = job_dict['total_round'] - job_dict['round']
-            remain_demand = job_dict['demand'] * remain_round
-            # if remain_demand == 0:
-            #     remain_demand = job_dict['total_demand']
-            score = -remain_demand
-            custom_print(f"-------{id} {score:.3f} ", INFO)
-            self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        try:
+            q = Query('*')
+            result = self.r.ft('job').search(q)
+            if result.total == 0:
+                return
+            for doc in result.docs:
+                id = doc.id
+                job_dict = json.loads(doc.json)['job']
+                remain_round = job_dict['total_round'] - job_dict['round']
+                remain_demand = job_dict['demand'] * remain_round
+                # if remain_demand == 0:
+                #     remain_demand = job_dict['total_demand']
+                score = -remain_demand
+                self.logger.print(f"-------{id} {score:.3f} ", INFO)
+                self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        except Exception as e:
+            self.logger.print(e, ERROR)
 
     def srtf_update_all_job_score(self, std_round_time: float):
         """Give every job a score of -remaining time
             remaining time = past avg round time * remaining round
             Prioritize job with the shortest remaining demand
         """
-
-        q = Query('*')
-        result = self.r.ft('job').search(q)
-        if result.total == 0:
-            return
-        for doc in result.docs:
-            id = doc.id
-            job_dict = json.loads(doc.json)['job']
-            remain_round = job_dict['total_round'] - job_dict['round']
-            past_round = job_dict['round']
-            if past_round == 0:
-                avg_round_time = std_round_time
-            else:
-                avg_round_time = (
-                    time.time() - job_dict['timestamp']) / past_round
-            remain_time = remain_round * avg_round_time
-            score = -remain_time
-            custom_print(f"-------{id} {score:.3f} ", INFO)
-            self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        try:
+            q = Query('*')
+            result = self.r.ft('job').search(q)
+            if result.total == 0:
+                return
+            for doc in result.docs:
+                id = doc.id
+                job_dict = json.loads(doc.json)['job']
+                remain_round = job_dict['total_round'] - job_dict['round']
+                past_round = job_dict['round']
+                if past_round == 0:
+                    avg_round_time = std_round_time
+                else:
+                    avg_round_time = (
+                        time.time() - job_dict['timestamp']) / past_round
+                remain_time = remain_round * avg_round_time
+                score = -remain_time
+                self.logger.print(f"-------{id} {score:.3f} ", INFO)
+                self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        except Exception as e:
+            self.logger.print(e, ERROR)
 
     def _get_job_time(self, job_id: int) -> float:
         id = f"job:{job_id}"
@@ -193,7 +212,7 @@ class SC_job_db_portal(Job_db):
             timestamp = float(self.r.json().get(id, "$.job.timestamp")[0])
             return time.time() - timestamp
         except Exception as e:
-            custom_print(e, WARNING)
+            self.logger.print(e, WARNING)
             return 0
 
     def _get_est_JCT(self, job_id: int, std_round_time: float) -> float:
@@ -202,12 +221,12 @@ class SC_job_db_portal(Job_db):
             total_round = int(self.r.json().get(id, ".job.total_round")[0])
             return total_round * std_round_time
         except Exception as e:
-            custom_print(e, WARNING)
+            self.logger.print(e, WARNING)
             return 1000 * std_round_time
 
 
 class SC_client_db_portal(Client_db):
-    def __init__(self, gconfig):
+    def __init__(self, gconfig, logger):
         """Initialize client db portal
 
         Args:
@@ -218,16 +237,23 @@ class SC_client_db_portal(Client_db):
                     client_db_port
                 client_expire_time: expiration time of clients in the db
                 job_public_constraint: name of public constraint
+            logger
         """
         # TODO determine which client db to connect
-        super().__init__(gconfig, 0, False)
+        super().__init__(gconfig, 0, False, logger)
         self.public_max = gconfig['public_max']
 
     def get_client_size(self) -> int:
         """Get client dataset size
         """
-        info = self.r.ft('client').info()
-        return int(info['num_docs'])
+        num = 0
+        try:
+            info = self.r.ft('client').info()
+            num = int(info['num_docs'])
+        except Exception as e:
+            self.logger.print(e, ERROR)
+
+        return num
 
     def get_client_proportion(self, public_constraint: tuple) -> float:
         """Get client subset size
@@ -246,8 +272,13 @@ class SC_client_db_portal(Client_db):
         for idx, name in enumerate(self.public_constraint_name):
             qstr += f"@{name}: [{public_constraint[idx]}, {self.public_max[name]}] "
 
-        q = Query(qstr).no_content()
-        size = int(self.r.ft('client').search(q).total)
+        size = 0
+        try:
+            q = Query(qstr).no_content()
+            size = int(self.r.ft('client').search(q).total)
+        except Exception as e:
+            self.logger.print(e, ERROR)
+
         if size == 0:
             return 0.01
 
@@ -262,8 +293,12 @@ class SC_client_db_portal(Client_db):
         """
         if client_size == 0:
             return 0.01
+        size = 0
         q = Query(q).no_content()
-        size = int(self.r.ft('client').search(q).total)
+        try:
+            size = int(self.r.ft('client').search(q).total)
+        except Exception as e:
+            self.logger.print(e, ERROR)
 
         if size == 0:
             return 0.01

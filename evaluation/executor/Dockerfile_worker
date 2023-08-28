@@ -1,0 +1,15 @@
+FROM python:3.9
+
+WORKDIR /
+RUN mkdir /evaluation
+RUN mkdir /evaluation/executor
+COPY ./evaluation/commons.py /evaluation/commons.py
+COPY ./fedscale /fedscale
+COPY ./evaluation/requirements.txt /evaluation/requirements.txt
+COPY ./evaluation/executor/entrypoint.sh /evaluation/executor/entrypoint.sh
+
+RUN pip install --upgrade pip
+RUN pip install -r /evaluation/requirements.txt
+RUN chmod +x /evaluation/executor/entrypoint.sh 
+
+ENTRYPOINT ["/evaluation/executor/entrypoint.sh"]

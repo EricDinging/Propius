@@ -15,7 +15,7 @@ from evaluation.executor.channels import executor_pb2_grpc
 
 
 class Worker_manager:
-    def __init__(self, config):
+    def __init__(self, config, logger):
         """Init worker class
 
         Args:
@@ -24,7 +24,7 @@ class Worker_manager:
         self.job_id_model_adapter_map = {}
         self.job_id_agg_weight_map = {}
         self.job_id_agg_cnt = {}
-
+        self.logger = logger
         self.lock = asyncio.Lock()
 
         self._setup_seed()
@@ -44,13 +44,13 @@ class Worker_manager:
             ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH)
         ]
         for worker_id, worker_addr in enumerate(self.worker_addr_list):
-            worker_ip = worker_addr["ip"]
+            worker_ip = worker_addr["ip"] if not self.config["use_docker"] else f"worker_{worker_id}"
             worker_port = worker_addr["port"]
             self.worker_channel_dict[worker_id] = grpc.aio.insecure_channel(f"{worker_ip}:{worker_port}", options=channel_options)
             self.worker_stub_dict[worker_id] = executor_pb2_grpc.WorkerStub(
                 self.worker_channel_dict[worker_id]
             )
-            custom_print(f"Worker manager: connecting to worker {worker_id} at {worker_ip}:{worker_port}", INFO)
+            self.logger.print(f"Worker manager: connecting to worker {worker_id} at {worker_ip}:{worker_port}", INFO)
     
     async def _disconnect(self):
         for worker_channel in self.worker_channel_dict.values():
@@ -112,7 +112,7 @@ class Worker_manager:
         for worker_stub in self.worker_stub_dict.values():
             await worker_stub.INIT(job_info_msg)
 
-        custom_print(f"Worker manager: init job {job_id} success", INFO)
+        self.logger.print(f"Worker manager: init job {job_id} success", INFO)
 
         return model_size
         
@@ -128,7 +128,7 @@ class Worker_manager:
                     status_list.append(worker_status_msg.task_size)
                 
                 # self.cur_worker = status_list.index(min(status_list))
-                custom_print(f"Worker manager: current worker {self.cur_worker}", INFO)
+                self.logger.print(f"Worker manager: current worker {self.cur_worker}", INFO)
         except asyncio.CancelledError:
             pass
 
@@ -180,14 +180,10 @@ class Worker_manager:
                             agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
                         self.job_id_agg_weight_map[job_id] = agg_weight
                     except Exception as e:
-                        custom_print(e, ERROR)
+                        self.logger.print(e, ERROR)
 
                 results = {CLIENT_TRAIN+str(client_id): results}
-            
-            else:
-                results = {
-                    MODEL_TEST: results
-                }
+        
 
         elif event == AGGREGATE:
             async with self.lock:
@@ -202,7 +198,7 @@ class Worker_manager:
                     }
                     self.job_id_agg_cnt[job_id] = 0
                 except Exception as e:
-                    custom_print(e, ERROR)
+                    self.logger.print(e, ERROR)
 
             results = {AGGREGATE: results}
 
