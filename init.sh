@@ -24,12 +24,12 @@ else
             set -x
             sed -i "s/use_cuda: .*/use_cuda: True/" ./propius/global_config.yml
             sed -i "s/use_cuda: .*/use_cuda: True/" ./evaluation/evaluation_config.yml    
-            docker compose -f compose_propius.yml -f compose_eval_gpu.yml up
+            docker compose -f compose_eval_gpu.yml up
             set +x
         else
             echo "===!!!Starting docker network for evaluation!!!==="
             set -x
-            docker compose -f compose_propius.yml -f compose_eval.yml up
+            docker compose -f compose_eval.yml up
             set +x
         fi
 

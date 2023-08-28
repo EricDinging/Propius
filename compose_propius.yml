@@ -65,8 +65,3 @@ services:
         - client_0_data:/data
     logging:
       driver: none
-
-volumes:
-  job_redis_data:
-  client_0_data:
-  client_1_data:
