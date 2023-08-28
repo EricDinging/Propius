@@ -1,5 +1,5 @@
 # Global config
-use_docker: True # whether use docker compose to containerize every component
+use_docker: True
 
 # ---Addresses---
 load_balancer_ip: localhost

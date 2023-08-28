@@ -19,6 +19,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.ip = gconfig['load_balancer_ip'] if not gconfig['use_docker'] else '0.0.0.0'
         self.port = gconfig['load_balancer_port']
         self.id_weight = gconfig['client_manager_id_weight']
+        self.logger = logger
 
         # Round robin
         self.idx = 0
@@ -30,7 +31,6 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.cm_stub_dict = {}
         self._connect_cm()
         self.lb_monitor = LB_monitor(gconfig['sched_alg'], logger, gconfig['plot'])
-        self.logger = logger
 
     def _connect_cm(self):
         for cm_id, cm_addr in enumerate(self.cm_addr_list):

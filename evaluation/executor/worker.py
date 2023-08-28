@@ -343,7 +343,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 self.logger.print(e, ERROR)
                 await asyncio.sleep(5)
     
-async def run(config, logger):
+async def run(config, logger, id):
     async def server_graceful_shutdown():
         logger.print(f"===Worker {worker.id} ending===", WARNING)
         await server.stop(5)
@@ -355,11 +355,6 @@ async def run(config, logger):
 
     server = grpc.aio.server(options=channel_options)
 
-    if len(sys.argv) != 2:
-        logger.print("Usage: python evaluation/executor/worker.py <id>", ERROR)
-        exit(1)
-
-    id = int(sys.argv[1])
     worker = Worker(id, config, logger)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
@@ -374,13 +369,19 @@ async def run(config, logger):
 if __name__ == '__main__':
     config_file = './evaluation/evaluation_config.yml'
     
+    if len(sys.argv) != 2:
+        print("Usage: python evaluation/executor/worker.py <id>")
+        exit(1)
+
+    id = int(sys.argv[1])
+
     log_file = f'./evaluation/executor/wk{id}_app.log'
     logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(run(config, logger))
+            loop.run_until_complete(run(config, logger, id))
         except KeyboardInterrupt:
             pass
         except Exception as e:

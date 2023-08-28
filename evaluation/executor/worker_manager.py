@@ -24,7 +24,7 @@ class Worker_manager:
         self.job_id_model_adapter_map = {}
         self.job_id_agg_weight_map = {}
         self.job_id_agg_cnt = {}
-
+        self.logger = logger
         self.lock = asyncio.Lock()
 
         self._setup_seed()
@@ -37,7 +37,6 @@ class Worker_manager:
         self.worker_stub_dict = {}
         self._connect_worker()
         self.cur_worker = 0
-        self.logger = logger
 
     def _connect_worker(self):
         channel_options = [
