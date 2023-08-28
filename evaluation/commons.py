@@ -100,6 +100,3 @@ class My_logger:
                 self.logger.warning(message)
             elif level == ERROR:
                 self.logger.error(message)
-
-
-

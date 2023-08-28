@@ -16,17 +16,17 @@ import logging.handlers
 _cleanup_coroutines = []
 
 class Executor(executor_pb2_grpc.ExecutorServicer):
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, logger: My_logger):
         self.ip = config['executor_ip'] if not config['use_docker'] else '0.0.0.0'
         self.port = config['executor_port']
         self.task_pool = Task_pool(config)
-        self.worker = Worker_manager(config)
+        self.worker = Worker_manager(config, logger)
         self.sched_alg = config['sched_alg']
         self.config = config
         self.round_timeout = config['round_timeout']
 
         self.lock = asyncio.Lock()
-
+        self.logger = logger
         self.job_train_task_dict = {}
         self.job_test_task_dict = {}
 
@@ -43,7 +43,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                    dataset_name=job_meta["dataset"],
                                    model_name=job_meta["model"],
                                    )
-        custom_print(f"Executor: job {job_id} registered", INFO)
+        self.logger.print(f"Executor: job {job_id} registered", INFO)
         await self.task_pool.init_job(job_id, job_meta)
         return executor_pb2.register_ack(ack=True, model_size=model_size)
     
@@ -71,7 +71,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     timeout=self.round_timeout,
                                                     return_when=asyncio.ALL_COMPLETED)
         except Exception as e:
-            custom_print(e, ERROR)
+            self.logger.print(e, ERROR)
         
         aggregate_test_result = {
             "test_loss": 0,
@@ -87,7 +87,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     aggregate_test_result[key] += results[key]
                 
             except Exception as e:
-                custom_print(e, ERROR)
+                self.logger.print(e, ERROR)
         
         for key in aggregate_test_result.keys():
             if key != "test_len":
@@ -113,7 +113,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                 timeout=self.round_timeout,
                                                 return_when=asyncio.ALL_COMPLETED)
         except Exception as e:
-            custom_print(e, ERROR)
+            self.logger.print(e, ERROR)
         
         for task in completed:
             try:
@@ -122,7 +122,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     round=round,
                                                     result=results)
             except Exception as e:
-                custom_print(e, ERROR)
+                self.logger.print(e, ERROR)
 
     async def execute(self):
         while True:
@@ -140,7 +140,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             del execute_meta['client_id']
             del execute_meta['event']
 
-            custom_print(f"Executor: execute job {job_id} {event}", INFO)
+            self.logger.print(f"Executor: execute job {job_id} {event}", INFO)
 
             if event == JOB_FINISH:
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
@@ -206,17 +206,17 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     result=results)
 
     
-async def run(config):
+async def run(config, logger):
     async def server_graceful_shutdown():
         await executor.task_pool.gen_all_report(executor.sched_alg)
-        print("==Executor ending==")
+        logger.print("==Executor ending==", WARNING)
         heartbeat_task.cancel()
         await heartbeat_task
         await executor.worker._disconnect()
         await server.stop(5)
 
     server = grpc.aio.server()
-    executor = Executor(config)
+    executor = Executor(config, logger)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     heartbeat_task = asyncio.create_task(executor.worker.heartbeat_routine())
@@ -224,33 +224,26 @@ async def run(config):
     executor_pb2_grpc.add_ExecutorServicer_to_server(executor, server)
     server.add_insecure_port(f"{executor.ip}:{executor.port}")
     await server.start()
-    print(f"Executor: executor started, listening on {executor.ip}:{executor.port}")
+    logger.print(f"Executor: executor started, listening on {executor.ip}:{executor.port}", INFO)
 
     await executor.execute()
 
 if __name__ == '__main__':
     log_file = './evaluation/executor/ex_app.log'
-    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
+    logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
 
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    handler.setLevel(logging.INFO)
-
-    root_logger = logging.getLogger()
-    root_logger.addHandler(handler)
-    
     config_file = './evaluation/evaluation_config.yml'
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
-            custom_print("Executor read config successfully")
+            logger.print("Executor read config successfully")
             
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(run(config))
+            loop.run_until_complete(run(config, logger))
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            custom_print(e, ERROR)
+            logger.print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()
