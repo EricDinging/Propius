@@ -16,6 +16,12 @@ local_steps: 10
 loss_decay: 0.95
 batch_size: 20
 
+gradient_policy: fed-yogi
+yogi_eta: 1.e-2
+yogi_tau: 1.e-3
+yogi_beta1: 0.9
+yogi_beta2: 0.99
+
 # Client constraints
 public_constraint:
     cpu_f: 10
