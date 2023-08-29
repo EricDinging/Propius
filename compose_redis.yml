@@ -6,11 +6,19 @@ services:
     volumes:
         - job_redis_data:/data
     logging:
-      driver: none  
+      driver: none
+    ports:
+      - "6379:6379"
 
   client_db_0:
     image: redis/redis-stack-server:latest
     volumes:
-        - client_0_data:/data
+        - client_redis_data_0:/data
     logging:
       driver: none
+    ports:
+      - "6380:6380"
+
+volumes:
+  client_redis_data_0: {}
+  job_redis_data: {}

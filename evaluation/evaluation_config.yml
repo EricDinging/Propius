@@ -36,9 +36,9 @@ job_driver_starting_port: 50010
 
 # ---Execution---
 use_cuda: False
-use_docker: True
+use_docker: False
 
-cuda_device: cuda:0
+cuda_device: cuda:0 # if use cuda, else cpu
 
 executor_ip: localhost
 executor_port: 49999

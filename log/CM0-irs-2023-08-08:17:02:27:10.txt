@@ -1,2 +1,0 @@
-Client manager: avg request per second: 0.007, max request per second: 2
-Client manager 0: client num: 2
