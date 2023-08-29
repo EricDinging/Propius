@@ -28,7 +28,6 @@ class Client:
         self.ps_channel = None
         self.ps_stub = None
         
-        #TODO execution duration
         self.execution_duration = 3
         self.event_queue = deque()
         self.meta_queue = deque()
@@ -56,7 +55,7 @@ class Client:
         event = server_response.event
         meta = pickle.loads(server_response.meta)
         data = pickle.loads(server_response.data)
-        #TODO load meta, data update model
+
         async with self.lock:
             self.event_queue.append(event)
             self.meta_queue.append(meta)

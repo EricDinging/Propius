@@ -11,12 +11,8 @@ import pickle
 from evaluation.client.client import *
 
 async def run(config):
-    # clients = []
-    # num = int(config['client_num'])
-    # total_time = int(config['total_running_second'])
     public_constraint_name = config['job_public_constraint']
-    # private_constraint_name = config['job_private_constraint']
-    # start_time_list = [0] * total_time
+    private_constraint_name = config['job_private_constraint']
 
     client_comm_dict = None
     with open(config['client_comm_path'], 'rb') as client_file:
@@ -37,17 +33,6 @@ async def run(config):
     selected_client_avail = {i: client_avail_dict[i+1] for i in range(client_num)}
 
     eval_start_time = time.time()
-    
-    # if not is_uniform:
-    #     for i in range(num):
-    #         time = random.normalvariate(total_time / 2, total_time / 4)
-    #         while time < 0 or time >= total_time:
-    #             time = random.normalvariate(total_time / 2, total_time / 4)
-    #         start_time_list[int(time)] += 1
-    # else:
-    #     for i in range(num):
-    #         time = random.randint(0, total_time - 1)
-    #         start_time_list[int(time)] += 1
 
     task_list = []
 

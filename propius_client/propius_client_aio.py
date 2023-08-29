@@ -1,5 +1,5 @@
-from propius.channels import propius_pb2_grpc
-from propius.channels import propius_pb2
+from channels import propius_pb2_grpc
+from channels import propius_pb2
 import pickle
 import grpc
 import asyncio
