@@ -7,7 +7,7 @@ random.seed(1)
 
 # generate txt with format: time in minute, profile num, job_id
 if __name__ == '__main__':
-    global_setup_file = './evaluation/single_evaluation_config.yml'
+    global_setup_file = './evaluation/evaluation_config.yml'
     with open(global_setup_file, "r") as gyamlfile:
         gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
         total_job = gconfig['total_job']

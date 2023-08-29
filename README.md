@@ -77,18 +77,19 @@ conda list
 - If your device space is not enough for the entire Anaconda package, you can consider installing [miniconda](https://educe-ubc.github.io/conda.html) 
 - Navigate into `Propius` package, install and activate `propius` conda environment
     - If you are using cuda
-```bash
-cd Propius
-conda env create -f environment_cuda.yml
-conda activate propius
-conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
-```
+    ```bash
+    cd Propius
+    conda env create -f environment_cuda.yml
+    conda activate propius
+    conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
+    ```
     - If you are not using cuda
-```bash
-cd Propius
-conda env create -f environment.yml
-conda activate propius
-```
+
+    ```bash
+    cd Propius
+    conda env create -f environment.yml
+    conda activate propius
+    ```
 - Install docker and docker-compose
     - [docker installation guide (step 1)](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04)
     - [docker compose](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)
@@ -97,77 +98,80 @@ conda activate propius
 ## RoadMap
 - Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more info
 ## Usage
-### Quick setup
-We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network. The config is specified in `./compose.yml`.
-- Edit `./compose.yml`. By default, the interfacing port of load balancer (client interface) is `50000`, and the interfacing port of job manager (job interface) is `50002`
+### Quick Launch
+We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network. The config is specified in `compose_propius.yml`.
+- Edit `compose_propius.yml` and `propius/global_config.yml`. By default, the interfacing port of load balancer (client interface) is `50002`, and the interfacing port of job manager (job interface) is `50001`
+- Make sure the setup is consistent across two config files
+- By default, Propius has one client manager and client database. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services in `compose_propius.yml`, and edit `propius/global_config.yml` accordingly
 - Run docker compose
 ```bash
-docker compose -f compose.yml up # -d if want to run Propius in background
+docker compose -f compose_propius.yml up --build # -d if want to run Propius in background
 ```
 - Shut down
 ```bash
 docker compose -f compose.yml down
 ```
-### Launch Redis Database
+### Manual Lanuch
+Propius can be started without docker. However, for the ease of deployment, the Redis database is containerized.
+- Edit `propius/global_config.yml` and `compose_redis.yml`. Make sure these two files are consistent
+- Launch Redis Database in background
 ```bash
-source init.sh
+docker compose -f compose_redis.yml up -d
 ```
-- If there is an error saying that you cannot connect to docker daemon, try [this](https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue)
-    
-- Additionally, check Redis server is running
-    - [Install redis-cli](https://stackoverflow.com/questions/21795340/linux-install-redis-cli-only)
-```bash
-redis-cli -h localhost -p 6379 ping
-redis-cli -h localhost -p 6380 ping
-```
-### Download Dataset
-```bash
-source ./datasets/download.sh
-```
-### Propius
-- Make changes to `propius/global_config.yml`
-- Scheduler:
-```bash
-python propius/scheduler/scheduler.py
-```
-- Job manager:
-```bash
-python propius/job_manager/job_manager.py
-```
-- Client manager:
-```bash
-python propius/client_manager/client_manager.py 0 # <id>
-```
-- Load balancer:
-```bash
-python propius/load_balancer/load_balancer.py
-```
+- Launch major components in Propius
+    - Scheduler:
+    ```bash
+    python propius/scheduler/scheduler.py
+    ```
+    - Job manager:
+    ```bash
+    python propius/job_manager/job_manager.py
+    ```
+    - Client manager:
+    ```bash
+    python propius/client_manager/client_manager.py 0 # <id>
+    ```
+    - Load balancer:
+    ```bash
+    python propius/load_balancer/load_balancer.py
+    ```
+- By default, Propius has one client manager and client database. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services `propius/global_config.yml` and `compose_redis.yml`. Make sure the setting is consistent. You also need to start the additional client manager services manually.
+
 ## Interface
 - Propius' job interface is defined in `propius_job/propius_job.py`
 - Propius' client interface is defined in `propius_client/propius_client.py`
 - Refer to `test_job/parameter_server/parameter_server.py` and `test_client/client.py` to get an idea how your FL job and FL client can utilize Propius
 
 ## Evaluation
-- Make changes to `evaluation/single_evaluation_config.yml`
+For the ease of evaluation, we containerize Propius and essential peripherals for evaluation in one docker network using docker compose.
+- Download Dataset
+```bash
+source ./datasets/download.sh
+```
+
+- Make changes to `evaluation/evaluation_config.yml`
 - Generate job trace based on the previous configuration. The trace file won't be generated if it already exists
 ```bash
 python ./evaluation/job/generator.py
 ```
 - Edit job profile in `evaluation/job/profile/`. Make sure the number of profiles matches the number specified in the configuration file.
-- Launch executor:
+- Edit `propius/global_config.yml`, especially when you want to change the scheduling algorithms under evaluation
+- Start docker network
 ```bash
-python ./evaluation/single_executor/executor.py
+source ./init.sh
 ```
-- Launch client dispatcher:
-```bash
-python ./evaluation/client/client_dispatcher.py
-```
-- Launch job dispatcher:
-```bash
-python ./evaluation/job/job_dispatcher.py
-```
+
 ## Testing
 - Under construction
+
+## Error Handling
+- If there is an error saying that you cannot connect to docker daemon, try [this](https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue)
+- Check Redis server is running
+    - [Install redis-cli](https://stackoverflow.com/questions/21795340/linux-install-redis-cli-only)
+    ```bash
+    redis-cli -h localhost -p 6379 ping
+    redis-cli -h localhost -p 6380 ping
+    ```
 <!-- - Job:
     - Edit `test_job/parameter_server/test_profile.yml` file
     -   ```bash

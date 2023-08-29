@@ -1,0 +1,123 @@
+version: "3.9"
+
+services:
+  scheduler:
+    build: 
+      context: .
+      dockerfile: ./propius/scheduler/Dockerfile
+    volumes:
+      - ./propius/scheduler:/propius/scheduler
+      - ./propius/global_config.yml:/propius/global_config.yml
+    depends_on:
+      - job_db
+      - client_db_0
+    stop_signal: SIGINT
+
+  job_manager:
+    build:
+      context: .
+      dockerfile: ./propius/job_manager/Dockerfile
+    volumes:
+      - ./propius/job_manager:/propius/job_manager
+      - ./propius/global_config.yml:/propius/global_config.yml
+    depends_on:
+      - scheduler
+    stop_signal: SIGINT
+
+  client_manager_0:
+    build:
+      context: .
+      dockerfile: ./propius/client_manager/Dockerfile
+    volumes:
+      - ./propius/client_manager:/propius/client_manager
+      - ./propius/global_config.yml:/propius/global_config.yml
+    depends_on:
+      - job_db
+      - client_db_0
+    stop_signal: SIGINT
+    command: ["0"]
+  
+  load_balancer:
+    build:
+      context: .
+      dockerfile: ./propius/load_balancer/Dockerfile
+    volumes:
+      - ./propius/load_balancer:/propius/load_balancer
+      - ./propius/global_config.yml:/propius/global_config.yml
+    depends_on:
+      - client_manager_0
+    stop_signal: SIGINT
+
+  job_db:
+    image: redis/redis-stack-server:latest
+    volumes:
+        - job_redis_data:/data
+    logging:
+      driver: none  
+
+  client_db_0:
+    image: redis/redis-stack-server:latest
+    volumes:
+        - client_0_data:/data
+    logging:
+      driver: none
+
+  worker_0:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets:/datasets
+    stop_signal: SIGINT
+    command: ["0"]
+
+  worker_1:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets:/datasets
+    stop_signal: SIGINT
+    command: ["1"]
+  
+  executor:
+    build: 
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_executor
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    stop_signal: SIGINT
+    depends_on:
+      - worker_0
+      - worker_1
+  
+  clients:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+      - ./evaluation/client:/evaluation/client
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+      - load_balancer
+      
+
+  jobs:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+      - ./evaluation/job:/evaluation/job
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    stop_signal: SIGINT
+    depends_on:
+      - executor
+      - clients
+      - job_manager

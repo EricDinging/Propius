@@ -1,3 +1,5 @@
+import sys
+[sys.path.append(i) for i in ['.', '..', '...']]
 import asyncio
 import yaml
 import grpc
@@ -16,21 +18,23 @@ import torch
 from torch.autograd import Variable
 import numpy as np
 import random
+import logging
+import logging.handlers
 
 _cleanup_coroutines = []
 
 class Worker(executor_pb2_grpc.WorkerServicer):
-    def __init__(self, id: int, config: dict):
+    def __init__(self, id: int, config: dict, logger: My_logger):
         self.id = id
-        
+        self.logger = logger
         if id >= len(config["worker"]):
             raise ValueError("Invalid worker ID")
         
-        self.ip = config["worker"][id]["ip"]
+        self.ip = config["worker"][id]["ip"] if not config["use_docker"] else "0.0.0.0"
         self.port = config["worker"][id]["port"]
         device = config["worker"][id]["device"] if config["use_cuda"] else "cpu"
         self.device = torch.device(device)
-        print(f"Worker {self.id}: Use {self.device}")
+        self.logger.print(f"Worker {self.id}: Use {self.device}", INFO)
 
         self.lock = asyncio.Lock()
         
@@ -133,7 +137,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 self.data_partitioner_ref_cnt_dict[dataset_name] = 0
             
             self.data_partitioner_ref_cnt_dict[dataset_name] += 1
-            custom_print(f"Worker {self.id}: recieve job {job_id} init", INFO)
+            self.logger.print(f"Worker {self.id}: recieve job {job_id} init", INFO)
 
         return executor_pb2.ack(ack=True)
     
@@ -150,7 +154,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     del self.data_partitioner_ref_cnt_dict[dataset_name]
             if job_id in self.task_finished:
                 del self.task_finished[job_id]
-            custom_print(f"Worker {self.id}: recieve job {job_id} remove", INFO)
+            self.logger.print(f"Worker {self.id}: recieve job {job_id} remove", INFO)
         return executor_pb2.ack(ack=True)  
     
     async def TASK_REGIST(self, request, context):
@@ -165,17 +169,14 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         async with self.lock:
             self.task_to_do.append(conf)
         
-        custom_print(f"Worker {self.id}: recieve job {job_id} {event}", INFO)
+        self.logger.print(f"Worker {self.id}: recieve job {job_id} {event}{client_id}", INFO)
         return executor_pb2.ack(ack=True)
     
     async def PING(self, request, context):
         job_id, client_id = request.job_id, request.client_id
         event = request.event
 
-        if event == MODEL_TEST:
-            key = event
-        elif event == CLIENT_TRAIN:
-            key = f"{event}{client_id}"
+        key = f"{event}{client_id}"
 
         async with self.lock:
             if job_id in self.task_finished:
@@ -196,7 +197,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 result=pickle.dumps(DUMMY_RESPONSE),
                 data=pickle.dumps(DUMMY_RESPONSE)
             )
-            custom_print(f"Worker {self.id}: job {job_id} {key} retrieval fail", WARNING)
+            self.logger.print(f"Worker {self.id}: job {job_id} {key} retrieval fail", WARNING)
             return result_msg
     
     async def HEART_BEAT(self, request, context):
@@ -229,7 +230,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             try:
                 self._train_step(client_data, conf, model, optimizer, criterion)
             except Exception as ex:
-                custom_print(ex, ERROR)
+                self.logger.print(ex, ERROR)
                 break
         
         state_dict = model.state_dict()
@@ -240,7 +241,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             'trained_size': self._completed_steps * conf['batch_size'],
         }  
 
-        custom_print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: training complete===", INFO)
+        self.logger.print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: training complete===", INFO)
 
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
@@ -277,7 +278,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     correct += acc[0].item()
                     top_5 += acc[1].item()
                 except Exception as ex:
-                    custom_print(ex, ERROR)
+                    self.logger.print(ex, ERROR)
                     break
                 test_len += len(target)
         
@@ -295,7 +296,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             "test_len": test_len
         }
 
-        custom_print(f"Worker {self.id}: Job {conf['job_id']}: testing complete, {results}===", INFO)
+        self.logger.print(f"Worker {self.id}: Job {conf['job_id']}: testing complete, {results}===", INFO)
         return results
         
     async def execute(self):
@@ -304,7 +305,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 async with self.lock:
                     if len(self.task_to_do) == 0:
                         await asyncio.sleep(5)
-                        custom_print(f"Worker {self.id}: no task, sleeping")
+                        self.logger.print(f"Worker {self.id}: no task, sleeping")
                         continue
                     task_conf = self.task_to_do.popleft()
                     partition = self.data_partitioner_dict[self.job_id_data_map[task_conf["job_id"]]]
@@ -314,23 +315,24 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     client_id = task_conf["client_id"]
                     job_id = task_conf["job_id"]
 
-                    custom_print(f"Worker {self.id}: executing job {job_id} {event}", INFO)
+                    self.logger.print(f"Worker {self.id}: executing job {job_id} {event}, Client {client_id}", INFO)
                     
                     del task_conf["model_weight"]
+
+                    key = f"{event}{task_conf['client_id']}"
 
                     if event == CLIENT_TRAIN:
                         results = await self._train(client_id=client_id,
                                     partition=partition,
                                     model=model_weight,
                                     conf=task_conf)
-                        key = f"{event}{task_conf['client_id']}"
+
                     elif event == MODEL_TEST:
                         results = await self._test(client_id=client_id,
                                                 partition=partition,
                                                 model=model_weight,
                                                 conf=task_conf
                                                 )
-                        key = event
                 
                     if job_id not in self.task_finished:
                         self.task_finished[job_id] = {}
@@ -338,12 +340,12 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
-                custom_print(e, ERROR)
+                self.logger.print(e, ERROR)
                 await asyncio.sleep(5)
     
-async def run(config):
+async def run(config, logger, id):
     async def server_graceful_shutdown():
-        custom_print(f"===Worker {worker.id} ending===")
+        logger.print(f"===Worker {worker.id} ending===", WARNING)
         await server.stop(5)
 
     channel_options = [
@@ -353,35 +355,37 @@ async def run(config):
 
     server = grpc.aio.server(options=channel_options)
 
-    if len(sys.argv) != 2:
-        print("Usage: python evaluation/executor/worker.py <id>")
-        exit(1)
-
-    id = int(sys.argv[1])
-
-    logging.basicConfig(level=logging.INFO, filename=f'./evaluation/executor/wk{id}_app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
-    worker = Worker(id, config)
+    worker = Worker(id, config, logger)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     executor_pb2_grpc.add_WorkerServicer_to_server(worker, server)
     
     server.add_insecure_port(f"{worker.ip}:{worker.port}")
     await server.start()
-    custom_print(f"Worker {worker.id}: started, listening on {worker.ip}:{worker.port}", INFO)
+    logger.print(f"Worker {worker.id}: started, listening on {worker.ip}:{worker.port}", INFO)
 
     await worker.execute()
 
 if __name__ == '__main__':
     config_file = './evaluation/evaluation_config.yml'
+    
+    if len(sys.argv) != 2:
+        print("Usage: python evaluation/executor/worker.py <id>")
+        exit(1)
+
+    id = int(sys.argv[1])
+
+    log_file = f'./evaluation/executor/wk{id}_app.log'
+    logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(run(config))
+            loop.run_until_complete(run(config, logger, id))
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print(e)
+            logger.print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

@@ -1,5 +1,10 @@
 load_balancer_ip: localhost
-load_balancer_port: 50000
+load_balancer_port: 50002
+
+job_manager_ip: localhost
+job_manager_port: 50001
+
+sched_alg: fifo
 
 job_public_constraint:
   - cpu_f
@@ -11,35 +16,36 @@ job_private_constraint:
 
 # ---Simulation---
 
-client_num: 1000
-client_test_num: 100
+client_num: 100
+client_test_num: 10
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
 # Job profile number
-job_profile_num : 5
+job_profile_num : 2
 # Job total number
-total_job : 5
+total_job : 2
 # Job generation config
-avg_interval: 1800
+avg_interval: 10
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
 job_driver_starting_port: 50010
 
-# Total simulation time
-# total_running_second: 1200
-
 # ---Execution---
-use_cuda: True
-cuda_device: cpu
+use_cuda: False
+use_docker: True
+
+# ---Single worker
+cuda_device: cuda:0
 
 executor_ip: localhost
 executor_port: 49999
 round_timeout: 1000
 
+# ---Multi worker
 worker:
   - ip: localhost
     port: 49998
@@ -47,9 +53,8 @@ worker:
   - ip: localhost
     port: 49997
     device: cuda:0
-  # - ip: localhost
-  #   port: 49996
-  #   device: cuda:0
+
+# ---Testing---
 test_bsz: 20
 test_ratio: 1
 
@@ -59,5 +64,3 @@ eval_interval: 10
 femnist_data_dir: ./datasets/femnist
 femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
 femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
-
-verbose: True

@@ -1,13 +1,16 @@
 FROM python:3.9
 
 WORKDIR /
-RUN mkdir /propius
-COPY ./propius/client_manager /propius/client_manager
-COPY ./propius/channels /propius/channels
-COPY ./propius/util /propius/util
-COPY ./propius/global_config.yml /propius/global_config.yml
-COPY ./propius/requirements.txt /propius/requirements.txt
+RUN mkdir propius
+RUN mkdir propius/client_manager
 
-RUN pip3 install -r /propius/requirements.txt
+COPY ./propius/channels propius/channels
+COPY ./propius/util propius/util
 
-CMD ["python", "./propius/client_manager/client_manager.py", "0"]
+COPY ./propius/requirements.txt propius/requirements.txt
+COPY ./propius/client_manager/entrypoint.sh propius/client_manager/entrypoint.sh
+
+RUN pip3 install -r propius/requirements.txt
+RUN chmod +x propius/client_manager/entrypoint.sh
+
+ENTRYPOINT ["propius/client_manager/entrypoint.sh"]

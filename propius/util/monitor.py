@@ -3,12 +3,13 @@ import matplotlib.pyplot as plt
 from propius.util.commons import *
 
 class Monitor:
-    def __init__(self, server_name: str, plot: bool = False):
+    def __init__(self, server_name: str, logger: My_logger, plot: bool = False):
         self.start_time = int(time.time())
         self.plot = plot
         self.request_num_log = {}
         self.request_num = 0
         self.server_name = server_name
+        self.logger = logger
 
     def _request(self):
         """Log request for analysis
@@ -44,4 +45,4 @@ class Monitor:
             report = self.server_name + \
                 f": avg request per second: {avg_request_per_second:.3f}"
         
-        custom_print(report, INFO)
+        self.logger.print(report, INFO)

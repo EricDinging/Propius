@@ -10,19 +10,18 @@ from evaluation.single_executor.task_pool import *
 from evaluation.single_executor.worker import *
 from evaluation.commons import *
 import os
-import time
 
 _cleanup_coroutines = []
 
 class Executor(executor_pb2_grpc.ExecutorServicer):
-    def __init__(self, config: dict, gconfig: dict):
-        self.ip = config['executor_ip']
+    def __init__(self, config: dict):
+        self.ip = config['executor_ip'] if not config['use_docker'] else '0.0.0.0'
         self.port = config['executor_port']
         self.task_pool = Task_pool(config)
-        self.worker = Worker(config)
-        self.gconfig = gconfig
+        self.worker = Worker(config, logger)
+        self.sched_alg = config['sched_alg']
 
-        result_dict = f"./evaluation/result_{self.gconfig['sched_alg']}"
+        result_dict = f"./evaluation/single_executor/result_{self.sched_alg}"
         if not os.path.exists(result_dict):
             os.mkdir(result_dict)
 
@@ -31,11 +30,11 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         job_meta = pickle.loads(request.job_meta)
 
         #TODO get model weights
-        await self.task_pool.init_job(job_id, job_meta)
         model_size = await self.worker.init_job(job_id=job_id, 
                                    dataset_name=job_meta["dataset"],
                                    model_name=job_meta["model"],
                                    )
+        await self.task_pool.init_job(job_id, job_meta)
 
         return executor_pb2.register_ack(ack=True, model_size=model_size)
     
@@ -62,11 +61,11 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             
             job_id = execute_meta['job_id']
 
-            custom_print(f"Executor: execute job {job_id} {execute_meta['event']}", INFO)
+            logger.print(f"Executor: execute job {job_id} {execute_meta['event']}", INFO)
 
             if execute_meta['event'] == JOB_FINISH:
                 await self.task_pool.gen_report(job_id=job_id,
-                                                sched_alg=self.gconfig["sched_alg"])
+                                                sched_alg=self.sched_alg)
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 continue
@@ -103,44 +102,40 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                 result=results)
 
     
-async def run(config, gconfig):
+async def run(config, logger: My_logger):
     async def server_graceful_shutdown():
-        await executor.task_pool.gen_all_report(executor.gconfig["sched_alg"])
-        custom_print("==Executor ending==", INFO)
+        await executor.task_pool.gen_all_report(executor.sched_alg)
+        logger.print("==Executor ending==", WARNING)
         #TODO handling result
         await server.stop(5)
 
     server = grpc.aio.server()
-    executor = Executor(config, gconfig)
+    executor = Executor(config)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     executor_pb2_grpc.add_ExecutorServicer_to_server(executor, server)
     server.add_insecure_port(f"{executor.ip}:{executor.port}")
     await server.start()
-    custom_print(f"Executor: executor started, listening on {executor.ip}:{executor.port}", INFO)
+    logger.print(f"Executor: executor started, listening on {executor.ip}:{executor.port}", INFO)
 
     await executor.execute()
 
 if __name__ == '__main__':
     config_file = './evaluation/evaluation_config.yml'
-    logging.basicConfig(level=logging.INFO,
-                        filename='./evaluation/single_executor/app.log',
-                        filemode='w', 
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S',)
+    log_file = './evaluation/single_executor/app.log'
+    logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
+
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
-            custom_print("Executor read config successfully")
-            with open('./propius/global_config.yml', 'r') as gconfig:
-                gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
+            logger.print("Executor read config successfully")
                 
-                loop = asyncio.get_event_loop()
-                loop.run_until_complete(run(config, gconfig))
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(run(config, logger))
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            custom_print(e, ERROR)
+            logger.print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()
