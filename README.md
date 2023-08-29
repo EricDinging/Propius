@@ -1,5 +1,40 @@
 # Propius
 Propius is a Federated Learning resource manager, capable of efficiently schedule devices in a multi-job setting, with the goal of reducing average job completion time.
+
+## Repository Organization
+```
+.
+├── propius/                    # Propius Python package
+│   ├── client_manager/         #   - Edge device (client) interface
+│   ├── job_manager/            #   - FL job interface
+│   ├── load_balancer/          #   - Distributor of client traffics to client managers
+│   ├── scheduler/              #   - FL job scheduler, capable of executing various policies
+│   ├── util/                   #   - Utility functions and classes
+│   ├── channels/               #   - gRPC channel source code and definitions
+│   ├── database/               #   - Redis database base interface
+│   └── global_config.yml       #   - Configuration for Propius system
+│
+├── propius_client/
+│   ├── propius_client.py
+│   └── propius_client_aio.py
+│
+├── propius_job/
+│   └── propius_job.py
+│
+├── evaluation/
+│   ├── analyze/
+│   ├── executor/
+│   ├── single_executor/
+│   ├── client/
+│   ├── job/
+│   └── evaluation_config.yml
+│ 
+├── tests/
+│ 
+├── examples/
+│ 
+└── datasets/
+```
 ## Get Started
 ### Quick installation (Linux)
 ```bash
