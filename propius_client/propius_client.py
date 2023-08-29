@@ -6,9 +6,6 @@ import time
 from propius_client.commons import *
 import logging
 
-#TODO state flow check
-#TODO add value check
-
 def gen_client_config():
     pass
 
