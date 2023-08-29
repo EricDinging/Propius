@@ -1,5 +1,5 @@
 # Propius
-Propius is a Federated Learning resource manager, capable of efficiently schedule devices in a multi-job setting, with the goal of reducing average job completion time.
+Propius is a Federated Learning (FL) resource manager, capable of efficiently schedule devices in a multi-job setting, with the goal of reducing average job completion time.
 
 ## Repository Organization
 ```
@@ -23,11 +23,13 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
 │
 ├── evaluation/                 # Framework for evaluating scheduling policies
 │   ├── analyze/                #   - Analysis functions for time and accuracy logs
-│   ├── executor/               #   - Distributor of FL training and testing tasks to multiple GPU processes
-│   ├── single_executor/        #   - Simple version of FL training and testing worker using one GPU process
+│   ├── executor/               #   - Executor for FL training and testing tasks using multiple GPU processes
+│   ├── single_executor/        #   - Light-weight executor for FL training and testing worker using one GPU process
 │   ├── client/                 #   - Dispatcher of simulated clients
 │   ├── job/                    #   - Dispatcher of simulated jobs
 │   └── evaluation_config.yml   #   - Configuration for evaluation
+│ 
+├── fedscale/                   # FedScale FL training backends for evaluation and examples
 │ 
 ├── tests/                      # Test suites
 │ 
@@ -37,7 +39,7 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
 ```
 
 ## Get Started
-### Quick installation (Linux)
+### Quick Installation (Linux)
 ```bash
 source install.sh # add `--cuda` if you want CUDA
 pip install -e .
