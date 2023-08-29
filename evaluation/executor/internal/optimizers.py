@@ -21,7 +21,7 @@ class TorchServerOptimizer:
         if mode == 'fed-yogi':
             from evaluation.executor.internal.optimizer_lib.yogi import YoGi
             self.gradient_controller = YoGi(
-                eta=args.yogi_eta, tau=args.yogi_tau, beta1=args.yogi_beta1, beta2=args.yogi_beta2)
+                eta=args['yogi_eta'], tau=args['yogi_tau'], beta1=args['yogi_beta1'], beta2=args['yogi_beta2'])
             
     def update_round_gradient(self, last_model, current_model, target_model):
         """ update global model based on different policy
