@@ -6,7 +6,7 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from redis.commands.search.query import NumericFilter, Query
 import time
 import json
-from propius.util.db import *
+from propius.database.db import *
 
 
 class JM_job_db_portal(Job_db):

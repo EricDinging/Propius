@@ -1,5 +1,5 @@
 import random
-from propius.util.db import *
+from propius.database.db import *
 import json
 import time
 from redis.commands.search.query import NumericFilter, Query
