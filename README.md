@@ -1,5 +1,64 @@
 # Propius
 Propius is a Federated Learning resource manager, capable of efficiently schedule devices in a multi-job setting, with the goal of reducing average job completion time.
+
+## Repository Organization
+```
+.
+├── propius/
+│   ├── client_manager/
+│   ├── job_manager/
+│   ├── load_balancer/
+│   ├── scheduler/
+│   ├── util/
+│   ├── channels/
+│   ├── database/
+│   └── global_config.yml
+│
+├── propius_client/
+│   ├── propius_client.py
+│   └── propius_client_aio.py
+│
+├── propius_job/
+│   └── propius_job.py
+│
+├── evaluation/
+│   ├── executor/
+│   ├── single_executor/
+│   ├── client/
+│   ├── job/
+│   └── evaluation_config.yml
+│ 
+├── tests/
+│ 
+├── examples/
+
+
+
+
+
+
+├── zeus/                # ⚡ Zeus Python package
+│   ├── optimizer/       #    - GPU energy and time optimizers
+│   ├── run/             #    - Tools for running Zeus on real training jobs
+│   ├── policy/          #    - Optimization policies and extension interfaces
+│   ├── util/            #    - Utility functions and classes
+│   ├── monitor.py       #    - `ZeusMonitor`: Measure GPU time and energy of any code block
+│   ├── controller.py    #    - Tools for controlling the flow of training
+│   ├── callback.py      #    - Base class for Hugging Face-like training callbacks.
+│   ├── simulate.py      #    - Tools for trace-driven simulation
+│   ├── analyze.py       #    - Analysis functions for power logs
+│   └── job.py           #    - Class for job specification
+│
+├── zeus_monitor/        # 🔌 GPU power monitor
+│   ├── zemo/            #    -  A header-only library for querying NVML
+│   └── main.cpp         #    -  Source code of the power monitor
+│
+├── examples/            # 🛠️ Examples of integrating Zeus
+│
+├── capriccio/           # 🌊 A drifting sentiment analysis dataset
+│
+└── trace/               # 🗃️ Train and power traces for various GPUs and DNNs
+```
 ## Get Started
 ### Quick installation (Linux)
 ```bash
