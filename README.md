@@ -14,27 +14,28 @@ Propius is a Federated Learning resource manager, capable of efficiently schedul
 │   ├── database/               #   - Redis database base interface
 │   └── global_config.yml       #   - Configuration for Propius system
 │
-├── propius_client/
-│   ├── propius_client.py
-│   └── propius_client_aio.py
+├── propius_client/             # Propius client interface library
+│   ├── propius_client.py       #   - Class for Propius-client interface
+│   └── propius_client_aio.py   #   - asyncio-based class for Propius-client interface
 │
-├── propius_job/
-│   └── propius_job.py
+├── propius_job/                # Propius job interface library
+│   └── propius_job.py          #   - Class for Propius-job interface
 │
-├── evaluation/
-│   ├── analyze/
-│   ├── executor/
-│   ├── single_executor/
-│   ├── client/
-│   ├── job/
-│   └── evaluation_config.yml
+├── evaluation/                 # Framework for evaluating scheduling policies
+│   ├── analyze/                #   - Analysis functions for time and accuracy logs
+│   ├── executor/               #   - Distributor of FL training and testing tasks to multiple GPU processes
+│   ├── single_executor/        #   - Simple version of FL training and testing worker using one GPU process
+│   ├── client/                 #   - Dispatcher of simulated clients
+│   ├── job/                    #   - Dispatcher of simulated jobs
+│   └── evaluation_config.yml   #   - Configuration for evaluation
 │ 
-├── tests/
+├── tests/                      # Test suites
 │ 
-├── examples/
+├── examples/                   # Examples of integrating Propius
 │ 
-└── datasets/
+└── datasets/                   # FL datasets and client device traces
 ```
+
 ## Get Started
 ### Quick installation (Linux)
 ```bash
