@@ -38,48 +38,18 @@ Propius is a Federated Learning (FL) resource manager, capable of efficiently sc
 └── datasets/                   # FL datasets and client device traces
 ```
 
-## Get Started
-### Quick Installation (Linux)
+## Getting Started
+- Quick installation (Linux / MacOS)
 ```bash
 source install.sh # add `--cuda` if you want CUDA
 pip install -e .
 ```
+- [Step-by-step installation](./docs/getting_started/getting_started.md)
 
-### Installation from Source (Linux/MacOS)
-- If your machine has GPU and you want to use CUDA, check [this](https://askubuntu.com/questions/799184/how-can-i-install-cuda-on-ubuntu-16-04)
-- Download Anaconda if not installed
-```bash
-wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
-bash Anaconda3-2023.03-1-Linux-x86_64.sh
-conda list
-```
-- If your device space is not enough for the entire Anaconda package, you can consider installing [miniconda](https://educe-ubc.github.io/conda.html) 
-- Navigate into `Propius` package, install and activate `propius` conda environment
-    - If you are using cuda
-    ```bash
-    cd Propius
-    conda env create -f environment_cuda.yml
-    conda activate propius
-    conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
-    ```
-    - If you are not using cuda
-
-    ```bash
-    cd Propius
-    conda env create -f environment.yml
-    conda activate propius
-    ```
-- Install docker and docker-compose
-    - [docker installation guide (step 1)](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04)
-    - [docker compose](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)
-
-
-## RoadMap
-- Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more info
 ## Usage
 ### Quick Launch
 We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network. The config is specified in `compose_propius.yml`.
-- Edit `compose_propius.yml` and `propius/global_config.yml`. By default, the interfacing port of load balancer (client interface) is `50002`, and the interfacing port of job manager (job interface) is `50001`
+- Edit `compose_propius.yml` and `propius/global_config.yml`. By default, the network address of load balancer (client interface) is `localhost:50002`, and the address of job manager (job interface) is `localhost:50001`
 - Make sure the setup is consistent across two config files
 - By default, Propius has one client manager and client database. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services in `compose_propius.yml`, and edit `propius/global_config.yml` accordingly
 - Run docker compose
@@ -119,7 +89,7 @@ docker compose -f compose_redis.yml up -d
 ## Interface
 - Propius' job interface is defined in `propius_job/propius_job.py`
 - Propius' client interface is defined in `propius_client/propius_client.py`
-- Refer to `test_job/parameter_server/parameter_server.py` and `test_client/client.py` to get an idea how your FL job and FL client can utilize Propius
+- Refer to `examples/` to get an idea how your FL job and FL client can utilize Propius
 
 ## Evaluation
 For the ease of evaluation, we containerize Propius and essential peripherals for evaluation in one docker network using docker compose.
@@ -151,27 +121,9 @@ source ./init.sh
     redis-cli -h localhost -p 6379 ping
     redis-cli -h localhost -p 6380 ping
     ```
-<!-- - Job:
-    - Edit `test_job/parameter_server/test_profile.yml` file
-    -   ```bash
-        $ python test_job/parameter_server/parameter_server.py test_job/parameter_server/test_profile.yml <ip> <port>
-        ```
-- Client:
-    - Edit `test_client/test_profile.yml` file
-    -   ```bash
-        $ python test_client/client.py
-        ``` -->
-<!-- ### Propius (scheduling)
-- Make changes to `global_config.yml`
-- Scheduler, job manager, client manager, and load balancer launches are the same as above
-- Job driver:
-    ```bash
-    $ python propius/job_sim/job_driver.py
-    ```
-- Client:
-    ```bash
-    $ python propius/client_sim/client_driver.py
-    ``` -->
+
+## RoadMap
+- Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more information
 
 
 

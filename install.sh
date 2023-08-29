@@ -75,3 +75,5 @@ fi
 isDockerNotInstalled
 isDockerComposeNotInstalled
 
+pip install -e .
+
