@@ -30,6 +30,7 @@ class Worker_manager:
         self._setup_seed()
 
         self.config = config
+        self.device = config["cuda_device"] if config["use_cuda"] else "cpu"
 
         self.worker_num = len(config["worker"])
         self.worker_addr_list = config["worker"]
@@ -81,7 +82,7 @@ class Worker_manager:
             await worker_stub.REMOVE(job_info_msg)
 
 
-    async def init_job(self, job_id: int, dataset_name: str, model_name: str)->float:
+    async def init_job(self, job_id: int, dataset_name: str, model_name: str, args: dict)->float:
         model = None
         if model_name == "resnet18":
             from fedscale.utils.models.specialized.resnet_speech import resnet18
@@ -94,7 +95,8 @@ class Worker_manager:
             mobilenet_v2
             model = mobilenet_v2(num_classes=out_put_class[dataset_name])
 
-        model_adapter = Torch_model_adapter(model)
+        model_adapter = Torch_model_adapter(model,
+                                            optimizer=TorchServerOptimizer(args["gradient_policy"], args, self.device))
             # model_adapter.set_weights(model_weights)
         model_size = sys.getsizeof(pickle.dumps(model_adapter)) / 1024.0 * 8.  # kbits
 

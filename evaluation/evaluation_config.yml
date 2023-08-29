@@ -38,7 +38,6 @@ job_driver_starting_port: 50010
 use_cuda: False
 use_docker: True
 
-# ---Single worker
 cuda_device: cuda:0
 
 executor_ip: localhost
@@ -57,7 +56,6 @@ worker:
 # ---Testing---
 test_bsz: 20
 test_ratio: 1
-
 eval_interval: 10
 
 #FEMNIST

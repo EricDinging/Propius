@@ -21,7 +21,7 @@ class TorchServerOptimizer:
         if mode == 'fed-yogi':
             from evaluation.executor.internal.optimizer_lib.yogi import YoGi
             self.gradient_controller = YoGi(
-                eta=args.yogi_eta, tau=args.yogi_tau, beta=args.yogi_beta, beta2=args.yogi_beta2)
+                eta=args.yogi_eta, tau=args.yogi_tau, beta1=args.yogi_beta1, beta2=args.yogi_beta2)
             
     def update_round_gradient(self, last_model, current_model, target_model):
         """ update global model based on different policy
@@ -49,9 +49,10 @@ class TorchServerOptimizer:
             new_state_dict = {
                 name: torch.from_numpy(np.array(last_model[idx] + diff_weight[idx], dtype=np.float32)) for idx, name in enumerate(target_model.state_dict().keys())
             }
-
-            target_model.load_state_dict(new_state_dict)
         
-        else:
-            # The default optimizer, FedAvg, has been applied in aggregator.py on the fly
-            pass
+        elif self.mode == 'fed-avg':
+            new_state_dict = {
+                name: torch.from_numpy(np.array(current_model[i], dtype=np.float32)) for i, name in enumerate(target_model.state_dict().keys())
+            }
+
+        target_model.load_state_dict(new_state_dict)

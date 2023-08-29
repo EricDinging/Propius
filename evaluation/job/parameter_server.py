@@ -294,11 +294,18 @@ async def run(config):
         custom_print(f"Parameter server: register failed", ERROR)
         return
     
-    #TODO Register to executor
+    grad_policy = config["gradient_policy"]
     job_meta = {
         "model": config["model"],
-        "dataset": config["dataset"]
+        "dataset": config["dataset"],
+        "gradient_policy": grad_policy
     }
+    if grad_policy == "fed-yogi":
+        job_meta["yogi_eta"] = config["yogi_eta"]
+        job_meta["yogi_tau"] = config["yogi_tau"]
+        job_meta["yogi_beta1"] = config["yogi_beta1"]
+        job_meta["yogi_beta2"] = config["yogi_beta2"]
+
     job_info_msg = executor_pb2.job_info(job_id=ps.propius_stub.id, 
                                          job_meta=pickle.dumps(job_meta))
     executor_ack = await ps.executor_stub.JOB_REGISTER(job_info_msg)
