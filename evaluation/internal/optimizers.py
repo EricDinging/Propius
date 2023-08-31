@@ -20,7 +20,7 @@ class TorchServerOptimizer:
         self.device = device
 
         if mode == 'fed-yogi':
-            from evaluation.executor.internal.optimizer_lib.yogi import YoGi
+            from evaluation.internal.optimizer_lib.yogi import YoGi
             self.gradient_controller = YoGi(
                 eta=args['yogi_eta'], tau=args['yogi_tau'], beta1=args['yogi_beta1'], beta2=args['yogi_beta2'])
             
