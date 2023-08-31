@@ -1,5 +1,5 @@
 # Propius
-Propius is a Federated Learning (FL) resource manager, capable of efficiently schedule devices in a multi-job setting, with the goal of reducing average job completion time.
+Propius is a Federated Learning (FL) resource manager, capable of efficiently scheduling devices in a multi-job setting.
 
 ## Repository Organization
 ```
