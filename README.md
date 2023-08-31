@@ -4,38 +4,36 @@ Propius is a Federated Learning (FL) resource manager, capable of efficiently sc
 ## Repository Organization
 ```
 .
-├── propius/                    # Propius Python package
-│   ├── client_manager/         #   - Edge device (client) interface
-│   ├── job_manager/            #   - FL job interface
-│   ├── load_balancer/          #   - Distributor of client traffics to client managers
-│   ├── scheduler/              #   - FL job scheduler, capable of executing various policies
-│   ├── util/                   #   - Utility functions and classes
-│   ├── channels/               #   - gRPC channel source code and definitions
-│   ├── database/               #   - Redis database base interface
-│   └── global_config.yml       #   - Configuration for Propius system
+├── propius/                        # Propius Python package
+│   ├── client_manager/             #   - Edge device (client) interface
+│   ├── job_manager/                #   - FL job interface
+│   ├── load_balancer/              #   - Distributor of client traffics to client managers
+│   ├── scheduler/                  #   - FL job scheduler, capable of executing various policies
+│   ├── util/                       #   - Utility functions and classes
+│   ├── channels/                   #   - gRPC channel source code and definitions
+│   ├── database/                   #   - Redis database base interface
+│   ├── propius_job/                # Propius job interface library
+│   │   └── propius_job.py          #   - Class for Propius-job interface
+│   ├── propius_client/             # Propius client interface library
+│   │   ├── propius_client.py       #   - Class for Propius-client interface
+│   │   └── propius_client_aio.py   #   - asyncio-based class for Propius-client interface
+│   └── global_config.yml           #   - Configuration for Propius system
 │
-├── propius_client/             # Propius client interface library
-│   ├── propius_client.py       #   - Class for Propius-client interface
-│   └── propius_client_aio.py   #   - asyncio-based class for Propius-client interface
-│
-├── propius_job/                # Propius job interface library
-│   └── propius_job.py          #   - Class for Propius-job interface
-│
-├── evaluation/                 # Framework for evaluating scheduling policies
-│   ├── analyze/                #   - Analysis functions for time and accuracy logs
-│   ├── executor/               #   - Executor for FL training and testing tasks using multiple GPU processes
-│   ├── single_executor/        #   - Light-weight executor for FL training and testing worker using one GPU process
-│   ├── client/                 #   - Dispatcher of simulated clients
-│   ├── job/                    #   - Dispatcher of simulated jobs
-│   └── evaluation_config.yml   #   - Configuration for evaluation
+├── evaluation/                     # Framework for evaluating scheduling policies
+│   ├── analyze/                    #   - Analysis functions for time and accuracy logs
+│   ├── executor/                   #   - Executor for FL training and testing tasks using multiple GPU processes
+│   ├── single_executor/            #   - Light-weight executor for FL training and testing worker using one GPU process
+│   ├── client/                     #   - Dispatcher of simulated clients
+│   ├── job/                        #   - Dispatcher of simulated jobs
+│   └── evaluation_config.yml       #   - Configuration for evaluation
 │ 
-├── fedscale/                   # FedScale FL training backends for evaluation and examples
+├── fedscale/                       # FedScale FL training backends for evaluation and examples
 │ 
-├── tests/                      # Test suites
+├── tests/                          # Test suites
 │ 
-├── examples/                   # Examples of integrating Propius
+├── examples/                       # Examples of integrating Propius
 │ 
-└── datasets/                   # FL datasets and client device traces
+└── datasets/                       # FL datasets and client device traces
 ```
 
 ## Getting Started

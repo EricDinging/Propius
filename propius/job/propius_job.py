@@ -1,6 +1,6 @@
 import pickle
-from channels import propius_pb2_grpc
-from channels import propius_pb2
+from propius.channels import propius_pb2_grpc
+from propius.channels import propius_pb2
 import grpc
 import time
 from datetime import datetime
