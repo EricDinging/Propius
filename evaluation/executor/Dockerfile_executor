@@ -5,7 +5,6 @@ RUN mkdir /evaluation
 COPY ./evaluation/commons.py /evaluation/commons.py
 COPY ./evaluation/internal /evaluation/internal
 COPY ./evaluation/requirements.txt /evaluation/requirements.txt
-COPY ./fedscale /fedscale
 
 RUN pip install --upgrade pip
 RUN pip install -r /evaluation/requirements.txt

@@ -1,3 +1,6 @@
+# Source
+# https://github.com/SymbioticLab/FedScale/blob/master/fedscale/utils/model_test_module.py
+
 import torch
 
 def accuracy(output, target, topk=(1,)):

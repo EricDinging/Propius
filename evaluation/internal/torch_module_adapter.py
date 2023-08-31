@@ -1,10 +1,11 @@
-# From FedScale/fedscale/cloud/internal
+# Source
+# https://github.com/SymbioticLab/FedScale/blob/master/fedscale/cloud/internal/torch_model_adapter.py
 
 from typing import List
 import numpy as np
 import torch
 import copy
-from evaluation.executor.internal.optimizers import TorchServerOptimizer
+from evaluation.internal.optimizers import TorchServerOptimizer
 
 class Torch_model_adapter:
     def __init__(self, model: torch.nn.Module, optimizer: TorchServerOptimizer):

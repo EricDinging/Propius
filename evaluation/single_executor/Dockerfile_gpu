@@ -11,6 +11,7 @@ COPY ./evaluation/commons.py /evaluation/commons.py
 COPY ./fedscale /fedscale
 COPY ./evaluation/requirements.txt /evaluation/requirements.txt
 COPY ./evaluation/internal /evaluation/internal
+
 RUN pip3 install --upgrade pip
 RUN pip3 install -r /evaluation/requirements.txt
 CMD ["python3", "./evaluation/single_executor/executor.py"]

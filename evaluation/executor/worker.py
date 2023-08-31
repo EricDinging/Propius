@@ -111,8 +111,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
             if dataset_name not in self.data_partitioner_dict:
                 if dataset_name == "femnist":
-                    from fedscale.dataloaders.femnist import FEMNIST
-                    from fedscale.dataloaders.utils_data import get_data_transform
+                    from evaluation.internal.dataloaders.femnist import FEMNIST
+                    from evaluation.internal.dataloaders.utils_data import get_data_transform
 
                     train_transform, test_transform = get_data_transform("mnist")
                     train_dataset = FEMNIST(

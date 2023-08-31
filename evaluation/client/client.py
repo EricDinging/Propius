@@ -1,7 +1,6 @@
 import sys
 [sys.path.append(i) for i in ['.', '..', '...']]
 import asyncio
-import random
 import yaml
 import pickle
 from evaluation.job.channels import parameter_server_pb2_grpc

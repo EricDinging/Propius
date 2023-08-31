@@ -5,6 +5,7 @@ RUN mkdir propius
 
 COPY ./propius/channels propius/channels
 COPY ./propius/util propius/util
+COPY ./propius/database /propius/database
 
 COPY ./propius/requirements.txt propius/requirements.txt
 

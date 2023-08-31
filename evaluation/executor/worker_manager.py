@@ -84,13 +84,13 @@ class Worker_manager:
     async def init_job(self, job_id: int, dataset_name: str, model_name: str, args: dict)->float:
         model = None
         if model_name == "resnet18":
-            from fedscale.utils.models.specialized.resnet_speech import resnet18
+            from evaluation.internal.models.specialized.resnet_speech import resnet18
             model = resnet18(
                 num_classes=out_put_class[dataset_name],
                 in_channels=1
             )
         elif model_name == "mobilenet":
-            from fedscale.utils.models.specialized.resnet_speech import \
+            from evaluation.internal.models.specialized.resnet_speech import \
             mobilenet_v2
             model = mobilenet_v2(num_classes=out_put_class[dataset_name])
 
