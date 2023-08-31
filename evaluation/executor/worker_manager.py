@@ -1,6 +1,5 @@
 from evaluation.executor.task_pool import *
-from evaluation.executor.internal.torch_module_adapter import *
-
+from evaluation.internal.torch_module_adapter import *
 
 import numpy as np
 import random

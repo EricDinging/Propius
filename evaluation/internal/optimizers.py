@@ -1,4 +1,5 @@
-## From FedScale/fedscale/cloud/aggregation/optimizers.py
+# Source:
+# https://github.com/SymbioticLab/FedScale/blob/master/fedscale/cloud/aggregation/optimizers.py
 
 import numpy as np
 import torch

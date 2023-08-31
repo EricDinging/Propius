@@ -8,9 +8,9 @@ import sys
 from evaluation.executor.channels import executor_pb2
 from evaluation.executor.channels import executor_pb2_grpc
 from evaluation.commons import *
-from evaluation.executor.internal.torch_module_adapter import *
-from evaluation.executor.internal.dataset_handler import *
-from evaluation.executor.internal.test_helper import *
+from evaluation.internal.torch_module_adapter import *
+from evaluation.internal.dataset_handler import *
+from evaluation.internal.test_helper import *
 from collections import deque
 from typing import List
 

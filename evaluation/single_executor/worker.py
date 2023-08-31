@@ -1,7 +1,7 @@
 from evaluation.single_executor.task_pool import *
-from evaluation.single_executor.internal.torch_module_adapter import *
-from evaluation.single_executor.internal.dataset_handler import *
-from evaluation.single_executor.internal.test_helper import *
+from evaluation.internal.torch_module_adapter import *
+from evaluation.internal.dataset_handler import *
+from evaluation.internal.test_helper import *
 
 import math
 import torch

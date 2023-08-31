@@ -1,6 +1,7 @@
-import torch
+# Source: 
+# https://github.com/SymbioticLab/FedScale/blob/master/fedscale/utils/optimizer/yogi.py
 
-## From FedScale: fedscale/utils/optimizer/yogi.py
+import torch
 
 class YoGi():
     def __init__(self, eta=1e-2, tau=1e-3, beta1=0.9, beta2=0.99):

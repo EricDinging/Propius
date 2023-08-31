@@ -6,6 +6,7 @@ RUN mkdir evaluation
 COPY ./evaluation/commons.py evaluation/commons.py
 COPY ./fedscale fedscale
 COPY ./evaluation/requirements.txt evaluation/requirements.txt
+COPY ./evaluation/internal /evaluation/internal
 RUN pip install --upgrade pip
 RUN pip install -r evaluation/requirements.txt
 CMD ["python", "evaluation/single_executor/executor.py"]

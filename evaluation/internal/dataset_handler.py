@@ -1,3 +1,6 @@
+# Source:
+# https://github.com/SymbioticLab/FedScale/blob/master/fedscale/dataloaders/divide_data.py
+
 import csv
 from random import Random
 import numpy as np

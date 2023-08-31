@@ -3,6 +3,7 @@ FROM python:3.9
 WORKDIR /
 RUN mkdir /evaluation
 COPY ./evaluation/commons.py /evaluation/commons.py
+COPY ./evaluation/internal /evaluation/internal
 COPY ./evaluation/requirements.txt /evaluation/requirements.txt
 COPY ./fedscale /fedscale
 

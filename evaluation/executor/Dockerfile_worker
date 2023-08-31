@@ -6,6 +6,7 @@ RUN mkdir /evaluation/executor
 COPY ./evaluation/commons.py /evaluation/commons.py
 COPY ./fedscale /fedscale
 COPY ./evaluation/requirements.txt /evaluation/requirements.txt
+COPY ./evaluation/internal /evaluation/internal
 COPY ./evaluation/executor/entrypoint.sh /evaluation/executor/entrypoint.sh
 
 RUN pip install --upgrade pip
