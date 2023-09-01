@@ -3,8 +3,8 @@ from typing import List
 import numpy as np
 import torch
 
-from fedscale.cloud.aggregation.optimizers import TorchServerOptimizer
-from fedscale.cloud.internal.model_adapter_base import ModelAdapterBase
+from examples.fedscale.cloud.aggregation.optimizers import TorchServerOptimizer
+from examples.fedscale.cloud.internal.model_adapter_base import ModelAdapterBase
 
 class TorchModelAdapter(ModelAdapterBase):
     """

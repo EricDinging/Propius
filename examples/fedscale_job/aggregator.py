@@ -16,13 +16,11 @@ import numpy as np
 import torch
 #TODO import wandb
 
-import fedscale.cloud.channels.job_api_pb2_grpc as job_api_pb2_grpc
-from fedscale.cloud.channels import job_api_pb2
-from fedscale.cloud.aggregation.optimizers import TorchServerOptimizer
-#TODO job manager
-from fedscale.cloud.internal.torch_model_adapter import TorchModelAdapter
-#TODO resource manager
-from fedscale.cloud.fllibs import *
+import examples.fedscale.cloud.channels.job_api_pb2_grpc as job_api_pb2_grpc
+from examples.fedscale.cloud.channels import job_api_pb2
+from examples.fedscale.cloud.aggregation.optimizers import TorchServerOptimizer
+from examples.fedscale.cloud.internal.torch_model_adapter import TorchModelAdapter
+from examples.fedscale.cloud.fllibs import *
 
 from argparse import Namespace
 import yaml
@@ -75,7 +73,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         self.collate_fn = None
         self.round = 1
-        self.total_round = self.args.rounds
+        self.total_round = self.args.total_round
 
         self.start_run_time = time.time()
         self.client_conf = {}
@@ -737,7 +735,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         time.sleep(1)
 
 if __name__ == "__main__":
-    global_setup_file = './global_config.yml'
+    global_setup_file = './propius/global_config.yml'
 
     if len(sys.argv) != 2:
         print("Wrong format: python propius/job/aggregator.py <config file>")

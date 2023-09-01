@@ -36,7 +36,7 @@ async def run(config):
 
     task_list = []
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(3)
     try:
 
         for client_idx in range(client_num):
@@ -81,13 +81,13 @@ if __name__ == '__main__':
     root_logger.addHandler(handler)
     root_logger.setLevel(logging.INFO)
 
-    global_setup_file = './evaluation/evaluation_config.yml'
+    setup_file = './evaluation/evaluation_config.yml'
 
     random.seed(42)
 
-    with open(global_setup_file, "r") as gyamlfile:
+    with open(setup_file, "r") as yamlfile:
         try:
-            config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
+            config = yaml.load(yamlfile, Loader=yaml.FullLoader)
 
             loop = asyncio.get_event_loop()
             loop.run_until_complete(run(config))

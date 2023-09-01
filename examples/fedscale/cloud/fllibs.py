@@ -8,8 +8,8 @@ from torchvision import datasets, transforms
 
 # libs from fedscale
 #TODO: import fedscale.cloud.config_parser as parser
-from fedscale.cloud import commons
-from fedscale.dataloaders.utils_data import get_data_transform
+from examples.fedscale.cloud import commons
+from examples.fedscale.dataloaders.utils_data import get_data_transform
 # FedScale model libs
 #TODO: from fedscale.utils.models.torch_model_provider import get_cv_model
 #TODO: from fedscale.utils.models.tensorflow_model_provider import get_tensorflow_model
