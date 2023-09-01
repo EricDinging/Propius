@@ -82,4 +82,4 @@ class JM_monitor(Monitor):
             plt.subplot(2, 1, 2)
             self._plot_request()
             plt.tight_layout()
-            fig.savefig(f"./propius/job_manager/JM-{self.sched_alg}-{get_time()}")
+            fig.savefig(f"./propius/monitor/plot/jm_{self.sched_alg}_{get_time()}")

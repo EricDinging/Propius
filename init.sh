@@ -19,17 +19,28 @@ else
 
         read -p "Use GPU?(y/n): " use_gpu
 
+        echo "===!!!Starting docker network for evaluation!!!==="    
         if [ "$use_gpu" = "y" ]; then
-            echo "===!!!Starting docker network for evaluation!!!==="    
             set -x
             sed -i "s/use_cuda: .*/use_cuda: True/" ./propius/global_config.yml
-            sed -i "s/use_cuda: .*/use_cuda: True/" ./evaluation/evaluation_config.yml    
-            docker compose -f compose_eval_gpu.yml up --build
+            sed -i "s/use_cuda: .*/use_cuda: True/" ./evaluation/evaluation_config.yml
+            export DEVICE=gpu
             set +x
         else
-            echo "===!!!Starting docker network for evaluation!!!==="
+            set -x
+            sed -i "s/use_cuda: .*/use_cuda: False/" ./propius/global_config.yml
+            sed -i "s/use_cuda: .*/use_cuda: False/" ./evaluation/evaluation_config.yml
+            export DEVICE=cpu    
+            set +x
+        fi
+        read -p "Rebuild docker network?(y/n): " rebuild
+        if [ "$rebuild" = "y" ]; then
             set -x
             docker compose -f compose_eval.yml up --build
+            set +x
+        else
+            set -x
+            docker compose -f compose_eval.yml up
             set +x
         fi
 

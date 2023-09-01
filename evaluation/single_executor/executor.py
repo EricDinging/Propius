@@ -21,10 +21,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.worker = Worker(config, logger)
         self.sched_alg = config['sched_alg']
 
-        result_dict = f"./evaluation/single_executor/result_{self.sched_alg}"
-        if not os.path.exists(result_dict):
-            os.mkdir(result_dict)
-
     async def JOB_REGISTER(self, request, context):
         job_id = request.job_id
         job_meta = pickle.loads(request.job_meta)
@@ -122,7 +118,7 @@ async def run(config, logger: My_logger):
 
 if __name__ == '__main__':
     config_file = './evaluation/evaluation_config.yml'
-    log_file = './evaluation/single_executor/app.log'
+    log_file = './evaluation/monitor/executor/exe.log'
     logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
 
     with open(config_file, 'r') as config:

@@ -97,7 +97,7 @@ class Task_pool:
     
     async def gen_report(self, job_id: int, sched_alg: str):
         async with self.lock:
-            test_csv_file_name = f"./evaluation/single_executor/result_{sched_alg}/test_{job_id}.csv"
+            test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}.csv"
             fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
             with open(test_csv_file_name, "w", newline="") as test_csv:
                 writer = csv.DictWriter(test_csv, fieldnames=fieldnames)

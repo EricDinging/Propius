@@ -375,7 +375,7 @@ if __name__ == '__main__':
 
     id = int(sys.argv[1])
 
-    log_file = f'./evaluation/executor/wk{id}_app.log'
+    log_file = f'./evaluation/monitor/executor/wk_{id}.log'
     logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
     with open(config_file, 'r') as config:
         try:

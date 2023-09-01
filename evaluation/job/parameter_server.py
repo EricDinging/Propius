@@ -63,11 +63,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.executor_stub = None
         self._connect_to_executor()
         self.config = config
-
-        result_dict = f"./evaluation/job/ps_result_{config['sched_alg']}"
-        if not os.path.exists(result_dict):
-            os.mkdir(result_dict)
-        
         self.round_time_stamp = {}
         self.round_sched_time = {}
         self.model_size = 0
@@ -252,7 +247,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             return server_response_msg
             
     def gen_report(self):
-        csv_file_name = f"./evaluation/job/ps_result_{self.config['sched_alg']}/{self.propius_stub.id}.csv"
+        csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}_{self.propius_stub.id}.csv"
         fieldnames = ["round", "round_finish_time", "round_sched_time"]
         with open(csv_file_name, "w", newline="") as csv_file:
             writer = csv.writer(csv_file)
@@ -355,7 +350,7 @@ if __name__ == '__main__':
     ip = sys.argv[2]
     port = int(sys.argv[3])
 
-    log_file = f'./evaluation/job/log/app_{port}.log'
+    log_file = f'./evaluation/monitor/job/job_{port}.log'
 
     handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
 

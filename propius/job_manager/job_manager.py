@@ -10,8 +10,6 @@ from collections import deque
 import pickle
 import yaml
 import grpc
-import logging
-import logging.handlers
 
 _cleanup_coroutines = []
 
@@ -196,7 +194,7 @@ async def serve(gconfig, logger):
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    log_file = './propius/job_manager/app.log'
+    log_file = './propius/monitor/log/jm.log'
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:

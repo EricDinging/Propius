@@ -20,4 +20,4 @@ class LB_monitor(Monitor):
         if self.plot:
             fig = plt.gcf()
             self._plot_request()
-            fig.savefig(f"./propius/load_balancer/LB-{self.sched_alg}-{get_time()}")
+            fig.savefig(f"./propius/monitor/plot/lb_{self.sched_alg}_{get_time()}")

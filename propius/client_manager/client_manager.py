@@ -8,10 +8,7 @@ from propius.channels import propius_pb2
 import pickle
 import yaml
 import grpc
-import logging
-import logging.handlers
 import asyncio
-import time
 
 _cleanup_coroutines = []
 
@@ -177,24 +174,24 @@ async def serve(gconfig, cm_id: int, logger: My_logger):
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    log_file = './propius/client_manager/app.log'
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            logger = My_logger(log_file=log_file, verbose=gconfig['verbose'], use_logging=True)
             if len(sys.argv) != 2:
-                logger.print("Usage: python propius/client_manager/client_manager.py <cm_id>", ERROR)
-                exit(1)
+                raise ValueError("Usage: python propius/client_manager/client_manager.py <cm_id>")
+
             cm_id = int(sys.argv[1])
+            log_file = f'./propius/monitor/log/cm_{cm_id}.log'
+            logger = My_logger(log_file=log_file, verbose=gconfig['verbose'], use_logging=True)
             logger.print(f"Client manager {cm_id} read config successfully", INFO)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, cm_id, logger))
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            logger.print(e, ERROR)
+            print(e, ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

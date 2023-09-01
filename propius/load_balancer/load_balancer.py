@@ -6,8 +6,6 @@ from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import yaml
 import grpc
-import logging
-import logging.handlers
 import asyncio
 
 _cleanup_coroutines = []
@@ -125,7 +123,7 @@ async def serve(gconfig, logger):
     await server.wait_for_termination()
 
 if __name__ == '__main__':
-    log_file = './propius/load_balancer/app.log'
+    log_file = './propius/monitor/log/lb.log'
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:

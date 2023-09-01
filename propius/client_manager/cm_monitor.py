@@ -42,4 +42,4 @@ class CM_monitor(Monitor):
         if self.plot:
             fig = plt.gcf()
             self._plot_request()
-            fig.savefig(f"./propius/client_manager/CM{id}-{self.sched_alg}-{get_time()}")
+            fig.savefig(f"./propius/monitor/plot/cm_{id}_{self.sched_alg}_{get_time()}")

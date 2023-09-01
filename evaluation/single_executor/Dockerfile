@@ -1,10 +1,18 @@
-FROM python:3.9
+ARG IMAGE
+ARG DEVICE
+
+FROM $IMAGE
+
+RUN if [ "$DEVICE" = "gpu" ]; then \
+        ENV DEBIAN_FRONTEND=noninteractive; \
+        RUN apt-get update && \
+            apt-get install -y python3 python3-pip; \
+    fi
 
 WORKDIR /
 RUN mkdir evaluation
 
 COPY ./evaluation/commons.py evaluation/commons.py
-COPY ./fedscale fedscale
 COPY ./evaluation/requirements.txt evaluation/requirements.txt
 COPY ./evaluation/internal /evaluation/internal
 

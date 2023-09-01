@@ -61,4 +61,4 @@ class SC_monitor(Monitor):
             # plt.subplot(2, 1, 2)
             self._plot_request()
             # plt.tight_layout()
-            fig.savefig(f"./propius/scheduler/SC-{self.sched_alg}-{get_time()}")
+            fig.savefig(f"./propius/monitor/plot/sc_{self.sched_alg}_{get_time()}")

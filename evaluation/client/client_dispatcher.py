@@ -72,7 +72,7 @@ async def run(config):
         await asyncio.gather(*task_list, return_exceptions=True)
 
 if __name__ == '__main__':
-    log_file = './evaluation/client/app.log'
+    log_file = './evaluation/monitor/client/dispatcher.log'
     handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')

@@ -8,6 +8,7 @@ services:
     volumes:
       - ./propius/scheduler:/propius/scheduler
       - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
     depends_on:
       - job_db
       - client_db_0
@@ -20,6 +21,7 @@ services:
     volumes:
       - ./propius/job_manager:/propius/job_manager
       - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
     depends_on:
       - scheduler
     stop_signal: SIGINT
@@ -31,6 +33,7 @@ services:
     volumes:
       - ./propius/client_manager:/propius/client_manager
       - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
     depends_on:
       - job_db
       - client_db_0
@@ -44,21 +47,18 @@ services:
     volumes:
       - ./propius/load_balancer:/propius/load_balancer
       - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
     depends_on:
       - client_manager_0
     stop_signal: SIGINT
 
   job_db:
     image: redis/redis-stack-server:latest
-    volumes:
-        - job_redis_data:/data
     logging:
       driver: none  
 
   client_db_0:
     image: redis/redis-stack-server:latest
-    volumes:
-        - client_redis_data_0:/data
     logging:
       driver: none
 
@@ -66,10 +66,14 @@ services:
     build:
       context: .
       dockerfile: ./evaluation/executor/Dockerfile_worker
+      args:
+        DEVICE: cpu
+        IMAGE: python:3.9 # nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./datasets:/datasets
+      - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["0"]
 
@@ -77,10 +81,14 @@ services:
     build:
       context: .
       dockerfile: ./evaluation/executor/Dockerfile_worker
+      args:
+        DEVICE: cpu
+        IMAGE: python:3.9 # nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./datasets:/datasets
+      - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["1"]
   
@@ -91,6 +99,7 @@ services:
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
       - worker_0
@@ -104,6 +113,7 @@ services:
       - ./evaluation/client:/evaluation/client
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./datasets/device_info:/datasets/device_info
+      - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
       - load_balancer
@@ -116,12 +126,9 @@ services:
     volumes:
       - ./evaluation/job:/evaluation/job
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
       - executor
       - clients
       - job_manager
-
-volumes:
-  client_redis_data_0: {}
-  job_redis_data: {}
