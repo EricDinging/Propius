@@ -3,8 +3,6 @@ version: "3.9"
 services: 
   job_db:
     image: redis/redis-stack-server:latest
-    volumes:
-        - job_redis_data:/data
     logging:
       driver: none
     ports:
@@ -12,13 +10,7 @@ services:
 
   client_db_0:
     image: redis/redis-stack-server:latest
-    volumes:
-        - client_redis_data_0:/data
     logging:
       driver: none
     ports:
       - "6380:6380"
-
-volumes:
-  client_redis_data_0: {}
-  job_redis_data: {}

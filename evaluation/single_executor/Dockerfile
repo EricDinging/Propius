@@ -1,7 +1,7 @@
-ARG IMAGE
+ARG WORKER_IMAGE
 ARG DEVICE
 
-FROM $IMAGE
+FROM $WORKER_IMAGE
 
 RUN if [ "$DEVICE" = "gpu" ]; then \
         ENV DEBIAN_FRONTEND=noninteractive; \

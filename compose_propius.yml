@@ -8,6 +8,7 @@ services:
     volumes:
       - ./propius/scheduler:/propius/scheduler
       - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
     depends_on:
       - job_db
       - client_db_0
@@ -22,6 +23,7 @@ services:
     volumes:
       - ./propius/job_manager:/propius/job_manager
       - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
     depends_on:
       - scheduler
     stop_signal: SIGINT
@@ -33,6 +35,7 @@ services:
     volumes:
       - ./propius/client_manager:/propius/client_manager
       - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
     depends_on:
       - job_db
       - client_db_0
@@ -48,24 +51,17 @@ services:
     volumes:
       - ./propius/load_balancer:/propius/load_balancer
       - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
     depends_on:
       - client_manager_0
     stop_signal: SIGINT
 
   job_db:
     image: redis/redis-stack-server:latest
-    volumes:
-        - job_redis_data:/data
     logging:
       driver: none  
 
   client_db_0:
     image: redis/redis-stack-server:latest
-    volumes:
-        - client_redis_data_0:/data
     logging:
       driver: none
-
-volumes:
-  client_redis_data_0: {}
-  job_redis_data: {}

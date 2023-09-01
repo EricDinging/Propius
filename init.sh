@@ -24,15 +24,18 @@ else
             set -x
             sed -i "s/use_cuda: .*/use_cuda: True/" ./propius/global_config.yml
             sed -i "s/use_cuda: .*/use_cuda: True/" ./evaluation/evaluation_config.yml
-            export DEVICE=gpu
+            sed -i "s|DEVICE: .*|DEVICE: gpu|" ./compose_eval.yml
+            sed -i "s|WORKER_IMAGE: .*|WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04" ./compose_eval.yml
             set +x
         else
             set -x
             sed -i "s/use_cuda: .*/use_cuda: False/" ./propius/global_config.yml
             sed -i "s/use_cuda: .*/use_cuda: False/" ./evaluation/evaluation_config.yml
-            export DEVICE=cpu    
+            sed -i "s|DEVICE: .*|DEVICE: cpu|" ./compose_eval.yml
+            sed -i "s|WORKER_IMAGE: .*|WORKER_IMAGE: python:3.9" ./compose_eval.yml
             set +x
         fi
+
         read -p "Rebuild docker network?(y/n): " rebuild
         if [ "$rebuild" = "y" ]; then
             set -x
