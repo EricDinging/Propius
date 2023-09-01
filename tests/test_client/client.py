@@ -3,8 +3,8 @@ import sys
 import asyncio
 import random
 import yaml
-from test_job.parameter_server.channels import parameter_server_pb2_grpc
-from test_job.parameter_server.channels import parameter_server_pb2
+from tests.test_job.parameter_server.channels import parameter_server_pb2_grpc
+from tests.test_job.parameter_server.channels import parameter_server_pb2
 from propius.client.propius_client_aio import *
 
 class Client:

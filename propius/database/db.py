@@ -107,6 +107,7 @@ class Client_db:
         else:
             host = gconfig['client_manager'][cm_id]['ip']
             port = gconfig['client_manager'][cm_id]['client_db_port']
+        self.logger = logger
         self.r = redis.Redis(host=host, port=port)
         self.start_time = int(time.time())
         self.client_exp_time = int(gconfig['client_expire_time'])
