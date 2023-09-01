@@ -15,6 +15,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def __init__(self, config):
         self.est_total_round = config['total_round']
         self.demand = config['demand']
+        self.selection_num = config['over_selection'] * self.demand
         self.workload = config['workload']
 
         self.lock = asyncio.Lock()
@@ -26,10 +27,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         self.execution_start = False
 
-        #TODO config init
         self.propius_stub = Propius_job(job_config=config, verbose=True)
-        
-        self.propius_stub.connect()
 
     def _close_round(self):
         # locked
@@ -53,12 +51,12 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     async def CLIENT_REQUEST(self, request, context):
         client_id = request.id
         async with self.lock:
-            if self.round_client_num >= self.demand or self.cur_round > self.est_total_round:
+            if self.round_client_num >= self.selection_num or self.cur_round > self.est_total_round:
                 return parameter_server_pb2.plan(ack=False, workload=-1)
             print(
                 f"Parameter server: round: {self.cur_round}/{self.est_total_round}: client {client_id} request for plan")
             self.round_client_num += 1
-            if self.round_client_num >= self.demand:
+            if self.round_client_num >= self.selection_num:
                 if not self.execution_start:
                     self.propius_stub.round_end_request()
                     self.execution_start = True
@@ -89,7 +87,6 @@ async def run(config):
     round = 1
     async with ps.lock:
         while round <= ps.est_total_round:
-            #TODO error handling
             ps.execution_start = False
             if not ps.propius_stub.round_start_request(new_demand=False):
                 print(f"Parameter server: round start request failed")
@@ -103,15 +100,12 @@ async def run(config):
                     print("Timeout reached, shutting down job server")
                     return
             round += 1
-    #TODO error handling
+
     ps.propius_stub.complete_job()
     print(
         f"Parameter server: All round finished, result: {ps.agg_result_list[-1]}")
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    logger = logging.getLogger()
-
     if len(sys.argv) != 4:
         print("Usage: python test_job/parameter_server/parameter_server.py <config> <ip> <port>")
         exit(1)
@@ -131,7 +125,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            logger.error(str(e))
+            print(str(e))
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

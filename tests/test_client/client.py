@@ -5,11 +5,10 @@ import random
 import yaml
 from test_job.parameter_server.channels import parameter_server_pb2_grpc
 from test_job.parameter_server.channels import parameter_server_pb2
-from propius_client.propius_client_aio import *
+from propius.client.propius_client_aio import *
 
 class Client:
     def __init__(self, client_config: dict):
-        #TODO specification encode
         self.id = -1
         self.task_id = -1
         self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=True)
@@ -18,7 +17,7 @@ class Client:
         self.workload = 0
         self.result = 0
         self.client_plotter = None
-        self.ttl = 10
+        self.ttl = 3
 
     async def _connect_to_ps(self, job_ip: str, job_port: int):
         self.job_channel = grpc.aio.insecure_channel(f"{job_ip}:{job_port}")
