@@ -39,11 +39,6 @@ class Client:
     async def execute(self):
         print(f"Client {self.id}: executing task {self.task_id}")
         metric_product = 1
-        # TODO execute time calculation
-        # for m in self.public_specifications:
-        #     metric_product *= m
-        # extra_time_scale = (1 - metric_product / 1000000)
-        # exec_time = self.workload * (1 + 0.1 * extra_time_scale * math.exp(random.gauss(0, 1)))
         exec_time = self.workload
         await asyncio.sleep(exec_time)
 
