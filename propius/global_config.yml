@@ -1,5 +1,5 @@
 # Global config
-use_docker: False
+use_docker: True
 
 # ---Addresses---
 load_balancer_ip: localhost

@@ -108,7 +108,7 @@ class Client:
 
 
 if __name__ == '__main__':
-    config_file = './test_client/test_profile.yml'
+    config_file = './tests/test_client/test_profile.yml'
     with open(config_file, 'r') as config:
         config = yaml.load(config, Loader=yaml.FullLoader)
         client = Client(config)
