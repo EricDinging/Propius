@@ -35,7 +35,8 @@ class JM_job_db_portal(Job_db):
             job_port: int,
             total_demand: int,
             total_round: int) -> bool:
-        """Register incoming job to the database. 
+        """Register incoming job to the database
+
         Return False if the job ID is already in the database. 
         Set expiration time of the job
 
@@ -102,7 +103,8 @@ class JM_job_db_portal(Job_db):
                     return False
 
     def request(self, job_id: int, demand: int) -> bool:
-        """Update job metadata based on request. 
+        """Update job metadata based on request
+
         Return False if the job_id is not in the database. 
         Increment job round, update job demand for new round, 
         and clear job allocation amount counter. Start sched_time counter
@@ -144,7 +146,8 @@ class JM_job_db_portal(Job_db):
                     return False
 
     def end_request(self, job_id: int) -> bool:
-        """Update job metadata based on end request. 
+        """Update job metadata based on end request
+        
         Set job allocation amount as job demand to indicate allocation has finished. 
         Update total scheduling time.
 

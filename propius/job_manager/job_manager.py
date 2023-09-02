@@ -104,7 +104,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         job_id, demand = request.id, request.demand
         ack = self.job_db_portal.request(job_id=job_id, demand=demand)
-        # await self.client_db_portal.cleanup()
+        
         self.logger.print(f"Job manager: ack job {job_id} round request: {ack}", INFO)
 
         await self.jm_monitor.request()

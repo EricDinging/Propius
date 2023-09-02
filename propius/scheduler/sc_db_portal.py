@@ -49,7 +49,10 @@ class SC_job_db_portal(Job_db):
 
     def get_job_list(self, public_constraint: tuple,
                      constraints_job_list: list) -> bool:
-        """Get all the jobs that has the input public constraint, sorted by the total demand in ascending order
+        """Get all the jobs that has the input public constraint, 
+        sorted by the total demand in ascending order
+
+        Use register time to break tie 
 
         Args:
             public_constraint: constraint values listed in a tuple
@@ -131,7 +134,7 @@ class SC_job_db_portal(Job_db):
             for doc in result.docs:
                 id = doc.id
                 job_time = json.loads(doc.json)["job"]["timestamp"]
-                score  = -int(job_time - self.start_time)
+                score  = -(job_time - self.start_time)
                 self.logger.print(f"-------{id} {score:.3f} ", INFO)
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
@@ -219,7 +222,15 @@ class SC_job_db_portal(Job_db):
         id = f"job:{job_id}"
         try:
             total_round = int(self.r.json().get(id, ".job.total_round")[0])
-            return total_round * std_round_time
+            round_executed = int(self.r.json().get(job_id, "$.job.round")[0])
+            if round_executed == 0:
+                return total_round * std_round_time
+            else:
+                start_time = float(self.r.json().get(job_id, "$.job.timestamp")[0])
+                runtime = time.time() - start_time
+                avg_round_time = runtime / round_executed
+                return total_round * avg_round_time
+            
         except Exception as e:
             self.logger.print(e, WARNING)
             return 1000 * std_round_time
@@ -239,7 +250,8 @@ class SC_client_db_portal(Client_db):
                 job_public_constraint: name of public constraint
             logger
         """
-        # TODO determine which client db to connect
+
+        # TODO determine which client db to connect, by default db 0
         super().__init__(gconfig, 0, False, logger)
         self.public_max = gconfig['public_max']
 

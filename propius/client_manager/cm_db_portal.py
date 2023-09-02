@@ -122,11 +122,6 @@ class CM_job_db_portal(Job_db):
                     demand = int(self.r.json().get(id, "$.job.demand")[0])
                     ip = str(self.r.json().get(id, "$.job.ip")[0])
                     port = int(self.r.json().get(id, "$.job.port")[0])
-
-                    round = int(self.r.json().get(id, "$.job.round")[0])
-                    total_round = int(
-                        self.r.json().get(
-                            id, "$.job.total_round")[0])
                     
                     if amount >= demand:
                         pipe.unwatch()
