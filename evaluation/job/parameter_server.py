@@ -172,7 +172,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         if self.round_client_num >= self.over_demand:
                             if not self.execution_start:
                                 custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: start execution", INFO)
-                                self.propius_stub.round_end_request()
+                                self.propius_stub.end_request()
                                 self.execution_start = True
                                 self.round_sched_time[self.cur_round] = time.time() - self.round_sched_time[self.cur_round]
                 else:
@@ -323,7 +323,7 @@ async def run(config):
             ps.round_client_num = 0
             ps.round_result_cnt = 0
             ps.round_sched_time[ps.cur_round] = time.time()
-            if not ps.propius_stub.round_start_request(new_demand=False):
+            if not ps.propius_stub.start_request(new_demand=False):
                 custom_print(f"Parameter server: round start request failed", WARNING)
                 return
             while ps.cur_round != round + 1:

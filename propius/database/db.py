@@ -51,7 +51,7 @@ class Job_db:
                 NumericField(
                     "$.job.start_sched",
                     as_name="start_sched"),
-                # last round start time
+                # last start scheduling time
                 TextField("$.job.ip", as_name="ip"),
                 NumericField("$.job.port", as_name="port"),
                 NumericField("$.job.total_demand", as_name="total_demand"),
@@ -83,6 +83,63 @@ class Job_db:
     def get_job_size(self) -> int:
         info = self.r.ft('job').info()
         return int(info['num_docs'])
+    
+    def remove_job(self, job_id: int) -> tuple[tuple, int, int, float, float]:
+        """Remove the job from database. 
+        Returns a tuple of public constraints, demand, round_executed, 
+        runtime and avg scheduling latency for analsis
+
+        Args:
+            job_id
+
+        Returns:
+            public_constraints
+            demand: round demand
+            round_executed: number of round executed
+            runtime: time lapse since register
+            avg_scheduling_latency
+        """
+
+        with self.r.json().pipeline() as pipe:
+            while True:
+                try:
+                    id = f"job:{job_id}"
+                    pipe.watch(id)
+                    start_time = float(
+                        self.r.json().get(
+                            id, "$.job.timestamp")[0])
+                    total_sched = float(
+                        self.r.json().get(
+                            id, "$.job.total_sched")[0])
+                    round = float(self.r.json().get(id, "$.job.round")[0])
+                    demand = int(self.r.json().get(id, "$.job.demand")[0])
+                    round_executed = int(
+                        self.r.json().get(
+                            id, "$.job.round")[0])
+
+                    constraint_list = []
+                    for name in self.public_constraint_name:
+                        constraint_list.append(float(self.r.json().get(
+                            id, f"$.job.public_constraint.{name}")[0]))
+                    for name in self.private_constraint_name:
+                        constraint_list.append(float(self.r.json().get(
+                            id, f"$.job.private_constraint.{name}")[0]))
+
+                    runtime = time.time() - start_time
+                    sched_latency = total_sched / round if round > 0 else -1
+                    pipe.delete(id)
+                    pipe.unwatch()
+                    return (
+                        tuple(constraint_list),
+                        demand,
+                        round_executed,
+                        runtime,
+                        sched_latency)
+                except redis.WatchError:
+                    pass
+                except Exception as e:
+                    self.logger.print(e, ERROR)
+                    return (None, None, None, None, None)
 
 
 class Client_db:

@@ -58,7 +58,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             self.round_client_num += 1
             if self.round_client_num >= self.selection_num:
                 if not self.execution_start:
-                    self.propius_stub.round_end_request()
+                    self.propius_stub.end_request()
                     self.execution_start = True
         return parameter_server_pb2.plan(ack=True, workload=self.workload)
 
@@ -88,7 +88,7 @@ async def run(config):
     async with ps.lock:
         while round <= ps.est_total_round:
             ps.execution_start = False
-            if not ps.propius_stub.round_start_request(new_demand=False):
+            if not ps.propius_stub.start_request(new_demand=False):
                 print(f"Parameter server: round start request failed")
                 return
         

@@ -134,9 +134,11 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         """
 
         job_id = request.id
-        self.logger.print(f"Job manager: job {job_id} completed", INFO)
+        
         (constraints, demand, total_round, runtime, sched_latency) = \
             self.job_db_portal.finish(job_id)
+        self.logger.print(f"Job manager: job {job_id} completed"
+                          f", executed {total_round} rounds", INFO)
 
         if runtime:
             await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
