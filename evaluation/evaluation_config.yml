@@ -48,10 +48,10 @@ round_timeout: 3600
 worker:
   - ip: localhost
     port: 49998
-    device: cuda:1
+    device: cuda:2
   - ip: localhost
     port: 49997
-    device: cuda:1
+    device: cuda:2
 
 # ---Testing---
 test_bsz: 20
