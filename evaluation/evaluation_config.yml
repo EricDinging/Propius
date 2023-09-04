@@ -16,7 +16,7 @@ job_private_constraint:
 
 # ---Simulation---
 
-client_num: 1000
+client_num: 3000
 client_test_num: 10
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
@@ -42,7 +42,7 @@ cuda_device: cuda:1 # if use cuda, else cpu
 
 executor_ip: localhost
 executor_port: 49999
-round_timeout: 1000
+round_timeout: 3600
 
 # ---Multi worker
 worker:

@@ -1,5 +1,5 @@
 # Server setting
-connection_timeout: 800
+connection_timeout: 3600
 
 # Training and testing aggregator setting
 demand: 2
