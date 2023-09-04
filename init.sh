@@ -29,11 +29,11 @@ else
             read -p "Rebuild docker network?(y/n): " rebuild
             if [ "$rebuild" = "y" ]; then
                 set -x
-                docker compose -f compose_eval_gpu.yml up --build
+                docker compose -f compose_eval_gpu.yml up --build -d
                 set +x
             else
                 set -x
-                docker compose -f compose_eval_gpu.yml up
+                docker compose -f compose_eval_gpu.yml up -d
                 set +x
             fi
         else
@@ -44,11 +44,11 @@ else
             read -p "Rebuild docker network?(y/n): " rebuild
             if [ "$rebuild" = "y" ]; then
                 set -x
-                docker compose -f compose_eval.yml up --build
+                docker compose -f compose_eval.yml up --build -d
                 set +x
             else
                 set -x
-                docker compose -f compose_eval.yml up
+                docker compose -f compose_eval.yml up -d
                 set +x
             fi
         fi
