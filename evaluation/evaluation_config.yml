@@ -16,7 +16,7 @@ job_private_constraint:
 
 # ---Simulation---
 
-client_num: 500
+client_num: 1000
 client_test_num: 10
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
