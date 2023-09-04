@@ -67,8 +67,8 @@ services:
       context: .
       dockerfile: ./evaluation/executor/Dockerfile_worker
       args:
-        DEVICE: cpu
-        WORKER_IMAGE: python:3.9 # nvidia/cuda:11.6.2-devel-ubuntu20.04
+        DEVICE: gpu
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
@@ -82,8 +82,8 @@ services:
       context: .
       dockerfile: ./evaluation/executor/Dockerfile_worker
       args:
-        DEVICE: cpu
-        WORKER_IMAGE: python:3.9 # nvidia/cuda:11.6.2-devel-ubuntu20.04
+        DEVICE: gpu
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
