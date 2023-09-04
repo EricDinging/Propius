@@ -129,6 +129,7 @@ class Job_db:
                     sched_latency = total_sched / round if round > 0 else -1
                     pipe.delete(id)
                     pipe.unwatch()
+                    self.logger.print(f"Remove job:{job_id}", WARNING)
                     return (
                         tuple(constraint_list),
                         demand,

@@ -36,7 +36,7 @@ async def run(config):
 
     task_list = []
 
-    await asyncio.sleep(3)
+    await asyncio.sleep(10)
     try:
 
         for client_idx in range(client_num):

@@ -88,7 +88,9 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         for key in aggregate_test_result.keys():
             if key != "test_len":
                 aggregate_test_result[key] /= aggregate_test_result["test_len"]
-            
+
+        self.logger.print(f"Job {job_id} round {round} test result: {aggregate_test_result}", INFO)
+
         aggregate_test_result = {
             MODEL_TEST: aggregate_test_result
         }
