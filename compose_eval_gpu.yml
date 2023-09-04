@@ -75,6 +75,13 @@ services:
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["0"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 4
+              capabilities: [gpu]
 
   worker_1:
     build:
@@ -89,6 +96,13 @@ services:
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["1"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
   
   executor:
     build: 
