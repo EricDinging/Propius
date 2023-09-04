@@ -4,9 +4,8 @@ ARG DEVICE
 FROM $WORKER_IMAGE
 
 RUN if [ "$DEVICE" = "gpu" ]; then \
-        ENV DEBIAN_FRONTEND=noninteractive; \
-        RUN apt-get update && \
-            apt-get install -y python3 python3-pip; \
+        DEBIAN_FRONTEND=noninteractive apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-pip; \
     fi
 
 WORKDIR /
