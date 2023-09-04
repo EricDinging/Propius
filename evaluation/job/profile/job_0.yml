@@ -2,7 +2,7 @@
 connection_timeout: 800
 
 # Training and testing aggregator setting
-demand: 200
+demand: 100
 total_round: 800
 over_selection: 1.3
 
