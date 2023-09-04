@@ -90,7 +90,7 @@ class CM_job_db_portal(Job_db):
                              for name in self.private_constraint_name])
                         open_private_constraint.append(job_private_constraint)
                 else:
-                    if time.time() - job['start_sched'] >= self.gconfig['job_max_silent_time']:
+                    if time.time() - job['job']['start_sched'] >= self.gconfig['job_max_silent_time']:
                         self.remove_job(job_id)
 
             return open_list, open_private_constraint, size
