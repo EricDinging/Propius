@@ -10,7 +10,7 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
 
     with open(f"./evaluation/job/job_trace_{num}.txt", "r") as file:
         i = 0
-        time.sleep(3)
+        time.sleep(10)
 
         job_processes = []
         for line in file:

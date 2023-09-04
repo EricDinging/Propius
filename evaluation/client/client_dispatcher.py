@@ -63,7 +63,7 @@ async def run(config):
             task_list.append(task)
 
         while True:
-            await asyncio.sleep(5)
+            await asyncio.sleep(10)
     except KeyboardInterrupt:
         for task in task_list:
             task.cancel()
