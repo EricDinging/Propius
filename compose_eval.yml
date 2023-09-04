@@ -53,14 +53,14 @@ services:
     stop_signal: SIGINT
 
   job_db:
-    image: redis/redis-stack-server:latest
-    logging:
-      driver: none  
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile_jdb
 
   client_db_0:
-    image: redis/redis-stack-server:latest
-    logging:
-      driver: none
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile_cdb
 
   worker_0:
     build:
