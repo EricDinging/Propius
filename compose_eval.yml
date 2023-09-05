@@ -104,7 +104,7 @@ services:
       - ./datasets:/datasets
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
-    command: ["1"]
+    command: ["2"]
     deploy:
       resources:
         reservations:
