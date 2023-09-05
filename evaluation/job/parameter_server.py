@@ -41,6 +41,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             "port": config["port"]
         }
 
+        self.job_config = job_config
+        self.config = config
+
         self.ip = config["ip"] if not config["use_docker"] else "0.0.0.0"
         self.port = config["port"]
 
@@ -65,7 +68,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             self.executor_channel = None
             self.executor_stub = None
             self._connect_to_executor()
-        self.config = config
+
         self.round_time_stamp = {}
         self.round_sched_time = {}
         self.model_size = 0
@@ -78,21 +81,43 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     async def _close_round(self):
         # locked
-        task_meta = {}
-
         if self.do_compute:
             job_task_info_msg = executor_pb2.job_task_info(
                 job_id=self.propius_stub.id,
                 client_id=-1,
                 round=self.cur_round,
                 event=AGGREGATE,
-                task_meta=pickle.dumps(task_meta),
+                task_meta=pickle.dumps(DUMMY_RESPONSE),
                 task_data=pickle.dumps(DUMMY_RESPONSE)
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
 
         self.round_time_stamp[self.cur_round] = time.time()
         self.cur_round += 1
+        self.cv.notify()
+
+    async def _close_failed_round(self):
+        # locked
+        if self.do_compute:
+            job_task_info_msg = executor_pb2.job_task_info(
+                job_id=self.propius_stub.id,
+                client_id=-1,
+                round=self.cur_round,
+                event=ROUND_FAIL,
+                task_meta=pickle.dumps(DUMMY_RESPONSE),
+                task_data=pickle.dumps(DUMMY_RESPONSE)
+            )
+            await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+            self.cv.notify()
+
+    async def _re_register(self) -> bool:
+        self.job_config['total_round'] = self.job_config['total_round'] - self.cur_round + 1 
+        self.propius_stub = Propius_job(job_config=self.job_config, verbose=True, logging=True)
+        if not self.propius_stub.register():
+            custom_print(f"Parameter server: register failed", ERROR)
+            return False
+        return True
+
 
     def _init_event_queue(self, client_id:int):
         # locked
@@ -233,7 +258,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
                 if self.round_result_cnt >= self.demand:
                     await self._close_round()
-                    self.cv.notify()
         return server_response_msg
             
     def gen_report(self):
@@ -303,26 +327,24 @@ async def run(config):
     custom_print(f"Parameter server: parameter server started, listening on {ps.ip}:{ps.port}", INFO)
 
     ps.round_sched_time[0] = 0
-    round = 1
 
     async with ps.lock:
-        while round <= ps.total_round:
+        while ps.cur_round <= ps.total_round:
             ps.client_event_dict = {}
             ps.execution_start = False
             ps.round_client_num = 0
             ps.round_result_cnt = 0
             ps.round_sched_time[ps.cur_round] = time.time()
             if not ps.propius_stub.start_request(new_demand=False):
-                custom_print(f"Parameter server: round start request failed", WARNING)
-                return
-            while ps.cur_round != round + 1:
-                try:
-                    await asyncio.wait_for(ps.cv.wait(), timeout=config["connection_timeout"])
-                except asyncio.TimeoutError:
-                    await ps._close_round()
-                    break
-
-            round += 1
+                custom_print(f"Parameter server: round start request failed, re-register", WARNING)
+                if not ps._re_register():
+                    return
+                continue
+            
+            try:
+                await asyncio.wait_for(ps.cv.wait(), timeout=config["connection_timeout"])
+            except asyncio.TimeoutError:
+                await ps._close_failed_round()
 
     custom_print(
         f"Parameter server: All round finished", INFO)

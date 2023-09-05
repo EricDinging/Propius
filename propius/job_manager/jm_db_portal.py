@@ -113,6 +113,7 @@ class JM_job_db_portal(Job_db):
             job_id
             demand
         """
+        job_finished = False
 
         with self.r.json().pipeline() as pipe:
             while True:
@@ -121,14 +122,14 @@ class JM_job_db_portal(Job_db):
                     pipe.watch(id)
                     if not pipe.get(id):
                         pipe.unwatch()
-                        return False
+                        break
                     cur_round = int(self.r.json().get(id, "$.job.round")[0])
                     total_round = int(
                         self.r.json().get(
                             id, "$.job.total_round")[0])
                     if cur_round >= total_round:
-                        pipe.unwatch()
-                        return False
+                        job_finished = True
+                        break
                     pipe.multi()
                     pipe.execute_command(
                         'JSON.NUMINCRBY', id, "$.job.round", 1)
@@ -143,7 +144,11 @@ class JM_job_db_portal(Job_db):
                     pass
                 except Exception as e:
                     self.logger.print(e, ERROR)
-                    return False
+
+        if job_finished:
+            self.logger.print(f"Job {job_id} reached final round", ERROR)
+            self.remove_job(job_id)
+        return False
 
     def end_request(self, job_id: int) -> bool:
         """Update job metadata based on end request
