@@ -24,9 +24,9 @@ client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
 # Job profile number
-job_profile_num : 10
+job_profile_num : 20
 # Job total number
-total_job : 10
+total_job : 20
 # Job generation config
 avg_interval: 1800
 
@@ -35,7 +35,7 @@ job_driver_ip: localhost
 job_driver_starting_port: 50010
 
 # ---Execution---
-use_cuda: False
+use_cuda: True
 use_docker: True
 
 cuda_device: cuda:1 # if use cuda, else cpu
