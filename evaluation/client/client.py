@@ -112,12 +112,28 @@ class Client:
         await self.client_execute_complete(compl_event, status, compl_meta, compl_data)
         return True
 
-    async def event_monitor(self):
+    async def event_monitor(self) -> bool:
         custom_print(f"Client {self.id}: ping to jobs")
+        self.cur_time = time.time() - self.eval_start_time
+        remain_time = self.inactive_time[self.cur_period] - self.cur_time
+        if remain_time <= 0:
+            return False
+        
         while await self.client_ping():
             await asyncio.sleep(3)
+            self.cur_time = time.time() - self.eval_start_time
+            remain_time = self.inactive_time[self.cur_period] - self.cur_time
+            if remain_time <= 0:
+                return False
+            
         while await self.execute():
             await asyncio.sleep(1)
+            self.cur_time = time.time() - self.eval_start_time
+            remain_time = self.inactive_time[self.cur_period] - self.cur_time
+            if remain_time <= 0:
+                return False
+        
+        return True
 
     async def cleanup_routines(self, propius=False):
         try:
@@ -154,20 +170,10 @@ class Client:
                 if not status:
                     await asyncio.sleep(10)
                     continue
-
-                self.cur_time = time.time() - self.eval_start_time
-                remain_time = self.inactive_time[self.cur_period] - self.cur_time
-                if remain_time <= 0:
-                    continue
                 
                 await self._connect_to_ps(ps_ip, ps_port)
-                try:
-                    task = asyncio.create_task(self.event_monitor())
-                    await asyncio.wait_for(task, 
-                                           timeout=remain_time)
-                except asyncio.TimeoutError:
-                    custom_print(f"Client {self.id}: timeout, abort", WARNING)
-                    pass
+                if not await self.event_monitor():
+                    custom_print(f"Client {self.id}: timeout, aborted", WARNING)
                 await self.cleanup_routines()
 
         except KeyboardInterrupt:
