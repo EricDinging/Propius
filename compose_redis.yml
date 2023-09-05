@@ -13,4 +13,4 @@ services:
     logging:
       driver: none
     ports:
-      - "6380:6380"
+      - "6380:6379"

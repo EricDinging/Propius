@@ -1,7 +1,0 @@
-FROM redis/redis-stack:latest 
-
-WORKDIR /usr/local/db
-
-ENV PORT=6380
-
-CMD [ "redis-stack-server", "--port", "$PORT"]

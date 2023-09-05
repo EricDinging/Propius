@@ -55,12 +55,14 @@ services:
   job_db:
     build:
       context: .
-      dockerfile: ./propius/database/Dockerfile_jdb
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6379"]
 
   client_db_0:
     build:
       context: .
-      dockerfile: ./propius/database/Dockerfile_cdb
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6380"]
 
   worker_0:
     build:
