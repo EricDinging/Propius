@@ -69,6 +69,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.round_time_stamp = {}
         self.round_sched_time = {}
         self.model_size = 0
+        self.speedup_factor = config['speedup_factor']
 
     def _connect_to_executor(self):
         self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
@@ -243,7 +244,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             writer.writerow(fieldnames)
             start_time = self.round_time_stamp[0]
             for round, time in self.round_time_stamp.items():
-                writer.writerow([round, time-start_time, self.round_sched_time[round]])
+                writer.writerow([round, (time-start_time) * self.speedup_factor, self.round_sched_time[round]])
 
 async def run(config):
     async def server_graceful_shutdown():
@@ -364,6 +365,7 @@ if __name__ == '__main__':
                 config['use_docker'] = eval_config['use_docker']
                 config['sched_alg'] = eval_config['sched_alg']
                 config['do_compute'] = eval_config['do_compute']
+                config['speedup_factor'] = eval_config['speedup_factor']
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(run(config))
                 

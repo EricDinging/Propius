@@ -15,7 +15,9 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
         job_processes = []
         for line in file:
             line = line.strip().split(" ")
-            time.sleep(int(line[0]))
+            sleeping_time = int(line[0]) / config['speedup_factor']
+            time.sleep(sleeping_time)
+            
             command = [
                 "python",
                 "./evaluation/job/parameter_server.py",

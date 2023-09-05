@@ -1,3 +1,5 @@
+speedup_factor: 10
+
 load_balancer_ip: localhost
 load_balancer_port: 50002
 

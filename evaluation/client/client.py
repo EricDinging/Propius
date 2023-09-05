@@ -43,6 +43,7 @@ class Client:
         self.active_time = client_config["active"]
         self.inactive_time = client_config["inactive"]
         self.cur_period = 0
+        self.speedup_factor = client_config["speedup_factor"]
     
     async def _connect_to_ps(self, ps_ip: str, ps_port: int):
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
@@ -100,8 +101,8 @@ class Client:
         elif event == UPLOAD_MODEL:
             time = meta["upload_size"] / float(self.comm_speed)
         
+        time /= self.speedup_factor
         custom_print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds", INFO)
-        
         await asyncio.sleep(time)
 
         compl_event = event
@@ -120,7 +121,7 @@ class Client:
             return False
         
         while await self.client_ping():
-            await asyncio.sleep(3)
+            await asyncio.sleep(1)
             self.cur_time = time.time() - self.eval_start_time
             remain_time = self.inactive_time[self.cur_period] - self.cur_time
             if remain_time <= 0:
@@ -168,7 +169,9 @@ class Client:
                 await self.propius_client_stub.close()
                 
                 if not status:
-                    await asyncio.sleep(10)
+                    time = 10
+                    time /= self.speedup_factor
+                    await asyncio.sleep(time)
                     continue
                 
                 await self._connect_to_ps(ps_ip, ps_port)

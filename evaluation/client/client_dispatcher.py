@@ -46,6 +46,8 @@ async def run(config):
             private_specs = {
                     "dataset_size": client_size_dict[client_idx % len(client_size_dict)]}
             
+            active_time = [ x/config['speedup_factor'] for x in selected_client_avail[client_idx]['active']]
+            inactive_time = [ x/config['speedup_factor'] for x in selected_client_avail[client_idx]['inactive']] 
             client_config = {
                     "id": client_idx,
                     "public_specifications": public_specs,
@@ -55,9 +57,10 @@ async def run(config):
                     "computation_speed": client_spec_dict[client_idx % len(client_spec_dict)]['speed'],
                     "communication_speed": client_comm_dict[client_idx % len(client_comm_dict) + 1]['communication'],
                     "eval_start_time": eval_start_time,
-                    "active": selected_client_avail[client_idx]['active'],
-                    "inactive": selected_client_avail[client_idx]['inactive'],
+                    "active": active_time,
+                    "inactive": inactive_time,
                     "use_docker": config["use_docker"],
+                    "speedup_factor": config["speedup_factor"],
                 }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)
