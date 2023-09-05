@@ -31,8 +31,6 @@ class Client:
         self.event_queue = deque()
         self.meta_queue = deque()
         self.data_queue = deque()
-
-        self.lock = asyncio.Lock()
         self.round = 0
 
         self.comp_speed = client_config["computation_speed"]
@@ -56,10 +54,9 @@ class Client:
         meta = pickle.loads(server_response.meta)
         data = pickle.loads(server_response.data)
 
-        async with self.lock:
-            self.event_queue.append(event)
-            self.meta_queue.append(meta)
-            self.data_queue.append(data)
+        self.event_queue.append(event)
+        self.meta_queue.append(meta)
+        self.data_queue.append(data)
         
     async def client_ping(self)->bool:
         client_id_msg = parameter_server_pb2.client_id(id=self.id)
@@ -81,29 +78,28 @@ class Client:
         await self.handle_server_response(server_response)
 
     async def execute(self)->bool:
-        async with self.lock:
-            if len(self.event_queue) == 0:
-                return
-            event = self.event_queue.popleft()
-            meta = self.meta_queue.popleft()
-            data = self.data_queue.popleft()
+        if len(self.event_queue) == 0:
+            return
+        event = self.event_queue.popleft()
+        meta = self.meta_queue.popleft()
+        data = self.data_queue.popleft()
     
-        time = 0
+        exe_time = 0
 
         if event == CLIENT_TRAIN:
-            time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
+            exe_time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
         elif event == SHUT_DOWN:
             return False
         elif event == UPDATE_MODEL:
             self.round = meta["round"]
-            time = meta["download_size"] / float(self.comm_speed)
+            exe_time = meta["download_size"] / float(self.comm_speed)
 
         elif event == UPLOAD_MODEL:
-            time = meta["upload_size"] / float(self.comm_speed)
+            exe_time = meta["upload_size"] / float(self.comm_speed)
         
-        time /= self.speedup_factor
-        custom_print(f"Client {self.id}: Recieve {event} event, executing for {time} seconds", INFO)
-        await asyncio.sleep(time)
+        exe_time /= self.speedup_factor
+        custom_print(f"Client {self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
+        await asyncio.sleep(exe_time)
 
         compl_event = event
         status = True
@@ -147,13 +143,16 @@ class Client:
     async def run(self):
         try:
             while True:
-                if self.cur_period >= len(self.active_time):
+                if self.cur_period >= len(self.active_time) or \
+                    self.cur_period >= len(self.inactive_time):
                     custom_print(f"Client {self.id}: ==shutting down==", WARNING)
                     break
                 self.cur_time = time.time() - self.eval_start_time
+                if self.active_time[self.cur_period] >= self.inactive_time[self.cur_period]:
+                    raise ValueError("Active inactive time invalid")
                 if self.cur_time < self.active_time[self.cur_period]:
                     sleep_time = self.active_time[self.cur_period] - self.cur_time
-                    custom_print(f"Client {self.id}: sleep for {sleep_time}")
+                    # custom_print(f"Client {self.id}: sleep for {sleep_time}")
                     await asyncio.sleep(self.active_time[self.cur_period] - self.cur_time)
                     continue
                 elif self.cur_time >= self.inactive_time[self.cur_period]:
@@ -169,9 +168,9 @@ class Client:
                 await self.propius_client_stub.close()
                 
                 if not status:
-                    time = 10
-                    time /= self.speedup_factor
-                    await asyncio.sleep(time)
+                    sleep_time = 10
+                    sleep_time /= self.speedup_factor
+                    await asyncio.sleep(sleep_time)
                     continue
                 
                 await self._connect_to_ps(ps_ip, ps_port)
