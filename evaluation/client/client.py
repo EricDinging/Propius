@@ -148,12 +148,12 @@ class Client:
                     custom_print(f"Client {self.id}: ==shutting down==", WARNING)
                     break
                 self.cur_time = time.time() - self.eval_start_time
-                if self.active_time[self.cur_period] >= self.inactive_time[self.cur_period]:
+                if self.active_time[self.cur_period] > self.inactive_time[self.cur_period]:
                     raise ValueError("Active inactive time invalid")
                 if self.cur_time < self.active_time[self.cur_period]:
                     sleep_time = self.active_time[self.cur_period] - self.cur_time
                     # custom_print(f"Client {self.id}: sleep for {sleep_time}")
-                    await asyncio.sleep(self.active_time[self.cur_period] - self.cur_time)
+                    await asyncio.sleep(sleep_time)
                     continue
                 elif self.cur_time >= self.inactive_time[self.cur_period]:
                     self.cur_period += 1
@@ -168,7 +168,7 @@ class Client:
                 await self.propius_client_stub.close()
                 
                 if not status:
-                    sleep_time = 10
+                    sleep_time = 20
                     sleep_time /= self.speedup_factor
                     await asyncio.sleep(sleep_time)
                     continue
