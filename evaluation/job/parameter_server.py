@@ -46,7 +46,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.cv = asyncio.Condition(self.lock)
 
         self.cur_round = 1
-        self.client_event_dict = {}
+        self.client_event_dict = {} # key is client id, value is an event queue
 
         self.round_client_num = 0
         self.round_result_cnt = 0
@@ -152,15 +152,14 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
                         f"issue {event_dict['event']} event", INFO)
                     
-            else:
-                custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
-                            f"issue dummy event, {self.round_client_num}/{self.demand}", INFO)
-                
+            else:        
                 if client_id not in self.client_event_dict:
                     if self.round_client_num < self.over_demand and self.cur_round <= self.total_round:
                         #TODO job train task register to executor
                         self._init_event_queue(client_id)
-
+                        custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
+                            f"{self.round_client_num}/{self.demand}", INFO)
+                        
                         server_response_msg = parameter_server_pb2.server_response(
                             event=DUMMY_EVENT,
                             meta=pickle.dumps(DUMMY_RESPONSE),
@@ -319,6 +318,7 @@ async def run(config):
 
     async with ps.lock:
         while round <= ps.total_round:
+            ps.client_event_dict = {}
             ps.execution_start = False
             ps.round_client_num = 0
             ps.round_result_cnt = 0
@@ -328,8 +328,6 @@ async def run(config):
                 return
             while ps.cur_round != round + 1:
                 try:
-                    # reset client event queue dict
-                    ps.client_event_dict = {}
                     await asyncio.wait_for(ps.cv.wait(), timeout=config["connection_timeout"])
                 except asyncio.TimeoutError:
                     await ps._close_round()

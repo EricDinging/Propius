@@ -129,7 +129,7 @@ class Worker_manager:
                     status_list.append(worker_status_msg.task_size)
                 
                 # self.cur_worker = status_list.index(min(status_list))
-                self.logger.print(f"Worker manager: current worker {self.cur_worker}", INFO)
+                self.logger.print(f"Worker manager: current worker {self.cur_worker}", PRINT)
         except asyncio.CancelledError:
             pass
 

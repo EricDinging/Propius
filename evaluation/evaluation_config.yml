@@ -16,7 +16,7 @@ job_private_constraint:
 
 # ---Simulation---
 
-client_num: 3000
+client_num: 1500
 client_test_num: 10 
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
@@ -24,9 +24,9 @@ client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
 # Job profile number
-job_profile_num : 20
+job_profile_num : 1
 # Job total number
-total_job : 20
+total_job : 1
 # Job generation config
 avg_interval: 1800
 
@@ -35,7 +35,7 @@ job_driver_ip: localhost
 job_driver_starting_port: 50010
 
 # ---Execution---
-use_cuda: True
+use_cuda: False
 use_docker: True
 
 cuda_device: cuda:1 # if use cuda, else cpu

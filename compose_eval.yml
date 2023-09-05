@@ -105,13 +105,6 @@ services:
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["2"]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 4
-              capabilities: [gpu]
   
   executor:
     build: 
