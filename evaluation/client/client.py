@@ -149,6 +149,9 @@ class Client:
                     break
                 self.cur_time = time.time() - self.eval_start_time
                 if self.active_time[self.cur_period] > self.inactive_time[self.cur_period]:
+                    custom_print(f"Period: {self.cur_period}", ERROR)
+                    custom_print(f"Active time: {self.active_time}", ERROR)
+                    custom_print(f"Inactive time: {self.inactive_time}", ERROR)
                     raise ValueError("Active inactive time invalid")
                 if self.cur_time < self.active_time[self.cur_period]:
                     sleep_time = self.active_time[self.cur_period] - self.cur_time
