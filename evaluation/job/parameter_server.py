@@ -119,7 +119,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     async def re_register(self) -> bool:
         # locked
-        self.job_config['total_round'] = min(self.total_round - self.cur_round + 1, 1)
+        self.job_config['total_round'] = max(self.total_round - self.cur_round + 1, 1)
         
         custom_print(f"Parameter server: re-register, left round {self.job_config['total_round']}", WARNING)
         self.propius_stub = Propius_job(job_config=self.job_config, verbose=True, logging=True)
