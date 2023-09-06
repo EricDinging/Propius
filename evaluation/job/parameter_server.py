@@ -119,10 +119,11 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     async def re_register(self) -> bool:
         # locked
-        self.job_config['total_round'] = self.job_config['total_round'] - self.cur_round + 1 
+        self.job_config['total_round'] = min(self.total_round - self.cur_round + 1, 1)
+        
+        custom_print(f"Parameter server: re-register, left round {self.job_config['total_round']}", WARNING)
         self.propius_stub = Propius_job(job_config=self.job_config, verbose=True, logging=True)
-        if not self.propius_stub.register():
-            
+        if not self.propius_stub.register():    
             custom_print(f"Parameter server: re-register failed", ERROR)
             return False
         return True
@@ -270,30 +271,36 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def gen_report(self):
         csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}_{self.propius_stub.id}.csv"
         os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
-        fieldnames = ["round", "round_time", "sched_delay", "round_collection_time"]
+        fieldnames = ["round", "round_time", "sched_delay", "response_collection_time"]
         with open(csv_file_name, "w", newline="") as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(fieldnames)
-            start_time = self.round_time_stamp[1]
-            total_sched_delay = total_response_time = 0
-            for round, time in self.round_time_stamp.items():
-                round_time = (time-start_time) * self.speedup_factor
-                sched_delay = self.round_sched_time[round] * self.speedup_factor
-                response_time = self.round_sched_time[round] * self.speedup_factor
- 
-                total_sched_delay += sched_delay
-                total_response_time += response_time
-                writer.writerow([round, 
-                                 round_time, 
-                                 sched_delay,
-                                 response_time,
-                                 ])
-            writer.writerow([
-                -1,
-                -1,
-                total_sched_delay / len(self.round_time_stamp),
-                total_response_time / len(self.round_time_stamp),
-            ])
+            if 0 in self.round_time_stamp:
+                start_time = self.round_time_stamp[0]
+                total_sched_delay = total_response_time = 0
+                del self.round_time_stamp[0]
+
+                for round, time in self.round_time_stamp.items():
+                    round_time = (time-start_time) * self.speedup_factor
+                    sched_delay = self.round_sched_time[round] * self.speedup_factor
+                    response_time = self.round_response_time[round] * self.speedup_factor
+    
+                    total_sched_delay += sched_delay
+                    total_response_time += response_time
+                    writer.writerow([round, 
+                                    round_time, 
+                                    sched_delay,
+                                    response_time,
+                                    ])
+                    
+                total_round = len(self.round_time_stamp)
+                if total_round > 0:
+                    writer.writerow([
+                        -1,
+                        -1,
+                        total_sched_delay / total_round,
+                        total_response_time / total_round,
+                    ])
 
 async def run(config):
     async def server_graceful_shutdown():
@@ -349,11 +356,10 @@ async def run(config):
     await server.start()
     custom_print(f"Parameter server: parameter server started, listening on {ps.ip}:{ps.port}", INFO)
 
-    ps.round_sched_time[0] = 0
+    ps.round_time_stamp[0] = 0
 
     async with ps.lock:
         while ps.cur_round <= ps.total_round:
-            ps.round_time_stamp[ps.cur_round] = time.time()
             ps.client_event_dict = {}
             ps.execution_start = False
             ps.round_client_num = 0
@@ -361,9 +367,9 @@ async def run(config):
             ps.round_sched_time[ps.cur_round] = time.time()
 
             if not ps.propius_stub.start_request(new_demand=False):
-                custom_print(f"Parameter server: round start request failed, re-register", WARNING)
                 if not await ps.re_register():
                     return
+                await asyncio.sleep(3)
                 continue
             
             try:
@@ -384,7 +390,7 @@ async def run(config):
                 custom_print(f"PS {ps.propius_stub.id}-{ps.cur_round}: exec timeout", WARNING)
                 await ps.close_failed_round()
                 continue
-
+            ps.round_time_stamp[ps.cur_round] = time.time()
             await ps.close_round()
 
     custom_print(

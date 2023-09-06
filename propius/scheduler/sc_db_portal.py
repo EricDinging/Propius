@@ -145,7 +145,7 @@ class SC_job_db_portal(Job_db):
             a random float ranging from 0 to 10.
         """
 
-        q = Query('@score: [0, 0]')
+        q = Query('*')
         try:
             result = self.r.ft('job').search(q)
         

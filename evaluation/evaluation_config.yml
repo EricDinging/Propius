@@ -1,4 +1,4 @@
-speedup_factor: 1
+speedup_factor: 10
 
 load_balancer_ip: localhost
 load_balancer_port: 50002
@@ -16,12 +16,12 @@ job_public_constraint:
 job_private_constraint:
   - dataset_size
 
-sched_timeout: 180
+sched_timeout: 120
 exec_timeout: 180
 
 # ---Simulation---
 
-client_num: 1000
+client_num: 1500
 client_test_num: 10 
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
@@ -29,9 +29,9 @@ client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
 # Job profile number
-job_profile_num : 1
+job_profile_num : 10
 # Job total number
-total_job : 1
+total_job : 10
 # Job generation config
 avg_interval: 1800
 
