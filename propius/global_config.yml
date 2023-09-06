@@ -35,7 +35,7 @@ client_expire_time: 1000
 
 # ---Job---
 job_expire_time: 604800 # a week
-job_max_silent_time: 3600 # one hour; 
+job_max_silent_time: 1800 # half an hour; 
 # if job doesn't send request to Propius for more than half an hour,
 # the job will be removed, unless the job's demand hasn't been fulfilled
 

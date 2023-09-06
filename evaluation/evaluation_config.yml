@@ -16,12 +16,12 @@ job_public_constraint:
 job_private_constraint:
   - dataset_size
 
-sched_timeout: 120
+sched_timeout: 180
 exec_timeout: 180
 
 # ---Simulation---
 
-client_num: 100
+client_num: 500
 client_test_num: 10 
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'

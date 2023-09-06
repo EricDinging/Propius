@@ -105,7 +105,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     async def close_failed_round(self):
         # locked
-        custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: round fail", INFO)
         if self.do_compute:
             job_task_info_msg = executor_pb2.job_task_info(
                 job_id=self.propius_stub.id,
@@ -117,11 +116,12 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
 
-    async def _re_register(self) -> bool:
+    async def re_register(self) -> bool:
         # locked
         self.job_config['total_round'] = self.job_config['total_round'] - self.cur_round + 1 
         self.propius_stub = Propius_job(job_config=self.job_config, verbose=True, logging=True)
         if not self.propius_stub.register():
+            
             custom_print(f"Parameter server: re-register failed", ERROR)
             return False
         return True
@@ -341,24 +341,28 @@ async def run(config):
             ps.round_client_num = 0
             ps.round_result_cnt = 0
             ps.round_sched_time[ps.cur_round] = time.time()
-            
+
             if not ps.propius_stub.start_request(new_demand=False):
                 custom_print(f"Parameter server: round start request failed, re-register", WARNING)
-                if not ps._re_register():
+                if not await ps.re_register():
                     return
                 continue
             
             try:
-                await asyncio.wait_for(ps.cv.wait(), timeout=config["sched_timeout"])
+                timeout = config['sched_timeout'] / config['speedup_factor']
+                await asyncio.wait_for(ps.cv.wait(), timeout=timeout)
             except asyncio.TimeoutError:
+                custom_print(f"PS {ps.propius_stub.id}-{ps.cur_round}: schedule timeout", WARNING)
                 await ps.close_failed_round()
                 continue
 
             ps.round_exec_start()
 
             try:
-                await asyncio.wait_for(ps.cv.wait(), timeout=config["exec_timeout"])
+                timeout = config['exec_timeout'] / config['speedup_factor']
+                await asyncio.wait_for(ps.cv.wait(), timeout=timeout)
             except asyncio.TimeoutError:
+                custom_print(f"PS {ps.propius_stub.id}-{ps.cur_round}: exec timeout", WARNING)
                 await ps.close_failed_round()
                 continue
 
