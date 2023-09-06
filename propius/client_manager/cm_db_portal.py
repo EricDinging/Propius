@@ -81,6 +81,11 @@ class CM_job_db_portal(Job_db):
                         time.time() - job['job']['start_sched'] >= self.gconfig['job_max_silent_time']:                
                         self.remove_job(job_id)
 
+            if self.sched_alg == 'random':
+                paired_offer = list(zip(open_list, open_private_constraint))
+                random.shuffle(paired_offer)
+                open_list, open_private_constraint = zip(*paired_offer)
+
             return open_list, open_private_constraint, size
 
         return [], [], 0

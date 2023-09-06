@@ -141,26 +141,13 @@ class SC_job_db_portal(Job_db):
             self.logger.print(e, ERROR)
 
     def random_update_all_job_score(self):
-        """Give every job which doesn't have a score yet a score of
-            a random float ranging from 0 to 10.
+        """Do not assign score to jobs. Instead, client will recieved a randomly shuffled offer list
         """
-
-        q = Query('*')
-        try:
-            result = self.r.ft('job').search(q)
-        
-            if result.total == 0:
-                return
-            for doc in result.docs:
-                id = doc.id
-                score = random.uniform(0, 10)
-                self.logger.print(f"-------{id} {score:.3f} ", INFO)
-                self.r.execute_command('JSON.SET', id, "$.job.score", score)
-        except Exception as e:
-            self.logger.print(e, ERROR)
+        pass
 
     def srdf_update_all_job_score(self):
-        """Give every job a score of -remaining demand.
+        """Give every job a score of -remaining demand
+
             remaining demand = remaining round * current round demand
             Prioritize job with the smallest remaining demand.
         """
