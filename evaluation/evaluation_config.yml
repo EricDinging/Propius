@@ -16,6 +16,9 @@ job_public_constraint:
 job_private_constraint:
   - dataset_size
 
+sched_timeout: 120
+exec_timeout: 180
+
 # ---Simulation---
 
 client_num: 100
