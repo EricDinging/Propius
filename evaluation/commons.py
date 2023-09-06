@@ -56,7 +56,6 @@ MAX_MESSAGE_LENGTH = 1 * 1024 * 1024 * 1024  # 1GB
 
 
 from datetime import datetime
-import yaml
 import logging
 
 def get_time() -> str:
@@ -73,7 +72,7 @@ ERROR = 4
 verbose = True
 
 class My_logger:
-    def __init__(self, log_file:str=None, verbose:bool=True, use_logging:bool=True):
+    def __init__(self, log_file:str=None, verbose:bool=False, use_logging:bool=True):
         self.verbose = verbose
         self.use_logging = logging
         if self.use_logging:
@@ -90,8 +89,9 @@ class My_logger:
             self.logger.setLevel(logging.INFO)
 
     def print(self, message: str, level: int=PRINT):
-        if self.verbose:
+        if self.verbose or level > INFO:
             print(f"{get_time()} {message}")
+
         if self.use_logging:
             if level == DEBUG:
                 self.logger.debug(message)
@@ -103,7 +103,8 @@ class My_logger:
                 self.logger.error(message)
 
 def custom_print(message: str, level: int=PRINT):
-    print(f"{get_time()} {message}")
+    if level > INFO:
+        print(f"{get_time()} {message}")
 
     if level == DEBUG:
         logging.debug(message)

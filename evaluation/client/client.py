@@ -37,7 +37,6 @@ class Client:
         self.comm_speed = client_config["communication_speed"]
 
         self.eval_start_time = client_config["eval_start_time"] if "eval_start_time" in client_config else time.time()
-        self.cur_time = time.time() - self.eval_start_time
         self.active_time = client_config["active"]
         self.inactive_time = client_config["inactive"]
         self.cur_period = 0
@@ -108,34 +107,33 @@ class Client:
         
         await self.client_execute_complete(compl_event, status, compl_meta, compl_data)
         return True
+    
+    def remain_time(self) -> float:
+        cur_time = time.time() - self.eval_start_time
+        remain_time = self.inactive_time[self.cur_period] - cur_time
+        return remain_time
 
     async def event_monitor(self) -> bool:
         custom_print(f"Client {self.id}: ping to jobs")
-        self.cur_time = time.time() - self.eval_start_time
-        remain_time = self.inactive_time[self.cur_period] - self.cur_time
-        if remain_time <= 0:
+        if self.remain_time() <= 0:
             return False
         
         while await self.client_ping():
             await asyncio.sleep(1)
-            self.cur_time = time.time() - self.eval_start_time
-            remain_time = self.inactive_time[self.cur_period] - self.cur_time
-            if remain_time <= 0:
+            if self.remain_time() <= 0:
                 return False
             
         while await self.execute():
             await asyncio.sleep(1)
-            self.cur_time = time.time() - self.eval_start_time
-            remain_time = self.inactive_time[self.cur_period] - self.cur_time
-            if remain_time <= 0:
+            if self.remain_time() <= 0:
                 return False
-        
         return True
 
     async def cleanup_routines(self, propius=False):
         try:
             if propius:
                 await self.propius_client_stub.close()
+                custom_print(f"Client {self.id}: ==shutting down==", ERROR)
             await self.ps_channel.close()
         except Exception:
             pass
@@ -147,20 +145,27 @@ class Client:
                     self.cur_period >= len(self.inactive_time):
                     custom_print(f"Client {self.id}: ==shutting down==", WARNING)
                     break
-                self.cur_time = time.time() - self.eval_start_time
+                cur_time = time.time() - self.eval_start_time
+
                 if self.active_time[self.cur_period] > self.inactive_time[self.cur_period]:
                     custom_print(f"Period: {self.cur_period}", ERROR)
                     custom_print(f"Active time: {self.active_time}", ERROR)
                     custom_print(f"Inactive time: {self.inactive_time}", ERROR)
                     raise ValueError("Active inactive time invalid")
-                if self.cur_time < self.active_time[self.cur_period]:
-                    sleep_time = self.active_time[self.cur_period] - self.cur_time
+                
+                if cur_time < self.active_time[self.cur_period]:
+                    sleep_time = self.active_time[self.cur_period] - cur_time
                     # custom_print(f"Client {self.id}: sleep for {sleep_time}")
                     await asyncio.sleep(sleep_time)
                     continue
-                elif self.cur_time >= self.inactive_time[self.cur_period]:
+                elif cur_time >= self.inactive_time[self.cur_period]:
                     self.cur_period += 1
                     continue
+
+                
+                remain_time = self.remain_time()
+                if remain_time <= 60 / self.speedup_factor:
+                    await asyncio.sleep(remain_time)
                 
                 await self.propius_client_stub.connect()
 

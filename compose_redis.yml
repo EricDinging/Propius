@@ -16,3 +16,11 @@ services:
     command: ["6380"]
     ports: 
       - 6380:6380
+
+  client_db_1:
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6381"]
+    ports: 
+      - 6381:6381
