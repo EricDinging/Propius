@@ -17,11 +17,11 @@ job_private_constraint:
   - dataset_size
 
 sched_timeout: 600
-exec_timeout: 240
+exec_timeout: 600
 
 # ---Simulation---
 
-client_num: 10000
+client_num: 5000
 client_test_num: 10 
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
@@ -37,7 +37,7 @@ avg_interval: 1800
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
-job_driver_starting_port: 50010
+job_driver_starting_port: 50020
 
 # ---Execution---
 do_compute: False

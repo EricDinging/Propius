@@ -114,19 +114,12 @@ class Client:
         return remain_time
 
     async def event_monitor(self) -> bool:
-        custom_print(f"Client {self.id}: ping to jobs")
-        if self.remain_time() <= 0:
-            return False
         
         while await self.client_ping():
             await asyncio.sleep(1)
-            if self.remain_time() <= 0:
-                return False
             
         while await self.execute():
             await asyncio.sleep(1)
-            if self.remain_time() <= 0:
-                return False
         return True
 
     async def cleanup_routines(self, propius=False):
@@ -164,7 +157,7 @@ class Client:
 
                 
                 remain_time = self.remain_time()
-                if remain_time <= 60 / self.speedup_factor:
+                if remain_time <= 600 / self.speedup_factor:
                     await asyncio.sleep(remain_time)
                 
                 await self.propius_client_stub.connect()
