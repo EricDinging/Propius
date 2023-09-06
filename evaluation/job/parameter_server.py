@@ -71,6 +71,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         self.round_time_stamp = {}
         self.round_sched_time = {}
+        self.round_response_time = {}
         self.model_size = 0
         self.speedup_factor = config['speedup_factor']
 
@@ -100,7 +101,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
 
-        self.round_time_stamp[self.cur_round] = time.time()
+        self.round_response_time[self.cur_round] = time.time() - self.round_response_time[self.cur_round]
         self.cur_round += 1
 
     async def close_failed_round(self):
@@ -269,13 +270,30 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def gen_report(self):
         csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}_{self.propius_stub.id}.csv"
         os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
-        fieldnames = ["round", "round_finish_time", "round_sched_time"]
+        fieldnames = ["round", "round_time", "sched_delay", "round_collection_time"]
         with open(csv_file_name, "w", newline="") as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(fieldnames)
-            start_time = self.round_time_stamp[0]
+            start_time = self.round_time_stamp[1]
+            total_sched_delay = total_response_time = 0
             for round, time in self.round_time_stamp.items():
-                writer.writerow([round, (time-start_time) * self.speedup_factor, self.round_sched_time[round]])
+                round_time = (time-start_time) * self.speedup_factor
+                sched_delay = self.round_sched_time[round] * self.speedup_factor
+                response_time = self.round_sched_time[round] * self.speedup_factor
+ 
+                total_sched_delay += sched_delay
+                total_response_time += response_time
+                writer.writerow([round, 
+                                 round_time, 
+                                 sched_delay,
+                                 response_time,
+                                 ])
+            writer.writerow([
+                -1,
+                -1,
+                total_sched_delay / len(self.round_time_stamp),
+                total_response_time / len(self.round_time_stamp),
+            ])
 
 async def run(config):
     async def server_graceful_shutdown():
@@ -326,8 +344,6 @@ async def run(config):
     else:
         ps.model_size = 1000
 
-    ps.round_time_stamp[0] = time.time()
-
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
     server.add_insecure_port(f"{ps.ip}:{ps.port}")
     await server.start()
@@ -337,6 +353,7 @@ async def run(config):
 
     async with ps.lock:
         while ps.cur_round <= ps.total_round:
+            ps.round_time_stamp[ps.cur_round] = time.time()
             ps.client_event_dict = {}
             ps.execution_start = False
             ps.round_client_num = 0
@@ -358,6 +375,7 @@ async def run(config):
                 continue
 
             ps.round_exec_start()
+            ps.round_response_time[ps.cur_round] = time.time()
 
             try:
                 timeout = config['exec_timeout'] / config['speedup_factor']

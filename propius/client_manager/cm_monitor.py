@@ -6,7 +6,7 @@ import os
 
 class CM_monitor(Monitor):
     def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
-        super().__init__("Client manager", plot)
+        super().__init__("Client manager", logger, plot)
         self.sched_alg = sched_alg
         self.lock = asyncio.Lock()
         self.client_check_in_num = 0

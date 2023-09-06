@@ -1,4 +1,4 @@
-speedup_factor: 10
+speedup_factor: 1
 
 load_balancer_ip: localhost
 load_balancer_port: 50002
@@ -21,7 +21,7 @@ exec_timeout: 180
 
 # ---Simulation---
 
-client_num: 500
+client_num: 1000
 client_test_num: 10 
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
