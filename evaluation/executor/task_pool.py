@@ -4,6 +4,7 @@ from collections import deque
 import random
 import copy
 import csv
+import os
 
 class Task_pool:
     def __init__(self, config):
@@ -106,6 +107,7 @@ class Task_pool:
     async def gen_report(self, job_id: int, sched_alg: str):
         async with self.lock:
             test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{sched_alg}.csv"
+            os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
             fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
             if job_id not in self.result_dict:
                 return

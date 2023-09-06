@@ -8,6 +8,7 @@ import yaml
 import logging
 import logging.handlers
 import pickle
+import os
 from evaluation.client.client import *
 
 async def run(config):
@@ -76,6 +77,8 @@ async def run(config):
 
 if __name__ == '__main__':
     log_file = './evaluation/monitor/client/dispatcher.log'
+
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
     handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')

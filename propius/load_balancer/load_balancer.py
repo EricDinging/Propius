@@ -124,6 +124,7 @@ async def serve(gconfig, logger):
 
 if __name__ == '__main__':
     log_file = './propius/monitor/log/lb.log'
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:
