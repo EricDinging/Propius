@@ -356,7 +356,7 @@ async def run(config):
     await server.start()
     custom_print(f"Parameter server: parameter server started, listening on {ps.ip}:{ps.port}", INFO)
 
-    ps.round_time_stamp[0] = 0
+    ps.round_time_stamp[0] = time.time()
 
     async with ps.lock:
         while ps.cur_round <= ps.total_round:

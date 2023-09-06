@@ -29,9 +29,9 @@ client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
 # Job profile number
-job_profile_num : 10
+job_profile_num : 20
 # Job total number
-total_job : 10
+total_job : 20
 # Job generation config
 avg_interval: 1800
 
