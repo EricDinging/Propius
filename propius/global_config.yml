@@ -1,5 +1,5 @@
 # Global config
-use_docker: False
+use_docker: True
 
 # ---Addresses---
 load_balancer_ip: localhost
@@ -10,9 +10,9 @@ client_manager:
   - ip: localhost
     port: 50003
     client_db_port: 6380
-  - ip: localhost
-    port: 50004
-    client_db_port: 6381
+  # - ip: localhost
+  #   port: 50004
+  #   client_db_port: 6381
 
 job_db_ip: localhost
 job_db_port: 6379
