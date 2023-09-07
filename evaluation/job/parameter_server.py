@@ -217,6 +217,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         client_id = request.id
         compl_event, status = request.event, request.status
         meta, data = pickle.loads(request.meta), pickle.loads(request.data)
+        client_exec_id = meta["exec_id"]
 
         server_response_msg = parameter_server_pb2.server_response(
             event=SHUT_DOWN,
@@ -245,7 +246,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     if self.do_compute:
                         job_task_info_msg = executor_pb2.job_task_info(
                             job_id=self.propius_stub.id,
-                            client_id=client_id,
+                            client_id=client_exec_id,
                             round=self.cur_round,
                             event=CLIENT_TRAIN,
                             task_meta=pickle.dumps(task_meta),

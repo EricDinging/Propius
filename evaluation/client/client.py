@@ -101,7 +101,7 @@ class Client:
 
         compl_event = event
         status = True
-        compl_meta = {"round": self.round}
+        compl_meta = {"round": self.round, "exec_id": self.id}
         compl_data = DUMMY_RESPONSE
         
         await self.client_execute_complete(compl_event, status, compl_meta, compl_data)

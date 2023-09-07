@@ -53,7 +53,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                              round=round,
                                              event=event,
                                              task_meta=task_meta)
-        self.logger.print(f"Executer: job {job_id} {event} registered", INFO)
+        # self.logger.print(f"Executer: job {job_id} {event} registered", INFO)
         return executor_pb2.ack(ack=True)
 
     async def wait_for_testing_task(self, job_id:int, round: int):
