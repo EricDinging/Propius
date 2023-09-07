@@ -120,7 +120,7 @@ class Worker_manager:
     async def heartbeat_routine(self):
         try:
             while True:
-                await asyncio.sleep(5)
+                await asyncio.sleep(10)
                 
                 status_list = []
 
@@ -153,7 +153,7 @@ class Worker_manager:
             await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
 
             while True:
-                await asyncio.sleep(10)
+                await asyncio.sleep(3)
                 ping_msg = executor_pb2.job_task_info(
                     job_id=job_id,
                     client_id=client_id,

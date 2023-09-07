@@ -1,4 +1,4 @@
-speedup_factor: 2
+speedup_factor: 1
 
 load_balancer_ip: localhost
 load_balancer_port: 50002
@@ -62,10 +62,10 @@ worker:
     device: cuda:0
   - ip: localhost
     port: 49996
-    device: cuda:1
+    device: cuda:0
   - ip: localhost
     port: 49995
-    device: cuda:1
+    device: cuda:0
 
 # ---Testing---
 test_bsz: 20

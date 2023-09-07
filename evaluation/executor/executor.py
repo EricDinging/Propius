@@ -138,7 +138,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             execute_meta = await self.task_pool.get_next_task()
             
             if not execute_meta:
-                await asyncio.sleep(5)
+                await asyncio.sleep(3)
                 continue
             
             job_id = execute_meta['job_id']
