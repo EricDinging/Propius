@@ -25,7 +25,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.config = config
         self.round_timeout = config['round_timeout']
 
-        self.lock = asyncio.Lock()
         self.logger = logger
         self.job_train_task_dict = {}
         self.job_test_task_dict = {}
@@ -41,13 +40,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                    args=job_meta
                                    )
         self.logger.print(f"Executor: job {job_id} registered", INFO)
-        await self.task_pool.init_job(job_id, job_meta)
-
-        async with self.lock:
-            self.aggregate_test_result_dict[job_id] = {
-                "num": 0,
-                "aggregate_test_result": None,
-            }
+        await self.task_pool.init_job(job_id, job_meta)            
         return executor_pb2.register_ack(ack=True, model_size=model_size)
     
     async def JOB_REGISTER_TASK(self, request, context):
@@ -60,18 +53,15 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                              round=round,
                                              event=event,
                                              task_meta=task_meta)
-        async with self.lock:
-            if event == JOB_FINISH:
-                del self.aggregate_test_result_dict[job_id]
+                
         # self.logger.print(f"Executer: job {job_id} {event} registered", INFO)
         return executor_pb2.ack(ack=True)
 
     async def wait_for_testing_task(self, job_id:int, round: int):
-        async with self.lock:
-            if job_id not in self.job_test_task_dict:
-                return
-            task_list = self.job_test_task_dict[job_id]
-            del self.job_test_task_dict[job_id]
+        if job_id not in self.job_test_task_dict:
+            return
+        task_list = self.job_test_task_dict[job_id]
+        del self.job_test_task_dict[job_id]
 
         try:
             completed, pending = await asyncio.wait(task_list,
@@ -79,50 +69,55 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     return_when=asyncio.ALL_COMPLETED)
         except Exception as e:
             self.logger.print(e, ERROR)
-        
-        async with self.lock:
-            aggregate_test_result = self.aggregate_test_result_dict[job_id]['aggregate_test_result']
-            if aggregate_test_result is None:
-                aggregate_test_result = {
-                    "test_loss": 0,
-                    "acc": 0,
-                    "acc_5": 0,
-                    "test_len": 0
+
+        if job_id not in self.aggregate_test_result_dict:
+            self.aggregate_test_result_dict[job_id] = {
+                    "num": 0,
+                    "aggregate_test_result": None,
                 }
-
-            test_num = 0
-            for task in completed:
-                try:
-                    results = await task
-                    for key in aggregate_test_result.keys():
-                        aggregate_test_result[key] += results[key]
-                    
-                    test_num += 1
-                    
-                except Exception as e:
-                    self.logger.print(e, ERROR)
-            self.aggregate_test_result_dict[job_id]['num'] += test_num
         
-            if self.aggregate_test_result_dict[job_id]['num'] >= self.config['client_test_num']:
+        aggregate_test_result = self.aggregate_test_result_dict[job_id]['aggregate_test_result']
+        if aggregate_test_result is None:
+            aggregate_test_result = {
+                "test_loss": 0,
+                "acc": 0,
+                "acc_5": 0,
+                "test_len": 0
+            }
+
+        test_num = 0
+        for task in completed:
+            try:
+                results = await task
                 for key in aggregate_test_result.keys():
-                    if key != "test_len":
-                        aggregate_test_result[key] /= aggregate_test_result["test_len"]
-
-                self.logger.print(f"Job {job_id} round {round} test result: {aggregate_test_result}", INFO)
-        
-                await self.task_pool.report_result(job_id=job_id,
-                                                    round=round,
-                                                    result=aggregate_test_result)
+                    aggregate_test_result[key] += results[key]
                 
-                self.aggregate_test_result_dict[job_id]['num'] = 0
-                self.aggregate_test_result_dict[job_id]['aggregate_test_result'] = None
+                test_num += 1
+                
+            except Exception as e:
+                self.logger.print(e, ERROR)
+        self.aggregate_test_result_dict[job_id]['num'] += test_num
+    
+        if self.aggregate_test_result_dict[job_id]['num'] >= self.config['client_test_num']:
+            for key in aggregate_test_result.keys():
+                if key != "test_len":
+                    aggregate_test_result[key] /= aggregate_test_result["test_len"]
+
+            self.logger.print(f"Job {job_id} round {round} test result: {aggregate_test_result}", INFO)
+    
+            await self.task_pool.report_result(job_id=job_id,
+                                                round=round,
+                                                result=aggregate_test_result)
+            
+            self.aggregate_test_result_dict[job_id]['num'] = 0
+            self.aggregate_test_result_dict[job_id]['aggregate_test_result'] = None
     
     async def wait_for_training_task(self, job_id:int, round: int):
-        async with self.lock:
-            if job_id not in self.job_train_task_dict:
-                return
-            task_list = self.job_train_task_dict[job_id]
-            del self.job_train_task_dict[job_id]
+
+        if job_id not in self.job_train_task_dict:
+            return
+        task_list = self.job_train_task_dict[job_id]
+        del self.job_train_task_dict[job_id]
 
         try:
             completed, pending = await asyncio.wait(task_list,
@@ -137,15 +132,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 self.logger.print(f"Job {job_id} round {round} {results}", INFO)
             except Exception as e:
                 self.logger.print(e, ERROR)
-        
-        # for task in completed:
-        #     try:
-        #         results = await task
-        #         await self.task_pool.report_result(job_id=job_id,
-        #                                             round=round,
-        #                                             result=results)
-        #     except Exception as e:
-        #         self.logger.print(e, ERROR)
 
     async def execute(self):
         while True:
@@ -170,12 +156,12 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
+                del self.aggregate_test_result_dict[job_id]
                 
-                async with self.lock:
-                    if job_id in self.job_train_task_dict:
-                        del self.job_train_task_dict[job_id]
-                    if job_id in self.job_test_task_dict:
-                        del self.job_test_task_dict[job_id]
+                if job_id in self.job_train_task_dict:
+                    del self.job_train_task_dict[job_id]
+                if job_id in self.job_test_task_dict:
+                    del self.job_test_task_dict[job_id]
 
                 continue
             
@@ -190,29 +176,30 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                           args=execute_meta)
                 )
 
-                async with self.lock:
-                    if job_id not in self.job_train_task_dict:
-                        self.job_train_task_dict[job_id] = []
-                    self.job_train_task_dict[job_id].append(task)
-                    if len(self.job_train_task_dict[job_id]) > 5:
-                        await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
+                if job_id not in self.job_train_task_dict:
+                    self.job_train_task_dict[job_id] = []
+                self.job_train_task_dict[job_id].append(task)
+
+                if len(self.job_train_task_dict[job_id]) > 5:
+                    await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 
             elif event == MODEL_TEST:
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 
-                async with self.lock:
+                if job_id not in self.job_test_task_dict:
+                    self.job_test_task_dict[job_id] = []
+                for i in range(self.config["client_test_num"]):
+                    task = asyncio.create_task(
+                        self.worker.execute(event=MODEL_TEST,
+                                            job_id=job_id,
+                                            client_id=random.randint(0, self.config['client_num']-1),
+                                            args=execute_meta)
+                    )
                     if job_id not in self.job_test_task_dict:
                         self.job_test_task_dict[job_id] = []
-                    for i in range(self.config["client_test_num"]):
-                        task = asyncio.create_task(
-                            self.worker.execute(event=MODEL_TEST,
-                                                job_id=job_id,
-                                                client_id=i,
-                                                args=execute_meta)
-                        )
-                        self.job_test_task_dict[job_id].append(task)
-                        if len(self.job_test_task_dict[job_id]) > 5:
-                            await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
+                    self.job_test_task_dict[job_id].append(task)
+                    if len(self.job_test_task_dict[job_id]) >= 5:
+                        await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
 
             elif event == AGGREGATE:
                 # wait for all pending training task to complete

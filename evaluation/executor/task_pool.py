@@ -63,7 +63,7 @@ class Task_pool:
 
             if event == AGGREGATE and round % self.config["eval_interval"] == 0:
                 test_task_meta = {
-                    "client_id": random.randint(0, 10000),
+                    "client_id": -1,
                     "round": task_meta["round"],
                     "event": MODEL_TEST,
                     "test_ratio": self.config["test_ratio"],
