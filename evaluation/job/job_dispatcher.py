@@ -1,6 +1,7 @@
 import subprocess
 import yaml
 import time
+import os
 
 with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
     config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
@@ -21,7 +22,7 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
             command = [
                 "python",
                 "./evaluation/job/parameter_server.py",
-                f"./evaluation/job/profile/job_{line[1]}.yml",
+                os.path.join(config['profile_folder'], f"job_{line[1]}.yml"),
                 f"{ip}",
                 f"{port + i}"]
             print(command)

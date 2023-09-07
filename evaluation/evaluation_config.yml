@@ -28,6 +28,8 @@ client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
+profile_folder: './evaluation/job/test_profile/'
+
 # Job profile number
 job_profile_num : 10
 # Job total number
