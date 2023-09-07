@@ -140,6 +140,7 @@ services:
     depends_on:
       - worker_0
       - worker_1
+      - worker_2
   
   clients:
     build:

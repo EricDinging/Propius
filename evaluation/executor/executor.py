@@ -53,6 +53,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                              round=round,
                                              event=event,
                                              task_meta=task_meta)
+        self.logger.print(f"Executer: job {job_id} {event} registered", INFO)
         return executor_pb2.ack(ack=True)
 
     async def wait_for_testing_task(self, job_id:int, round: int):
@@ -112,15 +113,22 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                 return_when=asyncio.ALL_COMPLETED)
         except Exception as e:
             self.logger.print(e, ERROR)
-        
+
         for task in completed:
             try:
                 results = await task
-                await self.task_pool.report_result(job_id=job_id,
-                                                    round=round,
-                                                    result=results)
+                self.logger.print(f"Job {job_id} round {round} {results}", INFO)
             except Exception as e:
                 self.logger.print(e, ERROR)
+        
+        # for task in completed:
+        #     try:
+        #         results = await task
+        #         await self.task_pool.report_result(job_id=job_id,
+        #                                             round=round,
+        #                                             result=results)
+        #     except Exception as e:
+        #         self.logger.print(e, ERROR)
 
     async def execute(self):
         while True:
@@ -199,9 +207,9 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     client_id=-1,
                                                     args=execute_meta)
                 
-                await self.task_pool.report_result(job_id=job_id,
-                                                    round=execute_meta['round'],
-                                                    result=results)
+                # await self.task_pool.report_result(job_id=job_id,
+                #                                     round=execute_meta['round'],
+                #                                     result=results)
                 
             elif event == ROUND_FAIL:
                 # wait for all pending training task to complete                

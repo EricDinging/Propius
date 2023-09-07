@@ -183,6 +183,7 @@ class Worker_manager:
                     except Exception as e:
                         self.logger.print(e, ERROR)
 
+                del results["model_weight"]
                 results = {CLIENT_TRAIN+str(client_id): results}
         
 

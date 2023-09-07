@@ -43,7 +43,7 @@ job_driver_starting_port: 60000
 
 # ---Execution---
 do_compute: True
-use_cuda: True
+use_cuda: False
 use_docker: True
 
 cuda_device: cuda:1 # if use cuda, else cpu

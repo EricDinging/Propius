@@ -100,10 +100,11 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 client_id=-1,
                 round=self.cur_round,
                 event=AGGREGATE,
-                task_meta=pickle.dumps(DUMMY_RESPONSE),
+                task_meta=pickle.dumps({}),
                 task_data=pickle.dumps(DUMMY_RESPONSE)
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+            custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: aggregrate event reported", INFO)
 
         self.round_response_time[self.cur_round] = time.time() - self.round_response_time[self.cur_round]
         self.cur_round += 1
@@ -405,7 +406,7 @@ async def run(config):
     
 if __name__ == '__main__':
     if len(sys.argv) != 4:
-        custom_print("Usage: python test_job/parameter_server/parameter_server.py <config> <ip> <port>", ERROR)
+        custom_print("Usage: python evaluation/job/parameter_server/parameter_server.py <config> <ip> <port>", ERROR)
         exit(1)
         
     config_file = sys.argv[1]
