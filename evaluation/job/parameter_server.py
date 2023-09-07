@@ -304,16 +304,16 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         with open(csv_file_name, mode="a", newline="") as csv_file:
             writer = csv.writer(csv_file)
-            async with self.lock:
-                round_time = (self.round_time - self.start_time) * self.speedup_factor
-                sched_delay = self.sched_time * self.speedup_factor
-                response_time = self.response_time * self.speedup_factor
-                self.total_sched_delay += sched_delay
-                self.total_response_time += response_time
-                writer.writerow([self.cur_round, 
-                                 round_time,
-                                 sched_delay,
-                                 response_time])
+
+            round_time = (self.round_time - self.start_time) * self.speedup_factor
+            sched_delay = self.sched_time * self.speedup_factor
+            response_time = self.response_time * self.speedup_factor
+            self.total_sched_delay += sched_delay
+            self.total_response_time += response_time
+            writer.writerow([self.cur_round, 
+                                round_time,
+                                sched_delay,
+                                response_time])
 
 
 async def run(config):
@@ -414,6 +414,7 @@ async def run(config):
             await ps.close_round()
             await ps.gen_round_report()
             ps.cur_round += 1
+            
     custom_print(
         f"Parameter server: All round finished", INFO)
     
