@@ -216,15 +216,17 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 #                                     result=results)
                 
             elif event == ROUND_FAIL:
+                # wait for all pending testing task to complete   
+                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
                 # wait for all pending training task to complete                
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
-                # create asyncio task for training task
-                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
+
                 # clear aggregated weights for this round, no report generated
                 await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
                                                     client_id=-1,
-                                                    args=execute_meta)
+                                                    args=execute_meta, 
+                                                    abort=True)
 
 
     

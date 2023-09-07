@@ -133,7 +133,7 @@ class Worker_manager:
         except asyncio.CancelledError:
             pass
 
-    async def execute(self, event: str, job_id: int, client_id: int, args: dict)->dict:
+    async def execute(self, event: str, job_id: int, client_id: int, args: dict, abort: bool = False)->dict:
         if event == CLIENT_TRAIN or event == MODEL_TEST:
             async with self.lock:
                 self.cur_worker = (self.cur_worker + 1) % self.worker_num
@@ -190,6 +190,10 @@ class Worker_manager:
         elif event == AGGREGATE:
             async with self.lock:
                 try:
+                    if abort:
+                        self.job_id_agg_cnt[job_id] = 0
+                        self.job_id_agg_weight_map[job_id] = None
+                        return None
                     agg_weight = self.job_id_agg_weight_map[job_id]
                     if self.job_id_agg_cnt[job_id] > 0:
                         agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]

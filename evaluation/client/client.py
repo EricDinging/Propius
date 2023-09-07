@@ -131,8 +131,8 @@ class Client:
             pass
 
     async def run(self):
-        try:
-            while True:
+        while True:
+            try:
                 if self.cur_period >= len(self.active_time) or \
                     self.cur_period >= len(self.inactive_time):
                     custom_print(f"Client {self.id}: ==shutting down==", WARNING)
@@ -143,7 +143,7 @@ class Client:
                     custom_print(f"Period: {self.cur_period}", ERROR)
                     custom_print(f"Active time: {self.active_time}", ERROR)
                     custom_print(f"Inactive time: {self.inactive_time}", ERROR)
-                    raise ValueError("Active inactive time invalid")
+                    break
                 
                 if cur_time < self.active_time[self.cur_period]:
                     sleep_time = self.active_time[self.cur_period] - cur_time
@@ -178,12 +178,12 @@ class Client:
                     custom_print(f"Client {self.id}: timeout, aborted", WARNING)
                 await self.cleanup_routines()
 
-        except KeyboardInterrupt:
-            pass
-        except Exception as e:
-            custom_print(f"Client {self.id}: {e}", ERROR)
-        finally:
-            await self.cleanup_routines(True)
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                custom_print(f"Client {self.id}: {e}", ERROR)
+            
+        await self.cleanup_routines(True)
         
 if __name__ == '__main__':
     config_file = './evaluation/client/client_conf.yml'
