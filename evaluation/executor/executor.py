@@ -91,10 +91,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 aggregate_test_result[key] /= aggregate_test_result["test_len"]
 
         self.logger.print(f"Job {job_id} round {round} test result: {aggregate_test_result}", INFO)
-
-        aggregate_test_result = {
-            MODEL_TEST: aggregate_test_result
-        }
         
         await self.task_pool.report_result(job_id=job_id,
                                             round=round,
@@ -151,9 +147,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             if event == JOB_FINISH:
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
                 await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
-
-                await self.task_pool.gen_report(job_id=job_id,
-                                                sched_alg=self.config["sched_alg"])
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 
@@ -168,7 +161,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             elif event == CLIENT_TRAIN:
                 # create asyncio task for testing task
                 await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round']-1)
-
+    
                 task = asyncio.create_task(
                     self.worker.execute(event=CLIENT_TRAIN,
                                           job_id=job_id,
@@ -179,6 +172,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 async with self.lock:
                     if job_id not in self.job_train_task_dict:
                         self.job_train_task_dict[job_id] = []
+                    if len(self.job_train_task_dict[job_id]) > 10:
+                        await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
                     self.job_train_task_dict[job_id].append(task)
 
             elif event == MODEL_TEST:
@@ -226,7 +221,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
     
 async def run(config, logger):
     async def server_graceful_shutdown():
-        await executor.task_pool.gen_all_report(executor.sched_alg)
         logger.print("==Executor ending==", WARNING)
         heartbeat_task.cancel()
         await heartbeat_task

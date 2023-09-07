@@ -12,7 +12,6 @@ class Task_pool:
         self.job_meta_dict = {}
         self.job_task_dict = {}
         self.cur_job_id = -1
-        self.result_dict = {}
         self.config = config
 
     async def init_job(self, job_id: int, job_meta: dict):
@@ -29,6 +28,13 @@ class Task_pool:
                 "test_bsz": self.config["test_bsz"]
             }
             self.job_task_dict[job_id].append(test_task_meta)
+
+            test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
+            os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
+            fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
+            with open(test_csv_file_name, "w", newline="") as test_csv:
+                writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
+                writer.writeheader()
             
     
     async def insert_job_task(self, job_id: int, client_id: int, round: int, event: str, task_meta: dict):
@@ -89,39 +95,17 @@ class Task_pool:
             try:
                 del self.job_meta_dict[job_id]
                 del self.job_task_dict[job_id]
-                del self.result_dict[job_id]
             except:
                 pass
 
     
     async def report_result(self, job_id: int, round: int, result: dict):
         async with self.lock:
-            if job_id not in self.result_dict:
-                self.result_dict[job_id] = {}
-            
-            if round not in self.result_dict[job_id]:
-                self.result_dict[job_id][round] = {}
-
-            self.result_dict[job_id][round].update(result)
-    
-    async def gen_report(self, job_id: int, sched_alg: str):
-        async with self.lock:
-            test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{sched_alg}.csv"
-            os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
+            test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
             fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
-            if job_id not in self.result_dict:
-                return
-            with open(test_csv_file_name, "w", newline="") as test_csv:
+            os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
+            with open(test_csv_file_name, mode="a", newline="") as test_csv:
                 writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
-                writer.writeheader()
-                
-                for round, results in self.result_dict[job_id].items():
-                    for event, result in results.items():
-                        if event == MODEL_TEST:
-                            result["round"] = round
-                            writer.writerow(result)
-
-    async def gen_all_report(self, sched_alg: str):
-        for job_id in self.job_meta_dict.keys():
-            await self.gen_report(job_id, sched_alg)
+                result["round"] = round
+                writer.writerow(result)
 
