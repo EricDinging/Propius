@@ -74,6 +74,10 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.round_response_time = {}
         self.model_size = 0
         self.speedup_factor = config['speedup_factor']
+        self.total_sched_delay = 0
+        self.total_response_time = 0
+        self.num_sched_timeover = 0
+        self.num_response_timeover = 0
 
     def _connect_to_executor(self):
         self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
@@ -277,7 +281,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             writer.writerow(fieldnames)
             if 0 in self.round_time_stamp:
                 start_time = self.round_time_stamp[0]
-                total_sched_delay = total_response_time = 0
                 del self.round_time_stamp[0]
 
                 for round, time in self.round_time_stamp.items():
@@ -285,8 +288,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     sched_delay = self.round_sched_time[round] * self.speedup_factor
                     response_time = self.round_response_time[round] * self.speedup_factor
     
-                    total_sched_delay += sched_delay
-                    total_response_time += response_time
+                    self.total_sched_delay += sched_delay
+                    self.total_response_time += response_time
                     writer.writerow([round, 
                                     round_time, 
                                     sched_delay,
@@ -298,8 +301,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     writer.writerow([
                         -1,
                         -1,
-                        total_sched_delay / total_round,
-                        total_response_time / total_round,
+                        self.total_sched_delay / (total_round + self.num_sched_timeover),
+                        self.total_response_time / (total_round + self.num_response_timeover),
                     ])
 
 async def run(config):
@@ -378,6 +381,8 @@ async def run(config):
             except asyncio.TimeoutError:
                 custom_print(f"PS {ps.propius_stub.id}-{ps.cur_round}: schedule timeout", WARNING)
                 await ps.close_failed_round()
+                ps.total_sched_delay += config['sched_timeout']
+                ps.num_sched_timeover += 1
                 continue
 
             ps.round_exec_start()
@@ -389,6 +394,8 @@ async def run(config):
             except asyncio.TimeoutError:
                 custom_print(f"PS {ps.propius_stub.id}-{ps.cur_round}: exec timeout", WARNING)
                 await ps.close_failed_round()
+                ps.total_response_time += config['exec_timeout']
+                ps.num_response_timeover += 1
                 continue
             ps.round_time_stamp[ps.cur_round] = time.time()
             await ps.close_round()
