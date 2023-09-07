@@ -199,6 +199,7 @@ class Worker_manager:
                         "agg_number": self.job_id_agg_cnt[job_id]
                     }
                     self.job_id_agg_cnt[job_id] = 0
+                    self.job_id_agg_weight_map[job_id] = None
                 except Exception as e:
                     self.logger.print(e, ERROR)
 
