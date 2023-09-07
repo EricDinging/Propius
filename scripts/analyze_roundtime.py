@@ -2,27 +2,38 @@ import os
 import csv
 
 folder_path = input("Enter the folder path containing CSV files: ")
+
+if not os.path.exists(folder_path):
+    raise FileNotFoundError("The specified folder does not exist.")
 def read_last_line(csv_file):
     with open(csv_file, 'r', newline='') as file:
-        csv_reader = csv.reader(csv_file)
-        last_row = None
+        csv_reader = csv.reader(file)
         round_time = 0
+        sched_time = 0
+        resp_time = 0
+        last_row = None
         for row in csv_reader:
-            if row[1] != -1:
-                round_time = row[1]
+            print(row)
+            if row[0] == "-1":
+                round_time = float(last_row[1])
+                sched_time = float(row[2])
+                resp_time = float(row[3])
             last_row = row
-        if last_row is not None:
-            return (round_time, last_row[2], last_row[3])
-        
+    
+
+        return (round_time, sched_time, resp_time)
+upper_round = upper_sched = upper_resp =  0
+total_round = total_sched = total_resp = 0
+lower_round = lower_sched = lower_resp = 1000000000
+num = 0  
 for filename in os.listdir(folder_path):
-    upper_round = lower_round = upper_sched = lower_sched = upper_resp = lower_resp = 0
-    total_round = total_sched = total_resp = 0
-    num = 0
-    if filename.endwith(folder_path):
+    
+    if filename.endswith(".csv"):
         csv_file_path = os.path.join(folder_path, filename)
+        # print(csv_file_path)
         round_time, sched, response = read_last_line(csv_file_path)
 
-        num +=1 
+        num += 1 
         total_round += round_time
         total_sched += sched
         total_resp += response
@@ -33,6 +44,7 @@ for filename in os.listdir(folder_path):
         lower_sched = sched if sched < lower_sched else lower_sched
         upper_resp = response if response > upper_resp else upper_resp
         lower_resp = response if response < lower_resp else lower_resp
+
 avg_round = total_round / num
 avg_sched = total_sched / num
 avg_response = total_resp / num

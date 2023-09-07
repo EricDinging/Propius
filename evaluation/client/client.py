@@ -57,7 +57,7 @@ class Client:
         self.data_queue.append(data)
         
     async def client_ping(self)->bool:
-        client_id_msg = parameter_server_pb2.client_id(id=self.id)
+        client_id_msg = parameter_server_pb2.client_id(id=self.propius_client_stub.id)
         server_response = await self.ps_stub.CLIENT_PING(client_id_msg)
         if server_response.event == DUMMY_EVENT:
             return True
@@ -66,7 +66,7 @@ class Client:
     
     async def client_execute_complete(self, compl_event: str, status: bool, meta: str, data: str):
         client_complete_msg = parameter_server_pb2.client_complete(
-            id=self.id,
+            id=self.propius_client_stub.id,
             event=compl_event,
             status=status,
             meta=pickle.dumps(meta),
@@ -115,10 +115,10 @@ class Client:
     async def event_monitor(self) -> bool:
         
         while await self.client_ping():
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
             
         while await self.execute():
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
         return True
 
     async def cleanup_routines(self, propius=False):

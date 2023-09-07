@@ -12,12 +12,15 @@ services:
     depends_on:
       - job_db
       - client_db_0
+      - client_db_1
     stop_signal: SIGINT
 
   job_manager:
     build:
       context: .
       dockerfile: ./propius/job_manager/Dockerfile
+    ports:
+      - "50001:50001"
     volumes:
       - ./propius/job_manager:/propius/job_manager
       - ./propius/global_config.yml:/propius/global_config.yml
@@ -39,17 +42,34 @@ services:
       - client_db_0
     stop_signal: SIGINT
     command: ["0"]
+
+  client_manager_1:
+    build:
+      context: .
+      dockerfile: ./propius/client_manager/Dockerfile
+    volumes:
+      - ./propius/client_manager:/propius/client_manager
+      - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
+    depends_on:
+      - job_db
+      - client_db_1
+    stop_signal: SIGINT
+    command: ["1"]
   
   load_balancer:
     build:
       context: .
       dockerfile: ./propius/load_balancer/Dockerfile
+    ports:
+      - "50002:50002"
     volumes:
       - ./propius/load_balancer:/propius/load_balancer
       - ./propius/global_config.yml:/propius/global_config.yml
       - ./propius/monitor:/propius/monitor
     depends_on:
       - client_manager_0
+      - client_manager_1
     stop_signal: SIGINT
 
   job_db:
@@ -57,12 +77,24 @@ services:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command: ["6379"]
+    ports:
+      - 6379:6379
 
   client_db_0:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command: ["6380"]
+    ports: 
+      - 6380:6380
+
+  client_db_1:
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6381"]
+    ports: 
+      - 6381:6381
 
   worker_0:
     build:

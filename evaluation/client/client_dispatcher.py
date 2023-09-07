@@ -31,24 +31,24 @@ async def run(config):
     with open(config['client_avail_path'], 'rb') as client_file:
         client_avail_dict = pickle.load(client_file)
     client_num = config['client_num']
-    selected_client_avail = {i: client_avail_dict[i+1] for i in range(client_num)}
 
     eval_start_time = time.time()
 
     task_list = []
+    total_client_num = len(client_avail_dict)
 
     await asyncio.sleep(10)
     try:
-
-        for client_idx in range(client_num):
+        for _ in range(client_num):
+            client_idx = random.randint(0, total_client_num - 1)
             public_specs = {
                     name: client_spec_dict[client_idx % len(client_spec_dict)][name]
                     for name in public_constraint_name}
             private_specs = {
                     "dataset_size": client_size_dict[client_idx % len(client_size_dict)]}
             
-            active_time = [ x/config['speedup_factor'] for x in selected_client_avail[client_idx]['active']]
-            inactive_time = [ x/config['speedup_factor'] for x in selected_client_avail[client_idx]['inactive']] 
+            active_time = [ x/config['speedup_factor'] for x in client_avail_dict[client_idx + 1]['active']]
+            inactive_time = [ x/config['speedup_factor'] for x in client_avail_dict[client_idx + 1]['inactive']] 
             client_config = {
                     "id": client_idx,
                     "public_specifications": public_specs,

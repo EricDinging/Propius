@@ -180,7 +180,7 @@ class Propius_job():
         """
 
         job_info_msg = propius_pb2.job_info(
-            est_demand=self.demand,
+            est_demand=int(1.1 * self.demand),
             est_total_round=self.est_total_round,
             public_constraint=pickle.dumps(self.public_constraint),
             private_constraint=pickle.dumps(self.private_constraint),

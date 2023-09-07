@@ -21,7 +21,7 @@ exec_timeout: 900
 
 # ---Simulation---
 
-client_num: 5000
+client_num: 10000
 client_test_num: 10 
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
@@ -29,9 +29,9 @@ client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
 # Job profile number
-job_profile_num : 1
+job_profile_num : 10
 # Job total number
-total_job : 1
+total_job : 10
 # Job generation config
 avg_interval: 1800
 
@@ -40,9 +40,9 @@ job_driver_ip: localhost
 job_driver_starting_port: 60000
 
 # ---Execution---
-do_compute: False
-use_cuda: False
-use_docker: False
+do_compute: True
+use_cuda: True
+use_docker: True
 
 cuda_device: cuda:1 # if use cuda, else cpu
 
@@ -54,13 +54,13 @@ round_timeout: 3600
 worker:
   - ip: localhost
     port: 49998
-    device: cuda:2
+    device: cuda:0
   - ip: localhost
     port: 49997
-    device: cuda:2
+    device: cuda:0
   - ip: localhost
     port: 49996
-    device: cuda:2
+    device: cuda:0
 
 # ---Testing---
 test_bsz: 20

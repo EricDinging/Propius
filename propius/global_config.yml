@@ -25,11 +25,11 @@ scheduler_port: 50000
 
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2']
-sched_alg: 'random'
+sched_alg: 'fifo'
 max_task_offer_list_len: 20
 
 # Scheduling context
-standard_round_time: 100 # default round time for jobs that doesn't have history round
+standard_round_time: 300 # default round time for jobs that doesn't have history round
 irs_epsilon: 0
 
 # ---Client---

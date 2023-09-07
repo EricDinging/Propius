@@ -85,7 +85,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             est_total_round,
             total_round=est_total_round)
         self.logger.print(f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
-                     f", private constraint: {private_constraint}"
+                     f", private constraint: {private_constraint}, demand: {est_demand}"
                      , INFO)
         if ack:
             await self.jm_monitor.job_register()
