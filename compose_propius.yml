@@ -69,6 +69,7 @@ services:
       - ./propius/monitor:/propius/monitor
     depends_on:
       - client_manager_0
+      - client_manager_1
     stop_signal: SIGINT
 
   job_db:
