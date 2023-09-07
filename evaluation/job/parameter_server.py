@@ -117,7 +117,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 client_id=-1,
                 round=self.cur_round,
                 event=ROUND_FAIL,
-                task_meta=pickle.dumps(DUMMY_RESPONSE),
+                task_meta=pickle.dumps({}),
                 task_data=pickle.dumps(DUMMY_RESPONSE)
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
