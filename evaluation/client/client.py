@@ -52,7 +52,6 @@ class Client:
         event = server_response.event
         meta = pickle.loads(server_response.meta)
         data = pickle.loads(server_response.data)
-
         self.event_queue.append(event)
         self.meta_queue.append(meta)
         self.data_queue.append(data)

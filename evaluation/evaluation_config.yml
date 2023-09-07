@@ -17,7 +17,7 @@ job_private_constraint:
   - dataset_size
 
 sched_timeout: 600
-exec_timeout: 600
+exec_timeout: 720
 
 # ---Simulation---
 
@@ -37,7 +37,7 @@ avg_interval: 1800
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
-job_driver_starting_port: 50020
+job_driver_starting_port: 60000
 
 # ---Execution---
 do_compute: False
