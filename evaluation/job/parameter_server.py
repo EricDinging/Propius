@@ -69,15 +69,18 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             self.executor_stub = None
             self._connect_to_executor()
 
-        self.round_time_stamp = {}
-        self.round_sched_time = {}
-        self.round_response_time = {}
-        self.model_size = 0
-        self.speedup_factor = config['speedup_factor']
+        self.start_time = 0
+        self.round_time = 0
+        self.sched_time = 0
+        self.response_time = 0
         self.total_sched_delay = 0
         self.total_response_time = 0
         self.num_sched_timeover = 0
         self.num_response_timeover = 0
+
+        self.model_size = 0
+        self.speedup_factor = config['speedup_factor']
+        
 
     def _connect_to_executor(self):
         self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
@@ -89,7 +92,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: start execution", INFO)
         self.propius_stub.end_request()
         self.execution_start = True
-        self.round_sched_time[self.cur_round] = time.time() - self.round_sched_time[self.cur_round] 
+        self.sched_time = time.time() - self.sched_time
 
     async def close_round(self):
         # locked
@@ -106,8 +109,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
             custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: aggregrate event reported", INFO)
 
-        self.round_response_time[self.cur_round] = time.time() - self.round_response_time[self.cur_round]
-        self.cur_round += 1
+        self.response_time = time.time() - self.response_time
 
     async def close_failed_round(self):
         # locked
@@ -277,35 +279,42 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def gen_report(self):
         csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}_{self.propius_stub.id}.csv"
         os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
+        with open(csv_file_name, "w", newline="") as csv_file:
+            writer = csv.writer(csv_file)
+            total_round = self.cur_round
+            if total_round > 0:
+                writer.writerow([
+                    -1,
+                    -1,
+                    self.total_sched_delay / (total_round + self.num_sched_timeover),
+                    self.total_response_time / (total_round + self.num_response_timeover),
+                ])
+
+    async def init_report(self):
+        csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}_{self.propius_stub.id}.csv"
+        os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
         fieldnames = ["round", "round_time", "sched_delay", "response_collection_time"]
         with open(csv_file_name, "w", newline="") as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(fieldnames)
-            if 0 in self.round_time_stamp:
-                start_time = self.round_time_stamp[0]
-                del self.round_time_stamp[0]
 
-                for round, time in self.round_time_stamp.items():
-                    round_time = (time-start_time) * self.speedup_factor
-                    sched_delay = self.round_sched_time[round] * self.speedup_factor
-                    response_time = self.round_response_time[round] * self.speedup_factor
-    
-                    self.total_sched_delay += sched_delay
-                    self.total_response_time += response_time
-                    writer.writerow([round, 
-                                    round_time, 
-                                    sched_delay,
-                                    response_time,
-                                    ])
-                    
-                total_round = len(self.round_time_stamp)
-                if total_round > 0:
-                    writer.writerow([
-                        -1,
-                        -1,
-                        self.total_sched_delay / (total_round + self.num_sched_timeover),
-                        self.total_response_time / (total_round + self.num_response_timeover),
-                    ])
+    async def gen_round_report(self):
+        csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}_{self.propius_stub.id}.csv"
+        os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
+
+        with open(csv_file_name, mode="a", newline="") as csv_file:
+            writer = csv.writer(csv_file)
+            async with self.lock:
+                round_time = (self.round_time - self.start_time) * self.speedup_factor
+                sched_delay = self.sched_time * self.speedup_factor
+                response_time = self.response_time * self.speedup_factor
+                self.total_sched_delay += sched_delay
+                self.total_response_time += response_time
+                writer.writerow([self.cur_round, 
+                                 round_time,
+                                 sched_delay,
+                                 response_time])
+
 
 async def run(config):
     async def server_graceful_shutdown():
@@ -361,7 +370,8 @@ async def run(config):
     await server.start()
     custom_print(f"Parameter server: parameter server started, listening on {ps.ip}:{ps.port}", INFO)
 
-    ps.round_time_stamp[0] = time.time()
+    ps.start_time = time.time()
+    await ps.init_report()
 
     async with ps.lock:
         while ps.cur_round <= ps.total_round:
@@ -369,7 +379,8 @@ async def run(config):
             ps.execution_start = False
             ps.round_client_num = 0
             ps.round_result_cnt = 0
-            ps.round_sched_time[ps.cur_round] = time.time()
+
+            ps.sched_time = time.time()
 
             if not ps.propius_stub.start_request(new_demand=False):
                 if not await ps.re_register():
@@ -388,7 +399,7 @@ async def run(config):
                 continue
 
             ps.round_exec_start()
-            ps.round_response_time[ps.cur_round] = time.time()
+            ps.response_time = time.time()
 
             try:
                 timeout = config['exec_timeout'] / config['speedup_factor']
@@ -399,9 +410,10 @@ async def run(config):
                 ps.total_response_time += config['exec_timeout']
                 ps.num_response_timeover += 1
                 continue
-            ps.round_time_stamp[ps.cur_round] = time.time()
+            ps.round_time = time.time()
             await ps.close_round()
-
+            await ps.gen_round_report()
+            ps.cur_round += 1
     custom_print(
         f"Parameter server: All round finished", INFO)
     
