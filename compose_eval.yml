@@ -127,6 +127,20 @@ services:
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["2"]
+
+  worker_3:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets:/datasets
+      - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    command: ["3"]
   
   executor:
     build: 
@@ -141,6 +155,7 @@ services:
       - worker_0
       - worker_1
       - worker_2
+      - worker_3
   
   clients:
     build:

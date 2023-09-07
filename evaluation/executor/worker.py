@@ -20,6 +20,7 @@ import numpy as np
 import random
 import logging
 import logging.handlers
+import os
 
 _cleanup_coroutines = []
 
@@ -376,6 +377,7 @@ if __name__ == '__main__':
     id = int(sys.argv[1])
 
     log_file = f'./evaluation/monitor/executor/wk_{id}.log'
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
     logger = My_logger(log_file=log_file, verbose=False, use_logging=True)
     with open(config_file, 'r') as config:
         try:

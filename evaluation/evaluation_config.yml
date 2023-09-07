@@ -62,7 +62,10 @@ worker:
     device: cuda:0
   - ip: localhost
     port: 49996
-    device: cuda:0
+    device: cuda:1
+  - ip: localhost
+    port: 49995
+    device: cuda:1
 
 # ---Testing---
 test_bsz: 20
