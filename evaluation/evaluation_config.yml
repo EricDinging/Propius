@@ -21,7 +21,7 @@ exec_timeout: 1200
 
 # ---Simulation---
 
-client_num: 15000
+client_num: 30000 #15000
 client_test_num: 10
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
