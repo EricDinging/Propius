@@ -1,4 +1,4 @@
-speedup_factor: 5
+speedup_factor: 2
 
 load_balancer_ip: localhost
 load_balancer_port: 50002
@@ -6,7 +6,7 @@ load_balancer_port: 50002
 job_manager_ip: localhost
 job_manager_port: 50001
 
-sched_alg: random
+sched_alg: fifo
 
 job_public_constraint:
   - cpu_f
@@ -28,7 +28,7 @@ client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
-profile_folder: './evaluation/job/dry_profile/'
+profile_folder: './evaluation/job/profile/'
 
 # Job profile number
 job_profile_num : 10
@@ -42,9 +42,9 @@ job_driver_ip: localhost
 job_driver_starting_port: 60000
 
 # ---Execution---
-do_compute: False
-use_cuda: False
-use_docker: False
+do_compute: True
+use_cuda: True
+use_docker: True
 
 cuda_device: cuda:1 # if use cuda, else cpu
 
