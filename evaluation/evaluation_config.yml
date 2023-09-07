@@ -6,7 +6,7 @@ load_balancer_port: 50002
 job_manager_ip: localhost
 job_manager_port: 50001
 
-sched_alg: fifo
+sched_alg: random
 
 job_public_constraint:
   - cpu_f
@@ -16,19 +16,19 @@ job_public_constraint:
 job_private_constraint:
   - dataset_size
 
-sched_timeout: 600
-exec_timeout: 900
+sched_timeout: 1200
+exec_timeout: 1200
 
 # ---Simulation---
 
-client_num: 1000
+client_num: 15000
 client_test_num: 10
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
-profile_folder: './evaluation/job/test_profile/'
+profile_folder: './evaluation/job/dry_profile/'
 
 # Job profile number
 job_profile_num : 10
@@ -42,9 +42,9 @@ job_driver_ip: localhost
 job_driver_starting_port: 60000
 
 # ---Execution---
-do_compute: True
+do_compute: False
 use_cuda: False
-use_docker: True
+use_docker: False
 
 cuda_device: cuda:1 # if use cuda, else cpu
 

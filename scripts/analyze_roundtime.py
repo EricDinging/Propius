@@ -1,3 +1,7 @@
+"""A python script that performs analysis on JCT, scheduling latency and
+response time across all simulated jobs
+"""
+
 import os
 import csv
 

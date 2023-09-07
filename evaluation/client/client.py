@@ -135,6 +135,9 @@ class Client:
             try:
                 if self.cur_period >= len(self.active_time) or \
                     self.cur_period >= len(self.inactive_time):
+                    custom_print(f"Period: {self.cur_period}", ERROR)
+                    custom_print(f"Active time: {self.active_time[-1]}", ERROR)
+                    custom_print(f"Inactive time: {self.inactive_time[-1]}", ERROR)
                     custom_print(f"Client {self.id}: ==shutting down==", WARNING)
                     break
                 cur_time = time.time() - self.eval_start_time
@@ -179,7 +182,7 @@ class Client:
                 await self.cleanup_routines()
 
             except KeyboardInterrupt:
-                break
+                raise KeyboardInterrupt
             except Exception as e:
                 custom_print(f"Client {self.id}: {e}", ERROR)
             
