@@ -35,7 +35,8 @@ class JM_job_db_portal(Job_db):
             job_port: int,
             total_demand: int,
             total_round: int) -> bool:
-        """Register incoming job to the database. 
+        """Register incoming job to the database
+
         Return False if the job ID is already in the database. 
         Set expiration time of the job
 
@@ -102,7 +103,8 @@ class JM_job_db_portal(Job_db):
                     return False
 
     def request(self, job_id: int, demand: int) -> bool:
-        """Update job metadata based on request. 
+        """Update job metadata based on request
+
         Return False if the job_id is not in the database. 
         Increment job round, update job demand for new round, 
         and clear job allocation amount counter. Start sched_time counter
@@ -111,6 +113,7 @@ class JM_job_db_portal(Job_db):
             job_id
             demand
         """
+        job_finished = False
 
         with self.r.json().pipeline() as pipe:
             while True:
@@ -119,14 +122,14 @@ class JM_job_db_portal(Job_db):
                     pipe.watch(id)
                     if not pipe.get(id):
                         pipe.unwatch()
-                        return False
+                        break
                     cur_round = int(self.r.json().get(id, "$.job.round")[0])
                     total_round = int(
                         self.r.json().get(
                             id, "$.job.total_round")[0])
                     if cur_round >= total_round:
-                        pipe.unwatch()
-                        return False
+                        job_finished = True
+                        break
                     pipe.multi()
                     pipe.execute_command(
                         'JSON.NUMINCRBY', id, "$.job.round", 1)
@@ -141,10 +144,15 @@ class JM_job_db_portal(Job_db):
                     pass
                 except Exception as e:
                     self.logger.print(e, ERROR)
-                    return False
+
+        if job_finished:
+            self.logger.print(f"Job {job_id} reached final round", ERROR)
+            self.remove_job(job_id)
+        return False
 
     def end_request(self, job_id: int) -> bool:
-        """Update job metadata based on end request. 
+        """Update job metadata based on end request
+        
         Set job allocation amount as job demand to indicate allocation has finished. 
         Update total scheduling time.
 
@@ -184,50 +192,18 @@ class JM_job_db_portal(Job_db):
 
     def finish(self, job_id: int) -> tuple[tuple, int, int, float, float]:
         """Remove the job from database. 
-        Returns a tuple of public constraints, demand, total round, 
+        Returns a tuple of public constraints, demand, round_executed, 
         runtime and avg scheduling latency for analsis
 
         Args:
             job_id
+
+        Returns:
+            public_constraints
+            demand: round demand
+            round_executed: number of round executed
+            runtime: time lapse since register
+            avg_scheduling_latency
         """
 
-        with self.r.json().pipeline() as pipe:
-            while True:
-                try:
-                    id = f"job:{job_id}"
-                    pipe.watch(id)
-                    start_time = float(
-                        self.r.json().get(
-                            id, "$.job.timestamp")[0])
-                    total_sched = float(
-                        self.r.json().get(
-                            id, "$.job.total_sched")[0])
-                    round = float(self.r.json().get(id, "$.job.round")[0])
-                    demand = int(self.r.json().get(id, "$.job.demand")[0])
-                    total_round = int(
-                        self.r.json().get(
-                            id, "$.job.total_round")[0])
-
-                    constraint_list = []
-                    for name in self.public_constraint_name:
-                        constraint_list.append(float(self.r.json().get(
-                            id, f"$.job.public_constraint.{name}")[0]))
-                    for name in self.private_constraint_name:
-                        constraint_list.append(float(self.r.json().get(
-                            id, f"$.job.private_constraint.{name}")[0]))
-
-                    runtime = time.time() - start_time
-                    sched_latency = total_sched / round if round > 0 else -1
-                    pipe.delete(id)
-                    pipe.unwatch()
-                    return (
-                        tuple(constraint_list),
-                        demand,
-                        total_round,
-                        runtime,
-                        sched_latency)
-                except redis.WatchError:
-                    pass
-                except Exception as e:
-                    self.logger.print(e, ERROR)
-                    return (None, None, None, None, None)
+        return self.remove_job(job_id)

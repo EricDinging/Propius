@@ -3,7 +3,7 @@
 *swp
 *save*
 *pyc
-*.log
+*.log*
 *pys
 *.o
 *.e

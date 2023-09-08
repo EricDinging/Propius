@@ -1,3 +1,5 @@
+# speedup_factor: 5
+speedup_factor: 1.5
 load_balancer_ip: localhost
 load_balancer_port: 50002
 
@@ -14,35 +16,43 @@ job_public_constraint:
 job_private_constraint:
   - dataset_size
 
+sched_timeout: 360
+exec_timeout: 240
+
 # ---Simulation---
 
-client_num: 100
+client_num: 30000
+# client_num: 15000
 client_test_num: 10
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
+# profile_folder: './evaluation/job/dry_profile/'
+profile_folder: './evaluation/job/profile/'
+
 # Job profile number
-job_profile_num : 2
+job_profile_num : 10
 # Job total number
-total_job : 2
+total_job : 10
 # Job generation config
-avg_interval: 10
+avg_interval: 1800
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
-job_driver_starting_port: 50010
+job_driver_starting_port: 60000
 
 # ---Execution---
-use_cuda: False
+do_compute: True
+use_cuda: True
 use_docker: True
 
-cuda_device: cuda:0 # if use cuda, else cpu
+cuda_device: cuda:1 # if use cuda, else cpu
 
 executor_ip: localhost
 executor_port: 49999
-round_timeout: 1000
+round_timeout: 3600
 
 # ---Multi worker
 worker:
@@ -52,6 +62,12 @@ worker:
   - ip: localhost
     port: 49997
     device: cuda:0
+  - ip: localhost
+    port: 49996
+    device: cuda:1
+  - ip: localhost
+    port: 49995
+    device: cuda:1
 
 # ---Testing---
 test_bsz: 20

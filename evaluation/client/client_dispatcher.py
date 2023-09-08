@@ -8,6 +8,7 @@ import yaml
 import logging
 import logging.handlers
 import pickle
+import os
 from evaluation.client.client import *
 
 async def run(config):
@@ -30,22 +31,24 @@ async def run(config):
     with open(config['client_avail_path'], 'rb') as client_file:
         client_avail_dict = pickle.load(client_file)
     client_num = config['client_num']
-    selected_client_avail = {i: client_avail_dict[i+1] for i in range(client_num)}
 
     eval_start_time = time.time()
 
     task_list = []
+    total_client_num = len(client_avail_dict)
 
-    await asyncio.sleep(3)
+    await asyncio.sleep(10)
     try:
-
-        for client_idx in range(client_num):
+        for _ in range(client_num):
+            client_idx = random.randint(0, total_client_num - 1)
             public_specs = {
                     name: client_spec_dict[client_idx % len(client_spec_dict)][name]
                     for name in public_constraint_name}
             private_specs = {
                     "dataset_size": client_size_dict[client_idx % len(client_size_dict)]}
             
+            active_time = [ x/config['speedup_factor'] for x in client_avail_dict[client_idx + 1]['active']]
+            inactive_time = [ x/config['speedup_factor'] for x in client_avail_dict[client_idx + 1]['inactive']] 
             client_config = {
                     "id": client_idx,
                     "public_specifications": public_specs,
@@ -55,15 +58,16 @@ async def run(config):
                     "computation_speed": client_spec_dict[client_idx % len(client_spec_dict)]['speed'],
                     "communication_speed": client_comm_dict[client_idx % len(client_comm_dict) + 1]['communication'],
                     "eval_start_time": eval_start_time,
-                    "active": selected_client_avail[client_idx]['active'],
-                    "inactive": selected_client_avail[client_idx]['inactive'],
+                    "active": active_time,
+                    "inactive": inactive_time,
                     "use_docker": config["use_docker"],
+                    "speedup_factor": config["speedup_factor"],
                 }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)
 
         while True:
-            await asyncio.sleep(5)
+            await asyncio.sleep(10)
     except KeyboardInterrupt:
         for task in task_list:
             task.cancel()
@@ -73,6 +77,8 @@ async def run(config):
 
 if __name__ == '__main__':
     log_file = './evaluation/monitor/client/dispatcher.log'
+
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
     handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')

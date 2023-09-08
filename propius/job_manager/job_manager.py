@@ -85,7 +85,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             est_total_round,
             total_round=est_total_round)
         self.logger.print(f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
-                     f", private constraint: {private_constraint}"
+                     f", private constraint: {private_constraint}, demand: {est_demand}"
                      , INFO)
         if ack:
             await self.jm_monitor.job_register()
@@ -104,7 +104,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         job_id, demand = request.id, request.demand
         ack = self.job_db_portal.request(job_id=job_id, demand=demand)
-        # await self.client_db_portal.cleanup()
+        
         self.logger.print(f"Job manager: ack job {job_id} round request: {ack}", INFO)
 
         await self.jm_monitor.request()
@@ -134,9 +134,11 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         """
 
         job_id = request.id
-        self.logger.print(f"Job manager: job {job_id} completed", INFO)
+        
         (constraints, demand, total_round, runtime, sched_latency) = \
             self.job_db_portal.finish(job_id)
+        self.logger.print(f"Job manager: job {job_id} completed"
+                          f", executed {total_round} rounds", INFO)
 
         if runtime:
             await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
@@ -195,6 +197,7 @@ async def serve(gconfig, logger):
 
 if __name__ == '__main__':
     log_file = './propius/monitor/log/jm.log'
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
     global_setup_file = './propius/global_config.yml'
 
     with open(global_setup_file, "r") as gyamlfile:

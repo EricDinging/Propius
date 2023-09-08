@@ -20,6 +20,7 @@ import numpy as np
 import random
 import logging
 import logging.handlers
+import os
 
 _cleanup_coroutines = []
 
@@ -304,8 +305,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             try:
                 async with self.lock:
                     if len(self.task_to_do) == 0:
-                        await asyncio.sleep(5)
-                        self.logger.print(f"Worker {self.id}: no task, sleeping")
+                        await asyncio.sleep(1)
+                        # self.logger.print(f"Worker {self.id}: no task, sleeping")
                         continue
                     task_conf = self.task_to_do.popleft()
                     partition = self.data_partitioner_dict[self.job_id_data_map[task_conf["job_id"]]]
@@ -341,7 +342,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 raise KeyboardInterrupt
             except Exception as e:
                 self.logger.print(e, ERROR)
-                await asyncio.sleep(5)
+                await asyncio.sleep(1)
     
 async def run(config, logger, id):
     async def server_graceful_shutdown():
@@ -376,7 +377,8 @@ if __name__ == '__main__':
     id = int(sys.argv[1])
 
     log_file = f'./evaluation/monitor/executor/wk_{id}.log'
-    logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    logger = My_logger(log_file=log_file, verbose=False, use_logging=True)
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)

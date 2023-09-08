@@ -13,4 +13,4 @@ COPY ./propius/database /propius/database
 RUN pip3 install -r propius/requirements.txt
 RUN chmod +x propius/client_manager/entrypoint.sh
 
-ENTRYPOINT ["propius/client_manager/entrypoint.sh"]
+ENTRYPOINT ["./propius/client_manager/entrypoint.sh"]

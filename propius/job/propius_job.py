@@ -5,6 +5,7 @@ import grpc
 import time
 from datetime import datetime
 import logging
+import math
 
 CPU_F = "cpu_f"
 RAM = "ram"
@@ -180,7 +181,7 @@ class Propius_job():
         """
 
         job_info_msg = propius_pb2.job_info(
-            est_demand=self.demand,
+            est_demand=math.ceil(1.1 * self.demand),
             est_total_round=self.est_total_round,
             public_constraint=pickle.dumps(self.public_constraint),
             private_constraint=pickle.dumps(self.private_constraint),
@@ -211,9 +212,11 @@ class Propius_job():
         raise RuntimeError(
             "Unable to register to Propius job manager at the moment")
 
-    def round_start_request(self, new_demand: bool = False, demand: int = 0) -> bool:
-        """Send round start request to Propius job manager. Client will be routed to parameter server after this call
-        until the number of clients has reached specified demand, or round_end_request is called.
+    def start_request(self, new_demand: bool = False, demand: int = 0) -> bool:
+        """Send start request to Propius job manager
+        
+        Client will be routed to parameter server after this call
+        until the number of clients has reached specified demand, or end_request is called.
         Note that though Propius provide the guarantee that the requested demand will be satisfied,
         allocated clients may experience various issues such as network failure
         such that the number of check-in clients might be lower than what is demanded at the parameter server
@@ -260,14 +263,14 @@ class Propius_job():
                 time.sleep(5)
 
         raise RuntimeError(
-            "Unable to send round start request to Propius job manager at the moment")
+            "Unable to send start request to Propius job manager at the moment")
 
-    def round_end_request(self) -> bool:
-        """Send round end request to Propius job manager. Client won't be routed to parameter server after this call,
-        unless round_start_request is called
+    def end_request(self) -> bool:
+        """Send end request to Propius job manager. Client won't be routed to parameter server after this call,
+        unless start_request is called
 
         Raise:
-            RuntimeError: if can't send round end request after multiple trial
+            RuntimeError: if can't send end request after multiple trial
         """
 
         request_msg = propius_pb2.job_id(id=self.id)
@@ -289,7 +292,7 @@ class Propius_job():
                 time.sleep(5)
 
         raise RuntimeError(
-            "Unable to send round end request to Propius job manager at this moment")
+            "Unable to send end request to Propius job manager at this moment")
 
     def complete_job(self):
         """Send complete job request to Propius job manager. Job configuration will be removed from Propius.

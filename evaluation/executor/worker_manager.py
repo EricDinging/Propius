@@ -120,7 +120,7 @@ class Worker_manager:
     async def heartbeat_routine(self):
         try:
             while True:
-                await asyncio.sleep(5)
+                await asyncio.sleep(10)
                 
                 status_list = []
 
@@ -129,11 +129,11 @@ class Worker_manager:
                     status_list.append(worker_status_msg.task_size)
                 
                 # self.cur_worker = status_list.index(min(status_list))
-                self.logger.print(f"Worker manager: current worker {self.cur_worker}", INFO)
+                self.logger.print(f"Worker manager: current worker {self.cur_worker}", PRINT)
         except asyncio.CancelledError:
             pass
 
-    async def execute(self, event: str, job_id: int, client_id: int, args: dict)->dict:
+    async def execute(self, event: str, job_id: int, client_id: int, args: dict, abort: bool = False)->dict:
         if event == CLIENT_TRAIN or event == MODEL_TEST:
             async with self.lock:
                 self.cur_worker = (self.cur_worker + 1) % self.worker_num
@@ -152,8 +152,9 @@ class Worker_manager:
 
             await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
 
+            ping_num = 0
             while True:
-                await asyncio.sleep(10)
+                await asyncio.sleep(5)
                 ping_msg = executor_pb2.job_task_info(
                     job_id=job_id,
                     client_id=client_id,
@@ -167,6 +168,11 @@ class Worker_manager:
                 if task_result_msg.ack:
                     results = pickle.loads(task_result_msg.result)
                     break
+
+                ping_num += 1
+                if ping_num >= 50:
+                    self.logger(f"Unable to retrieve job {job_id} client {client_id} {event}", ERROR)
+                    return None
 
             if event == CLIENT_TRAIN:
                 model_param = results["model_weight"]
@@ -183,12 +189,17 @@ class Worker_manager:
                     except Exception as e:
                         self.logger.print(e, ERROR)
 
+                del results["model_weight"]
                 results = {CLIENT_TRAIN+str(client_id): results}
         
 
         elif event == AGGREGATE:
             async with self.lock:
                 try:
+                    if abort:
+                        self.job_id_agg_cnt[job_id] = 0
+                        self.job_id_agg_weight_map[job_id] = None
+                        return None
                     agg_weight = self.job_id_agg_weight_map[job_id]
                     if self.job_id_agg_cnt[job_id] > 0:
                         agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]
@@ -198,6 +209,7 @@ class Worker_manager:
                         "agg_number": self.job_id_agg_cnt[job_id]
                     }
                     self.job_id_agg_cnt[job_id] = 0
+                    self.job_id_agg_weight_map[job_id] = None
                 except Exception as e:
                     self.logger.print(e, ERROR)
 

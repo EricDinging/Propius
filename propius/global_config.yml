@@ -10,6 +10,9 @@ client_manager:
   - ip: localhost
     port: 50003
     client_db_port: 6380
+  - ip: localhost
+    port: 50004
+    client_db_port: 6381
 
 job_db_ip: localhost
 job_db_port: 6379
@@ -23,10 +26,10 @@ scheduler_port: 50000
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2']
 sched_alg: 'fifo'
-max_task_offer_list_len: 10
+max_task_offer_list_len: 20
 
 # Scheduling context
-standard_round_time: 100 # default round time for jobs that doesn't have history round
+standard_round_time: 300 # default round time for jobs that doesn't have history round
 irs_epsilon: 0
 
 # ---Client---
@@ -35,6 +38,9 @@ client_expire_time: 1000
 
 # ---Job---
 job_expire_time: 604800 # a week
+job_max_silent_time: 1800 # half an hour; 
+# if job doesn't send request to Propius for more than half an hour,
+# the job will be removed, unless the job's demand hasn't been fulfilled
 
 # ---Constraint/spec setting---
 job_public_constraint:
@@ -52,5 +58,5 @@ public_max:
   android_os: 15
 
 # ---General---
-verbose: True
+verbose: False
 plot: False

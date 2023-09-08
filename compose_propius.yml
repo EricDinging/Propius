@@ -12,6 +12,7 @@ services:
     depends_on:
       - job_db
       - client_db_0
+      - client_db_1
     stop_signal: SIGINT
 
   job_manager:
@@ -41,6 +42,20 @@ services:
       - client_db_0
     stop_signal: SIGINT
     command: ["0"]
+
+  client_manager_1:
+    build:
+      context: .
+      dockerfile: ./propius/client_manager/Dockerfile
+    volumes:
+      - ./propius/client_manager:/propius/client_manager
+      - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
+    depends_on:
+      - job_db
+      - client_db_1
+    stop_signal: SIGINT
+    command: ["1"]
   
   load_balancer:
     build:
@@ -54,14 +69,23 @@ services:
       - ./propius/monitor:/propius/monitor
     depends_on:
       - client_manager_0
+      - client_manager_1
     stop_signal: SIGINT
 
   job_db:
-    image: redis/redis-stack-server:latest
-    logging:
-      driver: none  
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6379"]
 
   client_db_0:
-    image: redis/redis-stack-server:latest
-    logging:
-      driver: none
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6380"]
+
+  client_db_1:
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6381"]

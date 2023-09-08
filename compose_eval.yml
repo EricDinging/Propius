@@ -12,6 +12,7 @@ services:
     depends_on:
       - job_db
       - client_db_0
+      - client_db_1
     stop_signal: SIGINT
 
   job_manager:
@@ -39,6 +40,20 @@ services:
       - client_db_0
     stop_signal: SIGINT
     command: ["0"]
+
+  client_manager_1:
+    build:
+      context: .
+      dockerfile: ./propius/client_manager/Dockerfile
+    volumes:
+      - ./propius/client_manager:/propius/client_manager
+      - ./propius/global_config.yml:/propius/global_config.yml
+      - ./propius/monitor:/propius/monitor
+    depends_on:
+      - job_db
+      - client_db_1
+    stop_signal: SIGINT
+    command: ["1"]
   
   load_balancer:
     build:
@@ -50,24 +65,32 @@ services:
       - ./propius/monitor:/propius/monitor
     depends_on:
       - client_manager_0
+      - client_manager_1
     stop_signal: SIGINT
 
   job_db:
-    image: redis/redis-stack-server:latest
-    logging:
-      driver: none  
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6379"]
 
   client_db_0:
-    image: redis/redis-stack-server:latest
-    logging:
-      driver: none
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6380"]
+
+  client_db_1:
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command: ["6381"]
 
   worker_0:
     build:
       context: .
       dockerfile: ./evaluation/executor/Dockerfile_worker
       args:
-        DEVICE: cpu
         WORKER_IMAGE: python:3.9 # nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
       - ./evaluation/executor:/evaluation/executor
@@ -82,8 +105,7 @@ services:
       context: .
       dockerfile: ./evaluation/executor/Dockerfile_worker
       args:
-        DEVICE: cpu
-        WORKER_IMAGE: python:3.9 # nvidia/cuda:11.6.2-devel-ubuntu20.04
+        WORKER_IMAGE: python:3.9
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
@@ -91,6 +113,34 @@ services:
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["1"]
+
+  worker_2:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets:/datasets
+      - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    command: ["2"]
+
+  worker_3:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+      - ./evaluation/executor:/evaluation/executor
+      - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+      - ./datasets:/datasets
+      - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    command: ["3"]
   
   executor:
     build: 
@@ -104,6 +154,8 @@ services:
     depends_on:
       - worker_0
       - worker_1
+      - worker_2
+      - worker_3
   
   clients:
     build:

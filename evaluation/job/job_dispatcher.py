@@ -1,6 +1,7 @@
 import subprocess
 import yaml
 import time
+import os
 
 with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
     config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
@@ -10,16 +11,18 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
 
     with open(f"./evaluation/job/job_trace_{num}.txt", "r") as file:
         i = 0
-        time.sleep(3)
+        time.sleep(10)
 
         job_processes = []
         for line in file:
             line = line.strip().split(" ")
-            time.sleep(int(line[0]))
+            sleeping_time = int(line[0]) / config['speedup_factor']
+            time.sleep(sleeping_time)
+            
             command = [
                 "python",
                 "./evaluation/job/parameter_server.py",
-                f"./evaluation/job/profile/job_{line[1]}.yml",
+                os.path.join(config['profile_folder'], f"job_{line[1]}.yml"),
                 f"{ip}",
                 f"{port + i}"]
             print(command)

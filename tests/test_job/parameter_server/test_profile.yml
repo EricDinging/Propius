@@ -1,15 +1,37 @@
-demand: 1
-public_constraint:
-    - 28
-    - 28
-    - 28
-private_constraint: []
-# - 50
+# Server setting
+job_manager_ip: localhost
+job_manager_port: 50001
+connection_timeout: 500
 
-total_round: 5
+# Training and testing aggregator setting
+demand: 2
+total_round: 3  # Total round
+over_selection: 2
 
+# Training and testing client setting
+engine: pytorch
+model: mobilenet
+dataset: femnist
+learning_rate: 0.05
+num_loaders: 4
+local_steps: 10
+loss_decay: 0.95
+batch_size: 10
+
+# Test setting
 workload: 3
 
-job_manager_ip: localhost
-job_manager_port: 50002
+gradient_policy: fed-avg
+# yogi_eta: 1.e-2
+# yogi_tau: 1.e-3
+# yogi_beta1: 0.9
+# yogi_beta2: 0.99
 
+# Client constraints
+public_constraint:
+    cpu_f: 0
+    ram: 0
+    fp16_mem: 0
+    android_os: 0
+private_constraint:
+    dataset_size: 100
