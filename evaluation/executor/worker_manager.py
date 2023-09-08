@@ -171,7 +171,7 @@ class Worker_manager:
 
                 ping_num += 1
                 if ping_num >= 50:
-                    self.logger(f"Unable to retrieve job {job_id} client {client_id} {event}", ERROR)
+                    self.logger.print(f"Unable to retrieve job {job_id} client {client_id} {event}", ERROR)
                     return None
 
             if event == CLIENT_TRAIN:
@@ -194,6 +194,7 @@ class Worker_manager:
         
 
         elif event == AGGREGATE:
+            results = None
             async with self.lock:
                 try:
                     if abort:

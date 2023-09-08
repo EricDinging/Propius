@@ -173,7 +173,9 @@ services:
   executor:
     build: 
       context: .
-      dockerfile: ./evaluation/executor/Dockerfile_executor
+      dockerfile: ./evaluation/executor/Dockerfile_executor_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
@@ -184,6 +186,13 @@ services:
       - worker_1
       - worker_2
       - worker_3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 4
+              capabilities: [gpu]
   
   clients:
     build:

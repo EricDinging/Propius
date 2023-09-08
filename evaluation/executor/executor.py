@@ -159,7 +159,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
 
             if event == JOB_FINISH:
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
-                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
+                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'], report=True)
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 del self.aggregate_test_result_dict[job_id]
@@ -173,7 +173,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             
             elif event == CLIENT_TRAIN:
                 # create asyncio task for testing task
-                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round']-1)
+                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round']-1, report=True)
     
                 task = asyncio.create_task(
                     self.worker.execute(event=CLIENT_TRAIN,
@@ -205,14 +205,14 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                         self.job_test_task_dict[job_id] = []
                     self.job_test_task_dict[job_id].append(task)
                     if len(self.job_test_task_dict[job_id]) >= 5:
-                        await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
+                        await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'], report=False)
 
             elif event == AGGREGATE:
                 # wait for all pending training task to complete
                 
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 
-                results = await self.worker.execute(event=AGGREGATE,
+                await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
                                                     client_id=-1,
                                                     args=execute_meta)
@@ -223,7 +223,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 
             elif event == ROUND_FAIL:
                 # wait for all pending testing task to complete   
-                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
+                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'], report=True)
                 # wait for all pending training task to complete                
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 

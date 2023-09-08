@@ -1,5 +1,5 @@
 # speedup_factor: 5
-speedup_factor: 1.5
+speedup_factor: 1
 load_balancer_ip: localhost
 load_balancer_port: 50002
 
@@ -21,7 +21,7 @@ exec_timeout: 240
 
 # ---Simulation---
 
-client_num: 30000
+client_num: 20000
 # client_num: 15000
 client_test_num: 10
 client_avail_path: './datasets/device_info/client_behave_trace'
@@ -48,10 +48,9 @@ do_compute: True
 use_cuda: True
 use_docker: True
 
-cuda_device: cuda:1 # if use cuda, else cpu
-
 executor_ip: localhost
 executor_port: 49999
+cuda_device: cuda:0 # if use cuda, else cpu
 round_timeout: 3600
 
 # ---Multi worker

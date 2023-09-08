@@ -2,6 +2,9 @@ ARG WORKER_IMAGE
 
 FROM $WORKER_IMAGE
 
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip
+
 WORKDIR /
 RUN mkdir /evaluation
 COPY ./evaluation/commons.py /evaluation/commons.py
