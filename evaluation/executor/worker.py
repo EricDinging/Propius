@@ -204,7 +204,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def HEART_BEAT(self, request, context):
         async with self.lock:
             status_msg = executor_pb2.worker_status(task_size=len(self.task_to_do))
-            self.logger.print(f"Worker {self.id}: queueing length {len(self.task_to_do)}")
+            self.logger.print(f"Worker {self.id}: queueing length {len(self.task_to_do)}", INFO)
             return status_msg
         
     async def _train(self, client_id, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->dict:
