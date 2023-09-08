@@ -3,7 +3,7 @@ from redis.commands.json.path import Path
 from redis.commands.search.query import Query
 import time
 import json
-from propius.database.db import Job_db, Client_db
+from propius.database import Job_db, Client_db
 import random
 from propius.util.commons import Msg_level, My_logger, geq
 

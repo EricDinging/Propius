@@ -5,7 +5,6 @@ from redis.commands.search.field import TextField, NumericField, TagField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from redis.commands.search.query import NumericFilter, Query
 import time
-import json
 from propius.util.commons import *
 
 
