@@ -170,7 +170,7 @@ class Worker_manager:
                     break
 
                 ping_num += 1
-                if ping_num >= 50:
+                if ping_num >= 30:
                     self.logger.print(f"Unable to retrieve job {job_id} client {client_id} {event}", ERROR)
                     return None
 
