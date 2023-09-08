@@ -13,6 +13,7 @@ class Task_pool:
         self.job_task_dict = {}
         self.cur_job_id = -1
         self.config = config
+        self.select_time = 0
 
     async def init_job(self, job_id: int, job_meta: dict):
         async with self.lock:
@@ -76,9 +77,12 @@ class Task_pool:
         """Get next task, prioritize previous job id if there is still task left for the job
         """
         async with self.lock:
-            if self.cur_job_id in self.job_meta_dict and len(self.job_task_dict[self.cur_job_id]) > 0:
+            if self.cur_job_id in self.job_meta_dict \
+                and len(self.job_task_dict[self.cur_job_id]) > 0 \
+                    and self.select_time < 50:
                 execute_meta = copy.deepcopy(self.job_meta_dict[self.cur_job_id])
                 execute_meta.update(self.job_task_dict[self.cur_job_id].popleft())
+                self.select_time += 1
                 return execute_meta
             
             for job_id, job_meta in self.job_meta_dict.items():
@@ -86,6 +90,7 @@ class Task_pool:
                     execute_meta = copy.deepcopy(job_meta)
                     execute_meta.update(self.job_task_dict[job_id].popleft())
                     self.cur_job_id = job_id
+                    self.select_time = 1
                     return execute_meta
             return None
         
