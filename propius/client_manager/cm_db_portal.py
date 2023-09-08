@@ -1,14 +1,11 @@
 import redis
 from redis.commands.json.path import Path
-import redis.commands.search.reducers as reducers
-from redis.commands.search.field import TextField, NumericField, TagField
-from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-from redis.commands.search.query import NumericFilter, Query
+from redis.commands.search.query import Query
 import time
 import json
-from propius.database.db import *
+from propius.database.db import Job_db, Client_db
 import random
-from propius.util.commons import *
+from propius.util.commons import Msg_level, My_logger, geq
 
 
 class CM_job_db_portal(Job_db):
@@ -55,7 +52,7 @@ class CM_job_db_portal(Job_db):
                 q = Query('*').sort_by('score', asc=False)
                 result = self.r.ft('job').search(q)
         except Exception as e:
-            self.logger.print(e, WARNING)
+            self.logger.print(e, Msg_level.WARNING)
             result = None
         if result:
             size = result.total
@@ -139,7 +136,7 @@ class CM_job_db_portal(Job_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
                     return None
 
 
@@ -171,7 +168,7 @@ class CM_client_db_portal(Client_db):
         """
 
         if len(specifications) != len(self.public_constraint_name):
-            self.logger.print("Specification length does not match required", ERROR)
+            self.logger.print("Specification length does not match required", Msg_level.ERROR)
         client_dict = {"timestamp": int(time.time())}
         spec_dict = {self.public_constraint_name[i]: specifications[i]
                      for i in range(len(specifications))}
@@ -183,7 +180,7 @@ class CM_client_db_portal(Client_db):
             self.r.json().set(f"client:{id}", Path.root_path(), client)
             self.r.expire(f"client:{id}", self.client_exp_time)
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
 
     def get(self, id: int) -> tuple:
         """Get client public spec values
@@ -202,5 +199,5 @@ class CM_client_db_portal(Client_db):
                 spec = float(self.r.json().get(id, f"$.client.{name}")[0])
                 specs[idx] = spec
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
         return tuple(specs)

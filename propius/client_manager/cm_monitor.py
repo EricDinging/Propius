@@ -1,8 +1,8 @@
 import asyncio
-from propius.util.monitor import *
-from propius.util.commons import *
+from propius.util.monitor import Monitor
+from propius.util.commons import Msg_level, My_logger, get_time
 import os
-
+import matplotlib.pyplot as plt
 
 class CM_monitor(Monitor):
     def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
@@ -37,7 +37,7 @@ class CM_monitor(Monitor):
         self._gen_report()
 
         self.logger.print(f"Client manager {id}: check in {self.client_check_in_num}, ping {self.client_ping_num}, "
-        f"accept {self.client_accept_num}, over-assign {self.client_over_assign_num}", INFO)
+        f"accept {self.client_accept_num}, over-assign {self.client_over_assign_num}", Msg_level.INFO)
 
         if self.plot:
             fig = plt.gcf()

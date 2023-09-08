@@ -188,17 +188,3 @@ class Client_db:
 
     def flushdb(self):
         self.r.flushdb()
-
-
-def geq(t1: tuple, t2: tuple) -> bool:
-    """Compare two tuples. Return True only if every values in t1 is greater than t2
-
-    Args:
-        t1
-        t2
-    """
-
-    for idx in range(len(t1)):
-        if t1[idx] < t2[idx]:
-            return False
-    return True

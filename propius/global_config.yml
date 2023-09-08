@@ -1,5 +1,5 @@
 # Global config
-use_docker: True
+use_docker: False
 
 # ---Addresses---
 load_balancer_ip: localhost
@@ -58,5 +58,5 @@ public_max:
   android_os: 15
 
 # ---General---
-verbose: False
+verbose: True
 plot: False

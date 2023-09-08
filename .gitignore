@@ -1,18 +1,28 @@
-*swo
-*swn
-*swp
-*save*
-*pyc
-*.log*
-*pys
-*.o
-*.e
-dist
-logs/
-pymp*
+# general things to ignore
+*.egg-info/
+*.egg
+*.py[cod]
+__pycache__/
+*.so
+*~
+out/
+tmp*
+
+# filesystem
+**/.vscode
+.idea
 .DS_Store
-*.egg-info
-*logging
+.apex
+
+# due to using tox and pytest
+*cache*
+
+# log
+*log*
+*logging*
+*csv
+
+# dataset
 open_images
 speech
 amazon_review
@@ -33,15 +43,10 @@ common_voice
 puffer
 landmark
 coqa
-.idea
-out/
-build/
-.vscode
-fedscale/cache
-fedscale/tmp*
-fedscale/*.tflite
-fedscale/*.ckpt
-fedscale/cloud/aggregation/cache
-experiment/*
-*.csv
-*.log
+
+# Evaluation results
+evaluation_result/
+
+
+
+
