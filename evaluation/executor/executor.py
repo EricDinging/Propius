@@ -89,6 +89,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         for task in completed:
             try:
                 results = await task
+                if results is None:
+                    continue
                 for key in aggregate_test_result.keys():
                     aggregate_test_result[key] += results[key]
                 

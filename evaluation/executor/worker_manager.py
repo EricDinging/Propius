@@ -152,8 +152,9 @@ class Worker_manager:
 
             await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
 
+            ping_num = 0
             while True:
-                await asyncio.sleep(3)
+                await asyncio.sleep(5)
                 ping_msg = executor_pb2.job_task_info(
                     job_id=job_id,
                     client_id=client_id,
@@ -167,6 +168,11 @@ class Worker_manager:
                 if task_result_msg.ack:
                     results = pickle.loads(task_result_msg.result)
                     break
+
+                ping_num += 1
+                if ping_num >= 50:
+                    self.logger(f"Unable to retrieve job {job_id} client {client_id} {event}", ERROR)
+                    return None
 
             if event == CLIENT_TRAIN:
                 model_param = results["model_weight"]

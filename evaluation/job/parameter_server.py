@@ -277,9 +277,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         return server_response_msg
             
     def gen_report(self):
-        csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}_{self.propius_stub.id}.csv"
+        csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}.csv"
         os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
-        with open(csv_file_name, "w", newline="") as csv_file:
+        with open(csv_file_name, mode="a", newline="") as csv_file:
             writer = csv.writer(csv_file)
             total_round = self.cur_round
             if total_round > 0:
@@ -291,7 +291,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 ])
 
     async def init_report(self):
-        csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}_{self.propius_stub.id}.csv"
+        csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}.csv"
         os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
         fieldnames = ["round", "round_time", "sched_delay", "response_collection_time"]
         with open(csv_file_name, "w", newline="") as csv_file:
@@ -299,7 +299,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             writer.writerow(fieldnames)
 
     async def gen_round_report(self):
-        csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}_{self.propius_stub.id}.csv"
+        csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}.csv"
         os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
 
         with open(csv_file_name, mode="a", newline="") as csv_file:
