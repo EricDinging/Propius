@@ -57,7 +57,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         # self.logger.print(f"Executer: job {job_id} {event} registered", INFO)
         return executor_pb2.ack(ack=True)
 
-    async def wait_for_testing_task(self, job_id:int, round: int):
+    async def wait_for_testing_task(self, job_id:int, round: int, report: bool = False):
         if job_id not in self.job_test_task_dict:
             return
         task_list = self.job_test_task_dict[job_id]
@@ -99,17 +99,21 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             except Exception as e:
                 self.logger.print(e, ERROR)
         self.aggregate_test_result_dict[job_id]['num'] += test_num
-    
-        if self.aggregate_test_result_dict[job_id]['num'] >= self.config['client_test_num']:
-            for key in aggregate_test_result.keys():
-                if key != "test_len":
-                    aggregate_test_result[key] /= aggregate_test_result["test_len"]
 
-            self.logger.print(f"Job {job_id} round {round} test result: {aggregate_test_result}", INFO)
+        total_num = self.aggregate_test_result_dict[job_id]['num']
     
-            await self.task_pool.report_result(job_id=job_id,
-                                                round=round,
-                                                result=aggregate_test_result)
+        if report:
+            if aggregate_test_result["test_len"] > 0:
+                for key in aggregate_test_result.keys():
+                    if key != "test_len":
+                        aggregate_test_result[key] /= aggregate_test_result["test_len"]
+
+                self.logger.print(f"Job {job_id} round {round} test client num: {total_num} "
+                                  f"result: {aggregate_test_result}", INFO)
+        
+                await self.task_pool.report_result(job_id=job_id,
+                                                    round=round,
+                                                    result=aggregate_test_result)
             
             self.aggregate_test_result_dict[job_id]['num'] = 0
             self.aggregate_test_result_dict[job_id]['aggregate_test_result'] = None

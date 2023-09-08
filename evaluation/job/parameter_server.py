@@ -333,7 +333,9 @@ async def run(config):
             )
             await ps.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
             await ps.executor_channel.close()
-        custom_print("==Parameter server ending==", WARNING)
+        custom_print(f"==Parameter server ending== "
+                     f"sched timeout {ps.num_sched_timeover} "
+                     f"response timeout {ps.num_response_timeover}", WARNING)
         await server.stop(5)
     
     server = grpc.aio.server()

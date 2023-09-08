@@ -305,7 +305,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             try:
                 async with self.lock:
                     if len(self.task_to_do) == 0:
-                        await asyncio.sleep(3)
+                        await asyncio.sleep(1)
                         # self.logger.print(f"Worker {self.id}: no task, sleeping")
                         continue
                     task_conf = self.task_to_do.popleft()
@@ -342,7 +342,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 raise KeyboardInterrupt
             except Exception as e:
                 self.logger.print(e, ERROR)
-                await asyncio.sleep(5)
+                await asyncio.sleep(1)
     
 async def run(config, logger, id):
     async def server_graceful_shutdown():
