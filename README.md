@@ -26,9 +26,11 @@ Propius is a Federated Learning (FL) resource manager, capable of efficiently sc
 │   ├── client/                     #   - Dispatcher of simulated clients
 │   ├── job/                        #   - Dispatcher of simulated jobs
 │   └── evaluation_config.yml       #   - Configuration for evaluation
-│ 
-├── fedscale/                       # FedScale FL training backends for evaluation and examples
-│ 
+│
+├── docs/                           # Documentation
+│
+├── scripts/                        # Helpful scripts that make lives easier
+│
 ├── tests/                          # Test suites
 │ 
 ├── examples/                       # Examples of integrating Propius
@@ -49,14 +51,19 @@ pip install -e .
 We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network. The config is specified in `compose_propius.yml`.
 - Edit `compose_propius.yml` and `propius/global_config.yml`. By default, the network address of load balancer (client interface) is `localhost:50002`, and the address of job manager (job interface) is `localhost:50001`
 - Make sure the setup is consistent across two config files
-- By default, Propius has one client manager and client database. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services in `compose_propius.yml`, and edit `propius/global_config.yml` accordingly
+- By default, Propius has two client managers and two client databases. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services in `compose_propius.yml`, and edit `propius/global_config.yml` accordingly
 - Run docker compose
 ```bash
 docker compose -f compose_propius.yml up --build # -d if want to run Propius in background
 ```
+- Monitoring
+```bash
+chmod +x ./scripts/monitor_propius.sh
+./scripts/monitor_propius.sh
+```
 - Shut down
 ```bash
-docker compose -f compose.yml down
+docker compose -f compose_propius.yml down
 ```
 ### Manual Lanuch
 Propius can be started without docker. However, for the ease of deployment, the Redis database is containerized.
@@ -65,7 +72,7 @@ Propius can be started without docker. However, for the ease of deployment, the 
 ```bash
 docker compose -f compose_redis.yml up -d
 ```
-- Launch major components in Propius
+- Launch major components in Propius. You can use tools such as [tmux](https://github.com/tmux/tmux/wiki) to organize your terminal.
     - Scheduler:
     ```bash
     python propius/scheduler/scheduler.py
@@ -77,12 +84,23 @@ docker compose -f compose_redis.yml up -d
     - Client manager:
     ```bash
     python propius/client_manager/client_manager.py 0 # <id>
+    python propius/client_manager/client_manager.py 1 # <id>
     ```
     - Load balancer:
     ```bash
     python propius/load_balancer/load_balancer.py
     ```
-- By default, Propius has one client manager and client database. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services `propius/global_config.yml` and `compose_redis.yml`. Make sure the setting is consistent. You also need to start the additional client manager services manually.
+- By default, Propius has two client managers and two client databases. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services `propius/global_config.yml` and `compose_redis.yml`. Make sure the setting is consistent. You also need to start the additional client manager services manually.
+- Monitoring
+```bash
+chmod +x ./scripts/monitor_propius.sh
+./scripts/monitor_propius.sh
+```
+- Shut down
+```bash
+docker compose -f compose_redis.yml down
+# ctrl-c on every process you launch 
+```
 
 ## Interface
 - Propius' job interface is defined in `propius_job/propius_job.py`
@@ -106,6 +124,26 @@ python ./evaluation/job/generator.py
 - Start docker network
 ```bash
 source ./init.sh
+```
+- Monitoring
+```bash
+chmod +x ./scripts/monitor_propius.sh
+./scripts/monitor_propius.sh
+
+chmod +x ./scripts/monitor_eval.sh
+./scripts/monitor_eval.sh
+
+chmod +x ./scripts/monitor_jobs.sh
+./scripts/monitor_jobs.sh
+```
+- Analyze
+```bash
+python ./scripts/analyze_roundtime.py # Give you insight on round time, sched latency etc.
+```
+- Clean up
+```bash
+chmod +x ./scripts/clean.sh
+./scripts/clean.sh
 ```
 
 ## Testing
