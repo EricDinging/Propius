@@ -82,4 +82,8 @@ class JM_monitor(Monitor):
             plt.subplot(2, 1, 2)
             self._plot_request()
             plt.tight_layout()
-            fig.savefig(f"./propius/monitor/plot/jm_{self.sched_alg}_{get_time()}")
+
+            plot_file = f"./propius/monitor/plot/jm_{self.sched_alg}_{get_time()}.jpg"
+            os.makedirs(os.path.dirname(plot_file), exist_ok=True)
+            fig.savefig(plot_file)
+

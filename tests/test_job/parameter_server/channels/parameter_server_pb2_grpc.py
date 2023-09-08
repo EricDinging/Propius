@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import test_job.parameter_server.channels.parameter_server_pb2 as parameter__server__pb2
+import tests.test_job.parameter_server.channels.parameter_server_pb2 as parameter__server__pb2
 
 
 class Parameter_serverStub(object):

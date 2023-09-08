@@ -1,19 +1,17 @@
-# Option
-# is_dummy: True # if is_dummy, the client won't perform actual
-# training/testing
-
 # Dataset
 data_set: femnist
 
 # Specification
 public_specifications:
-    - 30
-    - 30
-    - 30
-private_specifications: []
+    cpu_f: 10
+    ram: 8
+    fp16_mem: 800.5
+    android_os: 6
+private_specifications:
+    dataset_size: 101
 
 load_balancer_ip: localhost
-load_balancer_port: 50000 
+load_balancer_port: 50002 
 # TODO
 task: cv
 memory_capacity: 1

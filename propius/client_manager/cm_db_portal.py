@@ -29,10 +29,13 @@ class CM_job_db_portal(Job_db):
         super().__init__(gconfig, False, logger)
 
     def client_assign(self, specification: tuple, sched_alg: str) -> tuple[list, list, int]:
-        """Assign tasks to client with input specification. 
+        """Assign tasks to client with input specification
+
         The client public specification would satisfy returned task public constraints, 
         but client private specification might not satisfy the returned task private constraints. 
         The returned tasks' current allocation amount would be smaller than their respective demand
+        If a job doesn't send request to Propius for more than half an hour,
+        the job will be removed, unless the job's demand hasn't been fulfilled
 
         Args:
             specification: a tuple listing public spec values
@@ -45,12 +48,8 @@ class CM_job_db_portal(Job_db):
             size: total number of jobs for analytics
         """
         try:
-            if self.sched_alg == 'fifo':
-                q = Query('*').sort_by('timestamp', asc=True)
-                result = self.r.ft('job').search(q)
-            else: 
-                q = Query('*').sort_by('score', asc=False)
-                result = self.r.ft('job').search(q)
+            q = Query('*').sort_by('score', asc=False)
+            result = self.r.ft('job').search(q)
                 
         except Exception as e:
             self.logger.print(e, WARNING)
@@ -59,42 +58,34 @@ class CM_job_db_portal(Job_db):
             size = result.total
             open_list = []
             open_private_constraint = []
-            # proactive_list = []
-            # proactive_private_constraint = []
+
             max_task_len = self.gconfig['max_task_offer_list_len']
             for doc in result.docs:
                 job = json.loads(doc.json)
+                job_id = int(doc.id.split(':')[1])
                 job_public_constraint = tuple(
                     [job['job']['public_constraint'][name]
                         for name in self.public_constraint_name])
-                # if len(open_list) + len(proactive_list) >= max_task_len:
+
                 if len(open_list) >= max_task_len:
                     break
-                if geq(specification, job_public_constraint):
-                    if job['job']['amount'] < job['job']['demand']:
-                        open_list.append(int(doc.id.split(':')[1]))
+                if job['job']['amount'] < job['job']['demand']:
+                    if geq(specification, job_public_constraint):
+                        open_list.append(job_id)
                         job_private_constraint = tuple(
                             [job['job']['private_constraint'][name]
                              for name in self.private_constraint_name])
                         open_private_constraint.append(job_private_constraint)
+                else:
+                    if job['job']['start_sched'] > 0 and \
+                        time.time() - job['job']['start_sched'] >= self.gconfig['job_max_silent_time']:                
+                        self.remove_job(job_id)
 
-                    # elif self.gconfig['proactive']:
-                    #     if job['job']['round'] < job['job']['total_round']:
-                    #         proactive_list.append(int(doc.id.split(':')[1]))
-                    #         job_private_constraint = tuple(
-                    #         [job['job']['private_constraint'][name]
-                    #             for name in self.private_constraint_name])
-                    #         proactive_private_constraint.append(job_private_constraint)
-            # upd_proactive_list = upd_proactive_private_constraint = []
-            # if len(proactive_list) > 0:
-            #     # Use random proactive scheduling
-            #     combined_job = list(zip(proactive_list, proactive_private_constraint))
-            #     random.shuffle(combined_job)
-            #     upd_proactive_list, upd_proactive_private_constraint = zip(*combined_job)
-            #     upd_proactive_list = list(upd_proactive_list)
-            #     upd_proactive_private_constraint = list(upd_proactive_private_constraint)
-            # return open_list + upd_proactive_list, open_private_constraint +
-            # upd_proactive_private_constraint, size
+            if self.sched_alg == 'random' and len(open_list) > 0:
+                paired_offer = list(zip(open_list, open_private_constraint))
+                random.shuffle(paired_offer)
+                open_list, open_private_constraint = map(list, zip(*paired_offer))
+
             return open_list, open_private_constraint, size
 
         return [], [], 0
@@ -124,11 +115,6 @@ class CM_job_db_portal(Job_db):
                     demand = int(self.r.json().get(id, "$.job.demand")[0])
                     ip = str(self.r.json().get(id, "$.job.ip")[0])
                     port = int(self.r.json().get(id, "$.job.port")[0])
-
-                    round = int(self.r.json().get(id, "$.job.round")[0])
-                    total_round = int(
-                        self.r.json().get(
-                            id, "$.job.total_round")[0])
                     
                     if amount >= demand:
                         pipe.unwatch()

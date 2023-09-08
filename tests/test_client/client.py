@@ -3,13 +3,12 @@ import sys
 import asyncio
 import random
 import yaml
-from test_job.parameter_server.channels import parameter_server_pb2_grpc
-from test_job.parameter_server.channels import parameter_server_pb2
-from propius_client.propius_client_aio import *
+from tests.test_job.parameter_server.channels import parameter_server_pb2_grpc
+from tests.test_job.parameter_server.channels import parameter_server_pb2
+from propius.client.propius_client_aio import *
 
 class Client:
     def __init__(self, client_config: dict):
-        #TODO specification encode
         self.id = -1
         self.task_id = -1
         self.propius_client_stub = Propius_client_aio(client_config=client_config, verbose=True)
@@ -18,7 +17,7 @@ class Client:
         self.workload = 0
         self.result = 0
         self.client_plotter = None
-        self.ttl = 10
+        self.ttl = 3
 
     async def _connect_to_ps(self, job_ip: str, job_port: int):
         self.job_channel = grpc.aio.insecure_channel(f"{job_ip}:{job_port}")
@@ -40,11 +39,6 @@ class Client:
     async def execute(self):
         print(f"Client {self.id}: executing task {self.task_id}")
         metric_product = 1
-        # TODO execute time calculation
-        # for m in self.public_specifications:
-        #     metric_product *= m
-        # extra_time_scale = (1 - metric_product / 1000000)
-        # exec_time = self.workload * (1 + 0.1 * extra_time_scale * math.exp(random.gauss(0, 1)))
         exec_time = self.workload
         await asyncio.sleep(exec_time)
 
@@ -114,7 +108,7 @@ class Client:
 
 
 if __name__ == '__main__':
-    config_file = './test_client/test_profile.yml'
+    config_file = './tests/test_client/test_profile.yml'
     with open(config_file, 'r') as config:
         config = yaml.load(config, Loader=yaml.FullLoader)
         client = Client(config)

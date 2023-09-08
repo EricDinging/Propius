@@ -20,4 +20,6 @@ class LB_monitor(Monitor):
         if self.plot:
             fig = plt.gcf()
             self._plot_request()
-            fig.savefig(f"./propius/monitor/plot/lb_{self.sched_alg}_{get_time()}")
+            plot_file = f"./propius/monitor/plot/lb_{self.sched_alg}_{get_time()}.jpg"
+            os.makedirs(os.path.dirname(plot_file), exist_ok=True)
+            fig.savefig(plot_file)

@@ -184,6 +184,7 @@ if __name__ == '__main__':
 
             cm_id = int(sys.argv[1])
             log_file = f'./propius/monitor/log/cm_{cm_id}.log'
+            os.makedirs(os.path.dirname(log_file), exist_ok=True)
             logger = My_logger(log_file=log_file, verbose=gconfig['verbose'], use_logging=True)
             logger.print(f"Client manager {cm_id} read config successfully", INFO)
             loop = asyncio.get_event_loop()
