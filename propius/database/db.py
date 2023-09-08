@@ -72,7 +72,7 @@ class Job_db:
                     schema, definition=IndexDefinition(
                         prefix=["job:"], index_type=IndexType.JSON))
             except Exception as e:
-                self.logger.print(e, ERROR)
+                self.logger.print(e, Msg_level.ERROR)
                 pass
 
     def flushdb(self):
@@ -127,7 +127,7 @@ class Job_db:
                     sched_latency = total_sched / round if round > 0 else -1
                     pipe.delete(id)
                     pipe.unwatch()
-                    self.logger.print(f"Remove job:{job_id}", WARNING)
+                    self.logger.print(f"Remove job:{job_id}", Msg_level.WARNING)
                     return (
                         tuple(constraint_list),
                         demand,
@@ -137,7 +137,7 @@ class Job_db:
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
                     return (None, None, None, None, None)
 
 

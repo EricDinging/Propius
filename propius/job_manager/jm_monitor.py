@@ -1,9 +1,9 @@
 import asyncio
 import time
-from propius.util.monitor import *
-from propius.util.commons import *
+import matplotlib.pyplot as plt
+from propius.util.monitor import Monitor
+from propius.util.commons import Msg_level, My_logger, get_time
 import os
-
 
 class JM_monitor(Monitor):
     def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
@@ -25,7 +25,6 @@ class JM_monitor(Monitor):
     async def job_register(self):
         async with self.lock:
             self.total_job += 1
-
             if self.plot:
                 runtime = int(time.time()) - self.start_time
                 self.job_timestamp.append(runtime)
@@ -63,7 +62,7 @@ class JM_monitor(Monitor):
 
     def report(self):
         self._gen_report()
-        self.logger.print(f"Job manager: total job: {self.total_job}", INFO)
+        self.logger.print(f"Job manager: total job: {self.total_job}", Msg_level.INFO)
 
 
         for constraint, sum_jct in self.constraint_jct_dict.items():

@@ -1,3 +1,5 @@
+"""FL Edge Device (Client) Manager Class"""
+
 from propius.util.commons import My_logger, Msg_level
 from propius.client_manager.cm_monitor import CM_monitor
 from propius.client_manager.cm_db_portal import CM_client_db_portal, CM_job_db_portal
