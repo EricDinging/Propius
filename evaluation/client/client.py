@@ -41,6 +41,11 @@ class Client:
         self.inactive_time = client_config["inactive"]
         self.cur_period = 0
         self.speedup_factor = client_config["speedup_factor"]
+
+    def _deallocate(self):
+        self.event_queue.clear()
+        self.meta_queue.clear()
+        self.data_queue.clear()
     
     async def _connect_to_ps(self, ps_ip: str, ps_port: int):
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
@@ -123,6 +128,7 @@ class Client:
 
     async def cleanup_routines(self, propius=False):
         try:
+            self._deallocate()
             if propius:
                 await self.propius_client_stub.close()
                 custom_print(f"Client {self.id}: ==shutting down==", ERROR)
@@ -179,12 +185,13 @@ class Client:
                 await self._connect_to_ps(ps_ip, ps_port)
                 if not await self.event_monitor():
                     custom_print(f"Client {self.id}: timeout, aborted", WARNING)
-                await self.cleanup_routines()
 
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
                 custom_print(f"Client {self.id}: {e}", ERROR)
+            finally:
+                await self.cleanup_routines()
             
         await self.cleanup_routines(True)
         
