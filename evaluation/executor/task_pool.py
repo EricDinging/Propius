@@ -9,16 +9,15 @@ import os
 class Task_pool:
     def __init__(self, config):
         self.lock = asyncio.Lock()
-        self.job_meta_dict = {}
+        self.job_meta_list = deque()
         self.job_task_dict = {}
-        self.cur_job_id = -1
         self.config = config
         self.select_time = 0
 
     async def init_job(self, job_id: int, job_meta: dict):
         async with self.lock:
             job_meta["job_id"] = job_id
-            self.job_meta_dict[job_id] = job_meta
+            self.job_meta_list.append(job_meta)
 
             self.job_task_dict[job_id] = deque()
             test_task_meta = {
@@ -46,8 +45,8 @@ class Task_pool:
         task_meta["event"] = event
         
         async with self.lock:
-            assert job_id in self.job_meta_dict
-            assert job_id in self.job_task_dict
+            if job_id not in self.job_task_dict:
+                return
 
             test_task_meta = {
                     "client_id": -1,
@@ -77,28 +76,31 @@ class Task_pool:
         """Get next task, prioritize previous job id if there is still task left for the job
         """
         async with self.lock:
-            if self.cur_job_id in self.job_meta_dict \
-                and len(self.job_task_dict[self.cur_job_id]) > 0 \
-                    and self.select_time < 50:
-                execute_meta = copy.deepcopy(self.job_meta_dict[self.cur_job_id])
-                execute_meta.update(self.job_task_dict[self.cur_job_id].popleft())
-                self.select_time += 1
-                return execute_meta
-            
-            for job_id, job_meta in self.job_meta_dict.items():
-                if len(self.job_task_dict[job_id]) > 0:
-                    execute_meta = copy.deepcopy(job_meta)
-                    execute_meta.update(self.job_task_dict[job_id].popleft())
-                    self.cur_job_id = job_id
-                    self.select_time = 1
-                    return execute_meta
+            job_num = len(self.job_meta_list)
+            for _ in range(job_num):
+                job_meta = copy.deepcopy(self.job_meta_list[0])
+                job_id = job_meta["job_id"]
+                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 50:
+                    job_meta.update(self.job_task_dict[job_id].popleft())
+                    self.select_time += 1
+                    return job_meta
+                self.select_time = 0
+                self.job_meta_list.append(self.job_meta_list.popleft())
             return None
         
     async def remove_job(self, job_id: int):
         async with self.lock:
 
             try:
-                del self.job_meta_dict[job_id]
+                temp_deque = deque()
+                while self.job_meta_list:
+                    job_meta = self.job_meta_list.popleft()
+                    if job_meta["job_id"] == job_id:
+                        break
+                    temp_deque.append(job_meta)
+                while temp_deque:
+                    self.job_meta_list.appendleft(temp_deque.pop())
+
                 del self.job_task_dict[job_id]
             except:
                 pass
