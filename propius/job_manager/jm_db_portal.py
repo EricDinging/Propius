@@ -1,7 +1,7 @@
 import redis
 from redis.commands.json.path import Path
 import time
-from propius.database.db import Job_db
+from propius.database import Job_db
 from propius.util.commons import Msg_level, My_logger
 
 class JM_job_db_portal(Job_db):
