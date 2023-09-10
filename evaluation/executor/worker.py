@@ -332,7 +332,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     event = task_conf["event"]
                     client_id = task_conf["client_id"]
                     job_id = task_conf["job_id"]
-                    model_weight = self.job_id_model_adapter_map[job_id]
+                    model_weight = self.job_id_model_adapter_map[job_id].get_model()
 
                     self.logger.print(f"Worker {self.id}: executing job {job_id} {event}, Client {client_id}", INFO)
 

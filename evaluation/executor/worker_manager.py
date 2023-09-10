@@ -147,7 +147,6 @@ class Worker_manager:
                     round=0,
                     event=event,
                     task_meta=pickle.dumps(DUMMY_RESPONSE),
-                    task_data=pickle.dumps(DUMMY_RESPONSE)
                 )
                 task_result_msg = await self.worker_stub_dict[cur_worker].PING(ping_msg)
 
