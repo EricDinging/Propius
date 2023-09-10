@@ -186,7 +186,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     self.job_train_task_dict[job_id] = []
                 self.job_train_task_dict[job_id].append(task)
 
-                if len(self.job_train_task_dict[job_id]) >= 2 * self.worker.worker_num:
+                if len(self.job_train_task_dict[job_id]) >= 5 * self.worker.worker_num:
                     await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 
             elif event == MODEL_TEST:
@@ -198,13 +198,13 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     task = asyncio.create_task(
                         self.worker.execute(event=MODEL_TEST,
                                             job_id=job_id,
-                                            client_id=random.randint(0, self.config['client_num']-1),
+                                            client_id=i,
                                             args=execute_meta)
                     )
                     if job_id not in self.job_test_task_dict:
                         self.job_test_task_dict[job_id] = []
                     self.job_test_task_dict[job_id].append(task)
-                    if len(self.job_test_task_dict[job_id]) >= 2 * self.worker.worker_num:
+                    if len(self.job_test_task_dict[job_id]) >= 5 * self.worker.worker_num:
                         await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
 
             elif event == AGGREGATE:
