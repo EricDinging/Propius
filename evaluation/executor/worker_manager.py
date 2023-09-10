@@ -192,7 +192,7 @@ class Worker_manager:
 
                         job_weight_msg = executor_pb2.job_weight(
                             job_id = job_id,
-                            job_meta = pickle.dumps(agg_weight)
+                            job_data = pickle.dumps(agg_weight)
                         )
 
                         for worker_id, worker_stub in self.worker_stub_dict.items:

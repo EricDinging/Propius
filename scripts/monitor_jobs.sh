@@ -13,4 +13,4 @@ if ! command_exists multitail; then
 fi
 
 
-multitail -s 3 -n 2 ./evaluation/monitor/job/*.log
+multitail -s 3 -n 1 ./evaluation/monitor/job/*.log

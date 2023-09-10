@@ -191,7 +191,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         async with self.lock:
             self.task_to_do.append(conf)
         
-        self.logger.print(f"Worker {self.id}: recieve job {job_id} {event}{client_id}", INFO)
+        # self.logger.print(f"Worker {self.id}: recieve job {job_id} {event}{client_id}", INFO)
         return executor_pb2.ack(ack=True)
     
     async def PING(self, request, context):
@@ -324,7 +324,6 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 async with self.lock:
                     if len(self.task_to_do) == 0:
                         await asyncio.sleep(1)
-                        # self.logger.print(f"Worker {self.id}: no task, sleeping")
                         continue
                     task_conf = self.task_to_do.popleft()
                     partition = self.data_partitioner_dict[self.job_id_data_map[task_conf["job_id"]]]

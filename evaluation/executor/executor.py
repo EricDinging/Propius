@@ -39,7 +39,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                    model_name=job_meta["model"],
                                    args=job_meta
                                    )
-        self.logger.print(f"Executor: job {job_id} registered", INFO)
+        self.logger.print(f"job {job_id} registered", INFO)
         await self.task_pool.init_job(job_id, job_meta)            
         return executor_pb2.register_ack(ack=True, model_size=model_size)
     
@@ -155,8 +155,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             del execute_meta['client_id']
             del execute_meta['event']
 
-            self.logger.print(f"Executor: execute job {job_id} {event}", INFO)
-
             if event == JOB_FINISH:
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
                 await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
@@ -186,7 +184,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     self.job_train_task_dict[job_id] = []
                 self.job_train_task_dict[job_id].append(task)
 
-                if len(self.job_train_task_dict[job_id]) >= 5 * self.worker.worker_num:
+                if len(self.job_train_task_dict[job_id]) >= 10 * self.worker.worker_num:
                     await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 
             elif event == MODEL_TEST:
@@ -204,7 +202,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     if job_id not in self.job_test_task_dict:
                         self.job_test_task_dict[job_id] = []
                     self.job_test_task_dict[job_id].append(task)
-                    if len(self.job_test_task_dict[job_id]) >= 5 * self.worker.worker_num:
+                    if len(self.job_test_task_dict[job_id]) >= 10 * self.worker.worker_num:
                         await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
 
             elif event == AGGREGATE:
@@ -253,7 +251,7 @@ async def run(config, logger):
     executor_pb2_grpc.add_ExecutorServicer_to_server(executor, server)
     server.add_insecure_port(f"{executor.ip}:{executor.port}")
     await server.start()
-    logger.print(f"Executor: executor started, listening on {executor.ip}:{executor.port}", INFO)
+    logger.print(f"executor started, listening on {executor.ip}:{executor.port}", INFO)
 
     await executor.execute()
 
