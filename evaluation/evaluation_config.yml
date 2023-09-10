@@ -7,6 +7,7 @@ job_manager_ip: localhost
 job_manager_port: 50001
 
 sched_alg: fifo
+# sched_alg: random
 
 job_public_constraint:
   - cpu_f
@@ -39,7 +40,7 @@ profile_folder: './evaluation/job/profile/'
 
 # Job profile number
 job_profile_num: 10
-# job_profile_num: 5
+# job_profile_num: 20
 
 # Job total number
 total_job: 10
@@ -54,6 +55,10 @@ job_driver_starting_port: 60000
 
 # ---Execution---
 do_compute: True
+# do_compute: False
+# is_FA: True
+is_FA: False 
+
 use_cuda: True
 use_docker: True
 

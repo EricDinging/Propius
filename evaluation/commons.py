@@ -131,3 +131,6 @@ def get_model_size(model_name, dataset_name):
 
     model_size = sys.getsizeof(pickle.dumps(model)) / 1024.0 * 8.  # kbits
     return model_size
+
+if __name__ == "__main__":
+    print(get_model_size("resnet18", "femnist"))

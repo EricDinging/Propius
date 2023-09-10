@@ -21,9 +21,9 @@ yogi_beta2: 0.99
 
 # Client constraints
 public_constraint:
-    cpu_f: 6
+    cpu_f: 5
     ram: 4
-    fp16_mem: 800
-    android_os: 8
+    fp16_mem: 600
+    android_os: 6
 private_constraint:
-    dataset_size: 150
+    dataset_size: 100

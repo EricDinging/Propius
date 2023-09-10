@@ -41,6 +41,7 @@ class Client:
         self.inactive_time = client_config["inactive"]
         self.cur_period = 0
         self.speedup_factor = client_config["speedup_factor"]
+        self.is_FA = client_config["is_FA"]
 
     def _deallocate(self):
         self.event_queue.clear()
@@ -91,6 +92,8 @@ class Client:
 
         if event == CLIENT_TRAIN:
             exe_time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
+            if self.is_FA:
+                exe_time /= 3
         elif event == SHUT_DOWN:
             return False
         elif event == UPDATE_MODEL:
@@ -99,8 +102,11 @@ class Client:
 
         elif event == UPLOAD_MODEL:
             exe_time = meta["upload_size"] / float(self.comm_speed)
+            if self.is_FA:
+                exe_time = 0 
         
         exe_time /= self.speedup_factor
+
         custom_print(f"Client {self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
         await asyncio.sleep(exe_time)
 
