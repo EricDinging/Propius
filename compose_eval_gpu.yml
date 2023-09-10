@@ -173,7 +173,7 @@ services:
   executor:
     build: 
       context: .
-      dockerfile: ./evaluation/executor/Dockerfile_executor_gpu
+      dockerfile: ./evaluation/executor/Dockerfile_executor
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
