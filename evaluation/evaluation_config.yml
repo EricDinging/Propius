@@ -24,7 +24,10 @@ exec_timeout: 540
 
 client_num: 25000
 # client_num: 15000
-client_test_num: 100
+client_test_num: 356 # max testing set size
+# client_validation_num: 1000
+
+
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
