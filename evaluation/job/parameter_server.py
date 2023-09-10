@@ -106,7 +106,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 round=self.cur_round,
                 event=AGGREGATE,
                 task_meta=pickle.dumps({}),
-                task_data=pickle.dumps(DUMMY_RESPONSE)
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
             custom_print(f"PS {self.id}-{self.cur_round}: aggregrate event reported", INFO)
@@ -123,7 +122,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 round=self.cur_round,
                 event=ROUND_FAIL,
                 task_meta=pickle.dumps({}),
-                task_data=pickle.dumps(DUMMY_RESPONSE)
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
 
@@ -255,7 +253,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                             round=self.cur_round,
                             event=CLIENT_TRAIN,
                             task_meta=pickle.dumps(task_meta),
-                            task_data=pickle.dumps(DUMMY_RESPONSE)
                         )
                         await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
                     
@@ -332,7 +329,6 @@ async def run(config):
                 round=ps.cur_round if ps.cur_round <= ps.total_round else ps.total_round,
                 event=JOB_FINISH,
                 task_meta=pickle.dumps(task_meta),
-                task_data=pickle.dumps(DUMMY_RESPONSE)
             )
             await ps.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
             await ps.executor_channel.close()
