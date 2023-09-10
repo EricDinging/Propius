@@ -128,17 +128,18 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         task_list = self.job_train_task_dict[job_id]
         self.job_train_task_dict[job_id] = []
 
-        try:
-            completed, pending = await asyncio.wait(task_list,
-                                                timeout=self.round_timeout,
-                                                return_when=asyncio.ALL_COMPLETED)
-        except Exception as e:
-            self.logger.print(e, ERROR)
-
-        for task in completed:
+        if len(task_list) > 0:
             try:
-                results = await task
-                self.logger.print(f"Job {job_id} round {round} {results}", INFO)
+                completed, pending = await asyncio.wait(task_list,
+                                                    timeout=self.round_timeout,
+                                                    return_when=asyncio.ALL_COMPLETED)
+                for task in completed:
+                    try:
+                        results = await task
+                        self.logger.print(f"Job {job_id} round {round} {results}", INFO)
+                    except Exception as e:
+                        self.logger.print(e, ERROR)
+                        
             except Exception as e:
                 self.logger.print(e, ERROR)
 

@@ -364,7 +364,7 @@ async def run(config):
         executor_ack = await ps.executor_stub.JOB_REGISTER(job_info_msg)
         ps.model_size = executor_ack.model_size
     else:
-        ps.model_size = 350738 # for resnet18 and femnist dryrun profile
+        ps.model_size = 74016 # for mobilenetv2 and femnist dryrun profile
 
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
     server.add_insecure_port(f"{ps.ip}:{ps.port}")

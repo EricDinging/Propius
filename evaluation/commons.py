@@ -133,4 +133,4 @@ def get_model_size(model_name, dataset_name):
     return model_size
 
 if __name__ == "__main__":
-    print(get_model_size("resnet18", "femnist"))
+    print(get_model_size("mobilenet", "femnist"))
