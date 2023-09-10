@@ -209,7 +209,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 # wait for all pending training task to complete
                 
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
-
+                self.logger.print(f"Execute job {job_id} round {execute_meta['round']} aggregate", INFO)
                 await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
                                                     client_id=-1,
