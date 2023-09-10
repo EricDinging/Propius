@@ -17,7 +17,6 @@ class Worker_manager:
         Args:
             config:
         """
-        # self.job_id_model_adapter_map = {}
         self.job_id_agg_weight_map = {}
         self.job_id_agg_cnt = {}
         self.logger = logger

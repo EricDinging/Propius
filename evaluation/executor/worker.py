@@ -107,7 +107,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def INIT(self, request, context):
         job_id = request.job_id
         job_meta = pickle.loads(request.job_meta)
-        model = pickle.loads(request.model_adapter)
+        model = pickle.loads(request.model_weight)
         model_adapter = Torch_model_adapter(model,
                                             optimizer=TorchServerOptimizer(
                                             job_meta["gradient_policy"], 
