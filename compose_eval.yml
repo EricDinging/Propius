@@ -146,8 +146,6 @@ services:
     build: 
       context: .
       dockerfile: ./evaluation/executor/Dockerfile_executor
-      args:
-        WORKER_IMAGE: python:3.9
     volumes:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml

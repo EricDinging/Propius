@@ -114,3 +114,20 @@ def custom_print(message: str, level: int=PRINT):
         logging.warning(message)
     elif level == ERROR:
         logging.error(message)
+
+def get_model_size(model_name, dataset_name):
+    import pickle
+    import sys
+    if model_name == "resnet18":
+        from evaluation.internal.models.specialized.resnet_speech import resnet18
+        model = resnet18(
+            num_classes=out_put_class[dataset_name],
+            in_channels=1
+        )
+    elif model_name == "mobilenet":
+        from evaluation.internal.models.specialized.resnet_speech import \
+        mobilenet_v2
+        model = mobilenet_v2(num_classes=out_put_class[dataset_name])
+
+    model_size = sys.getsizeof(pickle.dumps(model)) / 1024.0 * 8.  # kbits
+    return model_size

@@ -22,12 +22,8 @@ class Worker_manager:
         self.job_id_agg_cnt = {}
         self.logger = logger
         self.lock = asyncio.Lock()
-
         self._setup_seed()
-
         self.config = config
-        self.device = config["cuda_device"] if config["use_cuda"] else "cpu"
-
         self.worker_num = len(config["worker"])
         self.worker_addr_list = config["worker"]
         self.worker_channel_dict = {}
@@ -63,8 +59,7 @@ class Worker_manager:
 
     async def remove_job(self, job_id: int):
         async with self.lock:
-            if job_id in self.job_id_model_adapter_map:
-                del self.job_id_model_adapter_map[job_id]
+            if job_id in self.job_id_agg_weight_map:
                 del self.job_id_agg_weight_map[job_id]
                 del self.job_id_agg_cnt[job_id]
         
@@ -91,8 +86,6 @@ class Worker_manager:
             mobilenet_v2
             model = mobilenet_v2(num_classes=out_put_class[dataset_name])
 
-        
-            # model_adapter.set_weights(model_weights)
         model_size = sys.getsizeof(pickle.dumps(model)) / 1024.0 * 8.  # kbits
 
         # broadcast
