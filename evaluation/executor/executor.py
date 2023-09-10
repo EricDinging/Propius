@@ -34,6 +34,16 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
     async def JOB_REGISTER(self, request, context):
         job_id = request.job_id
         job_meta = pickle.loads(request.job_meta)
+        if job_id not in self.aggregate_test_result_dict:
+            self.aggregate_test_result_dict[job_id] = {
+                    "num": 0,
+                    "aggregate_test_result": {
+                                                "test_loss": 0,
+                                                "acc": 0,
+                                                "acc_5": 0,
+                                                "test_len": 0
+                                            },
+                }
 
         model_size = await self.worker.init_job(job_id=job_id, 
                                    dataset_name=job_meta["dataset"],
@@ -59,50 +69,38 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         return executor_pb2.ack(ack=True)
 
     async def wait_for_testing_task(self, job_id:int, round: int, test_finish: bool=False):
-        if job_id not in self.job_test_task_dict:
+        if job_id not in self.job_test_task_dict or job_id not in self.aggregate_test_result_dict:
             return
         task_list = self.job_test_task_dict[job_id]
         self.job_test_task_dict[job_id] = []
-
-        try:
-            completed, pending = await asyncio.wait(task_list,
-                                                    timeout=self.round_timeout,
-                                                    return_when=asyncio.ALL_COMPLETED)
-        except Exception as e:
-            self.logger.print(e, ERROR)
-
-        if job_id not in self.aggregate_test_result_dict:
-            self.aggregate_test_result_dict[job_id] = {
-                    "num": 0,
-                    "aggregate_test_result": {
-                                                "test_loss": 0,
-                                                "acc": 0,
-                                                "acc_5": 0,
-                                                "test_len": 0
-                                            },
-                }
-        
         aggregate_test_result = self.aggregate_test_result_dict[job_id]['aggregate_test_result']
 
-        test_num = 0
-        for task in completed:
+        if len(task_list) > 0:
             try:
-                results = await task
-                if results is None or math.isnan(results["test_loss"]):
-                    continue
-                for key in aggregate_test_result.keys():
-                    aggregate_test_result[key] += results[key]
+                completed, pending = await asyncio.wait(task_list,
+                                                        timeout=self.round_timeout,
+                                                        return_when=asyncio.ALL_COMPLETED)
+                test_num = 0
+                for task in completed:
+                    try:
+                        results = await task
+                        if results is None or math.isnan(results["test_loss"]):
+                            continue
+                        for key in aggregate_test_result.keys():
+                            aggregate_test_result[key] += results[key]
+                        
+                        test_num += 1
+                        
+                    except Exception as e:
+                        self.logger.print(e, ERROR)
                 
-                test_num += 1
-                
+                self.aggregate_test_result_dict[job_id]['num'] += test_num
+
             except Exception as e:
                 self.logger.print(e, ERROR)
-
-        self.aggregate_test_result_dict[job_id]['num'] += test_num
-
-        total_num = self.aggregate_test_result_dict[job_id]['num']
     
         if test_finish:
+            total_num = self.aggregate_test_result_dict[job_id]['num']
             if aggregate_test_result["test_len"] > 0:
                 for key in aggregate_test_result.keys():
                     if key != "test_len":
