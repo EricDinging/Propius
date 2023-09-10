@@ -110,7 +110,12 @@ class WorkerStub(object):
         """
         self.INIT = channel.unary_unary(
                 '/executor.Worker/INIT',
-                request_serializer=executor__pb2.job_info.SerializeToString,
+                request_serializer=executor__pb2.job_init.SerializeToString,
+                response_deserializer=executor__pb2.ack.FromString,
+                )
+        self.UPDATE = channel.unary_unary(
+                '/executor.Worker/UPDATE',
+                request_serializer=executor__pb2.job_weight.SerializeToString,
                 response_deserializer=executor__pb2.ack.FromString,
                 )
         self.REMOVE = channel.unary_unary(
@@ -139,6 +144,12 @@ class WorkerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def INIT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UPDATE(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -173,7 +184,12 @@ def add_WorkerServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'INIT': grpc.unary_unary_rpc_method_handler(
                     servicer.INIT,
-                    request_deserializer=executor__pb2.job_info.FromString,
+                    request_deserializer=executor__pb2.job_init.FromString,
+                    response_serializer=executor__pb2.ack.SerializeToString,
+            ),
+            'UPDATE': grpc.unary_unary_rpc_method_handler(
+                    servicer.UPDATE,
+                    request_deserializer=executor__pb2.job_weight.FromString,
                     response_serializer=executor__pb2.ack.SerializeToString,
             ),
             'REMOVE': grpc.unary_unary_rpc_method_handler(
@@ -218,7 +234,24 @@ class Worker(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/executor.Worker/INIT',
-            executor__pb2.job_info.SerializeToString,
+            executor__pb2.job_init.SerializeToString,
+            executor__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UPDATE(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/executor.Worker/UPDATE',
+            executor__pb2.job_weight.SerializeToString,
             executor__pb2.ack.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

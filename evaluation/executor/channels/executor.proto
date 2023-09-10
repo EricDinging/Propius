@@ -11,7 +11,8 @@ service Executor {
 }
 
 service Worker {
-    rpc INIT (job_info) returns (ack) {}
+    rpc INIT (job_init) returns (ack) {}
+    rpc UPDATE (job_weight) returns (ack) {}
     rpc REMOVE (job_info) returns (ack) {}
     rpc TASK_REGIST (job_task_info) returns (ack) {}
     rpc PING (job_task_info) returns (task_result) {}
@@ -28,9 +29,20 @@ message task_result {
     bytes data = 3;
 }
 
+message job_init {
+    int32 job_id = 1;
+    bytes job_meta = 2;
+    bytes model_weight = 3;
+}
+
 message job_info {
     int32 job_id = 1;
     bytes job_meta = 2;
+}
+
+message job_weight {
+    int32 job_id = 1;
+    bytes job_data = 2;
 }
 
 message job_task_info {
@@ -39,7 +51,6 @@ message job_task_info {
     int32 round = 3;
     string event = 4;
     bytes task_meta = 5;
-    bytes task_data = 6;
 }
 
 message job_id {

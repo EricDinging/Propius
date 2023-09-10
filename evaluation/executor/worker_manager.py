@@ -1,10 +1,7 @@
 from evaluation.executor.task_pool import *
-from evaluation.internal.torch_module_adapter import *
-
 import numpy as np
 import random
 import torch
-
 import asyncio
 import sys
 import pickle
@@ -20,7 +17,7 @@ class Worker_manager:
         Args:
             config:
         """
-        self.job_id_model_adapter_map = {}
+        # self.job_id_model_adapter_map = {}
         self.job_id_agg_weight_map = {}
         self.job_id_agg_cnt = {}
         self.logger = logger
@@ -94,25 +91,25 @@ class Worker_manager:
             mobilenet_v2
             model = mobilenet_v2(num_classes=out_put_class[dataset_name])
 
-        model_adapter = Torch_model_adapter(model,
-                                            optimizer=TorchServerOptimizer(args["gradient_policy"], args, self.device))
+        
             # model_adapter.set_weights(model_weights)
-        model_size = sys.getsizeof(pickle.dumps(model_adapter)) / 1024.0 * 8.  # kbits
-
-        async with self.lock:
-            self.job_id_model_adapter_map[job_id] = model_adapter
-            self.job_id_agg_weight_map[job_id] = []
-            self.job_id_agg_cnt[job_id] = 0
+        model_size = sys.getsizeof(pickle.dumps(model)) / 1024.0 * 8.  # kbits
 
         # broadcast
-        job_meta = {"dataset": dataset_name}
-        job_info_msg = executor_pb2.job_info(
+        
+        job_init_msg = executor_pb2.job_init(
             job_id=job_id,
-            job_meta=pickle.dumps(job_meta)
+            job_meta=pickle.dumps(args),
+            model_weight=pickle.dumps(model)
         )
-        for worker_stub in self.worker_stub_dict.values():
-            await worker_stub.INIT(job_info_msg)
 
+        for worker_stub in self.worker_stub_dict.values():
+            await worker_stub.INIT(job_init_msg)
+        
+        async with self.lock:
+            self.job_id_agg_weight_map[job_id] = []
+            self.job_id_agg_cnt[job_id] = 0
+        
         self.logger.print(f"Worker manager: init job {job_id} success", INFO)
 
         return model_size
@@ -139,22 +136,19 @@ class Worker_manager:
                 self.cur_worker = (self.cur_worker + 1) % self.worker_num
 
                 cur_worker = self.cur_worker
-                task_data = self.job_id_model_adapter_map[job_id].get_model()
-
                 job_task_msg = executor_pb2.job_task_info(
                     job_id=job_id,
                     client_id=client_id,
                     round=0,
                     event=event,
                     task_meta=pickle.dumps(args),
-                    task_data=pickle.dumps(task_data)
                 )
 
             await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
 
             ping_num = 0
             while True:
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.1)
                 ping_msg = executor_pb2.job_task_info(
                     job_id=job_id,
                     client_id=client_id,
@@ -205,7 +199,16 @@ class Worker_manager:
                     if self.job_id_agg_cnt[job_id] > 0:
                         agg_weight = [np.divide(weight, self.job_id_agg_cnt[job_id]) for weight in agg_weight]
 
-                        self.job_id_model_adapter_map[job_id].set_weights(copy.deepcopy(agg_weight))
+                        job_weight_msg = executor_pb2.job_weight(
+                            job_id = job_id,
+                            job_meta = pickle.dumps(agg_weight)
+                        )
+
+                        for worker_id, worker_stub in self.worker_stub_dict.items:
+                            ack_msg = await worker_stub.UPDATE(job_weight_msg)
+                            if not ack_msg.ack:
+                                self.logger.print(f"Update model weight to worker {worker_id} failed", ERROR)
+
                     results = {
                         "agg_number": self.job_id_agg_cnt[job_id]
                     }

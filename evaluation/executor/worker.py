@@ -53,6 +53,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         self._setup_seed()
         self.config = config
 
+        self.job_id_model_adapter_map = {}
+
     def _setup_seed(self, seed=1):
         torch.manual_seed(seed)
         torch.backends.cudnn.deterministic = True
@@ -105,6 +107,13 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def INIT(self, request, context):
         job_id = request.job_id
         job_meta = pickle.loads(request.job_meta)
+        model = pickle.loads(request.model_adapter)
+        model_adapter = Torch_model_adapter(model,
+                                            optimizer=TorchServerOptimizer(
+                                            job_meta["gradient_policy"], 
+                                            job_meta, 
+                                            self.device)
+                                            )
         dataset_name = job_meta["dataset"]
 
         async with self.lock:
@@ -138,6 +147,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 self.data_partitioner_ref_cnt_dict[dataset_name] = 0
             
             self.data_partitioner_ref_cnt_dict[dataset_name] += 1
+            self.job_id_model_adapter_map[job_id] = model_adapter
             self.logger.print(f"Worker {self.id}: recieve job {job_id} init", INFO)
 
         return executor_pb2.ack(ack=True)
@@ -145,6 +155,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def REMOVE(self, request, context):
         job_id = request.job_id
         async with self.lock:
+            if job_id in self.job_id_model_adapter_map:
+                del self.job_id_model_adapter_map[job_id]
             if job_id in self.job_id_data_map:
                 dataset_name = self.job_id_data_map[job_id]
                 del self.job_id_data_map[job_id]
@@ -158,12 +170,21 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             self.logger.print(f"Worker {self.id}: recieve job {job_id} remove", INFO)
         return executor_pb2.ack(ack=True)  
     
+    async def UPDATE(self, request, context):
+        async with self.lock:
+            job_id = request.job_id
+            weight = pickle.loads(request.job_data)
+            if job_id in self.job_id_model_adapter_map:
+                self.job_id_model_adapter_map[job_id].set_weights(copy.deepcopy(weight))
+                ack = True
+            else:
+                ack = False
+        return executor_pb2.ack(ack=ack)
+        
     async def TASK_REGIST(self, request, context):
         job_id, client_id = request.job_id, request.client_id
         event = request.event
         conf = pickle.loads(request.task_meta)
-        model = pickle.loads(request.task_data)
-        conf["model_weight"] = model
         conf["job_id"] = job_id
         conf["client_id"] = client_id
         conf["event"] = event
@@ -220,10 +241,6 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
         model = model.to(device=self.device)
         model.train()
-
-        # trained_unique_samples = min(
-        #     len(client_data.dataset), conf.local_steps * conf.batch_size
-        # )
 
         optimizer = self._get_optimizer(model, conf)
         criterion = self._get_criterion(conf)
@@ -313,13 +330,11 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     partition = self.data_partitioner_dict[self.job_id_data_map[task_conf["job_id"]]]
                 
                     event = task_conf["event"]
-                    model_weight = task_conf["model_weight"]
                     client_id = task_conf["client_id"]
                     job_id = task_conf["job_id"]
+                    model_weight = self.job_id_model_adapter_map[job_id]
 
                     self.logger.print(f"Worker {self.id}: executing job {job_id} {event}, Client {client_id}", INFO)
-                    
-                    del task_conf["model_weight"]
 
                     key = f"{event}{task_conf['client_id']}"
 
