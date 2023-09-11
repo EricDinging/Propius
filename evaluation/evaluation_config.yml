@@ -18,8 +18,8 @@ job_private_constraint:
   - dataset_size
 
 sched_timeout: 360
-# exec_timeout: 240
-exec_timeout: 360
+exec_timeout: 240
+# exec_timeout: 360
 
 # ---Simulation---
 
@@ -41,7 +41,7 @@ job_profile_num: 20
 # job_profile_num: 20
 
 # Job total number
-total_job: 5
+total_job: 10
 # total_job: 5
 
 # Job generation config
@@ -55,7 +55,7 @@ job_driver_starting_port: 60000
 do_compute: False
 # do_compute: False
 # is_FA: True
-is_FA: False 
+is_FA: True
 
 use_cuda: False
 use_docker: False

@@ -21,6 +21,7 @@ import random
 import logging
 import logging.handlers
 import os
+import math
 
 _cleanup_coroutines = []
 
@@ -291,7 +292,6 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     output = model(data)
                     loss = criterion(output, target)
                     loss = loss.tolist()
-
                     test_loss += sum(loss)
                     acc = accuracy(output, target, topk=(1, 5))
                     correct += acc[0].item()
@@ -303,6 +303,9 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         
         test_len = max(test_len, 1)
         test_loss /= len(test_data)
+
+        if math.isnan(test_loss):
+            test_loss = 0
 
         acc = round(correct / test_len, 4)
         acc_5 = round(top_5 / test_len, 4)
