@@ -29,12 +29,12 @@ class Task_pool:
             }
             self.job_task_dict[job_id].append(test_task_meta)
 
-            test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
-            os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
-            fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
-            with open(test_csv_file_name, "w", newline="") as test_csv:
-                writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
-                writer.writeheader()
+        test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
+        os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
+        fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
+        with open(test_csv_file_name, "w", newline="") as test_csv:
+            writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
+            writer.writeheader()
             
     
     async def insert_job_task(self, job_id: int, client_id: int, round: int, event: str, task_meta: dict):
@@ -80,7 +80,7 @@ class Task_pool:
             for _ in range(job_num):
                 job_meta = copy.deepcopy(self.job_meta_list[0])
                 job_id = job_meta["job_id"]
-                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 50:
+                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 100:
                     job_meta.update(self.job_task_dict[job_id].popleft())
                     self.select_time += 1
                     return job_meta
@@ -107,12 +107,11 @@ class Task_pool:
 
     
     async def report_result(self, job_id: int, round: int, result: dict):
-        async with self.lock:
-            test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
-            fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
-            os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
-            with open(test_csv_file_name, mode="a", newline="") as test_csv:
-                writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
-                result["round"] = round
-                writer.writerow(result)
+        test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
+        fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
+        os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
+        with open(test_csv_file_name, mode="a", newline="") as test_csv:
+            writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
+            result["round"] = round
+            writer.writerow(result)
 
