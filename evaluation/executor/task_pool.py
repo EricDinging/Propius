@@ -80,7 +80,7 @@ class Task_pool:
             for _ in range(job_num):
                 job_meta = copy.deepcopy(self.job_meta_list[0])
                 job_id = job_meta["job_id"]
-                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 100:
+                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 50:
                     job_meta.update(self.job_task_dict[job_id].popleft())
                     self.select_time += 1
                     return job_meta
