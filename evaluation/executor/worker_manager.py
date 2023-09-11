@@ -126,15 +126,15 @@ class Worker_manager:
         if event == CLIENT_TRAIN or event == MODEL_TEST:
             async with self.lock:
                 self.cur_worker = (self.cur_worker + 1) % self.worker_num
-
                 cur_worker = self.cur_worker
-                job_task_msg = executor_pb2.job_task_info(
-                    job_id=job_id,
-                    client_id=client_id,
-                    round=0,
-                    event=event,
-                    task_meta=pickle.dumps(args),
-                )
+
+            job_task_msg = executor_pb2.job_task_info(
+                job_id=job_id,
+                client_id=client_id,
+                round=0,
+                event=event,
+                task_meta=pickle.dumps(args),
+            )
 
             await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
 
