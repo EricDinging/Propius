@@ -35,8 +35,17 @@ class Task_pool:
         with open(test_csv_file_name, "w", newline="") as test_csv:
             writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
             writer.writeheader()
+
+    def _pop_failed_task(self, job_id: int, round: int):
+        #locked
+        task_list = self.job_task_dict[job_id]
+        while task_list:
+            task = task_list.pop()
+            if task["event"] == CLIENT_TRAIN and task["round"] == round:
+                continue
+            else:
+                break
             
-    
     async def insert_job_task(self, job_id: int, client_id: int, round: int, event: str, task_meta: dict):
         """event: {CLIENT_TRAIN, AGGREGATE, FINISH}
         """
@@ -47,6 +56,9 @@ class Task_pool:
         async with self.lock:
             if job_id not in self.job_task_dict:
                 return
+            
+            if event == ROUND_FAIL:
+                self._pop_failed_task(job_id, round)
 
             test_task_meta = {
                     "client_id": -1,

@@ -237,8 +237,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     client_id=-1,
                                                     args=execute_meta, 
                                                     abort=True)
-
-
     
 async def run(config, logger):
     async def server_graceful_shutdown():
