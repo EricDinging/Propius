@@ -100,26 +100,29 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 self.logger.print(e, ERROR)
     
         if test_finish:
-            total_num = self.aggregate_test_result_dict[job_id]['num']
-            if aggregate_test_result["test_len"] > 0:
-                aggregate_test_result["test_loss"] /= aggregate_test_result["test_len"]
-                aggregate_test_result["acc"] /= total_num
-                aggregate_test_result["acc_5"] /= total_num
+            try:
+                total_num = self.aggregate_test_result_dict[job_id]['num']
+                if aggregate_test_result["test_len"] > 0:
+                    aggregate_test_result["test_loss"] /= aggregate_test_result["test_len"]
+                    aggregate_test_result["acc"] /= total_num
+                    aggregate_test_result["acc_5"] /= total_num
 
-                self.logger.print(f"Job {job_id} round {round} test client num: {total_num} "
-                                  f"result: {aggregate_test_result}", INFO)
-        
-                await self.task_pool.report_result(job_id=job_id,
-                                                    round=round,
-                                                    result=aggregate_test_result)
+                    self.logger.print(f"Job {job_id} round {round} test client num: {total_num} "
+                                    f"result: {aggregate_test_result}", INFO)
             
-                self.aggregate_test_result_dict[job_id]['num'] = 0
-                self.aggregate_test_result_dict[job_id]['aggregate_test_result'] = {
-                        "test_loss": 0,
-                        "acc": 0,
-                        "acc_5": 0,
-                        "test_len": 0
-                    }
+                    await self.task_pool.report_result(job_id=job_id,
+                                                        round=round,
+                                                        result=aggregate_test_result)
+                
+                    self.aggregate_test_result_dict[job_id]['num'] = 0
+                    self.aggregate_test_result_dict[job_id]['aggregate_test_result'] = {
+                            "test_loss": 0,
+                            "acc": 0,
+                            "acc_5": 0,
+                            "test_len": 0
+                        }
+            except Exception as e:
+                self.logger.print(e, ERROR)
     
     async def wait_for_training_task(self, job_id:int, round: int):
 
