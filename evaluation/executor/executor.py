@@ -84,7 +84,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 for task in completed:
                     try:
                         results = await task
-                        if results is None or math.isnan(results["test_loss"]):
+                        if results is None:
                             continue
                         for key in aggregate_test_result.keys():
                             aggregate_test_result[key] += results[key]
@@ -102,9 +102,9 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         if test_finish:
             total_num = self.aggregate_test_result_dict[job_id]['num']
             if aggregate_test_result["test_len"] > 0:
-                for key in aggregate_test_result.keys():
-                    if key != "test_len":
-                        aggregate_test_result[key] /= aggregate_test_result["test_len"]
+                aggregate_test_result["test_loss"] /= aggregate_test_result["test_len"]
+                aggregate_test_result["acc"] /= total_num
+                aggregate_test_result["acc_5"] /= total_num
 
                 self.logger.print(f"Job {job_id} round {round} test client num: {total_num} "
                                   f"result: {aggregate_test_result}", INFO)
