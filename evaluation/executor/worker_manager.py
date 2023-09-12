@@ -172,7 +172,7 @@ class Worker_manager:
                 if event == CLIENT_TRAIN:
                     model_param = results["model_weight"]
                     del results["model_weight"]
-                    
+
                     agg_weight = self.job_id_agg_weight_map[job_id]
                     if not self.job_id_agg_weight_map[job_id]:
                         agg_weight = model_param
@@ -190,7 +190,8 @@ class Worker_manager:
             elif event == AGGREGATE:
                 agg_weight = self.job_id_agg_weight_map[job_id]
                 cnt = self.job_id_agg_meta[job_id]["cnt"]
-                results = self.job_id_agg_meta[job_id]
+                agg_results = self.job_id_agg_meta[job_id]
+                self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
                 if cnt > 0:
                     agg_weight = [np.divide(weight, cnt) for weight in agg_weight]
 
@@ -204,11 +205,11 @@ class Worker_manager:
                         if not ack_msg.ack:
                             self.logger.print(f"Update model weight to worker {worker_id} failed", ERROR)
 
-                    results["avg_moving_loss"] = results["moving_loss"] / cnt
-                self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
+                    agg_results["avg_moving_loss"] = results["moving_loss"] / cnt
+                
                 self.job_id_agg_weight_map[job_id] = None
 
-                results = {AGGREGATE: results}
+                results = agg_results
             
             elif event == AGGREGATE_TEST:
                 agg_test = self.job_id_agg_test_map[job_id]
@@ -220,21 +221,21 @@ class Worker_manager:
 
                 self.job_id_agg_test_map[job_id] = {
                     "cnt": 0,
+                    "test_loss": 0,
                     "acc": 0,
                     "acc_5": 0,
-                    "test_len": 0,
-                    "cnt": 0
+                    "test_len": 0
                 }
 
-                results = {MODEL_TEST: agg_test}
+                results = agg_test
 
             elif event == ROUND_FAIL:
                 self.job_id_agg_test_map[job_id] = {
                     "cnt": 0,
+                    "test_loss": 0,
                     "acc": 0,
                     "acc_5": 0,
-                    "test_len": 0,
-                    "cnt": 0
+                    "test_len": 0
                 }
 
                 self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}

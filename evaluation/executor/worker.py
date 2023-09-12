@@ -173,8 +173,9 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def UPDATE(self, request, context):
         job_id = request.job_id
         weight = pickle.loads(request.job_data)
+        self.logger.print(f"Update job {job_id} weight", INFO)
         if job_id in self.job_id_model_adapter_map:
-            self.job_id_model_adapter_map[job_id].set_weights(copy.deepcopy(weight))
+            self.job_id_model_adapter_map[job_id].set_weights(weight)
             ack = True
         else:
             ack = False

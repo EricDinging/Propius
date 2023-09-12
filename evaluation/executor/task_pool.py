@@ -29,9 +29,16 @@ class Task_pool:
 
         test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
         os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
-        fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
+        fieldnames = ["round", "cnt", "test_loss", "acc", "acc_5", "test_len"]
         with open(test_csv_file_name, "w", newline="") as test_csv:
             writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
+            writer.writeheader()
+
+        train_csv_file_name = f"./evaluation/monitor/executor/train_{job_id}_{self.config['sched_alg']}.csv"
+        os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
+        fieldnames = ["round", "cnt", "moving_loss", "avg_moving_loss", "trained_size"]
+        with open(train_csv_file_name, "w", newline="") as train_csv:
+            writer = csv.DictWriter(train_csv, fieldnames=fieldnames)
             writer.writeheader()
 
     def _pop_failed_task(self, job_id: int, round: int):
@@ -129,12 +136,22 @@ class Task_pool:
             pass
 
     
-    async def report_result(self, job_id: int, round: int, result: dict):
-        test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
-        fieldnames = ["round", "test_loss", "acc", "acc_5", "test_len"]
-        os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
-        with open(test_csv_file_name, mode="a", newline="") as test_csv:
-            writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
-            result["round"] = round
-            writer.writerow(result)
+    async def report_result(self, job_id: int, round: int, result: dict, is_train: bool = False):
+        if not is_train:
+            test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
+            fieldnames = ["round", "cnt", "test_loss", "acc", "acc_5", "test_len"]
+            os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
+            with open(test_csv_file_name, mode="a", newline="") as test_csv:
+                writer = csv.DictWriter(test_csv, fieldnames=fieldnames)
+                result["round"] = round
+                writer.writerow(result)
+
+        else:
+            train_csv_file_name = f"./evaluation/monitor/executor/train_{job_id}_{self.config['sched_alg']}.csv"
+            os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
+            fieldnames = ["round", "cnt", "moving_loss", "avg_moving_loss", "trained_size"]
+            with open(train_csv_file_name, mode="a", newline="") as train_csv:
+                writer = csv.DictWriter(train_csv, fieldnames=fieldnames)
+                result["round"] = round
+                writer.writerow(result)
 
