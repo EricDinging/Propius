@@ -35,16 +35,17 @@ client_spec_path: './datasets/device_info/client_spec_speed'
 client_size_path: './datasets/device_info/client_dataset_size'
 
 # profile_folder: './evaluation/job/dry_profile/'
-profile_folder: './evaluation/job/profile/'
-# profile_folder: './evaluation/job/test_profile/'
+# profile_folder: './evaluation/job/profile/'
+profile_folder: './evaluation/job/test_profile/'
 
 # Job profile number
-job_profile_num: 10
+# job_profile_num: 10
 # job_profile_num: 20
+job_profile_num: 5
 
 # Job total number
-total_job: 10
-# total_job: 5
+# total_job: 10
+total_job: 5
 
 # Job generation config
 avg_interval: 1800
