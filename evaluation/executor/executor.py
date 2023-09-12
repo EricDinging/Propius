@@ -115,8 +115,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             del execute_meta['round']
 
             if event == JOB_FINISH:
-                await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
-                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
+                await self.wait_for_training_task(job_id=job_id, round=round)
+                await self.wait_for_testing_task(job_id=job_id, round=round)
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 
@@ -142,10 +142,10 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 self.job_train_task_dict[job_id].append(task)
 
                 if len(self.job_train_task_dict[job_id]) >= 10 * self.worker.worker_num:
-                    await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
+                    await self.wait_for_training_task(job_id=job_id, round=round)
 
             elif event == MODEL_TEST:
-                await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
+                await self.wait_for_training_task(job_id=job_id, round=round)
 
                 if job_id not in self.job_test_task_dict:
                     self.job_test_task_dict[job_id] = []
@@ -168,12 +168,12 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     )
                     self.job_test_task_dict[job_id].append(task)
                     if len(self.job_test_task_dict[job_id]) >= 10 * self.worker.worker_num:
-                        await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
+                        await self.wait_for_testing_task(job_id=job_id, round=round)
 
             elif event == AGGREGATE:
                 # wait for all pending training task to complete
-                await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
-                self.logger.print(f"Execute job {job_id} round {execute_meta['round']} aggregate", INFO)
+                await self.wait_for_training_task(job_id=job_id, round=round)
+                self.logger.print(f"Execute job {job_id} round {round} aggregate", INFO)
                 results = await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
                                                     client_id_list=[],
@@ -181,23 +181,23 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     args=execute_meta)
                 
                 await self.task_pool.report_result(job_id=job_id,
-                                                    round=execute_meta['round'],
+                                                    round=round,
                                                     result=results)
                 
             elif event == AGGREGATE_TEST:
-                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
+                await self.wait_for_testing_task(job_id=job_id, round=round)
                 results = await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
                                                     client_id_list=[],
                                                     round=round,
                                                     args=execute_meta)
                 await self.task_pool.report_result(job_id=job_id,
-                                                    round=execute_meta['round'],
+                                                    round=round,
                                                     result=results)
                 
             elif event == ROUND_FAIL:
                 # wait for all pending training task to complete                
-                await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
+                await self.wait_for_training_task(job_id=job_id, round=round)
 
                 # clear aggregated weights for this round, no report generated
                 await self.worker.execute(event=ROUND_FAIL,

@@ -59,7 +59,7 @@ class Task_pool:
 
         test_task_meta = {
             "client_id": -1,
-            "round": task_meta["round"],
+            "round": round,
             "event": MODEL_TEST,
             "test_ratio": self.config["test_ratio"],
             "test_bsz": self.config["test_bsz"]
@@ -67,7 +67,7 @@ class Task_pool:
         
         agg_test_meta = {
             "client_id": -1,
-            "round": task_meta["round"],
+            "round": round,
             "event": AGGREGATE_TEST,
         }
         
