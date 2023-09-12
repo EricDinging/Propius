@@ -45,4 +45,4 @@ fedscale/cloud/aggregation/cache
 experiment/*
 *.csv
 *.log
-math
+math/

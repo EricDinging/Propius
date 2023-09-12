@@ -102,7 +102,7 @@ class Task_pool:
         for _ in range(job_num):
             job_meta = copy.deepcopy(self.job_meta_list[0])
             job_id = job_meta["job_id"]
-            if len(self.job_task_dict[job_id]) > 0 and self.select_time < 5:
+            if len(self.job_task_dict[job_id]) > 0 and self.select_time < 10:
                 task_meta = self.job_task_dict[job_id].popleft()
                 for key, value in task_meta.items():
                     if key == "client_id":
@@ -111,13 +111,15 @@ class Task_pool:
                         job_meta[key] = value
 
                 if task_meta["event"] == CLIENT_TRAIN:
-                    while self.job_task_dict[job_id]:
+                    cnt = 0
+                    while self.job_task_dict[job_id] and cnt < 10:
                         task_meta = self.job_task_dict[job_id].popleft()
                         if task_meta["event"] != job_meta["event"] or\
                             task_meta["round"] != job_meta["round"]:
                             self.job_task_dict[job_id].appendleft(task_meta)
                             break
                         job_meta["client_id_list"].append(task_meta["client_id"])
+                        cnt += 1
 
                 self.select_time += 1
                 return job_meta
