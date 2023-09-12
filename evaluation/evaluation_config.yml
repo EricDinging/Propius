@@ -1,5 +1,4 @@
-# speedup_factor: 5
-speedup_factor: 2
+speedup_factor: 5
 load_balancer_ip: localhost
 load_balancer_port: 50002
 
@@ -18,12 +17,11 @@ job_private_constraint:
   - dataset_size
 
 sched_timeout: 360
-# exec_timeout: 240
-exec_timeout: 540
+exec_timeout: 360
 
 # ---Simulation---
 
-client_num: 25000
+client_num: 5000
 # client_num: 15000
 client_test_num: 356 # max testing set size
 # client_validation_num: 1000
@@ -36,7 +34,7 @@ client_size_path: './datasets/device_info/client_dataset_size'
 
 # profile_folder: './evaluation/job/dry_profile/'
 # profile_folder: './evaluation/job/profile/'
-profile_folder: './evaluation/job/test_profile/'
+profile_folder: './evaluation/job/profile_small/'
 
 # Job profile number
 # job_profile_num: 10
