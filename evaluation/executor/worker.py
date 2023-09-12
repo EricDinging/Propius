@@ -18,10 +18,10 @@ import torch
 from torch.autograd import Variable
 import numpy as np
 import random
-import logging
-import logging.handlers
 import os
 import math
+import pickle
+
 
 _cleanup_coroutines = []
 
@@ -75,7 +75,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         )
         return optimizer
     
-    def _train_step(self, client_data: DataLoader, conf: dict, model: Torch_model_adapter, optimizer, criterion):
+    def _train_step(self, client_data: DataLoader, conf: dict, model, optimizer, criterion):
         for data_pair in client_data:
             (data, target) = data_pair
             data = Variable(data).to(device=self.device)
@@ -149,6 +149,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             
             self.data_partitioner_ref_cnt_dict[dataset_name] += 1
             self.job_id_model_adapter_map[job_id] = model_adapter
+            self.task_finished[job_id] = {}
             self.logger.print(f"Worker {self.id}: recieve job {job_id} init", INFO)
 
         return executor_pb2.ack(ack=True)
@@ -183,12 +184,14 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         return executor_pb2.ack(ack=ack)
         
     async def TASK_REGIST(self, request, context):
-        job_id, client_id = request.job_id, request.client_id
+        job_id, round = request.job_id, request.round
+        client_id_list = pickle.load(request.client_id_list)
         event = request.event
         conf = pickle.loads(request.task_meta)
         conf["job_id"] = job_id
-        conf["client_id"] = client_id
+        conf["client_id_list"] = client_id_list
         conf["event"] = event
+        conf["round"] = round
         async with self.lock:
             self.task_to_do.append(conf)
         
@@ -196,31 +199,27 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         return executor_pb2.ack(ack=True)
     
     async def PING(self, request, context):
-        job_id, client_id = request.job_id, request.client_id
-        event = request.event
-
-        key = f"{event}{client_id}"
+        job_id = request.job_id
+        task_id = request.task_id
 
         async with self.lock:
             if job_id in self.task_finished:
-                if key in self.task_finished[job_id]:
-                    result = self.task_finished[job_id][key]
+                if task_id in self.task_finished[job_id]:
+                    result = self.task_finished[job_id][task_id]
 
-                    result_msg = executor_pb2.task_result(
+                    result_msg = executor_pb2.worker_task_result(
                             ack=True,
-                            result=pickle.dumps(result),
-                            data=pickle.dumps(DUMMY_RESPONSE)
+                            result_data=pickle.dumps(result),
                         )
-                    del self.task_finished[job_id][key]
+                    del self.task_finished[job_id][task_id]
 
                     return result_msg
                 
-            result_msg = executor_pb2.task_result(
+            result_msg = executor_pb2.worker_task_result(
                 ack=False,
-                result=pickle.dumps(DUMMY_RESPONSE),
-                data=pickle.dumps(DUMMY_RESPONSE)
+                result_data=pickle.dumps(DUMMY_RESPONSE),
             )
-            self.logger.print(f"Worker {self.id}: job {job_id} {key} retrieval fail", WARNING)
+            self.logger.print(f"Worker {self.id}: job {job_id} {task_id} retrieval fail", WARNING)
             return result_msg
     
     async def HEART_BEAT(self, request, context):
@@ -229,20 +228,17 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             self.logger.print(f"Worker {self.id}: queueing length {len(self.task_to_do)}", INFO)
             return status_msg
         
-    async def _train(self, client_id, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->dict:
+    async def _train(self, client_id, partition: Data_partitioner, model, conf: dict)->dict:
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
-
         client_data = select_dataset(client_id=client_id, 
                                      partition=partition,
                                      batch_size=conf['batch_size'],
                                      args=conf,
                                      is_test=False,
                                      )
-
         model = model.to(device=self.device)
         model.train()
-
         optimizer = self._get_optimizer(model, conf)
         criterion = self._get_criterion(conf)
         
@@ -268,7 +264,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
         return results
     
-    async def _test(self, client_id: int, partition: Data_partitioner, model: Torch_model_adapter, conf: dict)->dict:
+    async def _test(self, client_id: int, partition: Data_partitioner, model, conf: dict)->dict:
         test_data = select_dataset(
             client_id=client_id, 
             partition=partition, 
@@ -276,12 +272,11 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             args=conf,
             is_test=True)
         criterion = self._get_criterion(conf)
-        
+        model = model.to(device=self.device)
         test_loss = 0
         correct = 0
         top_5 = 0
         test_len = 0
-        model = model.to(device=self.device)
         model.eval()
 
         with torch.no_grad():
@@ -332,30 +327,55 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     partition = self.data_partitioner_dict[self.job_id_data_map[task_conf["job_id"]]]
                 
                     event = task_conf["event"]
-                    client_id = task_conf["client_id"]
+                    client_id_list = task_conf["client_id_list"]
                     job_id = task_conf["job_id"]
-                    model_weight = self.job_id_model_adapter_map[job_id].get_model()
+                    model = self.job_id_model_adapter_map[job_id].get_model()
+                    round = task_conf["round"]
+                    key = task_conf["task_id"]
 
-                    self.logger.print(f"Worker {self.id}: executing job {job_id} {event}, Client {client_id}", INFO)
-
-                    key = f"{event}{task_conf['client_id']}"
-
-                    if event == CLIENT_TRAIN:
+                self.logger.print(f"Worker {self.id}: executing job {job_id}-{round} {event}, Client {client_id_list}", INFO)
+                if event == CLIENT_TRAIN:
+                    agg_results = {
+                        "cnt": 0,
+                        "model_weight": None,
+                        "moving_loss": 0,
+                        "trained_size": 0, 
+                    }
+                    
+                    for client_id in client_id_list:
                         results = await self._train(client_id=client_id,
                                     partition=partition,
-                                    model=model_weight,
+                                    model=model,
                                     conf=task_conf)
+                        agg_results["cnt"] += 1
+                        model_weight = results["model_weight"]
+                        if not agg_results["model_weight"]:
+                            agg_results["model_weight"] = model_weight
+                        else:
+                            agg_results["model_weight"] = [weight + model_weight[i] for i, weight in enumerate(agg_results["model_weight"])]
+                        agg_results["moving_loss"] += results["moving_loss"]
+                        agg_results["trained_size"] += results["trained_size"]
 
-                    elif event == MODEL_TEST:
+                elif event == MODEL_TEST:
+                    agg_results = {
+                        "test_loss": 0,
+                        "acc": 0,
+                        "acc_5": 0,
+                        "test_len": 0,
+                        "cnt": 0,
+                    }
+                    for client_id in client_id_list:
                         results = await self._test(client_id=client_id,
                                                 partition=partition,
-                                                model=model_weight,
+                                                model=model,
                                                 conf=task_conf
                                                 )
-                
-                    if job_id not in self.task_finished:
-                        self.task_finished[job_id] = {}
-                    self.task_finished[job_id][key] = results
+                        agg_results["cnt"] += 1
+                        for key, value in results.items():
+                            agg_results[key] += value
+                            
+                async with self.lock:
+                    self.task_finished[job_id][key] = agg_results
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:

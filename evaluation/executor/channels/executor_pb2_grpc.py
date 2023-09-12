@@ -2,8 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import evaluation.executor.channels.executor_pb2 as executor__pb2
-
+ import evaluation.executor.channels.executor_pb2 as executor__pb2
 
 class ExecutorStub(object):
     """Missing associated documentation comment in .proto file."""
@@ -125,13 +124,13 @@ class WorkerStub(object):
                 )
         self.TASK_REGIST = channel.unary_unary(
                 '/executor.Worker/TASK_REGIST',
-                request_serializer=executor__pb2.job_task_info.SerializeToString,
+                request_serializer=executor__pb2.worker_task.SerializeToString,
                 response_deserializer=executor__pb2.ack.FromString,
                 )
         self.PING = channel.unary_unary(
                 '/executor.Worker/PING',
-                request_serializer=executor__pb2.job_task_info.SerializeToString,
-                response_deserializer=executor__pb2.task_result.FromString,
+                request_serializer=executor__pb2.worker_task_info.SerializeToString,
+                response_deserializer=executor__pb2.worker_task_result.FromString,
                 )
         self.HEART_BEAT = channel.unary_unary(
                 '/executor.Worker/HEART_BEAT',
@@ -199,13 +198,13 @@ def add_WorkerServicer_to_server(servicer, server):
             ),
             'TASK_REGIST': grpc.unary_unary_rpc_method_handler(
                     servicer.TASK_REGIST,
-                    request_deserializer=executor__pb2.job_task_info.FromString,
+                    request_deserializer=executor__pb2.worker_task.FromString,
                     response_serializer=executor__pb2.ack.SerializeToString,
             ),
             'PING': grpc.unary_unary_rpc_method_handler(
                     servicer.PING,
-                    request_deserializer=executor__pb2.job_task_info.FromString,
-                    response_serializer=executor__pb2.task_result.SerializeToString,
+                    request_deserializer=executor__pb2.worker_task_info.FromString,
+                    response_serializer=executor__pb2.worker_task_result.SerializeToString,
             ),
             'HEART_BEAT': grpc.unary_unary_rpc_method_handler(
                     servicer.HEART_BEAT,
@@ -285,7 +284,7 @@ class Worker(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/executor.Worker/TASK_REGIST',
-            executor__pb2.job_task_info.SerializeToString,
+            executor__pb2.worker_task.SerializeToString,
             executor__pb2.ack.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -302,8 +301,8 @@ class Worker(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/executor.Worker/PING',
-            executor__pb2.job_task_info.SerializeToString,
-            executor__pb2.task_result.FromString,
+            executor__pb2.worker_task_info.SerializeToString,
+            executor__pb2.worker_task_result.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
