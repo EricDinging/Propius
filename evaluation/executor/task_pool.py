@@ -91,9 +91,12 @@ class Task_pool:
             job_id = job_meta["job_id"]
             if len(self.job_task_dict[job_id]) > 0 and self.select_time < 5:
                 task_meta = self.job_task_dict[job_id].popleft()
-                job_meta["client_id_list"] = [task_meta["client_id"]]
-                job_meta["round"] = task_meta["round"]
-                job_meta["event"] = task_meta["event"]
+                for key, value in task_meta:
+                    if key == "client_id":
+                        job_meta["client_id_list"] = [value]
+                    else:
+                        job_meta[key] = value
+
                 if task_meta["event"] == CLIENT_TRAIN:
                     while self.job_task_dict[job_id]:
                         task_meta = self.job_task_dict[job_id].popleft()
