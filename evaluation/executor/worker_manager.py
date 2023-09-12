@@ -193,6 +193,7 @@ class Worker_manager:
                 agg_weight = self.job_id_agg_weight_map[job_id]
                 cnt = self.job_id_agg_meta[job_id]["cnt"]
                 agg_results = self.job_id_agg_meta[job_id]
+                agg_results["avg_moving_loss"] = 0
                 self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
                 if cnt > 0:
                     agg_weight = [np.divide(weight, cnt) for weight in agg_weight]
@@ -207,7 +208,7 @@ class Worker_manager:
                         if not ack_msg.ack:
                             self.logger.print(f"Update model weight to worker {worker_id} failed", ERROR)
 
-                    agg_results["avg_moving_loss"] = results["moving_loss"] / cnt
+                    agg_results["avg_moving_loss"] = agg_results["moving_loss"] / cnt
                 
                 self.job_id_agg_weight_map[job_id] = None
 

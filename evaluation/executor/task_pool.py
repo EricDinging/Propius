@@ -154,7 +154,7 @@ class Task_pool:
 
         else:
             train_csv_file_name = f"./evaluation/monitor/executor/train_{job_id}_{self.config['sched_alg']}.csv"
-            os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
+            os.makedirs(os.path.dirname(train_csv_file_name), exist_ok=True)
             fieldnames = ["round", "cnt", "moving_loss", "avg_moving_loss", "trained_size"]
             with open(train_csv_file_name, mode="a", newline="") as train_csv:
                 writer = csv.DictWriter(train_csv, fieldnames=fieldnames)
