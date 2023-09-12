@@ -44,6 +44,7 @@ class Task_pool:
             if task["event"] == CLIENT_TRAIN and task["round"] == round:
                 continue
             else:
+                task_list.append(task)
                 break
             
     async def insert_job_task(self, job_id: int, client_id: int, round: int, event: str, task_meta: dict):
