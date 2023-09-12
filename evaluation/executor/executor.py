@@ -134,7 +134,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                           job_id=job_id,
                                           round=round,
                                           client_id_list=client_id_list,
-                                          round=round,
                                           args=execute_meta)
                 )
 
