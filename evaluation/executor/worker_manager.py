@@ -174,10 +174,12 @@ class Worker_manager:
                     del results["model_weight"]
 
                     agg_weight = self.job_id_agg_weight_map[job_id]
-                    if not self.job_id_agg_weight_map[job_id]:
+                    if not agg_weight:
                         agg_weight = model_param
                     else:
                         agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
+                    
+                    self.job_id_agg_weight_map[job_id] = agg_weight
 
                     for key, value in results.items():
                         self.job_id_agg_meta[job_id][key] += value

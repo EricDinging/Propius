@@ -19,13 +19,19 @@ class Task_pool:
 
         self.job_task_dict[job_id] = deque()
         test_task_meta = {
-            "client_id": random.randint(0, 10000),
+            "client_id": -1,
             "round": 0,
             "event": MODEL_TEST,
             "test_ratio": self.config["test_ratio"],
             "test_bsz": self.config["test_bsz"]
         }
+        agg_test_meta = {
+            "client_id": -1,
+            "round": 0,
+            "event": AGGREGATE_TEST,
+        }
         self.job_task_dict[job_id].append(test_task_meta)
+        self.job_task_dict[job_id].append(agg_test_meta)
 
         test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
         os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)

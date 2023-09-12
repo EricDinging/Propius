@@ -114,7 +114,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             del execute_meta['event']
             del execute_meta['round']
 
-            self.logger.print(f"Execute job {job_id}-{round}-{event}" 
+            self.logger.print(f"Execute job {job_id}-{round}-{event} " 
                             f"list_size: {len(client_id_list)}", INFO)
 
             if event == JOB_FINISH:
@@ -176,7 +176,6 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             elif event == AGGREGATE:
                 # wait for all pending training task to complete
                 await self.wait_for_training_task(job_id=job_id)
-                self.logger.print(f"Execute job {job_id} round {round} aggregate", INFO)
                 results = await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
                                                     client_id_list=[],
@@ -185,7 +184,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 
                 await self.task_pool.report_result(job_id=job_id,
                                                     round=round,
-                                                    result=results)
+                                                    result=results,
+                                                    is_train=True)
                 
             elif event == AGGREGATE_TEST:
                 await self.wait_for_testing_task(job_id=job_id)
@@ -196,7 +196,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     args=execute_meta)
                 await self.task_pool.report_result(job_id=job_id,
                                                     round=round,
-                                                    result=results)
+                                                    result=results,
+                                                    is_train=False)
                 
             elif event == ROUND_FAIL:
                 # wait for all pending training task to complete                

@@ -345,7 +345,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                         if not agg_results["model_weight"]:
                             agg_results["model_weight"] = model_weight
                         else:
-                            agg_results["model_weight"] = [weight + model_weight[i] for i, weight in enumerate(agg_results["model_weight"])]
+                            agg_results["model_weight"] = [weight + model_weight[i] 
+                                                           for i, weight in enumerate(agg_results["model_weight"])]
                         agg_results["moving_loss"] += results["moving_loss"]
                         agg_results["trained_size"] += results["trained_size"]
 
