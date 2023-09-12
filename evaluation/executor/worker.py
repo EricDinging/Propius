@@ -323,7 +323,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 job_id = task_conf["job_id"]
                 model = self.job_id_model_adapter_map[job_id].get_model()
                 round = task_conf["round"]
-                key = task_conf["task_id"]
+                task_id = task_conf["task_id"]
 
                 self.logger.print(f"Worker {self.id}: executing job {job_id}-{round} {event}, Client {client_id_list}", INFO)
                 if event == CLIENT_TRAIN:
@@ -366,7 +366,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                         for key, value in results.items():
                             agg_results[key] += value
 
-                self.task_finished[job_id][key] = agg_results
+                self.task_finished[job_id][task_id] = agg_results
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:

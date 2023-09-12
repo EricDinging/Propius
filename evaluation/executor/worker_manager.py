@@ -171,7 +171,8 @@ class Worker_manager:
 
                 if event == CLIENT_TRAIN:
                     model_param = results["model_weight"]
-                
+                    del results["model_weight"]
+                    
                     agg_weight = self.job_id_agg_weight_map[job_id]
                     if not self.job_id_agg_weight_map[job_id]:
                         agg_weight = model_param
