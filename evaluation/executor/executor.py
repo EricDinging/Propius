@@ -189,7 +189,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 
             elif event == AGGREGATE_TEST:
                 await self.wait_for_testing_task(job_id=job_id)
-                results = await self.worker.execute(event=AGGREGATE,
+                results = await self.worker.execute(event=AGGREGATE_TEST,
                                                     job_id=job_id,
                                                     client_id_list=[],
                                                     round=round,
