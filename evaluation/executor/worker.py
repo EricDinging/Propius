@@ -181,16 +181,13 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         return executor_pb2.ack(ack=ack)
         
     async def TASK_REGIST(self, request, context):
-        job_id, round = request.job_id, request.round
-        client_id_list = pickle.load(request.client_id_list)
-        event = request.event
-        task_id = request.task_id
+        client_id_list = pickle.loads(request.client_id_list)
         conf = pickle.loads(request.task_meta)
-        conf["job_id"] = job_id
+        conf["job_id"] = request.job_id
         conf["client_id_list"] = client_id_list
-        conf["event"] = event
-        conf["round"] = round
-        conf["task_id"] = task_id
+        conf["event"] = request.event
+        conf["round"] = request.round
+        conf["task_id"] = request.task_id
         self.task_to_do.append(conf)
         
         # self.logger.print(f"Worker {self.id}: recieve job {job_id} {event}{client_id}", INFO)
