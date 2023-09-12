@@ -112,7 +112,7 @@ class Task_pool:
 
                 if task_meta["event"] == CLIENT_TRAIN:
                     cnt = 0
-                    while self.job_task_dict[job_id] and cnt < 10:
+                    while self.job_task_dict[job_id] and cnt < 5:
                         task_meta = self.job_task_dict[job_id].popleft()
                         if task_meta["event"] != job_meta["event"] or\
                             task_meta["round"] != job_meta["round"]:

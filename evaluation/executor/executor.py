@@ -144,7 +144,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     self.job_train_task_dict[job_id] = []
                 self.job_train_task_dict[job_id].append(task)
 
-                if len(self.job_train_task_dict[job_id]) >= 10 * self.worker.worker_num:
+                if len(self.job_train_task_dict[job_id]) >= 5 * self.worker.worker_num:
                     await self.wait_for_training_task(job_id=job_id)
 
             elif event == MODEL_TEST:
@@ -170,7 +170,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                             args=execute_meta)
                     )
                     self.job_test_task_dict[job_id].append(task)
-                    if len(self.job_test_task_dict[job_id]) >= 10 * self.worker.worker_num:
+                    if len(self.job_test_task_dict[job_id]) >= 5 * self.worker.worker_num:
                         await self.wait_for_testing_task(job_id=job_id)
 
             elif event == AGGREGATE:
