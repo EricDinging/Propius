@@ -57,64 +57,26 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         # self.logger.print(f"Executer: job {job_id} {event} registered", INFO)
         return executor_pb2.ack(ack=True)
 
-    async def wait_for_testing_task(self, job_id:int, round: int, test_finish: bool=False):
-        if job_id not in self.job_test_task_dict or job_id not in self.aggregate_test_result_dict:
+    async def wait_for_testing_task(self, job_id:int, round: int):
+        if job_id not in self.job_test_task_dict:
             return
         task_list = self.job_test_task_dict[job_id]
         self.job_test_task_dict[job_id] = []
-        aggregate_test_result = self.aggregate_test_result_dict[job_id]['aggregate_test_result']
-
         if len(task_list) > 0:
             try:
                 completed, pending = await asyncio.wait(task_list,
                                                         timeout=self.round_timeout,
                                                         return_when=asyncio.ALL_COMPLETED)
-                test_num = 0
                 for task in completed:
                     try:
-                        results = await task
-                        if results is None:
-                            continue
-                        for key in aggregate_test_result.keys():
-                            aggregate_test_result[key] += results[key]
-                        
-                        test_num += 1
-                        
+                        await task
                     except Exception as e:
                         self.logger.print(e, ERROR)
-                
-                self.aggregate_test_result_dict[job_id]['num'] += test_num
-
             except Exception as e:
                 self.logger.print(e, ERROR)
-    
-        if test_finish:
-            try:
-                total_num = self.aggregate_test_result_dict[job_id]['num']
-                if aggregate_test_result["test_len"] > 0:
-                    aggregate_test_result["test_loss"] /= aggregate_test_result["test_len"]
-                    aggregate_test_result["acc"] /= total_num
-                    aggregate_test_result["acc_5"] /= total_num
 
-                    self.logger.print(f"Job {job_id} round {round} test client num: {total_num} "
-                                    f"result: {aggregate_test_result}", INFO)
-            
-                    await self.task_pool.report_result(job_id=job_id,
-                                                        round=round,
-                                                        result=aggregate_test_result)
-                
-                    self.aggregate_test_result_dict[job_id]['num'] = 0
-                    self.aggregate_test_result_dict[job_id]['aggregate_test_result'] = {
-                            "test_loss": 0,
-                            "acc": 0,
-                            "acc_5": 0,
-                            "test_len": 0
-                        }
-            except Exception as e:
-                self.logger.print(e, ERROR)
     
     async def wait_for_training_task(self, job_id:int, round: int):
-
         if job_id not in self.job_train_task_dict:
             return
         task_list = self.job_train_task_dict[job_id]
@@ -127,8 +89,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     return_when=asyncio.ALL_COMPLETED)
                 for task in completed:
                     try:
-                        results = await task
-                        self.logger.print(f"Job {job_id} round {round} {results}", INFO)
+                        await task
                     except Exception as e:
                         self.logger.print(e, ERROR)
                         
@@ -155,7 +116,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
 
             if event == JOB_FINISH:
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
-                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'], test_finish=True)
+                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 
@@ -163,20 +124,17 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     del self.job_train_task_dict[job_id]
                 if job_id in self.job_test_task_dict:
                     del self.job_test_task_dict[job_id]
-                if job_id in self.aggregate_test_result_dict:
-                    del self.aggregate_test_result_dict[job_id]
 
                 continue
             
             elif event == CLIENT_TRAIN:
                 # create asyncio task for testing task
-                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round']-1, test_finish=True)
-    
                 task = asyncio.create_task(
                     self.worker.execute(event=CLIENT_TRAIN,
                                           job_id=job_id,
                                           round=round,
                                           client_id_list=client_id_list,
+                                          round=round,
                                           args=execute_meta)
                 )
 
@@ -192,44 +150,63 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
 
                 if job_id not in self.job_test_task_dict:
                     self.job_test_task_dict[job_id] = []
-                for i in range(self.config["client_test_num"]):
+                
+                client_test_num = self.config["client_test_num"]
+                client_test_list = list(range(client_test_num))
+                worker_test_num = int(client_test_num / self.worker.worker_num)
+                for i in range(self.worker.worker_num):
+                    if i == self.worker.worker_num - 1:
+                        client_id_list = client_test_list[i*worker_test_num:-1]
+                    else:
+                        client_id_list = client_test_list[i*worker_test_num:(i+1)*worker_test_num]
+
                     task = asyncio.create_task(
                         self.worker.execute(event=MODEL_TEST,
                                             job_id=job_id,
+                                            client_id_list=client_id_list,
                                             round=round,
-                                            client_id=i,
                                             args=execute_meta)
                     )
                     self.job_test_task_dict[job_id].append(task)
                     if len(self.job_test_task_dict[job_id]) >= 10 * self.worker.worker_num:
-                        await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'], test_finish=False)
+                        await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
 
             elif event == AGGREGATE:
                 # wait for all pending training task to complete
                 
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
                 self.logger.print(f"Execute job {job_id} round {execute_meta['round']} aggregate", INFO)
-                await self.worker.execute(event=AGGREGATE,
+                results = await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
-                                                    client_id=-1,
+                                                    client_id_list=[],
+                                                    round=round,
                                                     args=execute_meta)
                 
-                # await self.task_pool.report_result(job_id=job_id,
-                #                                     round=execute_meta['round'],
-                #                                     result=results)
+                await self.task_pool.report_result(job_id=job_id,
+                                                    round=execute_meta['round'],
+                                                    result=results)
+                
+            elif event == AGGREGATE_TEST:
+                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'])
+                results = await self.worker.execute(event=AGGREGATE,
+                                                    job_id=job_id,
+                                                    client_id_list=[],
+                                                    round=round,
+                                                    args=execute_meta)
+                await self.task_pool.report_result(job_id=job_id,
+                                                    round=execute_meta['round'],
+                                                    result=results)
                 
             elif event == ROUND_FAIL:
-                # wait for all pending testing task to complete   
-                await self.wait_for_testing_task(job_id=job_id, round=execute_meta['round'], test_finish=True)
                 # wait for all pending training task to complete                
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
 
                 # clear aggregated weights for this round, no report generated
-                await self.worker.execute(event=AGGREGATE,
-                                                    job_id=job_id,
-                                                    client_id=-1,
-                                                    args=execute_meta, 
-                                                    abort=True)
+                await self.worker.execute(event=ROUND_FAIL,
+                                            job_id=job_id,
+                                            client_id_list=[],
+                                            round=round,
+                                            args=execute_meta,)
     
 async def run(config, logger):
     async def server_graceful_shutdown():

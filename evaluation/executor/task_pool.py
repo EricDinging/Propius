@@ -48,7 +48,7 @@ class Task_pool:
                 break
             
     async def insert_job_task(self, job_id: int, client_id: int, round: int, event: str, task_meta: dict):
-        """event: {CLIENT_TRAIN, AGGREGATE, FINISH}
+        """event: {CLIENT_TRAIN, AGGREGATE, FINISH, ROUND_FAIL}
         """
         task_meta["client_id"] = client_id
         task_meta["round"] = round
@@ -62,27 +62,28 @@ class Task_pool:
                 self._pop_failed_task(job_id, round)
 
             test_task_meta = {
-                    "client_id": -1,
-                    "round": task_meta["round"],
-                    "event": MODEL_TEST,
-                    "test_ratio": self.config["test_ratio"],
-                    "test_bsz": self.config["test_bsz"]
-                }
+                "client_id": -1,
+                "round": task_meta["round"],
+                "event": MODEL_TEST,
+                "test_ratio": self.config["test_ratio"],
+                "test_bsz": self.config["test_bsz"]
+            }
+            
+            agg_test_meta = {
+                "client_id": -1,
+                "round": task_meta["round"],
+                "event": AGGREGATE_TEST,
+            }
             
             if event == JOB_FINISH:
                 self.job_task_dict[job_id].append(test_task_meta)
+                self.job_task_dict[job_id].append(agg_test_meta)
 
             self.job_task_dict[job_id].append(task_meta)
 
             if event == AGGREGATE and round % self.config["eval_interval"] == 0:
-                test_task_meta = {
-                    "client_id": -1,
-                    "round": task_meta["round"],
-                    "event": MODEL_TEST,
-                    "test_ratio": self.config["test_ratio"],
-                    "test_bsz": self.config["test_bsz"]
-                }
                 self.job_task_dict[job_id].append(test_task_meta)
+                self.job_task_dict[job_id].append(agg_test_meta)
 
 
     async def get_next_task(self)->dict:
@@ -93,7 +94,7 @@ class Task_pool:
             for _ in range(job_num):
                 job_meta = copy.deepcopy(self.job_meta_list[0])
                 job_id = job_meta["job_id"]
-                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 10:
+                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 5:
                     task_meta = self.job_task_dict[job_id].popleft()
                     job_meta["client_id_list"] = [task_meta["client_id"]]
                     job_meta["round"] = task_meta["round"]
@@ -105,7 +106,7 @@ class Task_pool:
                             self.job_task_dict[job_id].appendleft(task_meta)
                             break
                         job_meta["client_id_list"].append(task_meta["client_id"])
-                        
+
                     self.select_time += 1
                     return job_meta
                 

@@ -217,12 +217,12 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
                     return result_msg
                 
-            result_msg = executor_pb2.worker_task_result(
-                ack=False,
-                result_data=pickle.dumps(DUMMY_RESPONSE),
-            )
-            self.logger.print(f"Worker {self.id}: job {job_id} {task_id} retrieval fail", WARNING)
-            return result_msg
+        result_msg = executor_pb2.worker_task_result(
+            ack=False,
+            result_data=pickle.dumps(DUMMY_RESPONSE),
+        )
+        self.logger.print(f"Worker {self.id}: job {job_id} {task_id} retrieval fail", WARNING)
+        return result_msg
     
     async def HEART_BEAT(self, request, context):
         async with self.lock:

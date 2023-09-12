@@ -181,9 +181,7 @@ class Worker_manager:
                             agg_weight = model_param
                         else:
                             agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
-                        self.job_id_agg_weight_map[job_id] = agg_weight
 
-                        del results["model_weight"]
                         for key, value in results.items():
                             self.job_id_agg_meta[key] += value
                 
@@ -193,8 +191,6 @@ class Worker_manager:
                         for key, value in results:
                             agg_test_result[key] += value
                             
-                        
-            
             elif event == AGGREGATE:
                 async with self.lock:
                     agg_weight = self.job_id_agg_weight_map[job_id]
