@@ -179,11 +179,11 @@ class Worker_manager:
                         agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
 
                     for key, value in results.items():
-                        self.job_id_agg_meta[key] += value
+                        self.job_id_agg_meta[job_id][key] += value
                 
                 elif event == MODEL_TEST:
                     agg_test_result = self.job_id_agg_test_map[job_id]
-                    for key, value in results:
+                    for key, value in results.items():
                         agg_test_result[key] += value
                             
             elif event == AGGREGATE:
