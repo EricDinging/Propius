@@ -11,6 +11,7 @@ CLIENT_TRAIN = 'client_train'
 DUMMY_EVENT = 'dummy_event'
 UPLOAD_MODEL = 'upload_model'
 AGGREGATE = 'aggregate'
+AGGREGATE_TEST = 'agg_test'
 ROUND_FAIL = 'round_fail'
 JOB_FINISH = 'finish'
 

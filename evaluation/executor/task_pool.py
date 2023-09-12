@@ -93,10 +93,22 @@ class Task_pool:
             for _ in range(job_num):
                 job_meta = copy.deepcopy(self.job_meta_list[0])
                 job_id = job_meta["job_id"]
-                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 50:
-                    job_meta.update(self.job_task_dict[job_id].popleft())
+                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 10:
+                    task_meta = self.job_task_dict[job_id].popleft()
+                    job_meta["client_id_list"] = [task_meta["client_id"]]
+                    job_meta["round"] = task_meta["round"]
+                    job_meta["event"] = task_meta["event"]
+                    while self.job_task_dict[job_id]:
+                        task_meta = self.job_task_dict[job_id].popleft()
+                        if task_meta["event"] != job_meta["event"] or\
+                            task_meta["round"] != job_meta["round"]:
+                            self.job_task_dict[job_id].appendleft(task_meta)
+                            break
+                        job_meta["client_id_list"].append(task_meta["client_id"])
+                        
                     self.select_time += 1
                     return job_meta
+                
                 self.select_time = 0
                 self.job_meta_list.append(self.job_meta_list.popleft())
             return None

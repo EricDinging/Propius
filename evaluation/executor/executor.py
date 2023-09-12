@@ -29,21 +29,10 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         self.logger = logger
         self.job_train_task_dict = {}
         self.job_test_task_dict = {}
-        self.aggregate_test_result_dict = {}
 
     async def JOB_REGISTER(self, request, context):
         job_id = request.job_id
         job_meta = pickle.loads(request.job_meta)
-        if job_id not in self.aggregate_test_result_dict:
-            self.aggregate_test_result_dict[job_id] = {
-                    "num": 0,
-                    "aggregate_test_result": {
-                                                "test_loss": 0,
-                                                "acc": 0,
-                                                "acc_5": 0,
-                                                "test_len": 0
-                                            },
-                }
 
         model_size = await self.worker.init_job(job_id=job_id, 
                                    dataset_name=job_meta["dataset"],
@@ -155,12 +144,14 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 continue
             
             job_id = execute_meta['job_id']
-            client_id = execute_meta['client_id']
+            client_id_list = execute_meta['client_id_list']
             event = execute_meta['event']
+            round = execute_meta['round']
 
             del execute_meta['job_id']
-            del execute_meta['client_id']
+            del execute_meta['client_id_list']
             del execute_meta['event']
+            del execute_meta['round']
 
             if event == JOB_FINISH:
                 await self.wait_for_training_task(job_id=job_id, round=execute_meta['round'])
@@ -184,7 +175,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 task = asyncio.create_task(
                     self.worker.execute(event=CLIENT_TRAIN,
                                           job_id=job_id,
-                                          client_id=client_id,
+                                          round=round,
+                                          client_id_list=client_id_list,
                                           args=execute_meta)
                 )
 
@@ -204,6 +196,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     task = asyncio.create_task(
                         self.worker.execute(event=MODEL_TEST,
                                             job_id=job_id,
+                                            round=round,
                                             client_id=i,
                                             args=execute_meta)
                     )

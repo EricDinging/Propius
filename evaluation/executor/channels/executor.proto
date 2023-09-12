@@ -51,9 +51,10 @@ message job_task_info {
 message worker_task {
     int32 job_id = 1;
     int32 round = 2;
-    bytes client_id_list = 3;
-    string event = 4;
-    bytes task_meta = 5;
+    int32 task_id = 3;
+    bytes client_id_list = 4;
+    string event = 5;
+    bytes task_meta = 6;
 }
 
 message worker_task_info {

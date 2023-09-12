@@ -187,11 +187,13 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         job_id, round = request.job_id, request.round
         client_id_list = pickle.load(request.client_id_list)
         event = request.event
+        task_id = request.task_id
         conf = pickle.loads(request.task_meta)
         conf["job_id"] = job_id
         conf["client_id_list"] = client_id_list
         conf["event"] = event
         conf["round"] = round
+        conf["task_id"] = task_id
         async with self.lock:
             self.task_to_do.append(conf)
         
@@ -373,7 +375,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                         agg_results["cnt"] += 1
                         for key, value in results.items():
                             agg_results[key] += value
-                            
+
                 async with self.lock:
                     self.task_finished[job_id][key] = agg_results
             except KeyboardInterrupt:
