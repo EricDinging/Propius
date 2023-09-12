@@ -21,7 +21,6 @@ class Worker_manager:
         self.job_id_agg_meta = {}
         self.job_id_agg_test_map = {}
         self.logger = logger
-        self.lock = asyncio.Lock()
         self._setup_seed()
         self.config = config
         self.worker_num = len(config["worker"])
@@ -59,12 +58,11 @@ class Worker_manager:
 
 
     async def remove_job(self, job_id: int):
-        async with self.lock:
-            if job_id in self.job_id_agg_weight_map:
-                del self.job_id_agg_weight_map[job_id]
-                del self.job_id_agg_meta[job_id]
-            if job_id in self.job_id_agg_test_map:
-                del self.job_id_agg_test_map[job_id]
+        if job_id in self.job_id_agg_weight_map:
+            del self.job_id_agg_weight_map[job_id]
+            del self.job_id_agg_meta[job_id]
+        if job_id in self.job_id_agg_test_map:
+            del self.job_id_agg_test_map[job_id]
         
         job_info_msg = executor_pb2.job_info(
             job_id=job_id,
@@ -102,16 +100,15 @@ class Worker_manager:
         for worker_stub in self.worker_stub_dict.values():
             await worker_stub.INIT(job_init_msg)
         
-        async with self.lock:
-            self.job_id_agg_weight_map[job_id] = []
-            self.job_id_agg_meta[job_id] = {"cnt": 0, "moving_loss": 0, "trained_size": 0}
-            self.job_id_agg_test_map[job_id] = {
-                "cnt": 0,
-                "test_loss": 0,
-                "acc": 0,
-                "acc_5": 0,
-                "test_len": 0
-            }
+        self.job_id_agg_weight_map[job_id] = []
+        self.job_id_agg_meta[job_id] = {"cnt": 0, "moving_loss": 0, "trained_size": 0}
+        self.job_id_agg_test_map[job_id] = {
+            "cnt": 0,
+            "test_loss": 0,
+            "acc": 0,
+            "acc_5": 0,
+            "test_len": 0
+        }
         
         self.logger.print(f"Worker manager: init job {job_id} success", INFO)
 
@@ -137,12 +134,11 @@ class Worker_manager:
         try:
             results = None
             if event == CLIENT_TRAIN or event == MODEL_TEST:
-                async with self.lock:
-                    task_id = self.num_task
-                    self.num_task += 1
+                task_id = self.num_task
+                self.num_task += 1
 
-                    self.cur_worker = (self.cur_worker + 1) % self.worker_num
-                    cur_worker = self.cur_worker
+                self.cur_worker = (self.cur_worker + 1) % self.worker_num
+                cur_worker = self.cur_worker
 
                 job_task_msg = executor_pb2.worker_task(
                     job_id=job_id,
@@ -155,7 +151,7 @@ class Worker_manager:
 
                 await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
                 ping_num = 0
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1)
                 while True:
                     ping_msg = executor_pb2.worker_task_info(
                         job_id=job_id,
@@ -175,78 +171,73 @@ class Worker_manager:
 
                 if event == CLIENT_TRAIN:
                     model_param = results["model_weight"]
-                    async with self.lock:
-                        agg_weight = self.job_id_agg_weight_map[job_id]
-                        if not self.job_id_agg_weight_map[job_id]:
-                            agg_weight = model_param
-                        else:
-                            agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
+                
+                    agg_weight = self.job_id_agg_weight_map[job_id]
+                    if not self.job_id_agg_weight_map[job_id]:
+                        agg_weight = model_param
+                    else:
+                        agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
 
-                        for key, value in results.items():
-                            self.job_id_agg_meta[key] += value
+                    for key, value in results.items():
+                        self.job_id_agg_meta[key] += value
                 
                 elif event == MODEL_TEST:
-                    async with self.lock:
-                        agg_test_result = self.job_id_agg_test_map[job_id]
-                        for key, value in results:
-                            agg_test_result[key] += value
+                    agg_test_result = self.job_id_agg_test_map[job_id]
+                    for key, value in results:
+                        agg_test_result[key] += value
                             
             elif event == AGGREGATE:
-                async with self.lock:
-                    agg_weight = self.job_id_agg_weight_map[job_id]
-                    cnt = self.job_id_agg_meta[job_id]["cnt"]
-                    results = self.job_id_agg_meta[job_id]
-                    if cnt > 0:
-                        agg_weight = [np.divide(weight, cnt) for weight in agg_weight]
+                agg_weight = self.job_id_agg_weight_map[job_id]
+                cnt = self.job_id_agg_meta[job_id]["cnt"]
+                results = self.job_id_agg_meta[job_id]
+                if cnt > 0:
+                    agg_weight = [np.divide(weight, cnt) for weight in agg_weight]
 
-                        job_weight_msg = executor_pb2.job_weight(
-                            job_id = job_id,
-                            job_data = pickle.dumps(agg_weight)
-                        )
+                    job_weight_msg = executor_pb2.job_weight(
+                        job_id = job_id,
+                        job_data = pickle.dumps(agg_weight)
+                    )
 
-                        for worker_id, worker_stub in self.worker_stub_dict.items():
-                            ack_msg = await worker_stub.UPDATE(job_weight_msg)
-                            if not ack_msg.ack:
-                                self.logger.print(f"Update model weight to worker {worker_id} failed", ERROR)
+                    for worker_id, worker_stub in self.worker_stub_dict.items():
+                        ack_msg = await worker_stub.UPDATE(job_weight_msg)
+                        if not ack_msg.ack:
+                            self.logger.print(f"Update model weight to worker {worker_id} failed", ERROR)
 
-                        results["avg_moving_loss"] = results["moving_loss"] / cnt
-                    self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
-                    self.job_id_agg_weight_map[job_id] = None
+                    results["avg_moving_loss"] = results["moving_loss"] / cnt
+                self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
+                self.job_id_agg_weight_map[job_id] = None
 
                 results = {AGGREGATE: results}
             
             elif event == AGGREGATE_TEST:
-                async with self.lock:
-                    agg_test = self.job_id_agg_test_map[job_id]
-                    cnt = agg_test["cnt"]
-                    test_len = agg_test["test_len"]
-                    agg_test["test_loss"] /= test_len if test_len > 0 else 0
-                    agg_test["acc"] /= cnt if cnt > 0 else 0
-                    agg_test["acc_5"] /= cnt if cnt > 0 else 0
+                agg_test = self.job_id_agg_test_map[job_id]
+                cnt = agg_test["cnt"]
+                test_len = agg_test["test_len"]
+                agg_test["test_loss"] /= test_len if test_len > 0 else 0
+                agg_test["acc"] /= cnt if cnt > 0 else 0
+                agg_test["acc_5"] /= cnt if cnt > 0 else 0
 
-                    self.job_id_agg_test_map[job_id] = {
-                        "cnt": 0,
-                        "acc": 0,
-                        "acc_5": 0,
-                        "test_len": 0,
-                        "cnt": 0
-                    }
+                self.job_id_agg_test_map[job_id] = {
+                    "cnt": 0,
+                    "acc": 0,
+                    "acc_5": 0,
+                    "test_len": 0,
+                    "cnt": 0
+                }
 
                 results = {MODEL_TEST: agg_test}
 
             elif event == ROUND_FAIL:
-                async with self.lock:
-                    self.job_id_agg_test_map[job_id] = {
-                        "cnt": 0,
-                        "acc": 0,
-                        "acc_5": 0,
-                        "test_len": 0,
-                        "cnt": 0
-                    }
+                self.job_id_agg_test_map[job_id] = {
+                    "cnt": 0,
+                    "acc": 0,
+                    "acc_5": 0,
+                    "test_len": 0,
+                    "cnt": 0
+                }
 
-                    self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
-                    self.job_id_agg_weight_map[job_id] = None
-
+                self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
+                self.job_id_agg_weight_map[job_id] = None
 
         except Exception as e:
             self.logger.print(e, ERROR)

@@ -8,26 +8,24 @@ import os
 
 class Task_pool:
     def __init__(self, config):
-        self.lock = asyncio.Lock()
         self.job_meta_list = deque()
         self.job_task_dict = {}
         self.config = config
         self.select_time = 0
 
     async def init_job(self, job_id: int, job_meta: dict):
-        async with self.lock:
-            job_meta["job_id"] = job_id
-            self.job_meta_list.append(job_meta)
+        job_meta["job_id"] = job_id
+        self.job_meta_list.append(job_meta)
 
-            self.job_task_dict[job_id] = deque()
-            test_task_meta = {
-                "client_id": random.randint(0, 10000),
-                "round": 0,
-                "event": MODEL_TEST,
-                "test_ratio": self.config["test_ratio"],
-                "test_bsz": self.config["test_bsz"]
-            }
-            self.job_task_dict[job_id].append(test_task_meta)
+        self.job_task_dict[job_id] = deque()
+        test_task_meta = {
+            "client_id": random.randint(0, 10000),
+            "round": 0,
+            "event": MODEL_TEST,
+            "test_ratio": self.config["test_ratio"],
+            "test_bsz": self.config["test_bsz"]
+        }
+        self.job_task_dict[job_id].append(test_task_meta)
 
         test_csv_file_name = f"./evaluation/monitor/executor/test_{job_id}_{self.config['sched_alg']}.csv"
         os.makedirs(os.path.dirname(test_csv_file_name), exist_ok=True)
@@ -37,7 +35,6 @@ class Task_pool:
             writer.writeheader()
 
     def _pop_failed_task(self, job_id: int, round: int):
-        #locked
         task_list = self.job_task_dict[job_id]
         while task_list:
             task = task_list.pop()
@@ -54,51 +51,50 @@ class Task_pool:
         task_meta["round"] = round
         task_meta["event"] = event
         
-        async with self.lock:
-            if job_id not in self.job_task_dict:
-                return
-            
-            if event == ROUND_FAIL:
-                self._pop_failed_task(job_id, round)
+        if job_id not in self.job_task_dict:
+            return
+        
+        if event == ROUND_FAIL:
+            self._pop_failed_task(job_id, round)
 
-            test_task_meta = {
-                "client_id": -1,
-                "round": task_meta["round"],
-                "event": MODEL_TEST,
-                "test_ratio": self.config["test_ratio"],
-                "test_bsz": self.config["test_bsz"]
-            }
-            
-            agg_test_meta = {
-                "client_id": -1,
-                "round": task_meta["round"],
-                "event": AGGREGATE_TEST,
-            }
-            
-            if event == JOB_FINISH:
-                self.job_task_dict[job_id].append(test_task_meta)
-                self.job_task_dict[job_id].append(agg_test_meta)
+        test_task_meta = {
+            "client_id": -1,
+            "round": task_meta["round"],
+            "event": MODEL_TEST,
+            "test_ratio": self.config["test_ratio"],
+            "test_bsz": self.config["test_bsz"]
+        }
+        
+        agg_test_meta = {
+            "client_id": -1,
+            "round": task_meta["round"],
+            "event": AGGREGATE_TEST,
+        }
+        
+        if event == JOB_FINISH:
+            self.job_task_dict[job_id].append(test_task_meta)
+            self.job_task_dict[job_id].append(agg_test_meta)
 
-            self.job_task_dict[job_id].append(task_meta)
+        self.job_task_dict[job_id].append(task_meta)
 
-            if event == AGGREGATE and round % self.config["eval_interval"] == 0:
-                self.job_task_dict[job_id].append(test_task_meta)
-                self.job_task_dict[job_id].append(agg_test_meta)
+        if event == AGGREGATE and round % self.config["eval_interval"] == 0:
+            self.job_task_dict[job_id].append(test_task_meta)
+            self.job_task_dict[job_id].append(agg_test_meta)
 
 
     async def get_next_task(self)->dict:
         """Get next task, prioritize previous job id if there is still task left for the job
         """
-        async with self.lock:
-            job_num = len(self.job_meta_list)
-            for _ in range(job_num):
-                job_meta = copy.deepcopy(self.job_meta_list[0])
-                job_id = job_meta["job_id"]
-                if len(self.job_task_dict[job_id]) > 0 and self.select_time < 5:
-                    task_meta = self.job_task_dict[job_id].popleft()
-                    job_meta["client_id_list"] = [task_meta["client_id"]]
-                    job_meta["round"] = task_meta["round"]
-                    job_meta["event"] = task_meta["event"]
+        job_num = len(self.job_meta_list)
+        for _ in range(job_num):
+            job_meta = copy.deepcopy(self.job_meta_list[0])
+            job_id = job_meta["job_id"]
+            if len(self.job_task_dict[job_id]) > 0 and self.select_time < 5:
+                task_meta = self.job_task_dict[job_id].popleft()
+                job_meta["client_id_list"] = [task_meta["client_id"]]
+                job_meta["round"] = task_meta["round"]
+                job_meta["event"] = task_meta["event"]
+                if task_meta["event"] == CLIENT_TRAIN:
                     while self.job_task_dict[job_id]:
                         task_meta = self.job_task_dict[job_id].popleft()
                         if task_meta["event"] != job_meta["event"] or\
@@ -107,29 +103,27 @@ class Task_pool:
                             break
                         job_meta["client_id_list"].append(task_meta["client_id"])
 
-                    self.select_time += 1
-                    return job_meta
-                
-                self.select_time = 0
-                self.job_meta_list.append(self.job_meta_list.popleft())
-            return None
+                self.select_time += 1
+                return job_meta
+            
+            self.select_time = 0
+            self.job_meta_list.append(self.job_meta_list.popleft())
+        return None
         
     async def remove_job(self, job_id: int):
-        async with self.lock:
+        try:
+            temp_deque = deque()
+            while self.job_meta_list:
+                job_meta = self.job_meta_list.popleft()
+                if job_meta["job_id"] == job_id:
+                    break
+                temp_deque.append(job_meta)
+            while temp_deque:
+                self.job_meta_list.appendleft(temp_deque.pop())
 
-            try:
-                temp_deque = deque()
-                while self.job_meta_list:
-                    job_meta = self.job_meta_list.popleft()
-                    if job_meta["job_id"] == job_id:
-                        break
-                    temp_deque.append(job_meta)
-                while temp_deque:
-                    self.job_meta_list.appendleft(temp_deque.pop())
-
-                del self.job_task_dict[job_id]
-            except:
-                pass
+            del self.job_task_dict[job_id]
+        except:
+            pass
 
     
     async def report_result(self, job_id: int, round: int, result: dict):
