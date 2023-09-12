@@ -111,7 +111,7 @@ class Task_pool:
                         job_meta[key] = value
 
                 if task_meta["event"] == CLIENT_TRAIN:
-                    cnt = 0
+                    cnt = 1
                     while self.job_task_dict[job_id] and cnt < 5:
                         task_meta = self.job_task_dict[job_id].popleft()
                         if task_meta["event"] != job_meta["event"] or\
