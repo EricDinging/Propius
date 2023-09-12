@@ -114,6 +114,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             del execute_meta['event']
             del execute_meta['round']
 
+            self.logger.print(f"Execyte job {job_id}-{round}-{event}")
+
             if event == JOB_FINISH:
                 await self.wait_for_training_task(job_id=job_id, round=round)
                 await self.wait_for_testing_task(job_id=job_id, round=round)
