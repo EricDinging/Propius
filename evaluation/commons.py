@@ -57,7 +57,6 @@ MAX_MESSAGE_LENGTH = 1 * 1024 * 1024 * 1024  # 1GB
 
 
 from datetime import datetime
-import logging
 
 def get_time() -> str:
     current_time = datetime.now()

@@ -19,6 +19,8 @@ from torch.autograd import Variable
 import numpy as np
 import random
 import os
+import logging
+import logging.handlers
 import math
 import pickle
 
@@ -366,7 +368,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                         agg_results["cnt"] += 1
                         for key, value in results.items():
                             agg_results[key] += value
-                            
+
                 self.task_finished[job_id][key] = agg_results
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
