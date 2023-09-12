@@ -57,7 +57,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
         # self.logger.print(f"Executer: job {job_id} {event} registered", INFO)
         return executor_pb2.ack(ack=True)
 
-    async def wait_for_testing_task(self, job_id:int, round: int):
+    async def wait_for_testing_task(self, job_id:int):
         if job_id not in self.job_test_task_dict:
             return
         task_list = self.job_test_task_dict[job_id]
@@ -76,7 +76,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 self.logger.print(e, ERROR)
 
     
-    async def wait_for_training_task(self, job_id:int, round: int):
+    async def wait_for_training_task(self, job_id:int):
         if job_id not in self.job_train_task_dict:
             return
         task_list = self.job_train_task_dict[job_id]
@@ -118,8 +118,8 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                             f"list_size: {len(client_id_list)}", INFO)
 
             if event == JOB_FINISH:
-                await self.wait_for_training_task(job_id=job_id, round=round)
-                await self.wait_for_testing_task(job_id=job_id, round=round)
+                await self.wait_for_training_task(job_id=job_id)
+                await self.wait_for_testing_task(job_id=job_id)
                 await self.task_pool.remove_job(job_id=job_id)
                 await self.worker.remove_job(job_id=job_id)
                 
@@ -145,10 +145,10 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 self.job_train_task_dict[job_id].append(task)
 
                 if len(self.job_train_task_dict[job_id]) >= 10 * self.worker.worker_num:
-                    await self.wait_for_training_task(job_id=job_id, round=round)
+                    await self.wait_for_training_task(job_id=job_id)
 
             elif event == MODEL_TEST:
-                await self.wait_for_training_task(job_id=job_id, round=round)
+                await self.wait_for_training_task(job_id=job_id)
 
                 if job_id not in self.job_test_task_dict:
                     self.job_test_task_dict[job_id] = []
@@ -171,11 +171,11 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                     )
                     self.job_test_task_dict[job_id].append(task)
                     if len(self.job_test_task_dict[job_id]) >= 10 * self.worker.worker_num:
-                        await self.wait_for_testing_task(job_id=job_id, round=round)
+                        await self.wait_for_testing_task(job_id=job_id)
 
             elif event == AGGREGATE:
                 # wait for all pending training task to complete
-                await self.wait_for_training_task(job_id=job_id, round=round)
+                await self.wait_for_training_task(job_id=job_id)
                 self.logger.print(f"Execute job {job_id} round {round} aggregate", INFO)
                 results = await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
@@ -188,7 +188,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                                                     result=results)
                 
             elif event == AGGREGATE_TEST:
-                await self.wait_for_testing_task(job_id=job_id, round=round)
+                await self.wait_for_testing_task(job_id=job_id)
                 results = await self.worker.execute(event=AGGREGATE,
                                                     job_id=job_id,
                                                     client_id_list=[],
@@ -200,7 +200,7 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                 
             elif event == ROUND_FAIL:
                 # wait for all pending training task to complete                
-                await self.wait_for_training_task(job_id=job_id, round=round)
+                await self.wait_for_training_task(job_id=job_id)
 
                 # clear aggregated weights for this round, no report generated
                 await self.worker.execute(event=ROUND_FAIL,

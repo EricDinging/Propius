@@ -91,7 +91,7 @@ class Task_pool:
             job_id = job_meta["job_id"]
             if len(self.job_task_dict[job_id]) > 0 and self.select_time < 5:
                 task_meta = self.job_task_dict[job_id].popleft()
-                for key, value in task_meta:
+                for key, value in task_meta.items():
                     if key == "client_id":
                         job_meta["client_id_list"] = [value]
                     else:
