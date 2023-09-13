@@ -84,12 +84,14 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             total_demand=est_demand *
             est_total_round,
             total_round=est_total_round)
+        
         self.logger.print(f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
                      f", private constraint: {private_constraint}, demand: {est_demand}"
                      , INFO)
         if ack:
             await self.jm_monitor.job_register()
-            await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
+            if self.sched_alg != 'srdf' and self.sched_alg != 'srtf':
+                await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
         await self.jm_monitor.request()
         return propius_pb2.job_register_ack(id=job_id, ack=ack)
@@ -104,7 +106,9 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         job_id, demand = request.id, request.demand
         ack = self.job_db_portal.request(job_id=job_id, demand=demand)
-        
+        if self.sched_alg == 'srdf' or self.sched_alg == 'srtf':
+            await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
+
         self.logger.print(f"Job manager: ack job {job_id} round request: {ack}", INFO)
 
         await self.jm_monitor.request()
