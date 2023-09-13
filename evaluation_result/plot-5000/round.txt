@@ -1,0 +1,15 @@
+0-fifo - 231
+1-fifo - 239
+2-fifo - 249
+3-fifo - 166
+4-fifo - 164
+0-random - 228
+1-random - 239
+2-random - 248
+3-random - 165
+4-random - 167
+0-irs - 236
+1-irs - 234
+2-irs - 250
+3-irs - 162
+4-irs - 165

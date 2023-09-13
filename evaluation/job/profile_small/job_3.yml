@@ -1,6 +1,6 @@
 # Training and testing aggregator setting
-demand: 50
-total_round: 500
+demand: 100
+total_round: 200
 over_selection: 1.3
 
 # Training and testing client setting
@@ -13,11 +13,11 @@ local_steps: 20
 loss_decay: 0.2
 batch_size: 30
 
-gradient_policy: fed-yogi
-yogi_eta: 3.e-3
-yogi_tau: 1.e-8
-yogi_beta1: 0.9
-yogi_beta2: 0.99
+gradient_policy: fed-avg
+# yogi_eta: 3.e-3
+# yogi_tau: 1.e-8
+# yogi_beta1: 0.9
+# yogi_beta2: 0.99
 
 # Client constraints
 public_constraint:

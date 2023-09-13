@@ -1,0 +1,10 @@
+0-fifo - 154
+1-fifo - 85
+2-fifo - 50
+3-fifo - 165
+4-fifo - 167
+0-irs - 155
+1-irs - 89
+2-irs - 53
+3-irs - 161
+4-irs - 166

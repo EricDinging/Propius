@@ -1,4 +1,4 @@
-speedup_factor: 5
+speedup_factor: 2.5
 load_balancer_ip: localhost
 load_balancer_port: 50002
 
@@ -21,8 +21,8 @@ exec_timeout: 540
 
 # ---Simulation---
 
-client_num: 2500
-# client_num: 5000
+# client_num: 2500
+client_num: 5000
 # client_num: 15000
 client_test_num: 356 # max testing set size
 # client_validation_num: 1000
@@ -85,7 +85,7 @@ worker:
 # ---Testing---
 test_bsz: 20
 test_ratio: 1
-eval_interval: 10
+eval_interval: 5
 
 #FEMNIST
 femnist_data_dir: ./datasets/femnist
