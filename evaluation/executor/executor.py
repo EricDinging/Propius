@@ -118,15 +118,18 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
                             f"list_size: {len(client_id_list)}", INFO)
 
             if event == JOB_FINISH:
-                await self.wait_for_training_task(job_id=job_id)
-                await self.wait_for_testing_task(job_id=job_id)
-                await self.task_pool.remove_job(job_id=job_id)
-                await self.worker.remove_job(job_id=job_id)
-                
-                if job_id in self.job_train_task_dict:
-                    del self.job_train_task_dict[job_id]
-                if job_id in self.job_test_task_dict:
-                    del self.job_test_task_dict[job_id]
+                try:
+                    await self.wait_for_training_task(job_id=job_id)
+                    await self.wait_for_testing_task(job_id=job_id)
+                    await self.task_pool.remove_job(job_id=job_id)
+                    await self.worker.remove_job(job_id=job_id)
+                    
+                    if job_id in self.job_train_task_dict:
+                        del self.job_train_task_dict[job_id]
+                    if job_id in self.job_test_task_dict:
+                        del self.job_test_task_dict[job_id]
+                except Exception as e:
+                    self.logger.print(e, ERROR)
 
                 continue
             
@@ -176,39 +179,49 @@ class Executor(executor_pb2_grpc.ExecutorServicer):
             elif event == AGGREGATE:
                 # wait for all pending training task to complete
                 await self.wait_for_training_task(job_id=job_id)
-                results = await self.worker.execute(event=AGGREGATE,
-                                                    job_id=job_id,
-                                                    client_id_list=[],
-                                                    round=round,
-                                                    args=execute_meta)
+                try:
+                    results = await self.worker.execute(event=AGGREGATE,
+                                                        job_id=job_id,
+                                                        client_id_list=[],
+                                                        round=round,
+                                                        args=execute_meta)
                 
-                await self.task_pool.report_result(job_id=job_id,
+                    await self.task_pool.report_result(job_id=job_id,
                                                     round=round,
                                                     result=results,
                                                     is_train=True)
+                except Exception as e:
+                    self.logger.print(e, ERROR)
                 
             elif event == AGGREGATE_TEST:
                 await self.wait_for_testing_task(job_id=job_id)
-                results = await self.worker.execute(event=AGGREGATE_TEST,
-                                                    job_id=job_id,
-                                                    client_id_list=[],
-                                                    round=round,
-                                                    args=execute_meta)
-                await self.task_pool.report_result(job_id=job_id,
-                                                    round=round,
-                                                    result=results,
-                                                    is_train=False)
+                try:
+                    results = await self.worker.execute(event=AGGREGATE_TEST,
+                                                        job_id=job_id,
+                                                        client_id_list=[],
+                                                        round=round,
+                                                        args=execute_meta)
+                    await self.task_pool.report_result(job_id=job_id,
+                                                        round=round,
+                                                        result=results,
+                                                        is_train=False)
+                except Exception as e:
+                    self.logger.print(e, ERROR)
                 
             elif event == ROUND_FAIL:
                 # wait for all pending training task to complete                
                 await self.wait_for_training_task(job_id=job_id)
 
                 # clear aggregated weights for this round, no report generated
-                await self.worker.execute(event=ROUND_FAIL,
-                                            job_id=job_id,
-                                            client_id_list=[],
-                                            round=round,
-                                            args=execute_meta,)
+
+                try:
+                    await self.worker.execute(event=ROUND_FAIL,
+                                                job_id=job_id,
+                                                client_id_list=[],
+                                                round=round,
+                                                args=execute_meta,)
+                except Exception as e:
+                    self.logger.print(e, ERROR)
     
 async def run(config, logger):
     async def server_graceful_shutdown():
