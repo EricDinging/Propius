@@ -7,6 +7,7 @@ import csv
 
 folder_path = input("Enter the folder path containing CSV files: ")
 
+
 if not os.path.exists(folder_path):
     raise FileNotFoundError("The specified folder does not exist.")
 def read_last_line(csv_file):
@@ -17,12 +18,16 @@ def read_last_line(csv_file):
         resp_time = 0
         last_row = None
         for row in csv_reader:
-            print(row)
+            # print(row)
             if row[0] == "-1":
+                print(row)
                 round_time = float(last_row[1])
                 sched_time = float(row[2])
                 resp_time = float(row[3])
+                break
             last_row = row
+
+        return (round_time, sched_time, resp_time)
 
 def read_first(round, csv_file):
     with open(csv_file, 'r', newline='') as file:

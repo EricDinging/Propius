@@ -6,13 +6,16 @@ import matplotlib.pyplot as plt
 
 time_cutoff = 500000
 round_cutoff = 200
-sched_alg_list = ['fifo', 
+sched_alg_list = [
+    # 'fifo', 
                   'random', 
                   'irs']
-job_folder = ['./evaluation_result/fifo-3000-2/job',
+job_folder = [
+    # './evaluation_result/fifo-3000-2/job',
               './evaluation_result/random-3000-2/job',
               './evaluation_result/irs-3000-2/job']
-execute_folder = ['./evaluation_result/fifo-3000-2/executor',
+execute_folder = [
+    # './evaluation_result/fifo-3000-2/executor',
                   './evaluation_result/random-3000-2/executor',
                   './evaluation_result/irs-3000-2/executor']
 
@@ -20,7 +23,7 @@ execute_folder = ['./evaluation_result/fifo-3000-2/executor',
 
 plot_folder = f'./evaluation_result/plot-3000-2'
 line_styles = [
-            '-.', 
+            # '-.', 
                ':', 
                '-']
 # color_list = ['grey',  'blueviolet', 'gold', 'darkorange','teal', 'skyblue' ,'darkblue', 'blueviolet']
@@ -100,8 +103,8 @@ for i, sched_alg in enumerate(sched_alg_list):
 plt.xlabel('Time (seconds)')
 plt.ylabel('Accuracy')
 # plt.title(f'Femnist Job Time to Accuracy under Various Scheduling Policies')
-plt.ylim([0.6, 0.8])
-plt.xlim([10000, 20000])
+# plt.ylim([0.6, 0.8])
+# plt.xlim([10000, 20000])
 plt.grid(True)
 plt.legend()
 
