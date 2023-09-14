@@ -22,7 +22,7 @@ exec_timeout: 540
 # ---Simulation---
 
 # client_num: 2500
-client_num: 5000
+client_num: 2000
 # client_num: 15000
 client_test_num: 356 # max testing set size
 # client_validation_num: 1000

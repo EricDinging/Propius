@@ -46,3 +46,4 @@ experiment/*
 *.csv
 *.log
 math/
+evaluation_result/

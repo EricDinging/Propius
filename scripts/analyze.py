@@ -4,34 +4,36 @@ import yaml
 import re
 import matplotlib.pyplot as plt
 
-time_cutoff = 70000
-round_cutoff = 250
+time_cutoff = 500000
+round_cutoff = 200
 sched_alg_list = ['fifo', 
-                #   'random', 
+                  'random', 
                   'irs']
-job_folder = ['./evaluation_result/fifo-2500/job',
-            #   './evaluation_result/random-2500/job',
-              './evaluation_result/irs-2500/job']
-execute_folder = ['./evaluation_result/fifo-2500/executor',
-                #   './evaluation_result/random-2500/executor',
-                  './evaluation_result/irs-2500/executor']
+job_folder = ['./evaluation_result/fifo-3000-2/job',
+              './evaluation_result/random-3000-2/job',
+              './evaluation_result/irs-3000-2/job']
+execute_folder = ['./evaluation_result/fifo-3000-2/executor',
+                  './evaluation_result/random-3000-2/executor',
+                  './evaluation_result/irs-3000-2/executor']
 
-plot_folder = f'./evaluation_result/plot-2500'
+# client_num = [3000, 5000]
+
+plot_folder = f'./evaluation_result/plot-3000-2'
 line_styles = [
-            # '-.', 
+            '-.', 
                ':', 
                '-']
-colors = ['b', 'g', 'r', 'c', 'm']
-
+# color_list = ['grey',  'blueviolet', 'gold', 'darkorange','teal', 'skyblue' ,'darkblue', 'blueviolet']
+color_list = ['blueviolet', 'darkorange', 'teal', 'skyblue', 'darkblue']
 job_num = 5
 
 # test
 
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(10.8, 8))
 round_info_dict = {}
-for sched_alg in sched_alg_list:
-    for job_id in range(job_num):
-        round_info_dict[f"{job_id}-{sched_alg}"] = 0
+# for sched_alg in sched_alg_list:
+#     for job_id in range(job_num):
+#         round_info_dict[f"{job_id}-{sched_alg}"] = 0
 
 for i, sched_alg in enumerate(sched_alg_list):
     pattern = re.compile(f"test_(\d+)\_{sched_alg}.csv")
@@ -92,12 +94,14 @@ for i, sched_alg in enumerate(sched_alg_list):
             acc_list_dict[job_id] = acc_list
 
     for job_id in range(job_num):       
-        plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=f"{sched_alg}-{job_id}", color=colors[job_id], linestyle=line_styles[i])
+        plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=f"Job: {job_id}, sched. alg: {sched_alg}", color=color_list[job_id], linestyle=line_styles[i])
 
 
 plt.xlabel('Time (seconds)')
 plt.ylabel('Accuracy')
-plt.title(f'Femnist Job Time to Accuracy under Various Scheduling Policies')
+# plt.title(f'Femnist Job Time to Accuracy under Various Scheduling Policies')
+plt.ylim([0.6, 0.8])
+plt.xlim([10000, 20000])
 plt.grid(True)
 plt.legend()
 

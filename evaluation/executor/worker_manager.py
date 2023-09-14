@@ -204,9 +204,12 @@ class Worker_manager:
                     )
 
                     for worker_id, worker_stub in self.worker_stub_dict.items():
-                        ack_msg = await worker_stub.UPDATE(job_weight_msg)
-                        if not ack_msg.ack:
-                            self.logger.print(f"Update model weight to worker {worker_id} failed", ERROR)
+                        try:
+                            ack_msg = await worker_stub.UPDATE(job_weight_msg)
+                            if not ack_msg.ack:
+                                self.logger.print(f"Update model weight to worker {worker_id} failed", ERROR)
+                        except Exception as e:
+                            self.logger.print(e, ERROR)
 
                     agg_results["avg_moving_loss"] = agg_results["moving_loss"] / cnt
                 
