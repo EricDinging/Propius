@@ -6,23 +6,28 @@ import matplotlib.pyplot as plt
 
 time_cutoff = 70000
 round_cutoff = 250
-sched_alg_list = ['fifo', 'random', 'irs']
-job_folder = ['./evaluation_result/fifo-5000/job',
-              './evaluation_result/random-5000/job',
-              './evaluation_result/irs-5000/job']
-execute_folder = ['./evaluation_result/fifo-5000/executor',
-                  './evaluation_result/random-5000/executor',
-                  './evaluation_result/irs-5000/executor']
+sched_alg_list = ['fifo', 
+                #   'random', 
+                  'irs']
+job_folder = ['./evaluation_result/fifo-2500/job',
+            #   './evaluation_result/random-2500/job',
+              './evaluation_result/irs-2500/job']
+execute_folder = ['./evaluation_result/fifo-2500/executor',
+                #   './evaluation_result/random-2500/executor',
+                  './evaluation_result/irs-2500/executor']
 
-plot_folder = f'./evaluation_result/plot-5000'
-line_styles = ['-.', ':', '-']
+plot_folder = f'./evaluation_result/plot-2500'
+line_styles = [
+            # '-.', 
+               ':', 
+               '-']
 colors = ['b', 'g', 'r', 'c', 'm']
 
 job_num = 5
 
 # test
 
-plt.figure(figsize=(15, 9))
+plt.figure(figsize=(10, 6))
 round_info_dict = {}
 for sched_alg in sched_alg_list:
     for job_id in range(job_num):
