@@ -3,25 +3,32 @@ import csv
 import yaml
 import re
 import matplotlib.pyplot as plt
+import numpy as np
 
-time_cutoff = 500000
+time_cutoff = 20000
 round_cutoff = 200
 sched_alg_list = [
     # 'fifo', 
+                  'fifo',
+                #   'srdf',
                   'random', 
                   'irs']
 job_folder = [
-    # './evaluation_result/fifo-3000-2/job',
-              './evaluation_result/random-3000-2/job',
-              './evaluation_result/irs-3000-2/job']
+    # './evaluation_result/fifo-2500-2/job',
+              './evaluation_result/fifo-2500-2/job',
+            #   './evaluation_result/srdf-2500-2/job',
+              './evaluation_result/random-2500-2/job',
+              './evaluation_result/irs-2500-2/job']
 execute_folder = [
-    # './evaluation_result/fifo-3000-2/executor',
-                  './evaluation_result/random-3000-2/executor',
-                  './evaluation_result/irs-3000-2/executor']
+    # './evaluation_result/fifo-2500-2/executor',
+                  './evaluation_result/fifo-2500-2/executor',
+                #   './evaluation_result/srdf-2500-2/executor',
+                  './evaluation_result/random-2500-2/executor',
+                  './evaluation_result/irs-2500-2/executor']
 
-# client_num = [3000, 5000]
+# client_num = [2500, 5000]
 
-plot_folder = f'./evaluation_result/plot-3000-2'
+plot_folder = f'./evaluation_result/plot-2500-2'
 line_styles = [
             # '-.', 
                ':', 
@@ -96,8 +103,15 @@ for i, sched_alg in enumerate(sched_alg_list):
             round_time_list_dict[job_id] = time_stamp_list
             acc_list_dict[job_id] = acc_list
 
-    for job_id in range(job_num):       
-        plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=f"Job: {job_id}, sched. alg: {sched_alg}", color=color_list[job_id], linestyle=line_styles[i])
+
+    mean_x_axis = [i for i in range(time_cutoff)]
+    ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], acc_list_dict[j]) for j in range(job_num)]
+    mean_y_axis = np.mean(ys_interp, axis=0)
+
+    plt.plot(mean_x_axis, mean_y_axis, label=f"Sched. Alg.: {sched_alg}", color=color_list[i])
+
+   
+    # plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=f"Job: {job_id}, sched. alg: {sched_alg}", color=color_list[job_id], linestyle=line_styles[i])
 
 
 plt.xlabel('Time (seconds)')
@@ -108,7 +122,7 @@ plt.ylabel('Accuracy')
 plt.grid(True)
 plt.legend()
 
-output_plot_name = f'tta.png'
+output_plot_name = f'tta-avg.png'
 output_plot_path = os.path.join(plot_folder, output_plot_name)
 plt.savefig(output_plot_path)
 
