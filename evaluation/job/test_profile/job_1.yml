@@ -13,6 +13,9 @@ local_steps: 20
 loss_decay: 0.2
 batch_size: 30
 
+min_learning_rate: 5.e-5
+decay_factor: 0.98
+decay_round: 10
 
 gradient_policy: fed-yogi
 yogi_eta: 3.e-3
