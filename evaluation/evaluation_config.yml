@@ -83,7 +83,7 @@ worker:
     device: cuda:1
 
 # ---Testing---
-test_bsz: 20
+test_bsz: 128
 test_ratio: 1
 eval_interval: 5
 
