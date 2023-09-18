@@ -95,6 +95,13 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.execution_start = True
         self.sched_time = time.time() - self.sched_time
 
+    def _update_task_config(self):
+        if self.cur_round % self.config["decay_round"] == 0:
+            self.config["learning_rate"] = max(
+                self.config["learning_rate"] * self.config["decay_factor"],
+                self.config["min_learning_rate"]
+            )
+
     async def close_round(self):
         # locked
         custom_print(f"PS {self.id}-{self.cur_round}: round finish", INFO)
@@ -415,6 +422,7 @@ async def run(config):
             await ps.close_round()
             await ps.gen_round_report()
             ps.cur_round += 1
+            ps._update_task_config()
             
     custom_print(
         f"Parameter server: All round finished", INFO)
