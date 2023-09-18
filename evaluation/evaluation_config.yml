@@ -5,7 +5,7 @@ load_balancer_port: 50002
 job_manager_ip: localhost
 job_manager_port: 50001
 
-sched_alg: fifo
+sched_alg: random
 # sched_alg: random
 
 job_public_constraint:
@@ -22,7 +22,7 @@ exec_timeout: 540
 # ---Simulation---
 
 # client_num: 2500
-client_num: 2000
+client_num: 1000
 # client_num: 15000
 client_test_num: 356 # max testing set size
 # client_validation_num: 1000
@@ -35,7 +35,7 @@ client_size_path: './datasets/device_info/client_dataset_size'
 
 # profile_folder: './evaluation/job/dry_profile/'
 # profile_folder: './evaluation/job/profile/'
-profile_folder: './evaluation/job/profile_small/'
+profile_folder: './evaluation/job/test_profile/'
 
 # Job profile number
 # job_profile_num: 10
@@ -44,7 +44,7 @@ job_profile_num: 5
 
 # Job total number
 # total_job: 10
-total_job: 5
+total_job: 4
 
 # Job generation config
 avg_interval: 1800
