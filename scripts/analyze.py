@@ -20,20 +20,20 @@ job_folder = [
     # './evaluation_result/fifo-2500-2/job',
               # f'./evaluation_result/fifo-{version}/job',
             #   './evaluation_result/srdf-2500-2/job',
-              f'./evaluation_result/mobilenet_test/job',
+              f'./evaluation_result/mobilenet_test_2/job',
             #   f'./evaluation_result/irs-{version}/job'
               ]
 execute_folder = [
     # './evaluation_result/fifo-2500-2/executor',
                   # f'./evaluation_result/fifo-{version}/executor',
                 #   './evaluation_result/srdf-2500-2/executor',
-                  f'./evaluation_result/mobilenet_test/executor',
+                  f'./evaluation_result/mobilenet_test_2/executor',
                 #   f'./evaluation_result/irs-{version}/executor'
                   ]
 
 # client_num = [2500, 5000]
 
-plot_folder = f'./evaluation_result/plot-mobilenet'
+plot_folder = f'./evaluation_result/plot-mobilenet-2'
 line_styles = [
             # '-.', 
               #  ':', 
