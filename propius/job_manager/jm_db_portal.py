@@ -2,10 +2,10 @@ import redis
 from redis.commands.json.path import Path
 import time
 from propius.database import Job_db
-from propius.util.commons import Msg_level, My_logger
+from propius.util import Msg_level, Propius_logger
 
 class JM_job_db_portal(Job_db):
-    def __init__(self, gconfig: dict, logger: My_logger):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
         """Init job database portal class
 
         Args:

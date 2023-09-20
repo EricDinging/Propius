@@ -1,7 +1,6 @@
 """Distributor of client traffics to client managers."""
 
-from propius.util.commons import Msg_level, My_logger
-from propius.load_balancer.lb_monitor import LB_monitor
+from propius.util import Msg_level, Propius_logger
 from propius.load_balancer.load_balancer import Load_balancer
 from propius.channels import propius_pb2_grpc
 import yaml
@@ -42,7 +41,7 @@ if __name__ == '__main__':
     with open(global_setup_file, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            logger = My_logger(log_file=log_file, verbose=gconfig["verbose"], use_logging=True)
+            logger = Propius_logger(log_file=log_file, verbose=gconfig["verbose"], use_logging=True)
             logger.print(f"Load balancer read config successfully", Msg_level.INFO)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, logger))

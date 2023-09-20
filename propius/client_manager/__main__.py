@@ -2,7 +2,7 @@
 
 import sys
 import os
-from propius.util.commons import Msg_level, My_logger
+from propius.util import Msg_level, Propius_logger
 from propius.client_manager.client_manager import Client_manager
 from propius.channels import propius_pb2_grpc
 import yaml
@@ -11,7 +11,7 @@ import asyncio
 
 _cleanup_coroutines = []
 
-async def serve(gconfig, cm_id: int, logger: My_logger):
+async def serve(gconfig, cm_id: int, logger: Propius_logger):
     async def server_graceful_shutdown():
         logger.print(f"=====Client manager shutting down=====", Msg_level.WARNING)
         client_manager.cm_monitor.report(client_manager.cm_id)
@@ -39,7 +39,7 @@ if __name__ == '__main__':
             cm_id = int(sys.argv[1])
             log_file = f'./propius/monitor/log/cm_{cm_id}.log'
             os.makedirs(os.path.dirname(log_file), exist_ok=True)
-            logger = My_logger(log_file=log_file, verbose=gconfig['verbose'], use_logging=True)
+            logger = Propius_logger(log_file=log_file, verbose=gconfig['verbose'], use_logging=True)
             logger.print(f"Client manager {cm_id} read config successfully", Msg_level.INFO)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, cm_id, logger))

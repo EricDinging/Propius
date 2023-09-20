@@ -1,11 +1,10 @@
 import asyncio
-from propius.util.monitor import Monitor
-from propius.util.commons import Msg_level, My_logger, get_time
+from propius.util import Msg_level, Propius_logger, get_time, Monitor
 import os
 import matplotlib.pyplot as plt
 
 class CM_monitor(Monitor):
-    def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
+    def __init__(self, sched_alg: str, logger: Propius_logger, plot: bool=False):
         super().__init__("Client manager", logger, plot)
         self.sched_alg = sched_alg
         self.lock = asyncio.Lock()

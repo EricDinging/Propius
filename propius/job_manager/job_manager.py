@@ -1,6 +1,6 @@
 """FL Job Manager Class."""
 
-from propius.util.commons import Msg_level, My_logger
+from propius.util import Msg_level, Propius_logger
 from propius.job_manager.jm_monitor import JM_monitor
 from propius.job_manager.jm_db_portal import JM_job_db_portal
 from propius.channels import propius_pb2_grpc
@@ -10,7 +10,7 @@ import pickle
 import grpc
 
 class Job_manager(propius_pb2_grpc.Job_managerServicer):
-    def __init__(self, gconfig: dict, logger: My_logger):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
         """Init job manager class. Connect to scheduler server
 
         Args:
@@ -104,7 +104,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         if self.sched_alg == 'srdf' or self.sched_alg == 'srtf':
             await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
-        self.logger.print(f"Job manager: ack job {job_id} round request: {ack}", INFO)
+        self.logger.print(f"Job manager: ack job {job_id} round request: {ack}", Msg_level.INFO)
 
         await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)

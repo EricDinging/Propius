@@ -1,12 +1,11 @@
 import asyncio
 import time
 import matplotlib.pyplot as plt
-from propius.util.monitor import Monitor
-from propius.util.commons import Msg_level, My_logger, get_time
+from propius.util import Msg_level, Propius_logger, get_time, Monitor
 import os
 
 class JM_monitor(Monitor):
-    def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
+    def __init__(self, sched_alg: str, logger: Propius_logger, plot: bool=False):
         super().__init__("Job manager", logger, plot)
         self.lock = asyncio.Lock()
         self.sched_alg = sched_alg

@@ -1,15 +1,12 @@
 import redis
-from redis.commands.json.path import Path
-import redis.commands.search.reducers as reducers
-from redis.commands.search.field import TextField, NumericField, TagField
+from redis.commands.search.field import TextField, NumericField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-from redis.commands.search.query import NumericFilter, Query
 import time
-from propius.util.commons import *
+from propius.util import Propius_logger, Msg_level
 
 
 class Job_db:
-    def __init__(self, gconfig, is_jm: bool, logger: My_logger):
+    def __init__(self, gconfig, is_jm: bool, logger: Propius_logger):
         """Initialize job db portal
 
         Args:
@@ -142,7 +139,7 @@ class Job_db:
 
 
 class Client_db:
-    def __init__(self, gconfig, cm_id: int, is_cm: bool, logger: My_logger):
+    def __init__(self, gconfig, cm_id: int, is_cm: bool, logger: Propius_logger):
         """Initialize client db portal
 
         Args:

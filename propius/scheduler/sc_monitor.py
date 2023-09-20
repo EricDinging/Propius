@@ -1,13 +1,11 @@
-from propius.util.commons import *
-from propius.util.monitor import *
-import time
+from propius.util import get_time, Propius_logger, Monitor
+import matplotlib.pyplot as plt
 import asyncio
-import sys
 import os
 
 
 class SC_monitor(Monitor):
-    def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
+    def __init__(self, sched_alg: str, logger: Propius_logger, plot: bool=False):
         super().__init__("Scheduler", logger, plot)
         # self.job_size_latency_map = {}
         # self.job_request_map = {}

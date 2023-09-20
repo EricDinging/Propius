@@ -1,6 +1,6 @@
 """FL Edge Device (Client) Manager Class"""
 
-from propius.util.commons import My_logger, Msg_level
+from propius.util import Propius_logger, Msg_level
 from propius.client_manager.cm_monitor import CM_monitor
 from propius.client_manager.cm_db_portal import CM_client_db_portal, CM_job_db_portal
 from propius.channels import propius_pb2_grpc
@@ -9,7 +9,7 @@ import pickle
 import asyncio
 
 class Client_manager(propius_pb2_grpc.Client_managerServicer):
-    def __init__(self, gconfig, cm_id: int, logger: My_logger):
+    def __init__(self, gconfig, cm_id: int, logger: Propius_logger):
         """Initialize client db portal
 
         Args:

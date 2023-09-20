@@ -1,9 +1,9 @@
 import time
 import matplotlib.pyplot as plt
-from propius.util.commons import My_logger, Msg_level
+from propius.util.commons import Propius_logger, Msg_level
 
 class Monitor:
-    def __init__(self, server_name: str, logger: My_logger, plot: bool = False):
+    def __init__(self, server_name: str, logger: Propius_logger, plot: bool = False):
         self.start_time = int(time.time())
         self.plot = plot
         self.request_num_log = {}

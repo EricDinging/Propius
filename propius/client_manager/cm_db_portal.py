@@ -5,7 +5,7 @@ import time
 import json
 from propius.database import Job_db, Client_db
 import random
-from propius.util.commons import Msg_level, My_logger, geq
+from propius.util import Msg_level, Propius_logger, geq
 
 
 class CM_job_db_portal(Job_db):
@@ -141,7 +141,7 @@ class CM_job_db_portal(Job_db):
 
 
 class CM_client_db_portal(Client_db):
-    def __init__(self, gconfig, cm_id: int, logger: My_logger):
+    def __init__(self, gconfig, cm_id: int, logger: Propius_logger):
         """Initialize client db portal
 
         Args:

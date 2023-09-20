@@ -28,7 +28,7 @@ class Msg_level(Enum):
     WARNING = 3
     ERROR = 4
 
-class My_logger:
+class Propius_logger:
     def __init__(self, log_file:str=None, verbose:bool=True, use_logging:bool=True):
         self.verbose = verbose
         self.use_logging = logging

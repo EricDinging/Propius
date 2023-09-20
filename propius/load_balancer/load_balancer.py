@@ -1,6 +1,6 @@
 """Load Balancer class"""
 
-from propius.util.commons import Msg_level, My_logger
+from propius.util import Msg_level, Propius_logger
 from propius.load_balancer.lb_monitor import LB_monitor
 from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
@@ -8,7 +8,7 @@ import grpc
 import asyncio
 
 class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
-    def __init__(self, gconfig: dict, logger: My_logger):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
         self.gconfig = gconfig
         self.ip = gconfig['load_balancer_ip'] if not gconfig['use_docker'] else '0.0.0.0'
         self.port = gconfig['load_balancer_port']
