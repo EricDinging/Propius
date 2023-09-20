@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import evaluation.job.channels.parameter_server_pb2 as parameter__server__pb2
+import channels.parameter_server_pb2 as parameter__server__pb2
 
 
 class Parameter_serverStub(object):
@@ -14,6 +14,11 @@ class Parameter_serverStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.CLIENT_CHECKIN = channel.unary_unary(
+                '/parameter_server.Parameter_server/CLIENT_CHECKIN',
+                request_serializer=parameter__server__pb2.client_id.SerializeToString,
+                response_deserializer=parameter__server__pb2.server_response.FromString,
+                )
         self.CLIENT_PING = channel.unary_unary(
                 '/parameter_server.Parameter_server/CLIENT_PING',
                 request_serializer=parameter__server__pb2.client_id.SerializeToString,
@@ -28,6 +33,12 @@ class Parameter_serverStub(object):
 
 class Parameter_serverServicer(object):
     """Missing associated documentation comment in .proto file."""
+
+    def CLIENT_CHECKIN(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def CLIENT_PING(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -44,6 +55,11 @@ class Parameter_serverServicer(object):
 
 def add_Parameter_serverServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'CLIENT_CHECKIN': grpc.unary_unary_rpc_method_handler(
+                    servicer.CLIENT_CHECKIN,
+                    request_deserializer=parameter__server__pb2.client_id.FromString,
+                    response_serializer=parameter__server__pb2.server_response.SerializeToString,
+            ),
             'CLIENT_PING': grpc.unary_unary_rpc_method_handler(
                     servicer.CLIENT_PING,
                     request_deserializer=parameter__server__pb2.client_id.FromString,
@@ -63,6 +79,23 @@ def add_Parameter_serverServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class Parameter_server(object):
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def CLIENT_CHECKIN(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/parameter_server.Parameter_server/CLIENT_CHECKIN',
+            parameter__server__pb2.client_id.SerializeToString,
+            parameter__server__pb2.server_response.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def CLIENT_PING(request,

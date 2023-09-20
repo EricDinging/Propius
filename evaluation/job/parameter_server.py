@@ -176,6 +176,37 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             "data": {}
         })
         self.client_event_dict[client_id] = event_q
+
+    async def CLIENT_CHECKIN(self, request, context):
+        client_id = request.id
+        server_response_msg = parameter_server_pb2.server_response(
+            event=SHUT_DOWN,
+            meta=pickle.dumps(DUMMY_RESPONSE),
+            data=pickle.dumps(DUMMY_RESPONSE)
+            )
+        async with self.lock:
+            if not self.execution_start:
+                if client_id not in self.client_event_dict:
+                    if self.round_client_num < self.over_demand \
+                        and self.cur_round <= self.total_round:
+                       
+                        self._init_event_queue(client_id)
+                        custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} check-in, "
+                            f"{self.round_client_num}/{self.demand}", INFO)
+                        
+                        server_response_msg = parameter_server_pb2.server_response(
+                            event=DUMMY_EVENT,
+                            meta=pickle.dumps(DUMMY_RESPONSE),
+                            data=pickle.dumps(DUMMY_RESPONSE)
+                        )
+
+                        self.round_client_num += 1
+
+                        if self.round_client_num >= self.over_demand:
+                            self.cv.notify()
+
+
+        return server_response_msg
     
     async def CLIENT_PING(self, request, context):
         client_id = request.id
@@ -197,24 +228,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         f"issue {event_dict['event']} event", INFO)
                     
             else:        
-                if client_id not in self.client_event_dict:
-                    if self.round_client_num < self.over_demand and self.cur_round <= self.total_round:
-                       
-                        self._init_event_queue(client_id)
-                        custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping, "
-                            f"{self.round_client_num}/{self.demand}", INFO)
-                        
-                        server_response_msg = parameter_server_pb2.server_response(
-                            event=DUMMY_EVENT,
-                            meta=pickle.dumps(DUMMY_RESPONSE),
-                            data=pickle.dumps(DUMMY_RESPONSE)
-                        )
-
-                        self.round_client_num += 1
-
-                        if self.round_client_num >= self.over_demand:
-                            self.cv.notify()
-                else:
+                if client_id in self.client_event_dict:
                     server_response_msg = parameter_server_pb2.server_response(
                         event=DUMMY_EVENT,
                         meta=pickle.dumps(DUMMY_RESPONSE),

@@ -61,6 +61,11 @@ class Client:
         self.event_queue.append(event)
         self.meta_queue.append(meta)
         self.data_queue.append(data)
+
+    async def client_checkin(self)->bool:
+        client_id_msg = parameter_server_pb2.client_id(id=self.propius_client_stub.id)
+        server_response = await self.ps_stub.CLIENT_CHECKIN(client_id_msg)
+        return server_response.event == DUMMY_EVENT
         
     async def client_ping(self)->bool:
         client_id_msg = parameter_server_pb2.client_id(id=self.propius_client_stub.id)
@@ -123,14 +128,15 @@ class Client:
         remain_time = self.inactive_time[self.cur_period] - cur_time
         return remain_time
 
-    async def event_monitor(self) -> bool:
+    async def event_monitor(self):
+        if not await self.client_checkin():
+            return
         
         while await self.client_ping():
             await asyncio.sleep(3)
             
         while await self.execute():
             await asyncio.sleep(3)
-        return True
 
     async def cleanup_routines(self, propius=False):
         try:
@@ -189,8 +195,7 @@ class Client:
                     continue
                 
                 await self._connect_to_ps(ps_ip, ps_port)
-                if not await self.event_monitor():
-                    custom_print(f"Client {self.id}: timeout, aborted", WARNING)
+                await self.event_monitor()
 
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
