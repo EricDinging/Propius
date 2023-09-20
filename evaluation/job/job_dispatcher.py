@@ -9,7 +9,7 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
     port = int(config['job_driver_starting_port'])
     num = config['total_job']
 
-    with open(f"./evaluation/job/job_trace_{num}.txt", "r") as file:
+    with open(f"./evaluation/job/trace/job_trace_{num}.txt", "r") as file:
         i = 0
         time.sleep(10)
 

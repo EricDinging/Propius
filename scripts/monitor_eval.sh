@@ -20,4 +20,4 @@ wk3_log="./evaluation/monitor/executor/wk_3.log"
 sc_log="./propius/monitor/log/sc.log"
 jm_log="./propius/monitor/log/jm.log"
 
-multitail -s 3 -n 2 -l "tail -f $sc_log" -l "tail -f $jm_log" -l "tail -f $exe_log" -l "tail -f $wk0_log" -l "tail -f $wk1_log" -l "tail -f $wk2_log" -l "tail -f $wk3_log" 
+multitail -s 3 -n 1 -l "tail -f $sc_log" -l "tail -f $jm_log" -l "tail -f $exe_log" -l "tail -f $wk0_log" -l "tail -f $wk1_log" -l "tail -f $wk2_log" -l "tail -f $wk3_log" 

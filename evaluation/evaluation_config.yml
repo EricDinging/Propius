@@ -1,5 +1,4 @@
-# speedup_factor: 5
-speedup_factor: 1
+speedup_factor: 2.5
 load_balancer_ip: localhost
 load_balancer_port: 50002
 
@@ -16,14 +15,15 @@ job_public_constraint:
 job_private_constraint:
   - dataset_size
 
-sched_timeout: 360
-exec_timeout: 240
-
 # ---Simulation---
 
-client_num: 25000
+# client_num: 2500
+client_num: 5000
 # client_num: 15000
-client_test_num: 20
+client_test_num: 356 # max testing set size
+# client_validation_num: 1000
+
+
 client_avail_path: './datasets/device_info/client_behave_trace'
 client_comm_path: './datasets/device_info/client_device_capacity'
 client_spec_path: './datasets/device_info/client_spec_speed'
@@ -31,11 +31,17 @@ client_size_path: './datasets/device_info/client_dataset_size'
 
 # profile_folder: './evaluation/job/dry_profile/'
 profile_folder: './evaluation/job/profile/'
+# profile_folder: './evaluation/job/test_profile/'
 
 # Job profile number
-job_profile_num : 10
+# job_profile_num: 10
+# job_profile_num: 20
+job_profile_num: 10
+
 # Job total number
-total_job : 10
+# total_job: 10
+total_job: 10
+
 # Job generation config
 avg_interval: 1800
 
@@ -45,6 +51,10 @@ job_driver_starting_port: 60000
 
 # ---Execution---
 do_compute: True
+# do_compute: False
+# is_FA: True
+is_FA: False 
+
 use_cuda: True
 use_docker: True
 
@@ -69,9 +79,9 @@ worker:
     device: cuda:1
 
 # ---Testing---
-test_bsz: 20
+test_bsz: 128
 test_ratio: 1
-eval_interval: 10
+eval_interval: 5
 
 #FEMNIST
 femnist_data_dir: ./datasets/femnist

@@ -46,6 +46,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         self.ip = config["ip"] if not config["use_docker"] else "0.0.0.0"
         self.port = config["port"]
+        self.id = self.port
 
         self.lock = asyncio.Lock()
         self.cv = asyncio.Condition(self.lock)
@@ -89,38 +90,45 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     def round_exec_start(self):
         # locked
-        custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: start execution", INFO)
+        custom_print(f"PS {self.id}-{self.cur_round}: start execution", INFO)
         self.propius_stub.end_request()
         self.execution_start = True
         self.sched_time = time.time() - self.sched_time
 
+    def _update_task_config(self):
+        if self.cur_round % self.config["decay_round"] == 0:
+            self.config["learning_rate"] = max(
+                self.config["learning_rate"] * self.config["decay_factor"],
+                self.config["min_learning_rate"]
+            )
+
     async def close_round(self):
         # locked
-        custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: round finish", INFO)
+        custom_print(f"PS {self.id}-{self.cur_round}: round finish", INFO)
+        self.client_event_dict.clear()
         if self.do_compute:
             job_task_info_msg = executor_pb2.job_task_info(
-                job_id=self.propius_stub.id,
+                job_id=self.id,
                 client_id=-1,
                 round=self.cur_round,
                 event=AGGREGATE,
                 task_meta=pickle.dumps({}),
-                task_data=pickle.dumps(DUMMY_RESPONSE)
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
-            custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: aggregrate event reported", INFO)
+            custom_print(f"PS {self.id}-{self.cur_round}: aggregrate event reported", INFO)
 
         self.response_time = time.time() - self.response_time
 
     async def close_failed_round(self):
         # locked
+        self.client_event_dict.clear()
         if self.do_compute:
             job_task_info_msg = executor_pb2.job_task_info(
-                job_id=self.propius_stub.id,
+                job_id=self.id,
                 client_id=-1,
                 round=self.cur_round,
                 event=ROUND_FAIL,
                 task_meta=pickle.dumps({}),
-                task_data=pickle.dumps(DUMMY_RESPONSE)
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
 
@@ -185,7 +193,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         meta=pickle.dumps(event_dict["meta"]),
                         data=pickle.dumps(event_dict["data"])
                     )
-                    custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
+                    custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping, "
                         f"issue {event_dict['event']} event", INFO)
                     
             else:        
@@ -193,7 +201,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     if self.round_client_num < self.over_demand and self.cur_round <= self.total_round:
                        
                         self._init_event_queue(client_id)
-                        custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} ping, "
+                        custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping, "
                             f"{self.round_client_num}/{self.demand}", INFO)
                         
                         server_response_msg = parameter_server_pb2.server_response(
@@ -234,7 +242,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         self.round_result_cnt <= self.demand:
                
                 if compl_event == UPLOAD_MODEL:
-                    custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client {client_id} complete, "
+                    custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} complete, "
                                 f"issue SHUT_DOWN event, {self.round_result_cnt}/{self.demand}", INFO)
                     self.round_result_cnt += 1
                     task_meta = {
@@ -247,12 +255,11 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
                     if self.do_compute:
                         job_task_info_msg = executor_pb2.job_task_info(
-                            job_id=self.propius_stub.id,
+                            job_id=self.id,
                             client_id=client_exec_id,
                             round=self.cur_round,
                             event=CLIENT_TRAIN,
                             task_meta=pickle.dumps(task_meta),
-                            task_data=pickle.dumps(DUMMY_RESPONSE)
                         )
                         await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
                     
@@ -270,7 +277,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         data=pickle.dumps(next_event_dict["data"])
                     )
 
-                    custom_print(f"PS {self.propius_stub.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event", INFO)
+                    custom_print(f"PS {self.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event", INFO)
 
                 if self.round_result_cnt >= self.demand:
                     self.cv.notify()
@@ -324,12 +331,11 @@ async def run(config):
         if ps.do_compute:
             task_meta = {}
             job_task_info_msg = executor_pb2.job_task_info(
-                job_id=ps.propius_stub.id,
+                job_id=ps.id,
                 client_id=-1,
                 round=ps.cur_round if ps.cur_round <= ps.total_round else ps.total_round,
                 event=JOB_FINISH,
                 task_meta=pickle.dumps(task_meta),
-                task_data=pickle.dumps(DUMMY_RESPONSE)
             )
             await ps.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
             await ps.executor_channel.close()
@@ -360,12 +366,12 @@ async def run(config):
         job_meta["yogi_beta2"] = config["yogi_beta2"]
 
     if ps.do_compute:
-        job_info_msg = executor_pb2.job_info(job_id=ps.propius_stub.id, 
+        job_info_msg = executor_pb2.job_info(job_id=ps.id, 
                                             job_meta=pickle.dumps(job_meta))
         executor_ack = await ps.executor_stub.JOB_REGISTER(job_info_msg)
         ps.model_size = executor_ack.model_size
     else:
-        ps.model_size = 1000
+        ps.model_size = 74016 # for mobilenetv2 and femnist dryrun profile
 
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
     server.add_insecure_port(f"{ps.ip}:{ps.port}")
@@ -394,7 +400,7 @@ async def run(config):
                 timeout = config['sched_timeout'] / config['speedup_factor']
                 await asyncio.wait_for(ps.cv.wait(), timeout=timeout)
             except asyncio.TimeoutError:
-                custom_print(f"PS {ps.propius_stub.id}-{ps.cur_round}: schedule timeout", WARNING)
+                custom_print(f"PS {ps.id}-{ps.cur_round}: schedule timeout", WARNING)
                 await ps.close_failed_round()
                 ps.total_sched_delay += config['sched_timeout']
                 ps.num_sched_timeover += 1
@@ -407,7 +413,7 @@ async def run(config):
                 timeout = config['exec_timeout'] / config['speedup_factor']
                 await asyncio.wait_for(ps.cv.wait(), timeout=timeout)
             except asyncio.TimeoutError:
-                custom_print(f"PS {ps.propius_stub.id}-{ps.cur_round}: exec timeout", WARNING)
+                custom_print(f"PS {ps.id}-{ps.cur_round}: exec timeout", WARNING)
                 await ps.close_failed_round()
                 ps.total_response_time += config['exec_timeout']
                 ps.num_response_timeover += 1
@@ -416,6 +422,7 @@ async def run(config):
             await ps.close_round()
             await ps.gen_round_report()
             ps.cur_round += 1
+            ps._update_task_config()
             
     custom_print(
         f"Parameter server: All round finished", INFO)
@@ -460,8 +467,6 @@ if __name__ == '__main__':
                 config['sched_alg'] = eval_config['sched_alg']
                 config['do_compute'] = eval_config['do_compute']
                 config['speedup_factor'] = eval_config['speedup_factor']
-                config['sched_timeout'] = eval_config['sched_timeout']
-                config['exec_timeout'] = eval_config['exec_timeout']
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(run(config))
                 

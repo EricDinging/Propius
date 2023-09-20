@@ -41,6 +41,12 @@ class Client:
         self.inactive_time = client_config["inactive"]
         self.cur_period = 0
         self.speedup_factor = client_config["speedup_factor"]
+        self.is_FA = client_config["is_FA"]
+
+    def _deallocate(self):
+        self.event_queue.clear()
+        self.meta_queue.clear()
+        self.data_queue.clear()
     
     async def _connect_to_ps(self, ps_ip: str, ps_port: int):
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
@@ -86,6 +92,8 @@ class Client:
 
         if event == CLIENT_TRAIN:
             exe_time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
+            if self.is_FA:
+                exe_time /= 3
         elif event == SHUT_DOWN:
             return False
         elif event == UPDATE_MODEL:
@@ -94,8 +102,11 @@ class Client:
 
         elif event == UPLOAD_MODEL:
             exe_time = meta["upload_size"] / float(self.comm_speed)
+            if self.is_FA:
+                exe_time = 0 
         
         exe_time /= self.speedup_factor
+
         custom_print(f"Client {self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
         await asyncio.sleep(exe_time)
 
@@ -123,6 +134,7 @@ class Client:
 
     async def cleanup_routines(self, propius=False):
         try:
+            self._deallocate()
             if propius:
                 await self.propius_client_stub.close()
                 custom_print(f"Client {self.id}: ==shutting down==", ERROR)
@@ -179,12 +191,13 @@ class Client:
                 await self._connect_to_ps(ps_ip, ps_port)
                 if not await self.event_monitor():
                     custom_print(f"Client {self.id}: timeout, aborted", WARNING)
-                await self.cleanup_routines()
 
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
                 custom_print(f"Client {self.id}: {e}", ERROR)
+            finally:
+                await self.cleanup_routines()
             
         await self.cleanup_routines(True)
         

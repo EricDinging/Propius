@@ -1,6 +1,4 @@
-ARG WORKER_IMAGE
-
-FROM $WORKER_IMAGE
+FROM python:3.9
 
 WORKDIR /
 RUN mkdir /evaluation
