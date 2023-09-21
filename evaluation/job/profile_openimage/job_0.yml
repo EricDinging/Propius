@@ -8,7 +8,7 @@ exec_timeout: 510
 
 # Training and testing client setting
 engine: pytorch
-model: shufflenet_v2_x2_0
+model: shufflenetv2_w2
 dataset: openImg
 learning_rate: 0.05
 num_loaders: 4

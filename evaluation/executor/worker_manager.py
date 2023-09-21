@@ -87,6 +87,11 @@ class Worker_manager:
             mobilenet_v2
             model = mobilenet_v2(num_classes=out_put_class[dataset_name])
 
+        else:
+            from evaluation.internal.models.torch_module_provider import get_cv_model
+            model = get_cv_model(name=model_name, num_classes=out_put_class[dataset_name])
+        
+
         model_size = sys.getsizeof(pickle.dumps(model)) / 1024.0 * 8.  # kbits
 
         # broadcast

@@ -81,9 +81,16 @@ worker:
 # ---Testing---
 test_bsz: 128
 test_ratio: 1
-eval_interval: 5
+eval_interval: 10
 
-#FEMNIST
+# openImg
+openImg_data_dir: ./datasets/openImg
+openImg_data_map_file: ./datasets/openImg/client_data_mapping/train.csv
+
+# femnist
 femnist_data_dir: ./datasets/femnist
 femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
 femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
+
+
+

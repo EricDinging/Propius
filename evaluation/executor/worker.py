@@ -13,6 +13,7 @@ from evaluation.internal.dataset_handler import *
 from evaluation.internal.test_helper import *
 from collections import deque
 from typing import List
+from evaluation.internal.dataloaders.utils_data import get_data_transform
 
 import torch
 from torch.autograd import Variable
@@ -122,7 +123,6 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         if dataset_name not in self.data_partitioner_dict:
             if dataset_name == "femnist":
                 from evaluation.internal.dataloaders.femnist import FEMNIST
-                from evaluation.internal.dataloaders.utils_data import get_data_transform
 
                 train_transform, test_transform = get_data_transform("mnist")
                 train_dataset = FEMNIST(
@@ -144,6 +144,22 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 test_partitioner.partition_data_helper(0, data_map_file=self.config['femnist_test_data_map_file'])
                 self.test_data_partition_dict[dataset_name] = test_partitioner
             
+            elif dataset_name == "openImg":
+                from evaluation.internal.dataloaders.openimage import OpenImage
+                train_transform, test_transform = get_data_transform("openImg")
+                train_dataset = OpenImage(
+                    self.config['openImg_data_dir'], split='train', download=False, transform=train_transform)
+                test_dataset = OpenImage(
+                    self.config["openImg_data_dir"], split='val', download=False, transform=test_transform)
+                
+                train_partitioner = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
+                train_partitioner.partition_data_helper(0, data_map_file=self.config['openImg_data_map_file'])
+                self.data_partitioner_dict[dataset_name] = train_partitioner
+                
+                test_partitioner = Data_partitioner(data=test_dataset, num_of_labels=out_put_class[dataset_name])
+                test_partitioner.partition_data_helper(self.config["client_test_num"])
+                self.test_data_partition_dict[dataset_name] = test_partitioner
+
             self.data_partitioner_ref_cnt_dict[dataset_name] = 0
         
         self.data_partitioner_ref_cnt_dict[dataset_name] += 1
