@@ -1,5 +1,5 @@
 # Training and testing aggregator setting
-demand: 50
+demand: 400
 total_round: 300
 over_selection: 1.3
 
