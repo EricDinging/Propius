@@ -1,9 +1,9 @@
 # Training and testing aggregator setting
-demand: 50
+demand: 400
 total_round: 300
 over_selection: 1.3
 
-sched_timeout: 75
+sched_timeout: 600
 exec_timeout: 285
 
 # Training and testing client setting
