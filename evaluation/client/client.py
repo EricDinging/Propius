@@ -132,6 +132,7 @@ class Client:
         if not await self.client_checkin():
             return
         
+        await asyncio.sleep(3)
         while await self.client_ping():
             await asyncio.sleep(3)
             

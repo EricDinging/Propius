@@ -1,4 +1,4 @@
-speedup_factor: 5
+speedup_factor: 3
 load_balancer_ip: localhost
 load_balancer_port: 50002
 
@@ -18,7 +18,7 @@ job_private_constraint:
 # ---Simulation---
 
 # client_num: 2500
-client_num: 5000
+client_num: 10000
 # client_num: 15000
 client_test_num: 356 # max testing set size
 # client_validation_num: 1000
