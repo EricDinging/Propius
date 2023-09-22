@@ -4,11 +4,11 @@ total_round: 300
 over_selection: 1.3
 
 sched_timeout: 300
-exec_timeout: 510
+exec_timeout: 285
 
 # Training and testing client setting
 engine: pytorch
-model: resnet18
+model: mobilenet
 dataset: femnist
 learning_rate: 0.05
 num_loaders: 4
@@ -28,9 +28,9 @@ gradient_policy: fed-avg
 
 # Client constraints
 public_constraint:
-    cpu_f: 5
-    ram: 4
-    fp16_mem: 600
-    android_os: 6
+    cpu_f: 2
+    ram: 2
+    fp16_mem: 400
+    android_os: 4
 private_constraint:
     dataset_size: 100
