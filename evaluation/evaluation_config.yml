@@ -25,7 +25,7 @@ test_ratio: 1
 eval_interval: 5
 
 # Client number
-client_num: 7500
+client_num: 8000
 client_test_num: 356
 
 # Job profile number

@@ -47,3 +47,4 @@ experiment/*
 *.log
 math/
 evaluation_result/
+*.tar.gz

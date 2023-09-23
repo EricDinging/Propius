@@ -5,42 +5,40 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-version = "3000-2"
+version = "10000"
 time_cutoff = 70000
 round_cutoff = 100
 
 sched_alg_list = [
     # 'fifo', 
-                  # 'fifo',
+                  'fifo',
                 #   'srdf',
-                  'random', 
-                #   'irs'
+                #   'random', 
+                  'irs'
                   ]
 job_folder = [
-    # './evaluation_result/fifo-2500-2/job',
-              # f'./evaluation_result/fifo-{version}/job',
+            f'./evaluation_result/fifo-{version}/job',
             #   './evaluation_result/srdf-2500-2/job',
-              f'./evaluation_result/mobilenet_test_2/job',
-            #   f'./evaluation_result/irs-{version}/job'
+            #   f'./evaluation_result/mobilenet_test_2/job',
+              f'./evaluation_result/irs-{version}/job'
               ]
 execute_folder = [
-    # './evaluation_result/fifo-2500-2/executor',
-                  # f'./evaluation_result/fifo-{version}/executor',
+                  f'./evaluation_result/fifo-{version}/executor',
                 #   './evaluation_result/srdf-2500-2/executor',
-                  f'./evaluation_result/mobilenet_test_2/executor',
-                #   f'./evaluation_result/irs-{version}/executor'
+                #   f'./evaluation_result/mobilenet_test_2/executor',
+                  f'./evaluation_result/irs-{version}/executor'
                   ]
 
 # client_num = [2500, 5000]
 
-plot_folder = f'./evaluation_result/plot-mobilenet-2'
+plot_folder = f'./evaluation_result/plot-10000'
 line_styles = [
-            # '-.', 
+                '-.', 
               #  ':', 
                '-']
 # color_list = ['grey',  'blueviolet', 'gold', 'darkorange','teal', 'skyblue' ,'darkblue', 'blueviolet']
 color_list = ['blueviolet', 'darkorange', 'teal', 'skyblue', 'darkblue']
-job_num = 4
+job_num = 5
 
 # test
 
@@ -125,18 +123,19 @@ for i, sched_alg in enumerate(sched_alg_list):
 
     # plt.plot(mean_x_axis, mean_y_axis, label=f"Sched. Alg.: {sched_alg}", color=color_list[i])
 
-    for job_id in range(job_num):
-        if job_id == 0:
-            label_text = "Mobilenet, FedAvg"
-        elif job_id == 1:
-            label_text = "Mobilenet, FedYogi"
-        elif job_id == 2:
-            label_text = "Resnet18, FedAvg"
-        elif job_id == 3:
-            label_text = "Resnet18, FedYogi"
-        plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=label_text, color=color_list[job_id], linestyle=line_styles[i])
-
-        # plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=f"Job: {job_id}, sched. alg: {sched_alg}", color=color_list[job_id], linestyle=line_styles[i])
+    # Indivial job
+    # for job_id in range(job_num):
+    #     if job_id == 0:
+    #         label_text = "Mobilenet, FedAvg"
+    #     elif job_id == 1:
+    #         label_text = "Mobilenet, FedYogi"
+    #     elif job_id == 2:
+    #         label_text = "Resnet18, FedAvg"
+    #     elif job_id == 3:
+    #         label_text = "Resnet18, FedYogi"
+    #     plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=label_text, color=color_list[job_id], linestyle=line_styles[i])
+            if job_id < job_num:
+                plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=f"Job: {job_id}, sched. alg: {sched_alg}", color=color_list[job_id], linestyle=line_styles[i])
 
 
 plt.xlabel('Time (seconds)')
@@ -149,7 +148,7 @@ plt.grid(True)
 plt.legend()
 
 # output_plot_name = f'tta-acc-no-irs.png'
-output_plot_name = f"tta-mobilenet.png"
+output_plot_name = f"tta-{version}.png"
 output_plot_path = os.path.join(plot_folder, output_plot_name)
 plt.savefig(output_plot_path)
 
