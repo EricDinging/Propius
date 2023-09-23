@@ -1,11 +1,9 @@
-speedup_factor: 3
+# ---Propius setting---
 load_balancer_ip: localhost
 load_balancer_port: 50002
 
 job_manager_ip: localhost
 job_manager_port: 50001
-
-sched_alg: fifo
 
 job_public_constraint:
 - cpu_f
@@ -15,48 +13,51 @@ job_public_constraint:
 job_private_constraint:
 - dataset_size
 
-# ---Simulation---
+sched_alg: fifo
 
-# client_num: 2500
-client_num: 10000
-# client_num: 15000
-client_test_num: 356 # max testing set size
-# client_validation_num: 1000
+# ---Job generation config---
+avg_interval: 1800
 
+# ---Evaluation setting---
+speedup_factor: 3
+test_bsz: 128
+test_ratio: 1
+eval_interval: 5
 
-client_avail_path: ./datasets/device_info/client_behave_trace
-client_comm_path: ./datasets/device_info/client_device_capacity
-client_spec_path: ./datasets/device_info/client_spec_speed
-client_size_path: ./datasets/device_info/client_dataset_size
-
-# profile_folder: './evaluation/job/dry_profile/'
-profile_folder: ./evaluation/job/profile/
-# profile_folder: './evaluation/job/test_profile/'
+# Client number
+client_num: 7500
+client_test_num: 356
 
 # Job profile number
-# job_profile_num: 10
-# job_profile_num: 20
 job_profile_num: 10
-
 # Job total number
-# total_job: 10
 total_job: 10
-
-# Job generation config
-avg_interval: 1800
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
 job_driver_starting_port: 60000
 
-# ---Execution---
-do_compute: true
-# do_compute: False
-# is_FA: True
-is_FA: false
+# ---Data path---
+client_avail_path: ./datasets/device_info/client_behave_trace
+client_comm_path: ./datasets/device_info/client_device_capacity
+client_spec_path: ./datasets/device_info/client_spec_speed
+client_size_path: ./datasets/device_info/client_dataset_size
 
-use_cuda: true
-use_docker: true
+profile_folder: ./evaluation/job/profile/
+# profile_folder: ./evaluation/job/dry_profile/   # no training
+# profile_folder: './evaluation/job/test_profile/'
+
+#FEMNIST
+femnist_data_dir: ./datasets/femnist
+femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
+femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
+
+# ---Execution framework setting---
+do_compute: True
+is_FA: False
+
+use_cuda: True
+use_docker: True
 
 executor_ip: localhost
 executor_port: 49999
@@ -89,11 +90,3 @@ worker:
 - ip: localhost
   port: 49991
   device: 1
-test_bsz: 128
-test_ratio: 1
-eval_interval: 5
-
-#FEMNIST
-femnist_data_dir: ./datasets/femnist
-femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
-femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv

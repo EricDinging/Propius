@@ -188,7 +188,7 @@ services:
     - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command:
-    - '0'
+    - '1'
     deploy:
       resources:
         reservations:
@@ -212,7 +212,7 @@ services:
     - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command:
-    - '0'
+    - '2'
     deploy:
       resources:
         reservations:
@@ -236,7 +236,7 @@ services:
     - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command:
-    - '0'
+    - '3'
     deploy:
       resources:
         reservations:
@@ -260,7 +260,7 @@ services:
     - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command:
-    - '0'
+    - '4'
     deploy:
       resources:
         reservations:
@@ -284,7 +284,7 @@ services:
     - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command:
-    - '0'
+    - '5'
     deploy:
       resources:
         reservations:
@@ -308,7 +308,7 @@ services:
     - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command:
-    - '0'
+    - '6'
     deploy:
       resources:
         reservations:
@@ -332,7 +332,7 @@ services:
     - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command:
-    - '0'
+    - '7'
     deploy:
       resources:
         reservations:

@@ -42,7 +42,7 @@ for i in range(worker_num):
                 './evaluation/monitor:/evaluation/monitor',
             ],
             'stop_signal': 'SIGINT',
-            'command': ['0'],
+            'command': [f'{i}'],
             'deploy': {
                 'resources': {
                     'reservations': {
