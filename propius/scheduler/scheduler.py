@@ -131,7 +131,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             return propius_pb2.ack(ack=False)
         client_prop = self.client_db_portal.get_client_proportion(constraint)
 
-        self.logger.print(f"Scheduler: upd score for {constraint}: ". INFO)
+        self.logger.print(f"Scheduler: upd score for {constraint}: ", INFO)
         for idx, job in enumerate(constraint_job_list):
             groupsize = len(constraint_job_list)
             self.job_db_portal.irs_update_score(

@@ -28,9 +28,9 @@ gradient_policy: fed-avg
 
 # Client constraints
 public_constraint:
-    cpu_f: 8
+    cpu_f: 6
     ram: 4
-    fp16_mem: 1000
+    fp16_mem: 800
     android_os: 6
 private_constraint:
     dataset_size: 100
