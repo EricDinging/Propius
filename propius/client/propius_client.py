@@ -3,7 +3,7 @@ from propius.channels import propius_pb2
 import pickle
 import grpc
 import time
-from propius.client.commons import *
+from propius.util.commons import *
 import logging
 
 def gen_client_config():

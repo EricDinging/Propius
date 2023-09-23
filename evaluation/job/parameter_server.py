@@ -61,8 +61,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         self.propius_stub = Propius_job(job_config=job_config, verbose=True, logging=True)
 
-        # self.propius_stub.connect()
-
         if self.do_compute:
             self.executor_ip = config['executor_ip']
             self.executor_port = config['executor_port']

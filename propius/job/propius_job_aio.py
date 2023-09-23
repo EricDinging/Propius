@@ -1,84 +1,33 @@
-import pickle
 from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
+import pickle
 import grpc
 import time
+import asyncio
 from datetime import datetime
 import logging
 import math
 from propius.util.commons import *
+from propius.job.propius_job import Propius_job
 
+class Propius_job_aio(Propius_job):
 
-class Propius_job():
-    def __init__(self, job_config: dict, verbose: bool = False, logging: bool = False):
-        """Init Propius_job class
-
-        Args:
-            job_config:
-                public_constraint: dict
-                private_constraint: dict
-                total_round
-                demand
-                job_manager_ip
-                job_manager_port
-                ip
-                port
-            verbose: whether to print or not
-            logging: whether to log or not
-
-        Raises:
-            ValueError: missing config args
-        """
-        self.id = -1
-        try:
-            # TODO arguments check
-            # TODO add state flow check
-            public, private = encode_constraints(**job_config['public_constraint'], **job_config['private_constraint'])
-            self.public_constraint = tuple(public)
-            self.private_constraint = tuple(private)
-            self.est_total_round = job_config['total_round']
-            self.demand = job_config['demand']
-            self._jm_ip = job_config['job_manager_ip']
-            self._jm_port = job_config['job_manager_port']
-            self._jm_channel = None
-            self._jm_stub = None
-            self.ip = job_config['ip']
-            self.port = job_config['port']
-            self.verbose = verbose
-            self.logging = logging
-            self.id = -1
-        except Exception:
-            raise ValueError("Missing config arguments")
-
-    def _cleanup_routine(self):
-        try:
-            self._jm_channel.close()
-        except Exception:
-            pass
-
-    def _custom_print(self, message: str, level: int=PRINT):
-        if self.verbose:
-            print(f"{get_time()} {message}")
-        if self.logging:
-            if level == DEBUG:
-                logging.debug(message)
-            elif level == INFO:
-                logging.info(message)
-            elif level == WARNING:
-                logging.warning(message)
-            elif level == ERROR:
-                logging.error(message)
-
-    def __del__(self):
-        self._cleanup_routine()
+    async def _cleanup_routine(self):
+            try:
+                await self._jm_channel.close()
+            except Exception:
+                pass
+    
+    async def __del__(self):
+        await self._cleanup_routine()
 
     def _connect_jm(self) -> None:
-        self._jm_channel = grpc.insecure_channel(f'{self._jm_ip}:{self._jm_port}')
+        self._jm_channel = grpc.aio.insecure_channel(f'{self._jm_ip}:{self._jm_port}')
         self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
 
         self._custom_print(f"Job: connecting to job manager at {self._jm_ip}:{self._jm_port}", INFO)
 
-    def connect(self):
+    async def connect(self):
         """Connect to Propius job manager
 
         Raise:
@@ -90,19 +39,19 @@ class Propius_job():
                 return
             except Exception as e:
                 self._custom_print(e, ERROR)
-                time.sleep(5)
+                await asyncio.sleep(5)
 
         raise RuntimeError(
             "Unable to connect to Propius job manager at the moment")
-
-    def close(self) -> None:
+    
+    async def close(self) -> None:
         """Clean up allocation, close connection to Propius job manager
         """
         
-        self._cleanup_routine()
+        await self._cleanup_routine()
         self._custom_print(f"Job {self.id}: closing connection to Propius", INFO)
 
-    def register(self) -> bool:
+    async def register(self) -> bool:
         """Register job. Send job config to Propius job manager. This configuration will expire
         in one week, which means the job completion time should be within one week.
 
@@ -122,12 +71,12 @@ class Propius_job():
             port=self.port,
         )
         for _ in range(3):
-            self.connect()
+            await self.connect()
             try:
-                ack_msg = self._jm_stub.JOB_REGIST(job_info_msg)
+                ack_msg = await self._jm_stub.JOB_REGIST(job_info_msg)
                 self.id = ack_msg.id
                 ack = ack_msg.ack
-                self._cleanup_routine()
+                await self._cleanup_routine()
                 if not ack:
                     if self.verbose:
                         self._custom_print(f"Job {self.id}: register failed", WARNING)
@@ -139,13 +88,13 @@ class Propius_job():
             except Exception as e:
                 if self.verbose:
                     self._custom_print(e, ERROR)
-                self._cleanup_routine()
-                time.sleep(5)
+                await self._cleanup_routine()
+                await asyncio.sleep(5)
                 
         raise RuntimeError(
             "Unable to register to Propius job manager at the moment")
-
-    def start_request(self, new_demand: bool = False, demand: int = 0) -> bool:
+    
+    async def start_request(self, new_demand: bool = False, demand: int = 0) -> bool:
         """Send start request to Propius job manager
         
         Client will be routed to parameter server after this call
@@ -179,10 +128,10 @@ class Propius_job():
         )
 
         for _ in range(3):
-            self.connect()
+            await self.connect()
             try:
-                ack_msg = self._jm_stub.JOB_REQUEST(request_msg)
-                self._cleanup_routine()
+                ack_msg = await self._jm_stub.JOB_REQUEST(request_msg)
+                await self._cleanup_routine()
                 if not ack_msg.ack:
                     self._custom_print(f"Job {self.id}: round request failed", WARNING)
                     return False
@@ -191,13 +140,13 @@ class Propius_job():
                     return True
             except Exception as e:
                 self._custom_print(e, ERROR)
-                self._cleanup_routine()
-                time.sleep(5)
+                await self._cleanup_routine()
+                await asyncio.sleep(5)
 
         raise RuntimeError(
             "Unable to send start request to Propius job manager at the moment")
 
-    def end_request(self) -> bool:
+    async def end_request(self) -> bool:
         """Send end request to Propius job manager. Client won't be routed to parameter server after this call,
         unless start_request is called
 
@@ -208,10 +157,10 @@ class Propius_job():
         request_msg = propius_pb2.job_id(id=self.id)
 
         for _ in range(3):
-            self.connect()
+            await self.connect()
             try:
-                ack_msg = self._jm_stub.JOB_END_REQUEST(request_msg)
-                self._cleanup_routine()
+                ack_msg = await self._jm_stub.JOB_END_REQUEST(request_msg)
+                await self._cleanup_routine()
                 if not ack_msg.ack:
                     self._custom_print(f"Job {self.id}: end request failed", WARNING)
                     return False
@@ -220,13 +169,13 @@ class Propius_job():
                     return True
             except Exception as e:
                 self._custom_print(e, ERROR)
-                self._cleanup_routine()
-                time.sleep(5)
+                await self._cleanup_routine()
+                await asyncio.sleep(5)
 
         raise RuntimeError(
             "Unable to send end request to Propius job manager at this moment")
 
-    def complete_job(self):
+    async def complete_job(self):
         """Send complete job request to Propius job manager. Job configuration will be removed from Propius.
 
         Raise:
@@ -236,21 +185,21 @@ class Propius_job():
         req_msg = propius_pb2.job_id(id=self.id)
 
         for _ in range(3):
-            self.connect()
+            await self.connect()
             try:
-                self._jm_stub.JOB_FINISH(req_msg)
-                self._cleanup_routine()
+                await self._jm_stub.JOB_FINISH(req_msg)
+                await self._cleanup_routine()
                 self._custom_print(f"Job {self.id}: job completed", WARNING)
                 return
             except Exception as e:
                 self._custom_print(e, ERROR)
-                self._cleanup_routine()
-                time.sleep(5)
+                await self._cleanup_routine()
+                await asyncio.sleep(5)
 
         raise RuntimeError(
             "Unable to send complete job request to Propius job manager at this moment")
     
-    def heartbeat(self):
+    async def heartbeat(self):
         """Keep connection alive for long intervals during request
         """
-        self._jm_stub.HEART_BEAT(propius_pb2.empty())
+        await self._jm_stub.HEART_BEAT(propius_pb2.empty())
