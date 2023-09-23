@@ -157,8 +157,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                         groupsize,
                         idx,
                         constraints_client_map[cst],
-                        self.irs_epsilon,
-                        self.std_round_time)
+                    )
             except Exception as e:
                 self.logger.print(e, WARNING)
 
