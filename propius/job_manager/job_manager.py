@@ -153,6 +153,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         return propius_pb2.ack(ack=True)
     
     async def heartbeat_routine(self):
+        """Send heartbeat routine to scheduler and prune job db if needed."""
         try:
             while True:
                 await asyncio.sleep(30)
@@ -160,6 +161,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
                     self.sched_portal.HEART_BEAT(propius_pb2.empty())
                 except:
                     pass
+                self.job_db_portal.prune()
+                
         except asyncio.CancelledError:
             pass
 

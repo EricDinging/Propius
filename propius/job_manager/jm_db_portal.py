@@ -101,6 +101,29 @@ class JM_job_db_portal(Job_db):
                 except Exception as e:
                     self.logger.print(e, ERROR)
                     return False
+                
+    def prune(self):
+        """Prune job database.
+        
+        If a job doesn't send request to Propius for more than max_silent_time, 
+        the job will be removed
+        """
+        result = None
+        try:
+            q = Query('*')
+            result = self.r.ft('job').search(q)
+        except Exception as e:
+            self.logger.print(e, WARNING)
+
+        if result:
+            for doc in result.docs:
+                job = json.loads(doc.json)
+                job_id = int(doc.id.split(':')[1])
+                if job['job']['start_sched'] > 0 and \
+                    time.time() - job['job']['start_sched'] >= self.gconfig['job_max_silent_time']:
+
+                    self.remove_job(job_id)
+
 
     def request(self, job_id: int, demand: int) -> bool:
         """Update job metadata based on request
