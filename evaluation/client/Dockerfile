@@ -7,7 +7,7 @@ RUN mkdir propius
 
 COPY ./evaluation/job/channels evaluation/job/channels
 COPY ./evaluation/requirements_peripheral.txt evaluation/requirements_peripheral.txt
-COPY ./propius/client propius/client
+COPY ./propius propius
 COPY ./evaluation/commons.py evaluation/commons.py
 COPY ./propius/channels propius/channels
 
