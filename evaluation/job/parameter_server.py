@@ -3,7 +3,7 @@ import sys
 import asyncio
 import yaml
 import grpc
-from propius.job.propius_job import *
+from propius.job.propius_job_aio import Propius_job_aio
 from channels import parameter_server_pb2
 from channels import parameter_server_pb2_grpc
 from evaluation.commons import *
@@ -14,6 +14,8 @@ import os
 import csv
 import logging
 import logging.handlers
+import time
+import pickle
 
 _cleanup_coroutines = []
 
@@ -59,7 +61,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         self.execution_start = False #indicating whether the scheduling phase has passed
 
-        self.propius_stub = Propius_job(job_config=job_config, verbose=True, logging=True)
+        self.propius_stub = Propius_job_aio(job_config=job_config, verbose=True, logging=True)
 
         if self.do_compute:
             self.executor_ip = config['executor_ip']
@@ -86,10 +88,10 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.executor_stub = executor_pb2_grpc.ExecutorStub(self.executor_channel)
         custom_print(f"PS: connecting to executor on {self.executor_ip}:{self.executor_port}", INFO)
 
-    def round_exec_start(self):
+    async def round_exec_start(self):
         # locked
         custom_print(f"PS {self.id}-{self.cur_round}: start execution", INFO)
-        self.propius_stub.end_request()
+        await self.propius_stub.end_request()
         self.execution_start = True
         self.sched_time = time.time() - self.sched_time
 
@@ -135,8 +137,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.job_config['total_round'] = max(self.total_round - self.cur_round + 1, 1)
         
         custom_print(f"Parameter server: re-register, left round {self.job_config['total_round']}", WARNING)
-        self.propius_stub = Propius_job(job_config=self.job_config, verbose=True, logging=True)
-        if not self.propius_stub.register():    
+        self.propius_stub = Propius_job_aio(job_config=self.job_config, verbose=True, logging=True)
+        if not await self.propius_stub.register():    
             custom_print(f"Parameter server: re-register failed", ERROR)
             return False
         return True
@@ -338,7 +340,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 async def run(config):
     async def server_graceful_shutdown():
         ps.gen_report()
-        ps.propius_stub.complete_job()
+        await ps.propius_stub.complete_job()
         
         if ps.do_compute:
             task_meta = {}
@@ -361,7 +363,7 @@ async def run(config):
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     # Register
-    if not ps.propius_stub.register():
+    if not await ps.propius_stub.register():
         custom_print(f"Parameter server: register failed", ERROR)
         return
     
@@ -402,7 +404,7 @@ async def run(config):
 
             ps.sched_time = time.time()
 
-            if not ps.propius_stub.start_request(new_demand=False):
+            if not await ps.propius_stub.start_request(new_demand=False):
                 if not await ps.re_register():
                     return
                 await asyncio.sleep(3)
@@ -418,7 +420,7 @@ async def run(config):
                 ps.num_sched_timeover += 1
                 continue
 
-            ps.round_exec_start()
+            await ps.round_exec_start()
             ps.response_time = time.time()
 
             try:
