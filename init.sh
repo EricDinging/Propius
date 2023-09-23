@@ -26,6 +26,7 @@ else
             sed -i "s/use_cuda: .*/use_cuda: True/" ./propius/global_config.yml
             sed -i "s/use_cuda: .*/use_cuda: True/" ./evaluation/evaluation_config.yml
             set +x
+            python scripts/config.py
             read -p "Rebuild docker network?(y/n): " rebuild
             if [ "$rebuild" = "y" ]; then
                 set -x

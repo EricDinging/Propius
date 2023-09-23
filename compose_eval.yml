@@ -14,6 +14,9 @@ services:
       - client_db_0
       - client_db_1
     stop_signal: SIGINT
+    environment:
+      - TZ=America/Detroit
+
 
   job_manager:
     build:
@@ -26,6 +29,8 @@ services:
     depends_on:
       - scheduler
     stop_signal: SIGINT
+    environment:
+      - TZ=America/Detroit
 
   client_manager_0:
     build:
@@ -40,6 +45,8 @@ services:
       - client_db_0
     stop_signal: SIGINT
     command: ["0"]
+    environment:
+      - TZ=America/Detroit
 
   client_manager_1:
     build:
@@ -54,6 +61,8 @@ services:
       - client_db_1
     stop_signal: SIGINT
     command: ["1"]
+    environment:
+      - TZ=America/Detroit
   
   load_balancer:
     build:
@@ -67,24 +76,32 @@ services:
       - client_manager_0
       - client_manager_1
     stop_signal: SIGINT
+    environment:
+      - TZ=America/Detroit
 
   job_db:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command: ["6379"]
+    environment:
+      - TZ=America/Detroit
 
   client_db_0:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command: ["6380"]
+    environment:
+      - TZ=America/Detroit
 
   client_db_1:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command: ["6381"]
+    environment:
+      - TZ=America/Detroit
 
   worker_0:
     build:
@@ -99,6 +116,8 @@ services:
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["0"]
+    environment:
+      - TZ=America/Detroit
 
   worker_1:
     build:
@@ -113,6 +132,8 @@ services:
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["1"]
+    environment:
+      - TZ=America/Detroit
 
   worker_2:
     build:
@@ -127,6 +148,8 @@ services:
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["2"]
+    environment:
+      - TZ=America/Detroit
 
   worker_3:
     build:
@@ -141,6 +164,8 @@ services:
       - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     command: ["3"]
+    environment:
+      - TZ=America/Detroit
   
   executor:
     build: 
@@ -156,6 +181,9 @@ services:
       - worker_1
       - worker_2
       - worker_3
+    environment:
+      - TZ=America/Detroit
+
   
   clients:
     build:
@@ -169,8 +197,9 @@ services:
     stop_signal: SIGINT
     depends_on:
       - load_balancer
+    environment:
+      - TZ=America/Detroit
       
-
   jobs:
     build:
       context: .
@@ -184,3 +213,5 @@ services:
       - executor
       - clients
       - job_manager
+    environment:
+      - TZ=America/Detroit
