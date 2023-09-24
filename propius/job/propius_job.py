@@ -7,6 +7,7 @@ from datetime import datetime
 import logging
 import math
 from propius.util.commons import *
+import gc
 
 
 class Propius_job():
@@ -73,6 +74,13 @@ class Propius_job():
         self._cleanup_routine()
 
     def _connect_jm(self) -> None:
+        try:
+            self._jm_channel = None
+            self._jm_stub = None
+            gc.collect()
+        except Exception as e:
+            self._custom_print(e, ERROR)
+
         self._jm_channel = grpc.insecure_channel(f'{self._jm_ip}:{self._jm_port}')
         self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
 
