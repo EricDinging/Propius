@@ -22,6 +22,7 @@ _cleanup_coroutines = []
 class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     def __init__(self, config):
         self.total_round = config['total_round']
+        self.server = None
         self.demand = config['demand']
         self.over_demand = self.demand if "over_selection" not in config else \
             int(config["over_selection"] * config["demand"])
@@ -335,7 +336,22 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                                 round_time,
                                 sched_delay,
                                 response_time])
-
+            
+    async def start_server(self):
+        try:
+            self.server = grpc.aio.server()
+            parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(self, self.server)
+            self.server.add_insecure_port(f"{self.ip}:{self.port}")
+            await self.server.start()
+            custom_print(f"Parameter server: parameter server started, listening on {self.ip}:{self.port}", INFO)
+        except Exception as e:
+            custom_print(e, ERROR)
+    
+    async def stop_server(self, grace: float = 0):
+        try:
+            await self.server.stop(grace)
+        except Exception as e:
+            custom_print(e, ERROR)
 
 async def run(config):
     async def server_graceful_shutdown():
@@ -356,9 +372,9 @@ async def run(config):
         custom_print(f"==Parameter server ending== "
                      f"sched timeout {ps.num_sched_timeover} "
                      f"response timeout {ps.num_response_timeover}", WARNING)
-        await server.stop(5)
+        
+        await ps.stop_server(5)
     
-    server = grpc.aio.server()
     ps = Parameter_server(config)
     _cleanup_coroutines.append(server_graceful_shutdown())
 
@@ -387,16 +403,16 @@ async def run(config):
     else:
         ps.model_size = 74016 # for mobilenetv2 and femnist dryrun profile
 
-    parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(ps, server)
-    server.add_insecure_port(f"{ps.ip}:{ps.port}")
-    await server.start()
-    custom_print(f"Parameter server: parameter server started, listening on {ps.ip}:{ps.port}", INFO)
-
     ps.start_time = time.time()
     await ps.init_report()
 
+    await ps.start_server()
     async with ps.lock:
         while ps.cur_round <= ps.total_round:
+            if ps.cur_round % 10 == 0:
+                await ps.stop_server()
+                await ps.start_server()
+
             ps.client_event_dict = {}
             ps.execution_start = False
             ps.round_client_num = 0

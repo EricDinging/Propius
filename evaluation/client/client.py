@@ -89,7 +89,7 @@ class Client:
 
     async def execute(self)->bool:
         if len(self.event_queue) == 0:
-            return
+            return False
         event = self.event_queue.popleft()
         meta = self.meta_queue.popleft()
         data = self.data_queue.popleft()
@@ -134,10 +134,15 @@ class Client:
             return
         
         await asyncio.sleep(3)
-        while await self.client_ping():
+
+        for _ in range(50):
+            if not await self.client_ping():
+                break
             await asyncio.sleep(3)
-            
-        while await self.execute():
+
+        for _ in range(10):  
+            if not await self.execute():
+                break
             await asyncio.sleep(3)
 
     async def cleanup_routines(self, propius=False):
