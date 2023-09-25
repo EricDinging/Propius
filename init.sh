@@ -17,6 +17,7 @@ else
         chmod +x evaluation/executor/entrypoint.sh
         chmod +x propius/client_manager/entrypoint.sh
         chmod +x evaluation/job/entrypoint.sh
+        chmod +x evaluation/client/entrypoint.sh
         set +x
 
         read -p "Use GPU?(y/n): " use_gpu

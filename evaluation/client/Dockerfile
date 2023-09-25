@@ -13,4 +13,4 @@ COPY ./propius/channels propius/channels
 
 RUN pip install --upgrade pip
 RUN pip install -r evaluation/requirements_peripheral.txt
-CMD ["python", "evaluation/client/client_dispatcher.py"]
+ENTRYPOINT ["/evaluation/client/entrypoint.sh"]

@@ -9,6 +9,7 @@ worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
 job_per_container = 2
+client_per_container = 2000
 
 def get_gpu_idx():
     for i, _ in enumerate(allocate_list):
@@ -94,7 +95,6 @@ for i in range(math.ceil(total_job / job_per_container)):
             'stop_signal': 'SIGINT',
             'depends_on': [
                 'executor',
-                'clients',
                 'job_manager'
             ],
             'command': [
@@ -107,6 +107,39 @@ for i in range(math.ceil(total_job / job_per_container)):
     }
     
     compose_data['services'].update(new_job_container)
+
+# Config client container
+client_num = config_data['client_num']
+for i in range(math.ceil(client_num / client_per_container)):
+    num = min(client_per_container, client_num - i * client_per_container)
+
+    new_client_container = {
+        f'clients_{i}': {
+            'build': {
+                'context': '.',
+                'dockerfile': './evaluation/client/Dockerfile',
+            },
+            'volumes': [
+                './evaluation/client:/evaluation/client',
+                './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
+                './datasets/device_info:/datasets/device_info',
+                './evaluation/monitor:/evaluation/monitor'
+            ],
+            'stop_signal': 'SIGINT',
+            'depends_on': [
+                'load_balancer'
+            ],
+            'environment': ['TZ=America/Detroit'],
+            'command': [
+                f'{num}',
+                f'{i}'
+            ],
+
+        }
+    }
+    compose_data['services'].update(new_client_container)
+
+
 
 # Write the updated YAML back to the file
 with open(compose_file, 'w') as yaml_file:
