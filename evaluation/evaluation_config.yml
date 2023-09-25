@@ -19,13 +19,13 @@ sched_alg: fifo
 avg_interval: 1800
 
 # ---Evaluation setting---
-speedup_factor: 3
+speedup_factor: 5
 test_bsz: 128
 test_ratio: 1
 eval_interval: 5
 
 # Client number
-client_num: 8000
+client_num: 10000
 client_test_num: 356
 
 # Job profile number

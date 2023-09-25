@@ -16,6 +16,7 @@ import logging
 import logging.handlers
 import time
 import pickle
+import gc
 
 _cleanup_coroutines = []
 
@@ -103,10 +104,14 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 self.config["min_learning_rate"]
             )
 
+    def _clear_event_dict(self):
+        self.client_event_dict = {}
+        gc.collect()
+
     async def close_round(self):
         # locked
         custom_print(f"PS {self.id}-{self.cur_round}: round finish", INFO)
-        self.client_event_dict.clear()
+        self._clear_event_dict()
         if self.do_compute:
             job_task_info_msg = executor_pb2.job_task_info(
                 job_id=self.id,
@@ -122,7 +127,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     async def close_failed_round(self):
         # locked
-        self.client_event_dict.clear()
+        self._clear_event_dict()
         if self.do_compute:
             job_task_info_msg = executor_pb2.job_task_info(
                 job_id=self.id,
