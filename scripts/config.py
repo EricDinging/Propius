@@ -1,4 +1,5 @@
 import ruamel.yaml
+import math
 
 compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
@@ -7,6 +8,8 @@ worker_num_list = [4, 4, 0, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
+job_per_container = 2
+
 def get_gpu_idx():
     for i, _ in enumerate(allocate_list):
         if allocate_list[i] > 0:
@@ -69,6 +72,39 @@ for i in range(worker_num):
 compose_data['services']['executor']['depends_on'] = [
     f"worker_{i}" for i in range(worker_num)
 ]
+
+# Config job container
+total_job = config_data['total_job']
+
+for i in range(math.ceil(total_job / job_per_container)):
+    start_row = i * job_per_container
+    end_row = min(total_job, start_row + job_per_container)
+
+    new_job_container = {
+        f'jobs_{i}': {
+            'build': {
+                'context': '.',
+                'dockerfile': './evaluation/job/Dockerfile'
+            },
+            'volumes': [
+                './evaluation/job:/evaluation/job',
+                './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
+                './evaluation/monitor:/evaluation/monitor',
+            ],
+            'stop_signal': 'SIGINT',
+            'depends_on': [
+                'executor',
+                'clients',
+                'job_manager'
+            ],
+            'commands': [
+                start_row,
+                end_row
+            ]
+        }
+    }
+    
+    compose_data['services'].update(new_job_container)
 
 # Write the updated YAML back to the file
 with open(compose_file, 'w') as yaml_file:

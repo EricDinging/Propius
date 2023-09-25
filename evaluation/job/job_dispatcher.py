@@ -2,6 +2,10 @@ import subprocess
 import yaml
 import time
 import os
+import sys
+
+start_row = int(sys.argv[1])
+end_row = int(sys.argv[2])
 
 with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
     config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
@@ -15,9 +19,14 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
 
         job_processes = []
         for line in file:
+            if i >= end_row:
+                break
             line = line.strip().split(" ")
             sleeping_time = int(line[0]) / config['speedup_factor']
             time.sleep(sleeping_time)
+
+            if i < start_row:
+                continue
             
             command = [
                 "python",

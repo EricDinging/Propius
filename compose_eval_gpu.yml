@@ -138,19 +138,6 @@ services:
     environment:
     - TZ=America/Detroit
 
-  jobs:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - clients
-    - job_manager
   worker_0:
     build:
       context: .
@@ -343,3 +330,83 @@ services:
             - gpu
     environment:
     - TZ=America/Detroit
+  jobs_0:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation/job:/evaluation/job
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - executor
+    - clients
+    - job_manager
+    commands:
+    - 0
+    - 2
+  jobs_1:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation/job:/evaluation/job
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - executor
+    - clients
+    - job_manager
+    commands:
+    - 2
+    - 4
+  jobs_2:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation/job:/evaluation/job
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - executor
+    - clients
+    - job_manager
+    commands:
+    - 4
+    - 6
+  jobs_3:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation/job:/evaluation/job
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - executor
+    - clients
+    - job_manager
+    commands:
+    - 6
+    - 8
+  jobs_4:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation/job:/evaluation/job
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - executor
+    - clients
+    - job_manager
+    commands:
+    - 8
+    - 10

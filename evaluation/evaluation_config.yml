@@ -19,7 +19,7 @@ sched_alg: fifo
 avg_interval: 1800
 
 # ---Evaluation setting---
-speedup_factor: 5
+speedup_factor: 3
 test_bsz: 128
 test_ratio: 1
 eval_interval: 5
@@ -54,11 +54,11 @@ femnist_data_map_file: ./datasets/femnist/client_data_mapping/train.csv
 femnist_test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
 
 # ---Execution framework setting---
-do_compute: True
-is_FA: False
+do_compute: true
+is_FA: false
 
-use_cuda: True
-use_docker: True
+use_cuda: true
+use_docker: true
 
 executor_ip: localhost
 executor_port: 49999
