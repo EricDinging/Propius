@@ -97,10 +97,10 @@ for i in range(math.ceil(total_job / job_per_container)):
                 'clients',
                 'job_manager'
             ],
-            'commands': [
-                start_row,
-                end_row,
-                i
+            'command': [
+                f'{start_row}',
+                f'{end_row}',
+                f'{i}'
             ],
             'environment': ['TZ=America/Detroit']
         }

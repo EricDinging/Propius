@@ -343,10 +343,10 @@ services:
     - executor
     - clients
     - job_manager
-    commands:
-    - 0
-    - 2
-    - 0
+    command:
+    - '0'
+    - '2'
+    - '0'
     environment:
     - TZ=America/Detroit
   jobs_1:
@@ -362,10 +362,10 @@ services:
     - executor
     - clients
     - job_manager
-    commands:
-    - 2
-    - 4
-    - 1
+    command:
+    - '2'
+    - '4'
+    - '1'
     environment:
     - TZ=America/Detroit
   jobs_2:
@@ -381,10 +381,10 @@ services:
     - executor
     - clients
     - job_manager
-    commands:
-    - 4
-    - 6
-    - 2
+    command:
+    - '4'
+    - '6'
+    - '2'
     environment:
     - TZ=America/Detroit
   jobs_3:
@@ -400,10 +400,10 @@ services:
     - executor
     - clients
     - job_manager
-    commands:
-    - 6
-    - 8
-    - 3
+    command:
+    - '6'
+    - '8'
+    - '3'
     environment:
     - TZ=America/Detroit
   jobs_4:
@@ -419,9 +419,9 @@ services:
     - executor
     - clients
     - job_manager
-    commands:
-    - 8
-    - 10
-    - 4
+    command:
+    - '8'
+    - '10'
+    - '4'
     environment:
     - TZ=America/Detroit
