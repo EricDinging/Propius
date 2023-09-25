@@ -27,6 +27,7 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
             time.sleep(sleeping_time)
 
             if i < start_row:
+                i += 1
                 continue
             
             command = [
