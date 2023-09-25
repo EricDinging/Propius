@@ -3,6 +3,7 @@ import math
 
 compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
+propius_config_file = './propius/global_config.yml'
 
 worker_num_list = [4, 4, 0, 0]
 worker_num = sum(worker_num_list)
@@ -10,6 +11,8 @@ worker_num = sum(worker_num_list)
 allocate_list = worker_num_list
 job_per_container = 2
 client_per_container = 2000
+
+sched_alg = 'fifo'
 
 def get_gpu_idx():
     for i, _ in enumerate(allocate_list):
@@ -25,6 +28,9 @@ with open(compose_file, 'r') as yaml_file:
 # Load the existing evaluation config YAML file
 with open(evaluation_config_file, 'r') as evaluation_config_yaml_file:
     config_data = yaml.load(evaluation_config_yaml_file)
+
+with open(propius_config_file, 'r') as propius_config_yaml_file:
+    propius_data = yaml.load(propius_config_yaml_file) 
 
 config_data['worker'] = []
 starting_port = 49998
@@ -139,9 +145,15 @@ for i in range(math.ceil(client_num / client_per_container)):
     }
     compose_data['services'].update(new_client_container)
 
-
+# sched_alg
+propius_data['sched_alg'] = sched_alg
+config_data['sched_alg'] = sched_alg
 
 # Write the updated YAML back to the file
+
+with open(propius_config_file, 'w') as propius_config_yaml_file:
+    yaml.dump(propius_data, propius_config_yaml_file) 
+
 with open(compose_file, 'w') as yaml_file:
     yaml.dump(compose_data, yaml_file)
 
