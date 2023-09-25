@@ -99,8 +99,10 @@ for i in range(math.ceil(total_job / job_per_container)):
             ],
             'commands': [
                 start_row,
-                end_row
-            ]
+                end_row,
+                i
+            ],
+            'environment': ['TZ=America/Detroit']
         }
     }
     

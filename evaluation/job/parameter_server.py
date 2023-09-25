@@ -41,7 +41,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     int(config["over_selection"] * config["demand"]),
             "job_manager_ip": config["job_manager_ip"] if not config["use_docker"] else "job_manager",
             "job_manager_port": config["job_manager_port"],
-            "ip": config["ip"] if not config["use_docker"] else "jobs",
+            "ip": config["ip"],
             "port": config["port"]
         }
 

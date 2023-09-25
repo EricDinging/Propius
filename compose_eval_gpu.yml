@@ -346,6 +346,9 @@ services:
     commands:
     - 0
     - 2
+    - 0
+    environment:
+    - TZ=America/Detroit
   jobs_1:
     build:
       context: .
@@ -362,6 +365,9 @@ services:
     commands:
     - 2
     - 4
+    - 1
+    environment:
+    - TZ=America/Detroit
   jobs_2:
     build:
       context: .
@@ -378,6 +384,9 @@ services:
     commands:
     - 4
     - 6
+    - 2
+    environment:
+    - TZ=America/Detroit
   jobs_3:
     build:
       context: .
@@ -394,6 +403,9 @@ services:
     commands:
     - 6
     - 8
+    - 3
+    environment:
+    - TZ=America/Detroit
   jobs_4:
     build:
       context: .
@@ -410,3 +422,6 @@ services:
     commands:
     - 8
     - 10
+    - 4
+    environment:
+    - TZ=America/Detroit

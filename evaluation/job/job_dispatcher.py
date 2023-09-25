@@ -6,10 +6,11 @@ import sys
 
 start_row = int(sys.argv[1])
 end_row = int(sys.argv[2])
+driver_id = int(sys.argv[3])
 
 with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
     config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-    ip = config['job_driver_ip']
+    ip = config['job_driver_ip'] if not config["use_docker"] else f"jobs_{driver_id}"
     port = int(config['job_driver_starting_port'])
     num = config['total_job']
 
