@@ -35,6 +35,15 @@ with open(propius_config_file, 'r') as propius_config_yaml_file:
 config_data['worker'] = []
 starting_port = 49998
 
+# remove old container configuration
+for i in range(100):
+    if f'worker_{i}' in compose_data['services']:
+        del compose_data['services'][f'worker_{i}']
+    if f'jobs_{i}' in compose_data['services']:
+        del compose_data['services'][f'jobs_{i}']
+    if f'clients_{i}' in compose_data['services']:
+        del compose_data['services'][f'clients_{i}']
+
 for i in range(worker_num):
     new_service = {
         f'worker_{i}': {

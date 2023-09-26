@@ -6,41 +6,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 version = "10000"
-time_cutoff = 70000
-round_cutoff = 100
+time_cutoff = 700000
+round_cutoff = 150
 
 sched_alg_list = [
-    # 'fifo', 
                   'fifo',
-                #   'srdf',
-                #   'random', 
-                  'irs'
-                  ]
-job_folder = [
-            f'./evaluation_result/fifo-{version}/job',
-            #   './evaluation_result/srdf-2500-2/job',
-            #   f'./evaluation_result/mobilenet_test_2/job',
-              f'./evaluation_result/irs-{version}/job'
-              ]
-execute_folder = [
-                  f'./evaluation_result/fifo-{version}/executor',
-                #   './evaluation_result/srdf-2500-2/executor',
-                #   f'./evaluation_result/mobilenet_test_2/executor',
-                  f'./evaluation_result/irs-{version}/executor'
+                  'irs2'
                   ]
 
-# client_num = [2500, 5000]
+plot_option = 'acc'
 
-plot_folder = f'./evaluation_result/plot-10000'
-line_styles = [
-                '-.', 
-              #  ':', 
-               '-']
-# color_list = ['grey',  'blueviolet', 'gold', 'darkorange','teal', 'skyblue' ,'darkblue', 'blueviolet']
-color_list = ['blueviolet', 'darkorange', 'teal', 'skyblue', 'darkblue']
-job_num = 5
+job_folder = [f'evaluation_result/{sched_alg}-{version}/job' for sched_alg in sched_alg_list]
+execute_folder = [f'evaluation_result/{sched_alg}-{version}/executor' for sched_alg in sched_alg_list]
 
-# test
+plot_folder = f'./evaluation_result/plot-{version}'
+line_styles = ['-.', ':', '-']
+color_list = ['grey',  'blueviolet', 'gold', 'darkorange','teal', 'skyblue' ,'darkblue', 'blueviolet']
+job_num = 10
+
+if not os.path.exists(plot_folder):
+    os.makedirs(plot_folder)
 
 plt.figure(figsize=(10.8, 8))
 round_info_dict = {}
@@ -49,12 +34,12 @@ round_info_dict = {}
 #         round_info_dict[f"{job_id}-{sched_alg}"] = 0
 
 for i, sched_alg in enumerate(sched_alg_list):
-    # pattern = re.compile(f"test_(\d+)\_{sched_alg}.csv")
     pattern = re.compile(f"test_(\d+)\_{sched_alg}.csv")
     round_list_dict = {}
     round_time_list_dict = {}
     acc_list_dict = {}
     avg_tloss_dict = {}
+    end_time_list = []
     for exe_res_name in os.listdir(execute_folder[i]):
         match = re.search(pattern, exe_res_name)
         if match:
@@ -64,10 +49,9 @@ for i, sched_alg in enumerate(sched_alg_list):
             ps_result_file_name = f"job_{job_id}_{sched_alg}.csv"
             ps_result_file_path = os.path.join(job_folder[i], ps_result_file_name)
 
-            # time_stamp_list = [0]
             time_stamp_list = [0]
             acc_list = []
-            # acc_5_list = []
+            acc_5_list = []
             round_list = []
             avg_tloss_list = []
 
@@ -75,14 +59,14 @@ for i, sched_alg in enumerate(sched_alg_list):
                 reader = csv.reader(exe_file)
                 header = next(reader)
                 acc_idx = header.index("acc")
-                # acc_5_idx = header.index("acc_5")
+                acc_5_idx = header.index("acc_5")
                 round_idx = header.index("round")
-                # avg_loss_idx = header.index("avg_moving_loss")
+                avg_loss_idx = header.index("test_loss")
                 for row in reader:
                     round = int(row[round_idx])
                     round_list.append(round)
                     acc_list.append(float(row[acc_idx]))
-                    # avg_tloss_list.append(float(row[avg_loss_idx]))
+                    avg_tloss_list.append(float(row[avg_loss_idx]))
                     if round == round_cutoff:
                         break
                     
@@ -105,23 +89,31 @@ for i, sched_alg in enumerate(sched_alg_list):
                         break
             
             acc_list = acc_list[0:len(time_stamp_list)]
-            # avg_tloss_list = avg_tloss_list[0:len(time_stamp_list)]
+            avg_tloss_list = avg_tloss_list[0:len(time_stamp_list)]
             # round_list = round_list[0:len(time_stamp_list)]
+            
             job_id = int(job_id) % 100
+            
             # round_list_dict[job_id] = round_list
-            round_info_dict[f"{job_id}-{sched_alg}"] = round_num
+            round_info_dict[f"{job_id}-{sched_alg}"] = time_stamp_list[-1]
             round_time_list_dict[job_id] = time_stamp_list
             acc_list_dict[job_id] = acc_list
-            # avg_tloss_dict[job_id] = avg_tloss_list
+            avg_tloss_dict[job_id] = avg_tloss_list
 
+            end_time_list.append(time_stamp_list[-1])
 
-    # mean_x_axis = [i for i in range(time_cutoff)]
-    # ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], acc_list_dict[j]) for j in range(job_num)]
-    # ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], avg_tloss_dict[j]) for j in range(job_num)]
+    avg_end_time = sum(end_time_list) / len(end_time_list)
+    round_info_dict[f"avg-{sched_alg}"] = avg_end_time
+    
+    mean_x_axis = [i for i in range(int(avg_end_time))]
+    if plot_option == 'acc':
+        ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], acc_list_dict[j]) for j in range(job_num)]
+    elif plot_option == 'test_loss':
+        ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], avg_tloss_dict[j]) for j in range(job_num)]
 
-    # mean_y_axis = np.mean(ys_interp, axis=0)
+    mean_y_axis = np.mean(ys_interp, axis=0)
 
-    # plt.plot(mean_x_axis, mean_y_axis, label=f"Sched. Alg.: {sched_alg}", color=color_list[i])
+    plt.plot(mean_x_axis, mean_y_axis, label=f"Sched. Alg.: {sched_alg}", color=color_list[i])
 
     # Indivial job
     # for job_id in range(job_num):
@@ -134,21 +126,25 @@ for i, sched_alg in enumerate(sched_alg_list):
     #     elif job_id == 3:
     #         label_text = "Resnet18, FedYogi"
     #     plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=label_text, color=color_list[job_id], linestyle=line_styles[i])
-            if job_id < job_num:
-                plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=f"Job: {job_id}, sched. alg: {sched_alg}", color=color_list[job_id], linestyle=line_styles[i])
+
+            # if job_id < job_num:
+            #     plt.plot(round_time_list_dict[job_id], acc_list_dict[job_id], label=f"Job: {job_id}, sched. alg: {sched_alg}", color=color_list[job_id], linestyle=line_styles[i])
 
 
 plt.xlabel('Time (seconds)')
-plt.ylabel('Accuracy')
-# plt.ylabel("Avg. Training Loss")
-# plt.title(f'Femnist Job Time to Accuracy under Various Scheduling Policies')
+
+if plot_option == 'acc':
+    plt.ylabel('Accuracy')
+elif plot_option == 'test_loss':
+    plt.ylabel("Avg. Training Loss")
+plt.title(f'Average Job Time to Accuracy Plot under Various Scheduling Policies, FEMNIST, {version}')
 # plt.ylim([0.6, 0.8])
 # plt.xlim([10000, 20000])
 plt.grid(True)
 plt.legend()
 
 # output_plot_name = f'tta-acc-no-irs.png'
-output_plot_name = f"tta-{version}.png"
+output_plot_name = f"{plot_option}-{version}.png"
 output_plot_path = os.path.join(plot_folder, output_plot_name)
 plt.savefig(output_plot_path)
 
