@@ -14,7 +14,7 @@ sched_alg_list = [
                   'irs2'
                   ]
 
-plot_option = 'acc'
+plot_option = 'test_loss'
 
 job_folder = [f'evaluation_result/{sched_alg}-{version}/job' for sched_alg in sched_alg_list]
 execute_folder = [f'evaluation_result/{sched_alg}-{version}/executor' for sched_alg in sched_alg_list]
