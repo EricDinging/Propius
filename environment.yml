@@ -13,4 +13,4 @@ dependencies:
   - pandas
   - pytorch
   - torchvision
-  - ruaml.yaml
+  - ruamel.yaml
