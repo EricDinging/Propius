@@ -10,7 +10,9 @@ worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
 job_per_container = 2
+
 client_per_container = 2000
+client_num = 5000
 
 sched_alg = 'fifo'
 
@@ -124,7 +126,7 @@ for i in range(math.ceil(total_job / job_per_container)):
     compose_data['services'].update(new_job_container)
 
 # Config client container
-client_num = config_data['client_num']
+config_data['client_num'] = client_num
 for i in range(math.ceil(client_num / client_per_container)):
     num = min(client_per_container, client_num - i * client_per_container)
 

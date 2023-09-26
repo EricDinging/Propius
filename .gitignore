@@ -43,8 +43,6 @@ fedscale/*.tflite
 fedscale/*.ckpt
 fedscale/cloud/aggregation/cache
 experiment/*
-*.csv
 *.log
 math/
-evaluation_result/
 *.tar.gz

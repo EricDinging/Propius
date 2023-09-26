@@ -5,7 +5,7 @@ response time across all simulated jobs
 import os
 import csv
 
-folder_path = input("Enter the folder path containing CSV files: ")
+folder_path = './evaluation_result/irs2-10000/job/'
 
 
 if not os.path.exists(folder_path):
@@ -51,7 +51,7 @@ def read_first(round, csv_file):
     
         return (time_round, sched_time, resp_time)
 
-analyze_certain_rounds = input("Analyze certain rounds y/n: ") == 'y'
+analyze_certain_rounds = input("Analyze a specific round? y/n: ") == 'y'
 
 if analyze_certain_rounds:
     round = int(input("round: "))

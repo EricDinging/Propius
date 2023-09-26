@@ -4,7 +4,10 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # no color
-DIR="dirname $0" 
+DIR="./datasets/" 
+ARGS=${@: 2};
+
+set -Eeuo pipefail
 
 Help()
 {
@@ -90,6 +93,7 @@ Download() {
                 ;;
             femnist )
                 femnist
+
                 ;;
         esac
     done
