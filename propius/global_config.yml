@@ -31,6 +31,7 @@ max_task_offer_list_len: 20
 # Scheduling context
 standard_round_time: 300 # default round time for jobs that doesn't have history round
 irs_epsilon: 0
+max_round: 100 # for jobs that cannot provide total round estimate upon check-in
 
 # ---Client---
 # Client data expiration time in Redis DB

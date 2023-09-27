@@ -124,7 +124,6 @@ class JM_job_db_portal(Job_db):
 
                     self.remove_job(job_id)
 
-
     def request(self, job_id: int, demand: int) -> bool:
         """Update job metadata based on request
 
@@ -150,9 +149,11 @@ class JM_job_db_portal(Job_db):
                     total_round = int(
                         self.r.json().get(
                             id, "$.job.total_round")[0])
-                    if cur_round >= total_round:
+                    if total_round > 0 and cur_round >= total_round or \
+                        total_round == 0 and cur_round >= self.gconfig["max_round"]:
                         job_finished = True
                         break
+                    
                     pipe.multi()
                     pipe.execute_command(
                         'JSON.NUMINCRBY', id, "$.job.round", 1)
@@ -172,6 +173,48 @@ class JM_job_db_portal(Job_db):
             self.logger.print(f"Job {job_id} reached final round", ERROR)
             self.remove_job(job_id)
         return False
+    
+    def update_total_demand_estimate(self, job_id: int):
+        """Update total demand estimate using LAS, if total round is not specified.
+        
+        Args:
+            job_id
+        """
+
+        with self.r.json().pipeline() as pipe:
+            while True:
+                try:
+                    id = f"job:{job_id}"
+                    pipe.watch(id)
+                    if not pipe.get(id):
+                        pipe.unwatch()
+                        break
+                    
+                    total_round = int(
+                        self.r.json().get(id, "$.job.total_round")[0]
+                    )
+                    if total_round > 0:
+                        break
+                    demand = int(
+                        self.r.json().get(id, "$.job.demand")[0]
+                    )
+                    
+                    round = int(
+                        self.r.json().get(id, "$.job.round")[0]
+                    )
+
+                    round = max(round, 1)
+                    total_demand = 2 * round * demand
+                    
+                    pipe.multi()
+                    pipe.execute_command(
+                        'JSON.SET', id, "$.job.total_demand", total_demand)
+                    pipe.execute()
+                    break
+                except redis.WatchError:
+                    pass
+                except Exception as e:
+                    self.logger.print(e, ERROR)
 
     def end_request(self, job_id: int) -> bool:
         """Update job metadata based on end request

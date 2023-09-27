@@ -18,7 +18,7 @@ class Propius_job():
             job_config:
                 public_constraint: dict
                 private_constraint: dict
-                total_round
+                total_round: optional
                 demand
                 job_manager_ip
                 job_manager_port
@@ -37,7 +37,7 @@ class Propius_job():
             public, private = encode_constraints(**job_config['public_constraint'], **job_config['private_constraint'])
             self.public_constraint = tuple(public)
             self.private_constraint = tuple(private)
-            self.est_total_round = job_config['total_round']
+            self.est_total_round = job_config['total_round'] if 'total_round' in job_config else 0
             self.demand = job_config['demand']
             self._jm_ip = job_config['job_manager_ip']
             self._jm_port = job_config['job_manager_port']

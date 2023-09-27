@@ -81,8 +81,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             private_constraint=private_constraint,
             job_ip=job_ip,
             job_port=job_port,
-            total_demand=est_demand *
-            est_total_round,
+            total_demand=est_demand * est_total_round if est_total_round > 0 \
+                else est_demand,
             total_round=est_total_round)
         
         self.logger.print(f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
@@ -111,6 +111,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         self.logger.print(f"Job manager: ack job {job_id} round request: {ack}", INFO)
 
+        self.job_db_portal.update_total_demand_estimate(job_id)
+        
         await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
 
