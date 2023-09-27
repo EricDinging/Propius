@@ -8,17 +8,20 @@ compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
 propius_config_file = './propius/global_config.yml'
 
-worker_num_list = [4, 4, 0, 0]
+profile_folder = './evaluation/job/profile_motivation'
+job_trace = './evaluation/job/profile_motivation/job_trace.txt'
+total_job = 1
+
+worker_num_list = [0, 0, 4, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
-total_job = 9
 avg_job_interval = 1800
 job_per_container = 2
 
+ideal_client = True
 client_per_container = 2000
-client_num = 5000
-
+client_num = 1000
 sched_alg = 'fifo'
 
 def get_gpu_idx():
@@ -171,7 +174,7 @@ config_data["total_job"] = total_job
 time_intervals = np.random.exponential(
     scale=avg_job_interval, size=total_job - 1)
 
-file_path = f"./evaluation/job/trace/job_trace_{total_job}.txt"
+file_path = job_trace
 job_id_list= list(range(total_job))
 random.shuffle(job_id_list)
 if not os.path.exists(file_path):
@@ -179,6 +182,10 @@ if not os.path.exists(file_path):
         file.write(f'0 {job_id_list[0]}\n')
         for idx, itv in enumerate(time_intervals):
             file.write(f'{int(itv)} {job_id_list[idx+1]}\n')
+
+config_data['job_trace'] = job_trace
+config_data['profile_folder'] = profile_folder
+config_data['ideal_client'] = ideal_client
 
 # Write the updated YAML back to the file
 
