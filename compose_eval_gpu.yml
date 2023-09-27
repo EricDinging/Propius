@@ -248,5 +248,5 @@ services:
     environment:
     - TZ=America/Detroit
     command:
-    - '1000'
+    - '1100'
     - '0'

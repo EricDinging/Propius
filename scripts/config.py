@@ -21,8 +21,9 @@ job_per_container = 2
 
 ideal_client = True
 client_per_container = 2000
-client_num = 1000
+client_num = 1100
 sched_alg = 'fifo'
+speedup_factor = 10
 
 def get_gpu_idx():
     for i, _ in enumerate(allocate_list):
@@ -186,6 +187,7 @@ if not os.path.exists(file_path):
 config_data['job_trace'] = job_trace
 config_data['profile_folder'] = profile_folder
 config_data['ideal_client'] = ideal_client
+config_data['speedup_factor'] = speedup_factor
 
 # Write the updated YAML back to the file
 

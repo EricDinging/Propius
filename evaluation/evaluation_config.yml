@@ -16,13 +16,13 @@ job_private_constraint:
 sched_alg: fifo
 
 # ---Evaluation setting---
-speedup_factor: 3
+speedup_factor: 10
 test_bsz: 128
 test_ratio: 1
 eval_interval: 5
 
 # Client number
-client_num: 1000
+client_num: 1100
 client_test_num: 356
 ideal_client: true
 
