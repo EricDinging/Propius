@@ -206,8 +206,8 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
 
         elif self.sched_alg == 'las':
             # Give every job a score of -attained service
-            pass
-
+            self.job_db_portal.las_update_all_job_score()
+            
         return propius_pb2.ack(ack=True)
     
     async def HEART_BEAT(self, request, context):

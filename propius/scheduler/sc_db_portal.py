@@ -195,6 +195,24 @@ class SC_job_db_portal(Job_db):
         except Exception as e:
             self.logger.print(e, ERROR)
 
+    def las_update_all_job_score(self):
+        """Give every job a score of -attained service.
+        """
+        try:
+            q = Query('*')
+            result = self.r.ft('job').search(q)
+            if result.total == 0:
+                return
+            for doc in result.docs:
+                id = doc.id
+                job_dict = json.loads(doc.json)['job']
+                attained_service = job_dict['attained_service']
+                score = -attained_service
+                self.logger.print(f"-------{id} {score:.3f} ", INFO)
+                self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        except Exception as e:
+            self.logger.print(e, ERROR)
+
     def _get_job_time(self, job_id: int) -> float:
         id = f"job:{job_id}"
         try:

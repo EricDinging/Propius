@@ -90,7 +90,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
                      , INFO)
         if ack:
             await self.jm_monitor.job_register()
-            if self.sched_alg != 'srdf' and self.sched_alg != 'srtf':
+            if self.sched_alg != 'srdf' and self.sched_alg != 'srtf' \
+                and self.sched_alg != 'las':
                 await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
         await self.jm_monitor.request()
@@ -108,8 +109,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         ack = self.job_db_portal.request(job_id=job_id, demand=demand)
 
         self.job_db_portal.update_total_demand_estimate(job_id, demand)
-        
-        if self.sched_alg == 'srdf' or self.sched_alg == 'srtf':
+
+        if self.sched_alg == 'srdf' or self.sched_alg == 'srtf' or self.sched_alg == 'las':
             await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
         self.logger.print(f"Job manager: ack job {job_id} round request: {ack}", INFO)
