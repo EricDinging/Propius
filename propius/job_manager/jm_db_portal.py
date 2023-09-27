@@ -150,8 +150,8 @@ class JM_job_db_portal(Job_db):
                     total_round = int(
                         self.r.json().get(
                             id, "$.job.total_round")[0])
-                    if total_round > 0 and cur_round >= total_round or \
-                        total_round == 0 and cur_round >= self.gconfig["max_round"]:
+                    if (total_round > 0 and cur_round >= total_round) or \
+                        (total_round == 0 and cur_round >= self.gconfig["max_round"]):
                         job_finished = True
                         break
 

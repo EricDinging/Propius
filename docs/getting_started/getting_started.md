@@ -1,13 +1,13 @@
 # Getting Started
 
-- If your machine has GPU and you want to use CUDA, check [this](https://askubuntu.com/questions/799184/how-can-i-install-cuda-on-ubuntu-16-04)
+- If your machine has GPU and you want to use CUDA, check [this](https://askubuntu.com/questions/799184/how-can-i-install-cuda-on-ubuntu-16-04) out
 - Download Anaconda if not installed
 ```bash
 wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
 bash Anaconda3-2023.03-1-Linux-x86_64.sh
 conda list
 ```
-- If your device space is not enough for the entire Anaconda package, you can consider installing [miniconda](https://educe-ubc.github.io/conda.html)
+- If your disk space is not enough for the entire Anaconda package, you can consider installing [miniconda](https://educe-ubc.github.io/conda.html)
 - Install docker and docker-compose
     - [docker installation guide (step 1)](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04)
     - [docker compose](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)

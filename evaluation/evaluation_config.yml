@@ -15,9 +15,6 @@ job_private_constraint:
 
 sched_alg: fifo
 
-# ---Job generation config---
-avg_interval: 1800
-
 # ---Evaluation setting---
 speedup_factor: 3
 test_bsz: 128
@@ -28,8 +25,6 @@ eval_interval: 5
 client_num: 10000
 client_test_num: 356
 
-# Job profile number
-job_profile_num: 10
 # Job total number
 total_job: 10
 
