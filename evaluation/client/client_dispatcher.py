@@ -62,6 +62,7 @@ async def run(config):
                     "inactive": inactive_time,
                     "use_docker": config["use_docker"],
                     "speedup_factor": config["speedup_factor"],
+                    "is_FA": config["is_FA"],
                 }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)
@@ -76,7 +77,10 @@ async def run(config):
         await asyncio.gather(*task_list, return_exceptions=True)
 
 if __name__ == '__main__':
-    log_file = './evaluation/monitor/client/dispatcher.log'
+    client_num = int(sys.argv[1])
+    dispatcher_id = int(sys.argv[2])
+
+    log_file = f'./evaluation/monitor/client/dispatcher_{dispatcher_id}.log'
 
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
@@ -94,7 +98,7 @@ if __name__ == '__main__':
     with open(setup_file, "r") as yamlfile:
         try:
             config = yaml.load(yamlfile, Loader=yaml.FullLoader)
-
+            config["client_num"] = client_num
             loop = asyncio.get_event_loop()
             loop.run_until_complete(run(config))
         except KeyboardInterrupt:

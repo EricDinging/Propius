@@ -122,20 +122,44 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             job_id: id of job that has just been registered by job manager
         """
 
-        constraint_job_list = []
-        constraint = self.job_db_portal.get_job_constraints(job_id)
-        if not constraint:
+        constraints_client_map = {}
+        constraints_job_map = {}
+        # get constraints
+        constraints = self.job_db_portal.get_job_constraints(job_id)
+        if not constraints:
             return propius_pb2.ack(ack=False)
-        if not self.job_db_portal.get_job_list(
-                constraint, constraint_job_list):
-            return propius_pb2.ack(ack=False)
-        client_prop = self.client_db_portal.get_client_proportion(constraint)
+        if constraints not in self.constraints:
+            self.constraints.append(constraints)
 
-        self.logger.print(f"Scheduler: upd score for {constraint}: ". INFO)
-        for idx, job in enumerate(constraint_job_list):
-            groupsize = len(constraint_job_list)
-            self.job_db_portal.irs_update_score(
-                job, groupsize, idx, client_prop)
+        # search job for each group, remove if empty
+        for cst in self.constraints:
+            constraints_job_map[cst] = []
+            if not self.job_db_portal.get_job_list(
+                    cst, constraints_job_map[cst]):
+                self.constraints.remove(cst)
+
+        # search elig client size for each group
+        for cst in self.constraints:
+            constraints_client_map[cst] = self.client_db_portal.\
+                get_client_proportion(cst)
+        # sort constraints
+        self.constraints.sort(key=lambda x: constraints_client_map[x])
+    
+        # update all score
+        self.logger.print("Scheduler: starting to update scores", INFO)
+        for cst in self.constraints:
+            try:
+                self.logger.print(f"Scheduler: update score for {cst}: ", INFO)
+                for idx, job in enumerate(constraints_job_map[cst]):
+                    groupsize = len(constraints_job_map[cst])
+                    self.job_db_portal.irs_update_score(
+                        job,
+                        groupsize,
+                        idx,
+                        constraints_client_map[cst],
+                    )
+            except Exception as e:
+                self.logger.print(e, WARNING)
 
     async def JOB_SCORE_UPDATE(self, request, context) -> propius_pb2.ack:
         """Service function that update scores of job in database
@@ -180,6 +204,10 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             # Prioritize job with the shortest remaining demand
             self.job_db_portal.srtf_update_all_job_score(self.std_round_time)
 
+        elif self.sched_alg == 'las':
+            # Give every job a score of -attained service
+            self.job_db_portal.las_update_all_job_score()
+            
         return propius_pb2.ack(ack=True)
     
     async def HEART_BEAT(self, request, context):

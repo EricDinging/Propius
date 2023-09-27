@@ -1,3 +1,6 @@
+# From FedScale
+# https://github.com/SymbioticLab/FedScale/blob/master/fedscale/utils/models/specialized/resnet_speech.py
+
 import math
 import torch
 import torch.nn as nn

@@ -3,9 +3,10 @@ import sys
 import asyncio
 import yaml
 import pickle
+import grpc
 from evaluation.job.channels import parameter_server_pb2_grpc
 from evaluation.job.channels import parameter_server_pb2
-from propius.client.propius_client_aio import *
+from propius.client.propius_client_aio import Propius_client_aio
 from evaluation.commons import *
 from collections import deque
 import time
@@ -41,6 +42,12 @@ class Client:
         self.inactive_time = client_config["inactive"]
         self.cur_period = 0
         self.speedup_factor = client_config["speedup_factor"]
+        self.is_FA = client_config["is_FA"]
+
+    def _deallocate(self):
+        self.event_queue.clear()
+        self.meta_queue.clear()
+        self.data_queue.clear()
     
     async def _connect_to_ps(self, ps_ip: str, ps_port: int):
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
@@ -55,6 +62,11 @@ class Client:
         self.event_queue.append(event)
         self.meta_queue.append(meta)
         self.data_queue.append(data)
+
+    async def client_checkin(self)->bool:
+        client_id_msg = parameter_server_pb2.client_id(id=self.propius_client_stub.id)
+        server_response = await self.ps_stub.CLIENT_CHECKIN(client_id_msg)
+        return server_response.event == DUMMY_EVENT
         
     async def client_ping(self)->bool:
         client_id_msg = parameter_server_pb2.client_id(id=self.propius_client_stub.id)
@@ -77,7 +89,7 @@ class Client:
 
     async def execute(self)->bool:
         if len(self.event_queue) == 0:
-            return
+            return False
         event = self.event_queue.popleft()
         meta = self.meta_queue.popleft()
         data = self.data_queue.popleft()
@@ -86,6 +98,8 @@ class Client:
 
         if event == CLIENT_TRAIN:
             exe_time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
+            if self.is_FA:
+                exe_time /= 3
         elif event == SHUT_DOWN:
             return False
         elif event == UPDATE_MODEL:
@@ -94,8 +108,11 @@ class Client:
 
         elif event == UPLOAD_MODEL:
             exe_time = meta["upload_size"] / float(self.comm_speed)
+            if self.is_FA:
+                exe_time = 0 
         
         exe_time /= self.speedup_factor
+
         custom_print(f"Client {self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
         await asyncio.sleep(exe_time)
 
@@ -112,17 +129,25 @@ class Client:
         remain_time = self.inactive_time[self.cur_period] - cur_time
         return remain_time
 
-    async def event_monitor(self) -> bool:
+    async def event_monitor(self):
+        if not await self.client_checkin():
+            return
         
-        while await self.client_ping():
+        await asyncio.sleep(3)
+
+        for _ in range(50):
+            if not await self.client_ping():
+                break
             await asyncio.sleep(3)
-            
-        while await self.execute():
+
+        for _ in range(10):  
+            if not await self.execute():
+                break
             await asyncio.sleep(3)
-        return True
 
     async def cleanup_routines(self, propius=False):
         try:
+            self._deallocate()
             if propius:
                 await self.propius_client_stub.close()
                 custom_print(f"Client {self.id}: ==shutting down==", ERROR)
@@ -177,14 +202,14 @@ class Client:
                     continue
                 
                 await self._connect_to_ps(ps_ip, ps_port)
-                if not await self.event_monitor():
-                    custom_print(f"Client {self.id}: timeout, aborted", WARNING)
-                await self.cleanup_routines()
+                await self.event_monitor()
 
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
                 custom_print(f"Client {self.id}: {e}", ERROR)
+            finally:
+                await self.cleanup_routines()
             
         await self.cleanup_routines(True)
         

@@ -3,14 +3,11 @@ from propius.channels import propius_pb2
 import pickle
 import grpc
 import asyncio
-from propius.client.commons import *
+from propius.util.commons import *
 import logging
 
 #TODO state flow check
 #TODO add value check
-
-def gen_client_config():
-    pass
 
 class Propius_client_aio():
     def __init__(self, client_config: dict, verbose: bool = False, logging: bool = False):
@@ -47,14 +44,14 @@ class Propius_client_aio():
         except Exception as e:
             raise ValueError("Invalid config arguments")
         
-    def _cleanup_routine(self):
+    async def _cleanup_routine(self):
         try:
-            self._lb_channel.close()
+            await self._lb_channel.close()
         except Exception:
             pass
 
-    def __del__(self):
-        self._cleanup_routine()
+    async def __del__(self):
+        await self._cleanup_routine()
 
     def _custom_print(self, message: str, level: int=PRINT):
         if self.verbose:
@@ -70,7 +67,7 @@ class Propius_client_aio():
                 logging.error(message)
 
     def _connect_lb(self) -> None:
-        self._lb_channel = grpc.insecure_channel(f'{self._lb_ip}:{self._lb_port}')
+        self._lb_channel = grpc.aio.insecure_channel(f'{self._lb_ip}:{self._lb_port}')
         self._lb_stub = propius_pb2_grpc.Load_balancerStub(self._lb_channel)
 
         self._custom_print(f"Client: connecting to load balancer at {self._lb_ip}:{self._lb_port}")
@@ -101,7 +98,7 @@ class Propius_client_aio():
         """Clean up allocation, close connection to Propius
         """
 
-        self._cleanup_routine()
+        await self._cleanup_routine()
         self._custom_print(f"Client {self.id}: closing connection to Propius")
     
     async def client_check_in(self, num_trial: int=1) -> tuple[list, list]:
@@ -123,7 +120,7 @@ class Propius_client_aio():
                 public_specification=pickle.dumps(self.public_specifications)
             )
             try:
-                cm_offer = self._lb_stub.CLIENT_CHECKIN(client_checkin_msg)
+                cm_offer = await self._lb_stub.CLIENT_CHECKIN(client_checkin_msg)
                 self.id = cm_offer.client_id
                 task_ids = pickle.loads(cm_offer.task_offer)
                 task_private_constraint = pickle.loads(
@@ -153,7 +150,7 @@ class Propius_client_aio():
 
         for _ in range(num_trial):
             try:
-                cm_offer = self._lb_stub.CLIENT_PING(propius_pb2.client_id(id=self.id))
+                cm_offer = await self._lb_stub.CLIENT_PING(propius_pb2.client_id(id=self.id))
                 task_ids = pickle.loads(cm_offer.task_offer)
                 task_private_constraint = pickle.loads(
                     cm_offer.private_constraint)
@@ -210,7 +207,7 @@ class Propius_client_aio():
                 client_id=self.id, task_id=task_id
             )
             try:
-                cm_ack = self._lb_stub.CLIENT_ACCEPT(client_accept_msg)
+                cm_ack = await self._lb_stub.CLIENT_ACCEPT(client_accept_msg)
                 
                 if cm_ack.ack:
                     self._custom_print(f"Client {self.id}: client task selection is recieved")

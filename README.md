@@ -1,6 +1,9 @@
 # Propius
 Propius is a Federated Learning (FL) resource manager, capable of efficiently scheduling devices in a multi-job setting.
 
+## Interface
+Under construction
+
 ## Repository Organization
 ```
 .
@@ -113,17 +116,15 @@ For the ease of evaluation, we containerize Propius and essential peripherals fo
 ```bash
 source ./datasets/download.sh
 ```
-
-- Make changes to `evaluation/evaluation_config.yml`
-- Generate job trace based on the previous configuration. The trace file won't be generated if it already exists
+- Edit and run configuration script
 ```bash
-python ./evaluation/job/generator.py
+python ./scripts/config.py
 ```
-- Edit job profile in `evaluation/job/profile/`. Make sure the number of profiles matches the number specified in the configuration file.
-- Edit `propius/global_config.yml`, especially when you want to change the scheduling algorithms under evaluation
+- Create or edit job profile in `evaluation/job/profile/`. Make sure the profile number is the same as total job number
 - Start docker network
 ```bash
-source ./init.sh
+chmod +x ./init.sh
+./init.sh
 ```
 - Monitoring
 ```bash
@@ -139,9 +140,11 @@ chmod +x ./scripts/monitor_jobs.sh
 - Analyze
 ```bash
 python ./scripts/analyze_roundtime.py # Give you insight on round time, sched latency etc.
+python ./scripts/analyze.py # Make time vs accuracy, time vs loss plot
 ```
-- Clean up
+- Shutdown & Clean up
 ```bash
+docker compose -f compose_eval_gpu.yml down
 chmod +x ./scripts/clean.sh
 ./scripts/clean.sh
 ```

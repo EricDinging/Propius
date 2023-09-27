@@ -81,15 +81,18 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             private_constraint=private_constraint,
             job_ip=job_ip,
             job_port=job_port,
-            total_demand=est_demand *
-            est_total_round,
+            total_demand=est_demand * est_total_round if est_total_round > 0 \
+                else 2 * est_demand,
             total_round=est_total_round)
+        
         self.logger.print(f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
                      f", private constraint: {private_constraint}, demand: {est_demand}"
                      , INFO)
         if ack:
             await self.jm_monitor.job_register()
-            await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
+            if self.sched_alg != 'srdf' and self.sched_alg != 'srtf' \
+                and self.sched_alg != 'las':
+                await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
         await self.jm_monitor.request()
         return propius_pb2.job_register_ack(id=job_id, ack=ack)
@@ -104,7 +107,12 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         job_id, demand = request.id, request.demand
         ack = self.job_db_portal.request(job_id=job_id, demand=demand)
-        
+
+        self.job_db_portal.update_total_demand_estimate(job_id, demand)
+
+        if self.sched_alg == 'srdf' or self.sched_alg == 'srtf' or self.sched_alg == 'las':
+            await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
+
         self.logger.print(f"Job manager: ack job {job_id} round request: {ack}", INFO)
 
         await self.jm_monitor.request()
@@ -149,6 +157,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         return propius_pb2.ack(ack=True)
     
     async def heartbeat_routine(self):
+        """Send heartbeat routine to scheduler and prune job db if needed."""
         try:
             while True:
                 await asyncio.sleep(30)
@@ -156,6 +165,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
                     self.sched_portal.HEART_BEAT(propius_pb2.empty())
                 except:
                     pass
+                self.job_db_portal.prune()
+                
         except asyncio.CancelledError:
             pass
 

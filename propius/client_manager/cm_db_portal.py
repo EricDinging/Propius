@@ -33,9 +33,7 @@ class CM_job_db_portal(Job_db):
 
         The client public specification would satisfy returned task public constraints, 
         but client private specification might not satisfy the returned task private constraints. 
-        The returned tasks' current allocation amount would be smaller than their respective demand
-        If a job doesn't send request to Propius for more than half an hour,
-        the job will be removed, unless the job's demand hasn't been fulfilled
+        The returned tasks' current allocation amount would be smaller than their respective demand.
 
         Args:
             specification: a tuple listing public spec values
@@ -47,13 +45,17 @@ class CM_job_db_portal(Job_db):
                                             for client local task selection
             size: total number of jobs for analytics
         """
+        result = None
         try:
-            q = Query('*').sort_by('score', asc=False)
-            result = self.r.ft('job').search(q)
-                
+            if self.sched_alg == 'fifo':
+                q = Query('*').sort_by('timestamp', asc=True)
+                result = self.r.ft('job').search(q)
+            else:
+                q = Query('*').sort_by('score', asc=False)
+                result = self.r.ft('job').search(q)
         except Exception as e:
             self.logger.print(e, WARNING)
-            result = None
+
         if result:
             size = result.total
             open_list = []
@@ -76,10 +78,6 @@ class CM_job_db_portal(Job_db):
                             [job['job']['private_constraint'][name]
                              for name in self.private_constraint_name])
                         open_private_constraint.append(job_private_constraint)
-                else:
-                    if job['job']['start_sched'] > 0 and \
-                        time.time() - job['job']['start_sched'] >= self.gconfig['job_max_silent_time']:                
-                        self.remove_job(job_id)
 
             if self.sched_alg == 'random' and len(open_list) > 0:
                 paired_offer = list(zip(open_list, open_private_constraint))
@@ -131,6 +129,9 @@ class CM_job_db_portal(Job_db):
                         sched_time = time.time() - start_sched
                         pipe.execute_command(
                             'JSON.NUMINCRBY', id, "$.job.total_sched", sched_time)
+                        pipe.execute_command(
+                            'JSON.NUMINCRBY', id, "$.job.attained_service", demand
+                        )
                     pipe.execute()
                     return (ip, port)
                 except redis.WatchError:

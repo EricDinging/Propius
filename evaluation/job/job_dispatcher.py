@@ -2,22 +2,33 @@ import subprocess
 import yaml
 import time
 import os
+import sys
+
+start_row = int(sys.argv[1])
+end_row = int(sys.argv[2])
+driver_id = int(sys.argv[3])
 
 with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
     config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-    ip = config['job_driver_ip']
+    ip = config['job_driver_ip'] if not config["use_docker"] else f"jobs_{driver_id}"
     port = int(config['job_driver_starting_port'])
     num = config['total_job']
 
-    with open(f"./evaluation/job/job_trace_{num}.txt", "r") as file:
+    with open(f"./evaluation/job/trace/job_trace_{num}.txt", "r") as file:
         i = 0
         time.sleep(10)
 
         job_processes = []
         for line in file:
+            if i >= end_row:
+                break
             line = line.strip().split(" ")
             sleeping_time = int(line[0]) / config['speedup_factor']
             time.sleep(sleeping_time)
+
+            if i < start_row:
+                i += 1
+                continue
             
             command = [
                 "python",

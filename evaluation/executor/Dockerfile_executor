@@ -6,6 +6,6 @@ COPY ./evaluation/commons.py /evaluation/commons.py
 COPY ./evaluation/internal /evaluation/internal
 COPY ./evaluation/requirements.txt /evaluation/requirements.txt
 
-RUN pip install --upgrade pip
-RUN pip install -r /evaluation/requirements.txt
-CMD ["python", "./evaluation/executor/executor.py"]
+RUN pip3 install --upgrade pip
+RUN pip3 install -r /evaluation/requirements.txt
+CMD ["python3", "./evaluation/executor/executor.py"]

@@ -11,3 +11,4 @@ dependencies:
   - matplotlib
   - redis-py
   - pandas
+  - ruamel.yaml
