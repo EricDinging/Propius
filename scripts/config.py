@@ -21,7 +21,7 @@ job_per_container = 2
 
 ideal_client = True
 client_per_container = 2000
-client_num = 1100
+client_num = 1430
 sched_alg = 'fifo'
 speedup_factor = 10
 
