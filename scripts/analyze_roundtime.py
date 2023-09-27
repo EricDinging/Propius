@@ -87,8 +87,8 @@ else:
     avg_round = total_round / num
     avg_sched = total_sched / num
     avg_response = total_resp / num
-    print(f"Avg finish time: {avg_round}, avg sched delay: {avg_sched}, avg response time: {avg_response}")
-    print(f"Upper finish time: {upper_round}, Lower finish time: {lower_round}")
-    print(f"Upper sched time: {upper_sched}, Lower sched time: {lower_sched}")
-    print(f"Upper response time: {upper_resp}, Lower response time: {lower_resp}")
+    print(f"Avg finish time: {avg_round:.3f}, avg sched delay: {avg_sched:.3f}, avg response time: {avg_response:.3f}")
+    print(f"Upper finish time: {upper_round:.3f}, Lower finish time: {lower_round:.3f}")
+    print(f"Upper sched time: {upper_sched:.3f}, Lower sched time: {lower_sched:.3f}")
+    print(f"Upper response time: {upper_resp:.3f}, Lower response time: {lower_resp:.3f}")
 
