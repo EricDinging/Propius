@@ -31,7 +31,6 @@ max_task_offer_list_len: 20
 # Scheduling context
 standard_round_time: 300 # default round time for jobs that doesn't have history round
 irs_epsilon: 0
-max_round: 100 # for jobs that cannot provide total round estimate upon check-in
 
 # ---Client---
 # Client data expiration time in Redis DB
@@ -42,6 +41,7 @@ job_expire_time: 604800 # a week
 job_max_silent_time: 1800 # half an hour; 
 # if job doesn't send request to Propius for more than half an hour,
 # the job will be removed
+max_round: 1000 # for jobs that cannot provide total round estimate upon check-in
 
 # ---Constraint/spec setting---
 job_public_constraint:

@@ -46,3 +46,4 @@ experiment/*
 *.log
 math/
 *.tar.gz
+*.egg-info
