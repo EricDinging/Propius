@@ -5,21 +5,22 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-version = "10000"
+version = "8000"
 time_cutoff = 700000
 round_cutoff = 150
 
 sched_alg_list = [
                   'fifo',
+                  'random',
                   'amg'
                   ]
 
-# plot_option = 'acc' 
-plot_option = 'test_loss'
+plot_option = 'acc' 
+# plot_option = 'test_loss'
 
 plot_folder = f'./evaluation_result/plot-{version}'
 line_styles = ['-.', ':', '-']
-color_list = ['grey',  'blueviolet', 'gold', 'darkorange','teal', 'skyblue' ,'darkblue', 'blueviolet']
+color_list = ['grey', 'gold', 'blueviolet', 'darkorange','teal', 'skyblue' ,'darkblue', 'blueviolet']
 job_num = 10
 
 if not os.path.exists(plot_folder):
@@ -122,7 +123,7 @@ for i, sched_alg in enumerate(sched_alg_list):
     elif sched_alg == 'fifo':
         alg_label = 'FIFO'
     elif sched_alg == 'random':
-        alg_label = 'RANDOM'
+        alg_label = 'Random'
     plt.plot(mean_x_axis, mean_y_axis, label=f"Policy: {alg_label}", color=color_list[i])
 
     # Indivial job

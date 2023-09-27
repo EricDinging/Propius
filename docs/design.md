@@ -39,7 +39,8 @@ Propius will calculate a priority score $s$ for every job. A job has higher prio
 ## Job lifetime
 - Job will be removed if runtime is greater than JOB_EXPIRE_TIME
 - Job will be removed if time intervals is greater than JOB_MAX_SILENT_TIME
-- If job provides total round estimation $r_{total}$
-    - Job will be removed after $r_{total}$ 
-- Job does not provide total round estimation
-    - Job will be removed after MAX_ROUND
+- If use policy that removes job after reaching the estimated round
+    - If job provides total round estimation $r_{total}$
+        - Job will be removed after $r_{total}$ 
+    - Job does not provide total round estimation
+        - Job will be removed after MAX_ROUND
