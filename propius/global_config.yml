@@ -42,6 +42,7 @@ job_max_silent_time: 1800 # half an hour;
 # if job doesn't send request to Propius for more than half an hour,
 # the job will be removed
 max_round: 1000 # for jobs that cannot provide total round estimate upon check-in
+allow_exceed_total_round: True
 
 # ---Constraint/spec setting---
 job_public_constraint:

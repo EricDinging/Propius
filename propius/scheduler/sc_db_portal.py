@@ -184,7 +184,7 @@ class SC_job_db_portal(Job_db):
                 avg_round_time = runtime / past_round if past_round > 0 else std_round_time
                     
                 if job_dict['total_round'] > 0:
-                    remain_round = job_dict['total_round'] - job_dict['round']
+                    remain_round = max(job_dict['total_round'] - job_dict['round'], 0)
                     remain_time = remain_round * avg_round_time
                 else:
                     remain_time = runtime
@@ -232,7 +232,7 @@ class SC_job_db_portal(Job_db):
         
             total_round = int(self.r.json().get(id, ".job.total_round")[0])
             if total_round > 0:
-                est_jct = runtime + (total_round - round_executed) * avg_round_time
+                est_jct = runtime + max(total_round - round_executed, 0) * avg_round_time
             else:
                 est_jct = 2 * runtime
             return est_jct
