@@ -2,8 +2,8 @@
 
 # Remove all logs. If you use docker, try sudo ./scripts/clean.sh
 
-rm ./propius/monitor/log/*
-rm ./propius/monitor/plot/*
-rm ./evaluation/monitor/client/*
-rm ./evaluation/monitor/executor/*
-rm ./evaluation/monitor/job/*
+rm ./propius/monitor/log/* -f
+rm ./propius/monitor/plot/* -f
+rm ./evaluation/monitor/client/* -f
+rm ./evaluation/monitor/executor/* -f
+rm ./evaluation/monitor/job/* -f

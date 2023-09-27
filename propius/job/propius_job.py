@@ -6,74 +6,8 @@ import time
 from datetime import datetime
 import logging
 import math
-
-CPU_F = "cpu_f"
-RAM = "ram"
-FP16_MEM = "fp16_mem"
-ANDROID_OS = "android_os"
-DATASET_SIZE = "dataset_size"
-PRINT = 0
-DEBUG = 1
-INFO = 2
-WARNING = 3
-ERROR = 4
-
-
-def get_time() -> str:
-    current_time = datetime.now()
-    format_time = current_time.strftime("%Y-%m-%d:%H:%M:%S:%f")[:-4]
-    return format_time
-
-
-def encode_constraints(**kargs) -> tuple[list, list]:
-    """Encode job constraints. Eg. encode_constraints(CPU_F=18, RAM=8).
-
-    Args:
-        Keyword arguments
-
-    Raises:
-        ValueError: if input key is not recognized
-    """
-
-    public_constraint_dict = {
-        CPU_F: 0,
-        RAM: 0,
-        FP16_MEM: 0,
-        ANDROID_OS: 0,
-    }
-
-    private_constraint_dict = {
-        DATASET_SIZE: 0
-    }
-
-    for key in public_constraint_dict.keys():
-        if key in kargs:
-            public_constraint_dict[key] = kargs[key]
-
-    for key in private_constraint_dict.keys():
-        if key in kargs:
-            private_constraint_dict[key] = kargs[key]
-
-    for key in kargs.keys():
-        if key not in public_constraint_dict and key not in private_constraint_dict:
-            raise ValueError(f"{key} constraint is not supported")
-
-    # TODO encoding, value check
-
-    return (list(public_constraint_dict.values()),
-            list(private_constraint_dict.values()))
-
-
-def gen_job_config(constraint: tuple[list, list],
-                   est_total_round: int,
-                   demand: int,
-                   job_manager_ip: str,
-                   job_manager_port: int,
-                   ps_ip: str,
-                   ps_port: int
-                   ) -> dict:
-    # TODO
-    pass
+from propius.util.commons import *
+import gc
 
 
 class Propius_job():
@@ -84,7 +18,7 @@ class Propius_job():
             job_config:
                 public_constraint: dict
                 private_constraint: dict
-                total_round
+                total_round: optional
                 demand
                 job_manager_ip
                 job_manager_port
@@ -103,7 +37,7 @@ class Propius_job():
             public, private = encode_constraints(**job_config['public_constraint'], **job_config['private_constraint'])
             self.public_constraint = tuple(public)
             self.private_constraint = tuple(private)
-            self.est_total_round = job_config['total_round']
+            self.est_total_round = job_config['total_round'] if 'total_round' in job_config else 0
             self.demand = job_config['demand']
             self._jm_ip = job_config['job_manager_ip']
             self._jm_port = job_config['job_manager_port']
@@ -114,13 +48,13 @@ class Propius_job():
             self.verbose = verbose
             self.logging = logging
             self.id = -1
-        except BaseException:
+        except Exception:
             raise ValueError("Missing config arguments")
 
     def _cleanup_routine(self):
         try:
             self._jm_channel.close()
-        except BaseException:
+        except Exception:
             pass
 
     def _custom_print(self, message: str, level: int=PRINT):
@@ -140,6 +74,13 @@ class Propius_job():
         self._cleanup_routine()
 
     def _connect_jm(self) -> None:
+        try:
+            self._jm_channel = None
+            self._jm_stub = None
+            gc.collect()
+        except Exception as e:
+            self._custom_print(e, ERROR)
+
         self._jm_channel = grpc.insecure_channel(f'{self._jm_ip}:{self._jm_port}')
         self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
 
@@ -208,7 +149,7 @@ class Propius_job():
                     self._custom_print(e, ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
-
+                
         raise RuntimeError(
             "Unable to register to Propius job manager at the moment")
 
@@ -254,7 +195,6 @@ class Propius_job():
                     self._custom_print(f"Job {self.id}: round request failed", WARNING)
                     return False
                 else:
-                    
                     self._custom_print(f"Job {self.id}: round request succeeded", INFO)
                     return True
             except Exception as e:

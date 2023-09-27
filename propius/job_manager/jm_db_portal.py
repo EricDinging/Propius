@@ -63,6 +63,7 @@ class JM_job_db_portal(Job_db):
             "port": job_port,
             "total_demand": total_demand,
             "total_round": total_round,
+            "attained_service": 0,
             "round": 0,
             "demand": 0,
             "amount": 0,
@@ -101,6 +102,28 @@ class JM_job_db_portal(Job_db):
                 except Exception as e:
                     self.logger.print(e, ERROR)
                     return False
+                
+    def prune(self):
+        """Prune job database.
+        
+        If a job doesn't send request to Propius for more than max_silent_time, 
+        the job will be removed
+        """
+        result = None
+        try:
+            q = Query('*')
+            result = self.r.ft('job').search(q)
+        except Exception as e:
+            self.logger.print(e, WARNING)
+
+        if result:
+            for doc in result.docs:
+                job = json.loads(doc.json)
+                job_id = int(doc.id.split(':')[1])
+                if job['job']['start_sched'] > 0 and \
+                    time.time() - job['job']['start_sched'] >= self.gconfig['job_max_silent_time']:
+
+                    self.remove_job(job_id)
 
     def request(self, job_id: int, demand: int) -> bool:
         """Update job metadata based on request
@@ -127,9 +150,11 @@ class JM_job_db_portal(Job_db):
                     total_round = int(
                         self.r.json().get(
                             id, "$.job.total_round")[0])
-                    if cur_round >= total_round:
+                    if total_round > 0 and cur_round >= total_round or \
+                        total_round == 0 and cur_round >= self.gconfig["max_round"]:
                         job_finished = True
                         break
+
                     pipe.multi()
                     pipe.execute_command(
                         'JSON.NUMINCRBY', id, "$.job.round", 1)
@@ -149,6 +174,51 @@ class JM_job_db_portal(Job_db):
             self.logger.print(f"Job {job_id} reached final round", ERROR)
             self.remove_job(job_id)
         return False
+    
+    def update_total_demand_estimate(self, job_id: int, demand: int):
+        """Update total demand estimate.
+        
+        If total round is known, update total demand by multiplying total round with current demand.
+        If total round is unknown, update total demand by doubling the attained service number,
+
+        Args:
+            job_id
+            demand
+        """
+
+        with self.r.json().pipeline() as pipe:
+            while True:
+                try:
+                    id = f"job:{job_id}"
+                    pipe.watch(id)
+                    if not pipe.get(id):
+                        pipe.unwatch()
+                        break
+                    
+                    total_round = int(
+                        self.r.json().get(id, "$.job.total_round")[0]
+                    )
+                    attained_service = int(
+                        self.r.json().get(id, "$.job.attained_service")[0]
+                    )
+                    
+                    if total_round > 0:
+                        round = int(
+                            self.r.json().get(id, "$.job.round")[0]
+                        )
+                        total_demand = attained_service + (total_round - round) * demand
+                    else:
+                        total_demand = max(2 * attained_service, demand)
+                    
+                    pipe.multi()
+                    pipe.execute_command(
+                        'JSON.SET', id, "$.job.total_demand", total_demand)
+                    pipe.execute()
+                    break
+                except redis.WatchError:
+                    pass
+                except Exception as e:
+                    self.logger.print(e, ERROR)
 
     def end_request(self, job_id: int) -> bool:
         """Update job metadata based on end request
@@ -182,6 +252,9 @@ class JM_job_db_portal(Job_db):
                     sched_time = time.time() - start_sched
                     pipe.execute_command(
                         'JSON.NUMINCRBY', id, "$.job.total_sched", sched_time)
+                    pipe.execute_command(
+                        'JSON.NUMINCRBY', id, "$.job.attained_service", demand
+                    )
                     pipe.execute()
                     return True
                 except redis.WatchError:

@@ -14,6 +14,8 @@ services:
       - client_db_0
       - client_db_1
     stop_signal: SIGINT
+    environment:
+      - TZ=America/Detroit
 
   job_manager:
     build:
@@ -28,6 +30,8 @@ services:
     depends_on:
       - scheduler
     stop_signal: SIGINT
+    environment:
+      - TZ=America/Detroit
 
   client_manager_0:
     build:
@@ -42,6 +46,8 @@ services:
       - client_db_0
     stop_signal: SIGINT
     command: ["0"]
+    environment:
+      - TZ=America/Detroit
 
   client_manager_1:
     build:
@@ -56,6 +62,8 @@ services:
       - client_db_1
     stop_signal: SIGINT
     command: ["1"]
+    environment:
+      - TZ=America/Detroit
   
   load_balancer:
     build:
@@ -71,21 +79,29 @@ services:
       - client_manager_0
       - client_manager_1
     stop_signal: SIGINT
+    environment:
+      - TZ=America/Detroit
 
   job_db:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command: ["6379"]
+    environment:
+      - TZ=America/Detroit
 
   client_db_0:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command: ["6380"]
+    environment:
+      - TZ=America/Detroit
 
   client_db_1:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command: ["6381"]
+    environment:
+      - TZ=America/Detroit

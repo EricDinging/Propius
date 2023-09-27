@@ -24,8 +24,8 @@ scheduler_ip: localhost
 scheduler_port: 50000
 
 # ---Scheduling---
-# Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2']
-sched_alg: 'fifo'
+# Scheduling algorithm ['fifo', 'random', 'srtf', 'srdf', 'irs', 'irs2', 'las']
+sched_alg: fifo
 max_task_offer_list_len: 20
 
 # Scheduling context
@@ -40,7 +40,8 @@ client_expire_time: 1000
 job_expire_time: 604800 # a week
 job_max_silent_time: 1800 # half an hour; 
 # if job doesn't send request to Propius for more than half an hour,
-# the job will be removed, unless the job's demand hasn't been fulfilled
+# the job will be removed
+max_round: 1000 # for jobs that cannot provide total round estimate upon check-in
 
 # ---Constraint/spec setting---
 job_public_constraint:

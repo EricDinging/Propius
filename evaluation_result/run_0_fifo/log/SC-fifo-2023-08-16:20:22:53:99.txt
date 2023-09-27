@@ -1,6 +1,0 @@
-Scheduler: avg request per second: 0.000, max request per second: 1
-Job size: 1, latency: 0.003864765167236328
-Job size: 2, latency: 0.0012311935424804688
-Job size: 3, latency: 0.0012154579162597656
-Job size: 4, latency: 0.0008809566497802734
-Job size: 5, latency: 0.0011112689971923828

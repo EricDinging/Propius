@@ -123,7 +123,8 @@ python ./evaluation/job/generator.py
 - Edit `propius/global_config.yml`, especially when you want to change the scheduling algorithms under evaluation
 - Start docker network
 ```bash
-source ./init.sh
+chmod +x ./init.sh
+./init.sh
 ```
 - Monitoring
 ```bash
@@ -140,8 +141,9 @@ chmod +x ./scripts/monitor_jobs.sh
 ```bash
 python ./scripts/analyze_roundtime.py # Give you insight on round time, sched latency etc.
 ```
-- Clean up
+- Shutdown & Clean up
 ```bash
+docker compose -f compose_eval_gpu.yml down
 chmod +x ./scripts/clean.sh
 ./scripts/clean.sh
 ```
