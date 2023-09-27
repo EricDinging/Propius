@@ -159,10 +159,7 @@ class SC_job_db_portal(Job_db):
             for doc in result.docs:
                 id = doc.id
                 job_dict = json.loads(doc.json)['job']
-                remain_round = job_dict['total_round'] - job_dict['round']
-                remain_demand = job_dict['demand'] * remain_round
-                # if remain_demand == 0:
-                #     remain_demand = job_dict['total_demand']
+                remain_demand = max(job_dict['total_demand'] - job_dict['attained_service'], 0)
                 score = -remain_demand
                 self.logger.print(f"-------{id} {score:.3f} ", INFO)
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
@@ -182,13 +179,18 @@ class SC_job_db_portal(Job_db):
             for doc in result.docs:
                 id = doc.id
                 job_dict = json.loads(doc.json)['job']
-                remain_round = job_dict['total_round'] - job_dict['round']
                 past_round = job_dict['round']
                 if past_round == 0:
                     avg_round_time = std_round_time
                 else:
                     avg_round_time = (
                         time.time() - job_dict['timestamp']) / past_round
+                    
+                if job_dict['total_round'] > 0:
+                    remain_round = job_dict['total_round'] - job_dict['round']
+                else:
+                    remain_round = max(2 * job_dict['round'], 1)
+
                 remain_time = remain_round * avg_round_time
                 score = -remain_time
                 self.logger.print(f"-------{id} {score:.3f} ", INFO)
@@ -208,15 +210,17 @@ class SC_job_db_portal(Job_db):
     def _get_est_JCT(self, job_id: int, std_round_time: float) -> float:
         id = f"job:{job_id}"
         try:
-            total_round = int(self.r.json().get(id, ".job.total_round")[0])
+            start_time = float(self.r.json().get(job_id, "$.job.timestamp")[0])
             round_executed = int(self.r.json().get(job_id, "$.job.round")[0])
-            if round_executed == 0:
-                return total_round * std_round_time
+            runtime = time.time() - start_time
+            avg_round_time = runtime / round_executed if round_executed > 0 else std_round_time
+        
+            total_round = int(self.r.json().get(id, ".job.total_round")[0])
+            if total_round > 0:
+                est_jct = runtime + (total_round - round_executed) * avg_round_time
             else:
-                start_time = float(self.r.json().get(job_id, "$.job.timestamp")[0])
-                runtime = time.time() - start_time
-                avg_round_time = runtime / round_executed
-                return total_round * avg_round_time
+                est_jct = 2 * runtime
+            return est_jct
             
         except Exception as e:
             self.logger.print(e, WARNING)
