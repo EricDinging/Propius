@@ -204,6 +204,10 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             # Prioritize job with the shortest remaining demand
             self.job_db_portal.srtf_update_all_job_score(self.std_round_time)
 
+        elif self.sched_alg == 'las':
+            # Give every job a score of -attained service
+            pass
+
         return propius_pb2.ack(ack=True)
     
     async def HEART_BEAT(self, request, context):

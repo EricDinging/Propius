@@ -180,18 +180,15 @@ class SC_job_db_portal(Job_db):
                 id = doc.id
                 job_dict = json.loads(doc.json)['job']
                 past_round = job_dict['round']
-                if past_round == 0:
-                    avg_round_time = std_round_time
-                else:
-                    avg_round_time = (
-                        time.time() - job_dict['timestamp']) / past_round
+                runtime = time.time() - job_dict['timestamp']
+                avg_round_time = runtime / past_round if past_round > 0 else std_round_time
                     
                 if job_dict['total_round'] > 0:
                     remain_round = job_dict['total_round'] - job_dict['round']
+                    remain_time = remain_round * avg_round_time
                 else:
-                    remain_round = max(2 * job_dict['round'], 1)
+                    remain_time = runtime
 
-                remain_time = remain_round * avg_round_time
                 score = -remain_time
                 self.logger.print(f"-------{id} {score:.3f} ", INFO)
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
