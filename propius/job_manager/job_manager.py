@@ -82,7 +82,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             job_ip=job_ip,
             job_port=job_port,
             total_demand=est_demand * est_total_round if est_total_round > 0 \
-                else est_demand,
+                else 2 * est_demand,
             total_round=est_total_round)
         
         self.logger.print(f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
