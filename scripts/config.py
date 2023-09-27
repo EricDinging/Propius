@@ -12,7 +12,7 @@ profile_folder = './evaluation/job/profile_motivation'
 job_trace = './evaluation/job/profile_motivation/job_trace.txt'
 total_job = 1
 
-worker_num_list = [0, 0, 4, 0]
+worker_num_list = [0, 0, 2, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
@@ -21,7 +21,7 @@ job_per_container = 2
 
 ideal_client = True
 client_per_container = 2000
-client_num = 1430
+client_num = 242
 sched_alg = 'fifo'
 speedup_factor = 10
 
