@@ -148,7 +148,7 @@ class SC_job_db_portal(Job_db):
     def srdf_update_all_job_score(self):
         """Give every job a score of -remaining demand
 
-            remaining demand = remaining round * current round demand
+            remaining demand = est total demand - attained demand
             Prioritize job with the smallest remaining demand.
         """
         try:

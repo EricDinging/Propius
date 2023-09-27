@@ -55,6 +55,7 @@ class Job_db:
                 NumericField("$.job.port", as_name="port"),
                 NumericField("$.job.total_demand", as_name="total_demand"),
                 NumericField("$.job.total_round", as_name="total_round"),
+                NumericField("$.job.attained_service", as_name="attained_service"),
                 NumericField("$.job.round", as_name="round"),
                 NumericField("$.job.demand", as_name="demand"),
                 NumericField("$.job.amount", as_name="amount"),
@@ -110,11 +111,8 @@ class Job_db:
                     total_sched = float(
                         self.r.json().get(
                             id, "$.job.total_sched")[0])
-                    round = float(self.r.json().get(id, "$.job.round")[0])
+                    round = int(self.r.json().get(id, "$.job.round")[0])
                     demand = int(self.r.json().get(id, "$.job.demand")[0])
-                    round_executed = int(
-                        self.r.json().get(
-                            id, "$.job.round")[0])
 
                     constraint_list = []
                     for name in self.public_constraint_name:
@@ -132,7 +130,7 @@ class Job_db:
                     return (
                         tuple(constraint_list),
                         demand,
-                        round_executed,
+                        round,
                         runtime,
                         sched_latency)
                 except redis.WatchError:

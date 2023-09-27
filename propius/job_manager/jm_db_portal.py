@@ -63,6 +63,7 @@ class JM_job_db_portal(Job_db):
             "port": job_port,
             "total_demand": total_demand,
             "total_round": total_round,
+            "attained_service": 0,
             "round": 0,
             "demand": 0,
             "amount": 0,
@@ -153,7 +154,7 @@ class JM_job_db_portal(Job_db):
                         total_round == 0 and cur_round >= self.gconfig["max_round"]:
                         job_finished = True
                         break
-                    
+
                     pipe.multi()
                     pipe.execute_command(
                         'JSON.NUMINCRBY', id, "$.job.round", 1)
@@ -174,11 +175,15 @@ class JM_job_db_portal(Job_db):
             self.remove_job(job_id)
         return False
     
-    def update_total_demand_estimate(self, job_id: int):
-        """Update total demand estimate using LAS, if total round is not specified.
+    def update_total_demand_estimate(self, job_id: int, demand: int):
+        """Update total demand estimate.
         
+        If total round is known, update total demand by multiplying total round with current demand.
+        If total round is unknown, update total demand by doubling the attained service number,
+
         Args:
             job_id
+            demand
         """
 
         with self.r.json().pipeline() as pipe:
@@ -193,18 +198,17 @@ class JM_job_db_portal(Job_db):
                     total_round = int(
                         self.r.json().get(id, "$.job.total_round")[0]
                     )
-                    if total_round > 0:
-                        break
-                    demand = int(
-                        self.r.json().get(id, "$.job.demand")[0]
+                    attained_service = int(
+                        self.r.json().get(id, "$.job.attained_service")[0]
                     )
                     
-                    round = int(
-                        self.r.json().get(id, "$.job.round")[0]
-                    )
-
-                    round = max(round, 1)
-                    total_demand = 2 * round * demand
+                    if total_round > 0:
+                        round = int(
+                            self.r.json().get(id, "$.job.round")[0]
+                        )
+                        total_demand = attained_service + (total_round - round) * demand
+                    else:
+                        total_demand = max(2 * attained_service, demand)
                     
                     pipe.multi()
                     pipe.execute_command(
@@ -248,6 +252,9 @@ class JM_job_db_portal(Job_db):
                     sched_time = time.time() - start_sched
                     pipe.execute_command(
                         'JSON.NUMINCRBY', id, "$.job.total_sched", sched_time)
+                    pipe.execute_command(
+                        'JSON.NUMINCRBY', id, "$.job.attained_service", demand
+                    )
                     pipe.execute()
                     return True
                 except redis.WatchError:

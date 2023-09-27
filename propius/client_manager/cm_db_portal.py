@@ -129,6 +129,9 @@ class CM_job_db_portal(Job_db):
                         sched_time = time.time() - start_sched
                         pipe.execute_command(
                             'JSON.NUMINCRBY', id, "$.job.total_sched", sched_time)
+                        pipe.execute_command(
+                            'JSON.NUMINCRBY', id, "$.job.attained_service", demand
+                        )
                     pipe.execute()
                     return (ip, port)
                 except redis.WatchError:
