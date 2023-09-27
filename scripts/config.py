@@ -1,5 +1,8 @@
 import ruamel.yaml
 import math
+import random
+import os
+import numpy as np
 
 compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
@@ -9,6 +12,8 @@ worker_num_list = [4, 4, 0, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
+total_job = 9
+avg_job_interval = 1800
 job_per_container = 2
 
 client_per_container = 2000
@@ -92,7 +97,6 @@ compose_data['services']['executor']['depends_on'] = [
 ]
 
 # Config job container
-total_job = config_data['total_job']
 
 for i in range(math.ceil(total_job / job_per_container)):
     start_row = i * job_per_container
@@ -159,6 +163,22 @@ for i in range(math.ceil(client_num / client_per_container)):
 # sched_alg
 propius_data['sched_alg'] = sched_alg
 config_data['sched_alg'] = sched_alg
+
+
+random.seed(1)
+config_data["total_job"] = total_job
+# generate txt with format: time in minute, profile num, job_id
+time_intervals = np.random.exponential(
+    scale=avg_job_interval, size=total_job - 1)
+
+file_path = f"./evaluation/job/trace/job_trace_{total_job}.txt"
+job_id_list= list(range(total_job))
+random.shuffle(job_id_list)
+if not os.path.exists(file_path):
+    with open(file_path, "w") as file:
+        file.write(f'0 {job_id_list[0]}\n')
+        for idx, itv in enumerate(time_intervals):
+            file.write(f'{int(itv)} {job_id_list[idx+1]}\n')
 
 # Write the updated YAML back to the file
 
