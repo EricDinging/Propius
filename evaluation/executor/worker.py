@@ -150,7 +150,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 train_dataset = OpenImage(
                     self.config['data_dir'], dataset='train', transform=train_transform)
                 test_dataset = OpenImage(
-                    self.config["data_dir"], dataset='validation', transform=test_transform)
+                    self.config["data_dir"], dataset='val', transform=test_transform)
                 
                 train_partitioner = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
                 train_partitioner.partition_data_helper(0, data_map_file=self.config['data_map_file'])
