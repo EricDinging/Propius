@@ -192,11 +192,11 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             # a random float ranging from 0 to 10.
             self.job_db_portal.random_update_all_job_score()
 
-        elif self.sched_alg == 'srdf':
+        elif self.sched_alg == 'srsf':
             # Give every job a score of -remaining demand.
             # remaining demand = remaining round * current round demand
             # Prioritize job with the smallest remaining demand
-            self.job_db_portal.srdf_update_all_job_score()
+            self.job_db_portal.srsf_update_all_job_score()
 
         elif self.sched_alg == 'srtf':
             # Give every job a score of -remaining time

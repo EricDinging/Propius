@@ -8,22 +8,22 @@ compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
 propius_config_file = './propius/global_config.yml'
 
-profile_folder = './evaluation/job/profile_yogi'
-job_trace = './evaluation/job/profile_yogi/job_trace.txt'
-total_job = 1
+profile_folder = './evaluation/job/profile_mobilenet'
+job_trace = './evaluation/job/trace/job_trace_10.txt'
+total_job = 10
 
-worker_num_list = [2, 0, 0, 0]
+worker_num_list = [4, 4, 0, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
 avg_job_interval = 1800
 job_per_container = 2
 
-ideal_client = True
+ideal_client = False
 client_per_container = 2000
-client_num = 1000
-sched_alg = 'fifo'
-speedup_factor = 10
+client_num = 10000
+sched_alg = 'srsf'
+speedup_factor = 3
 
 # dataset = "openImg"
 dataset = "femnist"

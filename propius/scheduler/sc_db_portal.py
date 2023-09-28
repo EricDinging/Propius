@@ -145,7 +145,7 @@ class SC_job_db_portal(Job_db):
         """
         pass
 
-    def srdf_update_all_job_score(self):
+    def srsf_update_all_job_score(self):
         """Give every job a score of -remaining demand
 
             remaining demand = est total demand - attained demand

@@ -27,7 +27,7 @@ Propius will calculate a priority score $s$ for every job. A job has higher prio
 3. SRTF
     - Calculate the score upon job request (every round)
     - $s = -t_r$
-4. SRDF
+4. SRSF
     - Calculate the score upon job request (every round)
     - $s = -d_r$
 5. IRS (AMG)
