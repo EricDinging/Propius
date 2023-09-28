@@ -13,7 +13,7 @@ plot_option = 'acc'
 # plot_option = 'test_loss'
 
 version = '10'
-contention_list = ['1', '5', '10', '20']
+contention_list = ['1', '5', '10', '15', '20']
 
 plot_folder = f'./evaluation_result/plot-motivation-{version}'
 line_styles = ['-.', ':', '-']
