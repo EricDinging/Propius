@@ -5,8 +5,11 @@ response time across all simulated jobs
 import os
 import csv
 
-folder_path = './evaluation_result/fifo-8000/job/'
+folder_path = './evaluation_result/irs2-8000/job/'
 
+analyze_certain_rounds = False
+
+print(folder_path)
 
 if not os.path.exists(folder_path):
     raise FileNotFoundError("The specified folder does not exist.")
@@ -51,8 +54,6 @@ def read_first(round, csv_file):
     
         return (time_round, sched_time, resp_time)
 
-analyze_certain_rounds = input("Analyze a specific round? y/n: ") == 'y'
-
 if analyze_certain_rounds:
     round = int(input("round: "))
     for filename in os.listdir(folder_path):
@@ -87,6 +88,7 @@ else:
     avg_round = total_round / num
     avg_sched = total_sched / num
     avg_response = total_resp / num
+    
     print(f"Avg finish time: {avg_round:.3f}, avg queueing delay: {avg_sched:.3f}, avg response time: {avg_response:.3f}")
     print(f"Upper finish time: {upper_round:.3f}, Lower finish time: {lower_round:.3f}")
     print(f"Upper queueing time: {upper_sched:.3f}, Lower queueing time: {lower_sched:.3f}")
