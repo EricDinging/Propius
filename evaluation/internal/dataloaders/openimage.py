@@ -103,7 +103,8 @@ class OpenImage():
 
     def _check_exists(self):
         return (os.path.exists(os.path.join(self.processed_folder,
-                                            self.data_file)))
+                                            'client_data_mapping',
+                                            self.data_file+'.csv')))
 
     def load_meta_data(self, path):
         datas, labels = [], []
