@@ -8,8 +8,8 @@ compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
 propius_config_file = './propius/global_config.yml'
 
-profile_folder = './evaluation/job/profile_openimage'
-job_trace = './evaluation/job/profile_openimage/job_trace.txt'
+profile_folder = './evaluation/job/profile_motivation'
+job_trace = './evaluation/job/profile_motivation/job_trace.txt'
 total_job = 1
 
 worker_num_list = [4, 4, 0, 0]
@@ -25,8 +25,8 @@ client_num = int(50 * 1.3 * 1.1 * 20)
 sched_alg = 'fifo'
 speedup_factor = 10
 
-dataset = "openImg"
-# dataset = "femnist"
+# dataset = "openImg"
+dataset = "femnist"
 
 def get_gpu_idx():
     for i, _ in enumerate(allocate_list):
@@ -191,9 +191,6 @@ config_data['job_trace'] = job_trace
 config_data['profile_folder'] = profile_folder
 config_data['ideal_client'] = ideal_client
 config_data['speedup_factor'] = speedup_factor
-
-if 'test_data_map_file' in config_data:
-    del config_data['test_data_map_file']
     
 if dataset == 'femnist':
     config_data['data_dir'] = "./datasets/femnist"
