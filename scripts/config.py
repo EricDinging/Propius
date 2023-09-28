@@ -191,9 +191,6 @@ config_data['job_trace'] = job_trace
 config_data['profile_folder'] = profile_folder
 config_data['ideal_client'] = ideal_client
 config_data['speedup_factor'] = speedup_factor
-
-if 'test_data_map_file' in config_data:
-    del config_data['test_data_map_file']
     
 if dataset == 'femnist':
     config_data['data_dir'] = "./datasets/femnist"
