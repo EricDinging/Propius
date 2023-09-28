@@ -55,11 +55,12 @@ class OpenImage():
         self.target_transform = target_transform
         self.data_file = dataset  # 'train', 'test', 'val'
 
-        if not self._check_exists():
-            raise RuntimeError('Dataset not found.' +
-                               ' You have to download it')
+        # if not self._check_exists():
+        #     raise RuntimeError('Dataset not found.' +
+        #                        ' You have to download it')
 
-        self.path = os.path.join(self.processed_folder, self.data_file)
+        self.path = os.path.join(
+            self.root, 'client_data_mapping', self.data_file+'.csv')
         # load data and targets
         self.data, self.targets = self.load_file(self.path)
         self.imgview = imgview
@@ -102,9 +103,8 @@ class OpenImage():
         return self.root
 
     def _check_exists(self):
-        return (os.path.exists(os.path.join(self.processed_folder,
-                                            'client_data_mapping',
-                                            self.data_file+'.csv')))
+        return (os.path.exists(os.path.join(self.root,
+                                            self.data_file)))
 
     def load_meta_data(self, path):
         datas, labels = [], []
@@ -123,7 +123,6 @@ class OpenImage():
     def load_file(self, path):
 
         # load meta file to get labels
-        datas, labels = self.load_meta_data(os.path.join(
-            self.processed_folder, 'client_data_mapping', self.data_file+'.csv'))
+        datas, labels = self.load_meta_data(path)
 
         return datas, labels
