@@ -156,7 +156,7 @@ class Worker_manager:
 
                 await self.worker_stub_dict[cur_worker].TASK_REGIST(job_task_msg)
                 ping_num = 0
-                await asyncio.sleep(1)
+                await asyncio.sleep(5)
                 while True:
                     ping_msg = executor_pb2.worker_task_info(
                         job_id=job_id,
@@ -172,7 +172,7 @@ class Worker_manager:
                     if ping_num >= 30:
                         self.logger.print(f"Unable to retrieve job {job_id} task {task_id}", ERROR)
                         return None
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(1)
 
                 if event == CLIENT_TRAIN:
                     model_param = results["model_weight"]

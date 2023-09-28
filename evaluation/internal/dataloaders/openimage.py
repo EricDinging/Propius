@@ -59,8 +59,13 @@ class OpenImage():
         #     raise RuntimeError('Dataset not found.' +
         #                        ' You have to download it')
 
+        if self.data_file == "val":
+            data_folder = "validation"
+        elif self.data_file == "train":
+            data_folder = "train"
+
         self.path = os.path.join(
-            self.root, 'client_data_mapping', self.data_file+'.csv')
+            self.root, data_folder)
         # load data and targets
         self.data, self.targets = self.load_file(self.path)
         self.imgview = imgview
@@ -123,6 +128,7 @@ class OpenImage():
     def load_file(self, path):
 
         # load meta file to get labels
-        datas, labels = self.load_meta_data(path)
+        datas, labels = self.load_meta_data(os.path.join(
+            self.root, 'client_data_mapping', self.data_file+'.csv'))
 
         return datas, labels
