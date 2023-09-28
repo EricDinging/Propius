@@ -41,8 +41,8 @@ async def run(config):
     await asyncio.sleep(10)
     try:
         for i in range(client_num):
-            # client_idx = random.randint(0, total_client_num - 1)
-            client_idx = i
+            client_idx = random.randint(0, total_client_num - 1)
+            # client_idx = i
             public_specs = {
                     name: client_spec_dict[client_idx % len(client_spec_dict)][name]
                     for name in public_constraint_name}

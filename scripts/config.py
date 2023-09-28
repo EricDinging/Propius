@@ -8,11 +8,11 @@ compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
 propius_config_file = './propius/global_config.yml'
 
-profile_folder = './evaluation/job/profile_motivation'
-job_trace = './evaluation/job/profile_motivation/job_trace.txt'
+profile_folder = './evaluation/job/profile_yogi'
+job_trace = './evaluation/job/profile_yogi/job_trace.txt'
 total_job = 1
 
-worker_num_list = [4, 4, 0, 0]
+worker_num_list = [2, 0, 0, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
@@ -21,7 +21,7 @@ job_per_container = 2
 
 ideal_client = True
 client_per_container = 2000
-client_num = int(50 * 1.3 * 1.1 * 20)
+client_num = 1000
 sched_alg = 'fifo'
 speedup_factor = 10
 

@@ -112,9 +112,9 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         model = pickle.loads(request.model_weight)
         model_adapter = Torch_model_adapter(model,
                                             optimizer=TorchServerOptimizer(
-                                            job_meta["gradient_policy"], 
-                                            job_meta, 
-                                            self.device)
+                                            mode=job_meta["gradient_policy"], 
+                                            args=job_meta, 
+                                            device=self.device)
                                             )
         dataset_name = job_meta["dataset"]
 
