@@ -1,3 +1,5 @@
+# FedScale: https://github.com/SymbioticLab/FedScale/blob/master/fedscale/dataloaders/openimage.py
+
 from __future__ import print_function
 
 import csv
