@@ -101,6 +101,11 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             loss.backward()
             optimizer.step()
 
+            if conf['gradient_policy'] == 'fed-prox':
+                for idx, param in enumerate(model.parameters()):
+                    param.data += conf['learning_rate'] * conf['proxy_mu'] * \
+                    (param.data - self.global_model[idx])
+
             self._completed_steps += 1
 
             if self._completed_steps == conf['local_steps']:
@@ -255,6 +260,10 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         model.train()
         optimizer = self._get_optimizer(model, conf)
         criterion = self._get_criterion(conf)
+
+        self.global_model = None
+        if conf['gradient_policy'] == 'fed-prox':
+            self.global_model = [param.data.clone() for param in model.parameters()]
         
         while self._completed_steps < conf['local_steps']:
             try:
@@ -271,7 +280,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             'trained_size': self._completed_steps * conf['batch_size'],
         }  
 
-        self.logger.print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: training complete===", INFO)
+        self.logger.print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: training complete, local steps: {conf['local_steps']}", INFO)
 
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4

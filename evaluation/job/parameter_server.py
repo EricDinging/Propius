@@ -165,7 +165,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             "event": CLIENT_TRAIN,
             "meta": {
                 "batch_size": self.config["batch_size"],
-                "local_steps": self.config["local_steps"]
+                "local_steps": self.config["local_steps"],
+                "gradient_policy": self.config["gradient_policy"]
             },
             "data": {}
         })
@@ -245,8 +246,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
     
     async def CLIENT_EXECUTE_COMPLETION(self, request, context):
         client_id = request.id
-        compl_event, status = request.event, request.status
-        meta, data = pickle.loads(request.meta), pickle.loads(request.data)
+        compl_event, _ = request.event, request.status
+        meta, _ = pickle.loads(request.meta), pickle.loads(request.data)
         client_exec_id = meta["exec_id"]
 
         server_response_msg = parameter_server_pb2.server_response(
@@ -264,13 +265,17 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 if compl_event == UPLOAD_MODEL:
                     custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} complete, "
                                 f"issue SHUT_DOWN event, {self.round_result_cnt}/{self.demand}", INFO)
+                    local_steps = meta["local_steps"]
+                    
                     self.round_result_cnt += 1
                     task_meta = {
-                        "local_steps": self.config["local_steps"],
+                        "local_steps": local_steps,
                         "learning_rate": self.config["learning_rate"],
                         "batch_size": self.config["batch_size"],
                         "num_loaders": self.config["num_loaders"],
-                        "loss_decay": self.config["loss_decay"]
+                        "loss_decay": self.config["loss_decay"],
+                        "gradient_policy": self.config["gradient_policy"],
+                        "proxy_mu": self.config["proxy_mu"] if "proxy_mu" in self.config else 0
                     }
 
                     if self.do_compute:

@@ -95,30 +95,47 @@ class Client:
         data = self.data_queue.popleft()
     
         exe_time = 0
+        local_steps = 0
+
+        update_model_comm_time = meta["download_size"] / (float(self.comm_speed) * self.speedup_factor)
+        upload_model_comm_time = meta["upload_size"] / (float(self.comm_speed) * self.speedup_factor)
 
         if event == CLIENT_TRAIN:
-            exe_time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
+            local_steps = meta["local_steps"]
+            one_step_exe_time = max(3 * meta["batch_size"] * float(self.comp_speed) / (1000 * self.speedup_factor), 0.0001)
+
+            remain_time = self.remain_time()
+
+            if meta["gradient_policy"] == 'fed-prox':
+                local_steps = max(min(local_steps, int((remain_time - upload_model_comm_time) / one_step_exe_time)), 1)
+
+            exe_time = one_step_exe_time * local_steps
+
+            if meta["gradient_policy"] != 'fed-prox':
+                if exe_time + upload_model_comm_time > remain_time:
+                    return False
+
             if self.is_FA:
                 exe_time /= 3
+
         elif event == SHUT_DOWN:
             return False
+        
         elif event == UPDATE_MODEL:
             self.round = meta["round"]
-            exe_time = meta["download_size"] / float(self.comm_speed)
+            exe_time = update_model_comm_time
 
         elif event == UPLOAD_MODEL:
-            exe_time = meta["upload_size"] / float(self.comm_speed)
+            exe_time = upload_model_comm_time
             if self.is_FA:
                 exe_time = 0 
-        
-        exe_time /= self.speedup_factor
 
         custom_print(f"Client {self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
         await asyncio.sleep(exe_time)
 
         compl_event = event
         status = True
-        compl_meta = {"round": self.round, "exec_id": self.id}
+        compl_meta = {"round": self.round, "exec_id": self.id, "local_steps": local_steps}
         compl_data = DUMMY_RESPONSE
         
         await self.client_execute_complete(compl_event, status, compl_meta, compl_data)
@@ -183,9 +200,10 @@ class Client:
                     continue
 
                 
-                remain_time = self.remain_time()
-                if remain_time <= 600 / self.speedup_factor:
-                    await asyncio.sleep(remain_time)
+                # remain_time = self.remain_time()
+                # if remain_time <= 600 / self.speedup_factor:
+                #     await asyncio.sleep(remain_time)
+                #     continue
                 
                 await self.propius_client_stub.connect()
 
@@ -208,8 +226,6 @@ class Client:
                 raise KeyboardInterrupt
             except Exception as e:
                 custom_print(f"Client {self.id}: {e}", ERROR)
-            finally:
-                await self.cleanup_routines()
             
         await self.cleanup_routines(True)
         

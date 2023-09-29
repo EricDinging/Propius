@@ -51,7 +51,8 @@ class TorchServerOptimizer:
                 name: torch.from_numpy(np.array(last_model[idx].cpu() + diff_weight[idx].cpu(), dtype=np.float32)) for idx, name in enumerate(target_model.state_dict().keys())
             }
         
-        elif self.mode == 'fed-avg':
+        else:
+            # fed-avg, fed-prox
             new_state_dict = {
                 name: torch.from_numpy(np.array(current_model[i].cpu(), dtype=np.float32)) for i, name in enumerate(target_model.state_dict().keys())
             }
