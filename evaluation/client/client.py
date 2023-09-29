@@ -44,6 +44,8 @@ class Client:
         self.speedup_factor = client_config["speedup_factor"]
         self.is_FA = client_config["is_FA"]
 
+        self.local_steps = 0
+
     def _deallocate(self):
         self.event_queue.clear()
         self.meta_queue.clear()
@@ -95,21 +97,20 @@ class Client:
         data = self.data_queue.popleft()
     
         exe_time = 0
-        local_steps = 0
 
-        update_model_comm_time = meta["download_size"] / (float(self.comm_speed) * self.speedup_factor)
-        upload_model_comm_time = meta["upload_size"] / (float(self.comm_speed) * self.speedup_factor)
+        update_model_comm_time = 0
+        upload_model_comm_time = 0
 
         if event == CLIENT_TRAIN:
-            local_steps = meta["local_steps"]
+            self.local_steps = meta["local_steps"]
             one_step_exe_time = max(3 * meta["batch_size"] * float(self.comp_speed) / (1000 * self.speedup_factor), 0.0001)
 
             remain_time = self.remain_time()
 
             if meta["gradient_policy"] == 'fed-prox':
-                local_steps = max(min(local_steps, int((remain_time - upload_model_comm_time) / one_step_exe_time)), 1)
+                self.local_steps = max(min(self.local_steps, int((remain_time - upload_model_comm_time) / one_step_exe_time)), 1)
 
-            exe_time = one_step_exe_time * local_steps
+            exe_time = one_step_exe_time * self.local_steps
 
             if meta["gradient_policy"] != 'fed-prox':
                 if exe_time + upload_model_comm_time > remain_time:
@@ -124,6 +125,8 @@ class Client:
         elif event == UPDATE_MODEL:
             self.round = meta["round"]
             exe_time = update_model_comm_time
+            update_model_comm_time = meta["download_size"] / (float(self.comm_speed) * self.speedup_factor)
+            upload_model_comm_time = meta["upload_size"] / (float(self.comm_speed) * self.speedup_factor)
 
         elif event == UPLOAD_MODEL:
             exe_time = upload_model_comm_time
@@ -135,7 +138,7 @@ class Client:
 
         compl_event = event
         status = True
-        compl_meta = {"round": self.round, "exec_id": self.id, "local_steps": local_steps}
+        compl_meta = {"round": self.round, "exec_id": self.id, "local_steps": self.local_steps}
         compl_data = DUMMY_RESPONSE
         
         await self.client_execute_complete(compl_event, status, compl_meta, compl_data)

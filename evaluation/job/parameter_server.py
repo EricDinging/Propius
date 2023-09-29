@@ -157,6 +157,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             "event": UPDATE_MODEL,
             "meta": {
                 "download_size": self.model_size,
+                "upload_size": self.model_size,
                 "round": self.cur_round
             },
             "data": {}
@@ -173,7 +174,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         event_q.append({
             "event": UPLOAD_MODEL,
             "meta": {
-                "upload_size": self.model_size,
             },
             "data": {}
         })
