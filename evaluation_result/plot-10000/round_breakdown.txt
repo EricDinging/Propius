@@ -43,3 +43,19 @@ Avg finish time: 22792.243, avg queueing delay: 19.635, avg response time: 131.3
 Upper finish time: 26378.904, Lower finish time: 18416.366
 Upper queueing time: 48.500, Lower queueing time: 4.553
 Upper response time: 151.114, Lower response time: 112.216
+./evaluation_result/srdf-10000/job/
+./evaluation_result/srsf-10000/job/
+['-1', '-1', '24.232943266432805', '148.83404223966284']
+['-1', '-1', '7.703580677904041', '120.87409892145372']
+['-1', '-1', '13.548994705377035', '128.82812714892506']
+['-1', '-1', '76.31415974410476', '110.53404982358414']
+['-1', '-1', '4.4275985695668405', '148.14080575444052']
+['-1', '-1', '22.925049205489508', '128.46185919938497']
+['-1', '-1', '19.965555696297955', '150.83068758288755']
+['-1', '-1', '9.683655577779605', '150.80238253549234']
+['-1', '-1', '13.121611449892157', '117.56777715209304']
+['-1', '-1', '45.65951609150056', '112.69802774498794']
+Avg finish time: 23547.654, avg queueing delay: 23.758, avg response time: 131.757
+Upper finish time: 28673.127, Lower finish time: 19415.937
+Upper queueing time: 76.314, Lower queueing time: 4.428
+Upper response time: 150.831, Lower response time: 110.534
