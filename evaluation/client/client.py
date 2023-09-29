@@ -97,8 +97,8 @@ class Client:
         exe_time = 0
         local_steps = 0
 
-        update_model_comm_time = meta["download_size"] / (float(self.comm_speed) * self.speedup_factor)
-        upload_model_comm_time = meta["upload_size"] / (float(self.comm_speed) * self.speedup_factor)
+        update_model_comm_time = 0
+        upload_model_comm_time = 0
 
         if event == CLIENT_TRAIN:
             local_steps = meta["local_steps"]
@@ -124,6 +124,8 @@ class Client:
         elif event == UPDATE_MODEL:
             self.round = meta["round"]
             exe_time = update_model_comm_time
+            update_model_comm_time = meta["download_size"] / (float(self.comm_speed) * self.speedup_factor)
+            upload_model_comm_time = meta["upload_size"] / (float(self.comm_speed) * self.speedup_factor)
 
         elif event == UPLOAD_MODEL:
             exe_time = upload_model_comm_time
