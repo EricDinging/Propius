@@ -8,11 +8,11 @@ compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
 propius_config_file = './propius/global_config.yml'
 
-profile_folder = './evaluation/job/profile_mobilenet'
-job_trace = './evaluation/job/trace/job_trace_10.txt'
-total_job = 10
+profile_folder = './evaluation/job/profile_prox'
+job_trace = './evaluation/job/profile_prox/job_trace.txt'
+total_job = 1
 
-worker_num_list = [4, 4, 0, 0]
+worker_num_list = [2, 0, 0, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
