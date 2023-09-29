@@ -10,21 +10,21 @@ propius_config_file = './propius/global_config.yml'
 
 profile_folder = './evaluation/job/profile_prox'
 job_trace = './evaluation/job/profile_prox/job_trace.txt'
-total_job = 1
+total_job = 4
 
-worker_num_list = [2, 0, 0, 0]
+worker_num_list = [4, 4, 0, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
 avg_job_interval = 1800
 job_per_container = 2
-allow_exceed_total_round = False
+allow_exceed_total_round = True
 
 ideal_client = False
 client_per_container = 2000
-client_num = int(10 * 1.1 * 1.1 * 20)
-sched_alg = 'fifo'
-speedup_factor = 10
+client_num = 2000
+sched_alg = 'random'
+speedup_factor = 5
 
 # dataset = "openImg"
 dataset = "femnist"

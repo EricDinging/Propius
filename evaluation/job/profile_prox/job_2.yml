@@ -20,7 +20,7 @@ min_learning_rate: 5.e-5
 decay_factor: 0.98
 decay_round: 10
 
-gradient_policy: fed-prox
+gradient_policy: fed-avg
 proxy_mu: 0.1
 # yogi_eta: 3.e-3
 # yogi_tau: 1.e-8
