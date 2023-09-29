@@ -12,17 +12,18 @@ profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
 total_job = 10
 
-worker_num_list = [4, 4, 0, 0]
+worker_num_list = [8, 0, 0, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
 avg_job_interval = 1800
 job_per_container = 2
+allow_exceed_total_round = False
 
 ideal_client = False
 client_per_container = 2000
-client_num = 10000
-sched_alg = 'srsf'
+client_num = 6000
+sched_alg = 'fifo'
 speedup_factor = 3
 
 # dataset = "openImg"
@@ -201,6 +202,8 @@ elif dataset == 'openImg':
     #TODO
     config_data['data_dir'] = './datasets/openImg'
     config_data['data_map_file'] = './datasets/openImg/client_data_mapping/train.csv'
+
+propius_data["allow_exceed_total_round"] = allow_exceed_total_round
 # Write the updated YAML back to the file
 
 with open(propius_config_file, 'w') as propius_config_yaml_file:
