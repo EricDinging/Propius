@@ -24,8 +24,7 @@ class Torch_model_adapter:
         """
         current_grad_weights = [param.data.clone() for param in self.model.state_dict().values()]
 
-        weights_origin = copy.deepcopy(weights)
-        new_weights = [torch.tensor(x) for x in weights_origin]
+        new_weights = copy.deepcopy(weights)
         self.optimizer.update_round_gradient(current_grad_weights,
                                             new_weights,
                                             self.model)
