@@ -175,18 +175,23 @@ class Worker_manager:
                     await asyncio.sleep(0.5)
 
                 if event == CLIENT_TRAIN:
-                    model_param = results["model_weight"]
-                    del results["model_weight"]
+                    result_list = results["result_list"]
+                    del results["result_list"]
 
                     agg_weight = self.job_id_agg_weight_map[job_id]
-                    if not agg_weight:
-                        agg_weight = model_param
-                    else:
-                        agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
+                    for result in result_list:
+                        model_weight = result["model_weight"]
+                        moving_loss = result["moving_loss"]
+                        if not agg_weight:
+                            agg_weight = model_weight
+                        else:
+                            agg_weight = [weight + model_weight[i] for i, weight in enumerate(agg_weight)]
+                        self.job_id_agg_meta[job_id]["moving_loss"] += moving_loss
                     
                     self.job_id_agg_weight_map[job_id] = agg_weight
 
                     for key, value in results.items():
+                        # cnt, trained_size
                         self.job_id_agg_meta[job_id][key] += value
                 
                 elif event == MODEL_TEST:
@@ -196,13 +201,14 @@ class Worker_manager:
                             
             elif event == AGGREGATE:
                 agg_weight = self.job_id_agg_weight_map[job_id]
-                cnt = self.job_id_agg_meta[job_id]["cnt"]
+
                 agg_results = self.job_id_agg_meta[job_id]
                 agg_results["avg_moving_loss"] = 0
+                cnt = agg_results["cnt"]
+
                 self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
                 if cnt > 0:
                     agg_weight = [np.divide(weight, cnt) for weight in agg_weight]
-
                     job_weight_msg = executor_pb2.job_weight(
                         job_id = job_id,
                         job_data = pickle.dumps(agg_weight)
@@ -219,7 +225,6 @@ class Worker_manager:
                     agg_results["avg_moving_loss"] = agg_results["moving_loss"] / cnt
                 
                 self.job_id_agg_weight_map[job_id] = None
-
                 results = agg_results
             
             elif event == AGGREGATE_TEST:

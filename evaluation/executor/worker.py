@@ -194,6 +194,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def UPDATE(self, request, context):
         job_id = request.job_id
         weight = pickle.loads(request.job_data)
+        
         self.logger.print(f"Update job {job_id} weight", INFO)
         try:
             if job_id in self.job_id_model_adapter_map:
@@ -359,9 +360,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 if event == CLIENT_TRAIN:
                     agg_results = {
                         "cnt": 0,
-                        "model_weight": None,
-                        "moving_loss": 0,
                         "trained_size": 0, 
+                        "result_list": []
                     }
                     
                     for client_id in client_id_list:
@@ -370,14 +370,11 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                                     model=model,
                                     conf=task_conf)
                         agg_results["cnt"] += 1
-                        model_weight = results["model_weight"]
-                        if not agg_results["model_weight"]:
-                            agg_results["model_weight"] = model_weight
-                        else:
-                            agg_results["model_weight"] = [weight + model_weight[i] 
-                                                           for i, weight in enumerate(agg_results["model_weight"])]
-                        agg_results["moving_loss"] += results["moving_loss"]
                         agg_results["trained_size"] += results["trained_size"]
+                        agg_results["result_list"].append({
+                            "model_weight": results["model_weight"],
+                            "moving_loss": results["moving_loss"]
+                        })
 
                 elif event == MODEL_TEST:
                     agg_results = {
