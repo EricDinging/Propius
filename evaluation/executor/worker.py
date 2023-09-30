@@ -196,8 +196,6 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         weight = pickle.loads(request.job_data)
         
         self.logger.print(f"Update job {job_id} weight", INFO)
-        
-        self.logger.print(f"DDDDDBUG {weight[1]}", WARNING)
         try:
             if job_id in self.job_id_model_adapter_map:
                 self.job_id_model_adapter_map[job_id].set_weights(weight)
