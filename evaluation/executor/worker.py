@@ -293,9 +293,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             # Move the result back to the CPU
             results['Delta'] = [delta.cpu() for delta in delta_gpu]
 
-            # Perform the computation on the GPU
-            grads_tensor = torch.stack(grads)  # Convert the list of grads to a GPU tensor
-            square_sum = torch.square(grads_tensor).sum()
+            square_sum = torch.sum(torch.stack([torch.square(
+                    grad).sum() for grad in grads]))   
             h_gpu = q_gpu * torch.float_power(epoch_train_loss_gpu + 1e-10, (q_gpu - 1)) \
                      * square_sum + (1.0/lr) * torch.float_power(epoch_train_loss_gpu + 1e-10, q_gpu)
             # Move the result back to the CPU

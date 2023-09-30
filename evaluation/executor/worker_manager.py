@@ -106,7 +106,7 @@ class Worker_manager:
             await worker_stub.INIT(job_init_msg)
         
         self.job_id_agg_weight_map[job_id] = None
-        self.job_id_agg_meta[job_id] = {"cnt": 0, "moving_loss": 0, "trained_size": 0, "gradient_policy": None}
+        self.job_id_agg_meta[job_id] = {"cnt": 0, "moving_loss": 0, "trained_size": 0}
         self.job_id_agg_test_map[job_id] = {
             "cnt": 0,
             "test_loss": 0,
@@ -135,7 +135,7 @@ class Worker_manager:
         except asyncio.CancelledError:
             pass
 
-    def update_agg(self, gradient_policy: str, agg_weight: list, agg_meta: list, result_list: list, meta: dict):
+    def update_agg(self, agg_weight, agg_meta: list, result_list: list, meta: dict, gradient_policy):
         agg_meta["gradient_policy"] = gradient_policy
         for key, value in meta.items():
             # cnt, trained_size
@@ -209,7 +209,7 @@ class Worker_manager:
                     agg_weight = self.job_id_agg_weight_map[job_id]
                     agg_meta = self.job_id_agg_meta[job_id]
 
-                    self.update_agg(gradient_policy, agg_weight, agg_meta, result_list, results)
+                    self.update_agg(agg_weight, agg_meta, result_list, results, gradient_policy)
                     
                     self.job_id_agg_weight_map[job_id] = agg_weight
                     self.job_id_agg_meta[job_id] = agg_meta 
@@ -222,14 +222,16 @@ class Worker_manager:
             elif event == AGGREGATE:
                 agg_weight = self.job_id_agg_weight_map[job_id]
 
+                if not agg_weight:
+                    raise RuntimeError("Cannot aggregate None object")
+
                 agg_meta = self.job_id_agg_meta[job_id]
                 agg_meta["avg_moving_loss"] = 0
                 cnt = agg_meta["cnt"]
-                gradient_policy = agg_meta["gradient_policy"]
             
-                self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0, "gradient_policy": None}
+                self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
                 if cnt > 0:
-                    if gradient_policy != 'q-fedavg':
+                    if args["gradient_policy"] != 'q-fedavg':
                         agg_weight = [np.divide(weight, cnt) for weight in agg_weight]
                     
                     job_weight_msg = executor_pb2.job_weight(
@@ -277,7 +279,7 @@ class Worker_manager:
                     "test_len": 0
                 }
 
-                self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0, "gradient_policy": None}
+                self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
                 self.job_id_agg_weight_map[job_id] = None
 
         except Exception as e:
