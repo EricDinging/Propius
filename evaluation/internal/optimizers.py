@@ -50,7 +50,7 @@ class TorchServerOptimizer:
             target_model_gpu = last_model + diff_weight
             
             new_state_dict = {
-                name: target_model_gpu[idx] \
+                name: target_model_gpu[idx].cpu() \
                 for idx, name in enumerate(target_model.state_dict().keys())
             }
             target_model.load_state_dict(new_state_dict)
@@ -66,7 +66,7 @@ class TorchServerOptimizer:
             target_model_gpu = last_model - Deltas / (hs + epsilon_gpu)
 
             new_state_dict = {
-                name: target_model_gpu[idx] \
+                name: target_model_gpu[idx].cpu() \
                 for idx, name in enumerate(target_model.state_dict().keys())
             }
             target_model.load_state_dict(new_state_dict)
