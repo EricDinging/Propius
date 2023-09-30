@@ -350,11 +350,11 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         self.logger.print(f"Worker {self.id}: Job {conf['job_id']}: testing complete, {results}===", INFO)
         return results
     
-    def update_agg_results(self, agg_results: dict, results: dict, task_conf: dict):
+    def update_agg_results(self, agg_results: dict, results: dict):
         agg_results["cnt"] += 1
         agg_results["trained_size"] += results["trained_size"]
 
-        if task_conf["gradient_policy"] == "q-fedavg":
+        if agg_results["gradient_policy"] == "q-fedavg":
             agg_results["result_list"].append({
                 "Delta": results["Delta"],
                 "h": results["h"],
@@ -398,7 +398,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                                         model=model,
                                         conf=task_conf)
                             
-                            self.update_agg_results(agg_results, results, task_conf)
+                            self.update_agg_results(agg_results, results)
                         except Exception as e:
                             self.logger.print(e, ERROR)
                         

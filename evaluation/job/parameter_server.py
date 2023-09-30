@@ -275,7 +275,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         "num_loaders": self.config["num_loaders"],
                         "loss_decay": self.config["loss_decay"],
                         "gradient_policy": self.config["gradient_policy"],
-                        "proxy_mu": self.config["proxy_mu"] if "proxy_mu" in self.config else 0
+                        "proxy_mu": self.config["proxy_mu"] if "proxy_mu" in self.config else 0,
+                        "qfed_q": self.config["qfed_q"] if "qfed_q" in self.config else 0,
                     }
 
                     if self.do_compute:

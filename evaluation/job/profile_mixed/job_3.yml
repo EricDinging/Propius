@@ -21,7 +21,7 @@ decay_factor: 0.98
 decay_round: 10
 
 gradient_policy: fed-avg
-proxy_mu: 0.1
+# proxy_mu: 0.1
 # yogi_eta: 3.e-3
 # yogi_tau: 1.e-8
 # yogi_beta1: 0.9

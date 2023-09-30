@@ -17,7 +17,7 @@ class Torch_model_adapter:
         self.model = model
         self.optimizer = optimizer
 
-    def set_weights(self, weights: List[np.ndarray]):
+    def set_weights(self, weights):
         """
         Set the model's weights to the numpy weights array.
         :param weights: numpy weights array

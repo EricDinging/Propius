@@ -8,8 +8,8 @@ compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
 propius_config_file = './propius/global_config.yml'
 
-profile_folder = './evaluation/job/profile_prox'
-job_trace = './evaluation/job/profile_prox/job_trace.txt'
+profile_folder = './evaluation/job/profile_mixed'
+job_trace = './evaluation/job/profile_mixed/job_trace.txt'
 total_job = 4
 
 worker_num_list = [4, 4, 0, 0]

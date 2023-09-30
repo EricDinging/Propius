@@ -49,8 +49,10 @@ class TorchServerOptimizer:
             ])
 
             new_state_dict = {
-                name: torch.from_numpy(np.array(last_model[idx].cpu() + diff_weight[idx].cpu(), dtype=np.float32)) for idx, name in enumerate(target_model.state_dict().keys())
+                name: torch.from_numpy(np.array(last_model[idx].cpu() + diff_weight[idx].cpu(), dtype=np.float32)) \
+                for idx, name in enumerate(target_model.state_dict().keys())
             }
+            target_model.load_state_dict(new_state_dict)
         
         elif self.mode == 'fed-prox':
             hs = current_model["h"]
@@ -64,5 +66,4 @@ class TorchServerOptimizer:
             new_state_dict = {
                 name: torch.from_numpy(np.array(current_model[i].cpu(), dtype=np.float32)) for i, name in enumerate(target_model.state_dict().keys())
             }
-
-        target_model.load_state_dict(new_state_dict)
+            target_model.load_state_dict(new_state_dict)
