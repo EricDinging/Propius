@@ -5,7 +5,7 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-version = "10000"
+version = "6000"
 time_cutoff = 700000
 round_cutoff = 150
 
@@ -16,8 +16,8 @@ sched_alg_list = [
                   'amg'
                   ]
 
-# plot_option = 'acc' 
-plot_option = 'test_loss'
+plot_option = 'acc' 
+# plot_option = 'test_loss'
 
 plot_folder = f'./evaluation_result/plot-{version}'
 line_styles = ['-.', ':', '-']
