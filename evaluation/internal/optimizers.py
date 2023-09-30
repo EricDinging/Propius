@@ -3,6 +3,8 @@
 
 import numpy as np
 import torch
+from evaluation.commons import *
+
 class TorchServerOptimizer:
     """This is a abstract server optimizer class
     
@@ -24,7 +26,7 @@ class TorchServerOptimizer:
             self.gradient_controller = YoGi(
                 eta=args['yogi_eta'], tau=args['yogi_tau'], beta1=args['yogi_beta1'], beta2=args['yogi_beta2'])
             
-    def update_round_gradient(self, last_model, current_model, target_model):
+    def update_round_gradient(self, last_model, current_model, target_model, logger):
         """ update global model based on different policy
         
         Args:
@@ -54,9 +56,11 @@ class TorchServerOptimizer:
         
         elif self.mode == 'q-fedavg':    
             hs = current_model[1]
-            Deltas = current_model[0] 
+            Deltas = current_model[0]
+            logger.print("Decompose", WARNING)
             for idx, param in enumerate(target_model.parameters()):
                 param.data = last_model[idx] - Deltas[idx]/(hs+1e-10)
+            logger.print("FINISH", WARNING)
 
         else:
             # fed-avg, fed-prox

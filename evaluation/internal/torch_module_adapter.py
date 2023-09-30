@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import copy
 from evaluation.internal.optimizers import TorchServerOptimizer
+from evaluation.commons import *
 
 class Torch_model_adapter:
     def __init__(self, model: torch.nn.Module, optimizer: TorchServerOptimizer):
@@ -17,7 +18,7 @@ class Torch_model_adapter:
         self.model = model
         self.optimizer = optimizer
 
-    def set_weights(self, weights):
+    def set_weights(self, weights, logger):
         """
         Set the model's weights to the numpy weights array.
         :param weights: numpy weights array
@@ -25,9 +26,11 @@ class Torch_model_adapter:
         last_weights = [param.data.clone() for param in self.model.state_dict().values()]
         new_weights = copy.deepcopy(weights)
         current_model = [torch.tensor(x) for x in new_weights]
+        logger.print("Start update round gradient", WARNING)
         self.optimizer.update_round_gradient(last_weights,
                                             current_model,
-                                            self.model)
+                                            self.model,
+                                            logger)
 
     def get_weights(self)-> List[np.ndarray]:
         return [params.data.clone() for params in self.model.state_dict().values()]
