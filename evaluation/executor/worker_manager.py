@@ -136,7 +136,6 @@ class Worker_manager:
             pass
 
     def update_agg(self, agg_weight, agg_meta: list, result_list: list, meta: dict, gradient_policy):
-        agg_meta["gradient_policy"] = gradient_policy
         for key, value in meta.items():
             # cnt, trained_size
             agg_meta[key] += value
