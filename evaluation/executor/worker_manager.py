@@ -160,6 +160,7 @@ class Worker_manager:
                     agg_weight["h"] += h
                     for idx in range(len(Delta)):
                         agg_weight["Delta"][idx] += Delta[idx]
+        return agg_weight
         
     async def execute(self, event: str, job_id: int, client_id_list: list, round: int, args: dict)->dict:
         try:
@@ -209,9 +210,9 @@ class Worker_manager:
                     agg_weight = self.job_id_agg_weight_map[job_id]
                     agg_meta = self.job_id_agg_meta[job_id]
 
-                    self.update_agg(agg_weight, agg_meta, result_list, results, gradient_policy)
+                    self.job_id_agg_weight_map[job_id] = \
+                        self.update_agg(agg_weight, agg_meta, result_list, results, gradient_policy)
                     
-                    self.job_id_agg_weight_map[job_id] = agg_weight
                     self.job_id_agg_meta[job_id] = agg_meta 
                 
                 elif event == MODEL_TEST:
