@@ -74,6 +74,7 @@ for i in range(worker_num):
                 './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
                 './datasets:/datasets',
                 './evaluation/monitor:/evaluation/monitor',
+                './evaluation/internal:/evaluation/internal',
             ],
             'stop_signal': 'SIGINT',
             'command': [f'{i}'],
