@@ -10,7 +10,7 @@ propius_config_file = './propius/global_config.yml'
 
 profile_folder = './evaluation/job/profile_mixed'
 job_trace = './evaluation/job/profile_mixed/job_trace.txt'
-total_job = 4
+total_job = 1
 
 worker_num_list = [4, 4, 0, 0]
 worker_num = sum(worker_num_list)

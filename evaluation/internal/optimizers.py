@@ -48,9 +48,11 @@ class TorchServerOptimizer:
             ])
 
             target_model_gpu = last_model + diff_weight
+
+            target_model_cpu = target_model_gpu.cpu()
             
             new_state_dict = {
-                name: target_model_gpu[idx].cpu() \
+                name: target_model_cpu[idx] \
                 for idx, name in enumerate(target_model.state_dict().keys())
             }
             target_model.load_state_dict(new_state_dict)
@@ -58,16 +60,16 @@ class TorchServerOptimizer:
         elif self.mode == 'q-fedavg':
             last_model = [x.to(device=self.device) for x in last_model]
     
-            hs = current_model[1]
-            Deltas = current_model[0]
-            hs_gpu = hs.to(device=self.device)
-            Deltas_gpu = [x.to(device=self.device) for x in Deltas]       
+            hs_gpu = current_model[1].to(device=self.device)
+            Deltas_gpu = [x.to(device=self.device) for x in current_model[0]]       
             epsilon_gpu = torch.tensor(1e-10, device=self.device)
 
             target_model_gpu = last_model - Deltas_gpu / (hs_gpu + epsilon_gpu)
 
+            target_model_cpu = target_model_gpu.cpu()
+
             new_state_dict = {
-                name: target_model_gpu[idx].cpu() \
+                name: target_model_cpu[idx] \
                 for idx, name in enumerate(target_model.state_dict().keys())
             }
             target_model.load_state_dict(new_state_dict)
