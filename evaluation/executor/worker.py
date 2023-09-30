@@ -251,12 +251,14 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def _train(self, client_id, partition: Data_partitioner, model, conf: dict)->dict:
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
+
         client_data = select_dataset(client_id=client_id, 
                                      partition=partition,
                                      batch_size=conf['batch_size'],
                                      args=conf,
                                      is_test=False,
                                      )
+        
         model = model.to(device=self.device)
         model.train()
         optimizer = self._get_optimizer(model, conf)
@@ -390,14 +392,16 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                     }
                     
                     for client_id in client_id_list:
-                        results = await self._train(client_id=client_id,
-                                    partition=partition,
-                                    model=model,
-                                    conf=task_conf)
+                        try:
+                            results = await self._train(client_id=client_id,
+                                        partition=partition,
+                                        model=model,
+                                        conf=task_conf)
+                            
+                            self.update_agg_results(agg_results, results, task_conf)
+                        except Exception as e:
+                            self.logger.print(e, ERROR)
                         
-                        self.update_agg_results(agg_results, results, task_conf)
-                        
-
                 elif event == MODEL_TEST:
                     agg_results = {
                         "test_loss": 0,
