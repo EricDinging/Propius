@@ -29,18 +29,17 @@ class TorchServerOptimizer:
         
         Args:
             last_model (list of tensor weight): A list of global model weight in last round.
-            current_model (list of tensor weight): A list of global model weight in this round.
+            current_model (list of tensor weight): A list of global model weight / updates in this round.
             target_model (PyTorch or TensorFlow nn module): Aggregated model.
         
         """
-
         if self.mode == 'fed-yogi':
             """
             "Adaptive Federated Optimizations", 
             Sashank J. Reddi, Zachary Charles, Manzil Zaheer, Zachary Garrett, Keith Rush, Jakub Konecný, Sanjiv Kumar, H. Brendan McMahan,
             ICLR 2021.
             """
-            current_model = [torch.tensor(x) for x in current_model]
+            
             last_model = [x.to(device=self.device) for x in last_model]
             current_model = [x.to(device=self.device) for x in current_model]
 
@@ -48,22 +47,31 @@ class TorchServerOptimizer:
                 pb - pa for pa, pb in zip(last_model, current_model) 
             ])
 
+            target_model_gpu = last_model + diff_weight
+            
             new_state_dict = {
-                name: torch.from_numpy(np.array(last_model[idx].cpu() + diff_weight[idx].cpu(), dtype=np.float32)) \
+                name: target_model_gpu[idx] \
                 for idx, name in enumerate(target_model.state_dict().keys())
             }
             target_model.load_state_dict(new_state_dict)
         
         elif self.mode == 'fed-prox':
-            hs = current_model["h"]
-            Deltas = current_model["Delta"]
+            last_model = [x.to(device=self.device) for x in last_model]
+            current_model = [x.to(device=self.device) for x in current_model]
+            hs = current_model[1]
+            Deltas = current_model[0]
+
+            target_model_gpu = last_model - Deltas / (hs + 1e-10)
+
+            new_state_dict = {
+                name: target_model_gpu[idx] \
+                for idx, name in enumerate(target_model.state_dict().keys())
+            }
+            target_model.load_state_dict(new_state_dict)
             
-            for idx, param in enumerate(target_model.parameters()):
-                param.data = last_model[idx] - Deltas[idx]/(hs+1e-10)
         else:
             # fed-avg
-            current_model = [torch.tensor(x) for x in current_model]
             new_state_dict = {
-                name: torch.from_numpy(np.array(current_model[i].cpu(), dtype=np.float32)) for i, name in enumerate(target_model.state_dict().keys())
+                name: current_model[i] for i, name in enumerate(target_model.state_dict().keys())
             }
             target_model.load_state_dict(new_state_dict)

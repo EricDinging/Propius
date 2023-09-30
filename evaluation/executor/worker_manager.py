@@ -151,14 +151,11 @@ class Worker_manager:
             else:
                 Delta, h = result["Delta"], result["h"]
                 if not agg_weight:
-                    agg_weight = {
-                        "Delta": Delta,
-                        "h": h
-                    }
+                    agg_weight = [Delta, h]
                 else:
-                    agg_weight["h"] += h
+                    agg_weight[1] += h
                     for idx in range(len(Delta)):
-                        agg_weight["Delta"][idx] += Delta[idx]
+                        agg_weight[0][idx] += Delta[idx]
         return agg_weight
         
     async def execute(self, event: str, job_id: int, client_id_list: list, round: int, args: dict)->dict:
