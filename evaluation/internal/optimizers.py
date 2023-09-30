@@ -57,13 +57,14 @@ class TorchServerOptimizer:
         
         elif self.mode == 'q-fedavg':
             last_model = [x.to(device=self.device) for x in last_model]
-            current_model = [x.to(device=self.device) for x in current_model]
-
+    
             hs = current_model[1]
             Deltas = current_model[0]
-            
+            hs_gpu = hs.to(device=self.device)
+            Deltas_gpu = [x.to(device=self.device) for x in Deltas]       
             epsilon_gpu = torch.tensor(1e-10, device=self.device)
-            target_model_gpu = last_model - Deltas / (hs + epsilon_gpu)
+
+            target_model_gpu = last_model - Deltas_gpu / (hs_gpu + epsilon_gpu)
 
             new_state_dict = {
                 name: target_model_gpu[idx].cpu() \

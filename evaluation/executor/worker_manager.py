@@ -231,11 +231,6 @@ class Worker_manager:
                     if args["gradient_policy"] != 'q-fedavg':
                         agg_weight = [np.divide(weight, cnt) for weight in agg_weight]
 
-                    else:
-                         # Debug
-                        self.logger.print("DEBUGGINGINGING", WARNING)
-                        self.logger.print(f"{agg_weight[1]}", WARNING)
-                    
                     job_weight_msg = executor_pb2.job_weight(
                         job_id = job_id,
                         job_data = pickle.dumps(agg_weight)
