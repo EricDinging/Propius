@@ -285,20 +285,22 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             update_weight = [param.data.clone() for param in model.parameters()]
             grads = [(u - v) / lr for u, v in zip(self.global_model, update_weight)]
 
-            epoch_train_loss_gpu = torch.tensor(self._epoch_train_loss, device='cuda')
-            q_gpu = torch.tensor(q, device='cuda')
+            epoch_train_loss_gpu = torch.tensor(self._epoch_train_loss, device=self.device)
+            q_gpu = torch.tensor(q, device=self.device)
+            lr_gpu = torch.tensor(lr, device=self.device)
+            epsilon_gpu = torch.tensor(1e-10, device=self.device)
 
             # Perform the computation on the GPU
-            delta_gpu = [torch.float_power(epoch_train_loss_gpu + 1e-10, q_gpu) * grad for grad in grads]
+            delta_gpu = [torch.float_power(epoch_train_loss_gpu + epsilon_gpu, q_gpu) * grad for grad in grads]
             # Move the result back to the CPU
             results['Delta'] = [delta.cpu() for delta in delta_gpu]
 
             square_sum = torch.sum(torch.stack([torch.square(
                     grad).sum() for grad in grads]))   
-            h_gpu = q_gpu * torch.float_power(epoch_train_loss_gpu + 1e-10, (q_gpu - 1)) \
-                     * square_sum + (1.0/lr) * torch.float_power(epoch_train_loss_gpu + 1e-10, q_gpu)
+            h_gpu = q_gpu * torch.float_power(epoch_train_loss_gpu + epsilon_gpu, (q_gpu - 1)) \
+                     * square_sum + (1.0/lr_gpu) * torch.float_power(epoch_train_loss_gpu + epsilon_gpu, q_gpu)
             # Move the result back to the CPU
-            results['h'] = h_gpu.cpu()
+            results['h'] = h_gpu.item()
         else:
             state_dict = model.state_dict()
             model_param = [state_dict[p].data.cpu().numpy() for p in state_dict]

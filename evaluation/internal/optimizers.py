@@ -55,22 +55,24 @@ class TorchServerOptimizer:
             }
             target_model.load_state_dict(new_state_dict)
         
-        elif self.mode == 'fed-prox':
+        elif self.mode == 'q-fedavg':
             last_model = [x.to(device=self.device) for x in last_model]
             current_model = [x.to(device=self.device) for x in current_model]
+
             hs = current_model[1]
             Deltas = current_model[0]
-
-            target_model_gpu = last_model - Deltas / (hs + 1e-10)
+            
+            epsilon_gpu = torch.tensor(1e-10, device=self.device)
+            target_model_gpu = last_model - Deltas / (hs + epsilon_gpu)
 
             new_state_dict = {
                 name: target_model_gpu[idx] \
                 for idx, name in enumerate(target_model.state_dict().keys())
             }
             target_model.load_state_dict(new_state_dict)
-            
+
         else:
-            # fed-avg
+            # fed-avg, fed-prox
             new_state_dict = {
                 name: current_model[i] for i, name in enumerate(target_model.state_dict().keys())
             }
