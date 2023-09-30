@@ -284,15 +284,29 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             lr, q = conf['learning_rate'], conf['qfed_q']
             update_weight = [param.data.clone() for param in model.parameters()]
             grads = [(u - v) / lr for u, v in zip(self.global_model, update_weight)]
-            results['Delta'] = [np.float_power(self._epoch_train_loss+1e-10, q) * grad for grad in grads]
-            results['h'] = (q * np.float_power(self._epoch_train_loss+1e-10, (q-1)) * torch.sum(torch.stack([torch.square(
-                    grad).sum() for grad in grads])) + (1.0/lr) * np.float_power(self._epoch_train_loss+1e-10, q))
+
+            epoch_train_loss_gpu = torch.tensor(self._epoch_train_loss, device='cuda')
+            q_gpu = torch.tensor(q, device='cuda')
+
+            # Perform the computation on the GPU
+            delta_gpu = [torch.float_power(epoch_train_loss_gpu + 1e-10, q_gpu) * grad for grad in grads]
+            # Move the result back to the CPU
+            results['Delta'] = [delta.cpu() for delta in delta_gpu]
+
+            # Perform the computation on the GPU
+            grads_tensor = torch.stack(grads)  # Convert the list of grads to a GPU tensor
+            square_sum = torch.square(grads_tensor).sum()
+            h_gpu = q_gpu * torch.float_power(epoch_train_loss_gpu + 1e-10, (q_gpu - 1)) \
+                     * square_sum + (1.0/lr) * torch.float_power(epoch_train_loss_gpu + 1e-10, q_gpu)
+            # Move the result back to the CPU
+            results['h'] = h_gpu.cpu()
         else:
             state_dict = model.state_dict()
             model_param = [state_dict[p].data.cpu().numpy() for p in state_dict]
             results['model_weight'] = model_param
 
-        self.logger.print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: training complete, local steps: {conf['local_steps']}", INFO)
+        self.logger.print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}:"
+                          f" training complete, local steps: {conf['local_steps']}", INFO)
 
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4

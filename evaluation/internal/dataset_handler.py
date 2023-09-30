@@ -127,7 +127,7 @@ def select_dataset(client_id: int, partition: Partition, batch_size: int, args: 
     else:
         time_out = 60
 
-    if len(partition) < batch_size:
+    if len(partition) < batch_size and not is_test:
         raise ValueError(f"Client dataset size too small: {len(partition)}")
 
     return DataLoader(partition, batch_size=batch_size, shuffle=True,
