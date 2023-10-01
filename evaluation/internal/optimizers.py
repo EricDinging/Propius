@@ -41,7 +41,7 @@ class TorchServerOptimizer:
             Sashank J. Reddi, Zachary Charles, Manzil Zaheer, Zachary Garrett, Keith Rush, Jakub Konecný, Sanjiv Kumar, H. Brendan McMahan,
             ICLR 2021.
             """
-            
+            current_model = [torch.tensor(x) for x in current_model]
             last_model = [x.to(device=self.device) for x in last_model]
             current_model = [x.to(device=self.device) for x in current_model]
 
@@ -64,6 +64,7 @@ class TorchServerOptimizer:
 
         else:
             # fed-avg, fed-prox
+            current_model = [torch.tensor(x) for x in current_model]
             new_state_dict = {
                 name: current_model[i] for i, name in enumerate(target_model.state_dict().keys())
             }

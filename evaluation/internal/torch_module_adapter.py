@@ -25,10 +25,8 @@ class Torch_model_adapter:
         """
         last_weights = [param.data.clone() for param in self.model.state_dict().values()]
         new_weights = copy.deepcopy(weights)
-        current_model = [torch.tensor(x) for x in new_weights]
-        logger.print("Start update round gradient", WARNING)
         self.optimizer.update_round_gradient(last_weights,
-                                            current_model,
+                                            new_weights,
                                             self.model,
                                             logger)
 

@@ -179,6 +179,7 @@ services:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./evaluation/monitor:/evaluation/monitor
+      - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     depends_on:
       - worker_0
