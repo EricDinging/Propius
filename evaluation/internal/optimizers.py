@@ -61,10 +61,8 @@ class TorchServerOptimizer:
             last_model = [x.to(device=self.device) for x in last_model]
             Deltas = [x.to(device=self.device) for x in Deltas]
 
-            hs = torch.tensor(hs + 1e-10).to(device=self.device)
-
             for idx, param in enumerate(target_model.parameters()):
-                param.data = last_model[idx] - Deltas[idx] / hs
+                param.data = last_model[idx] - Deltas[idx] / (hs+1e-10)
 
         else:
             # fed-avg, fed-prox
