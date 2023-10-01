@@ -18,7 +18,7 @@ class Torch_model_adapter:
         self.model = model
         self.optimizer = optimizer
 
-    def set_weights(self, weights, logger):
+    def set_weights(self, weights):
         """
         Set the model's weights to the numpy weights array.
         :param weights: numpy weights array
@@ -28,7 +28,7 @@ class Torch_model_adapter:
         self.optimizer.update_round_gradient(last_weights,
                                             new_weights,
                                             self.model,
-                                            logger)
+                                            )
 
     def get_weights(self)-> List[np.ndarray]:
         return [params.data.clone() for params in self.model.state_dict().values()]

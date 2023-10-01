@@ -198,7 +198,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         self.logger.print(f"Update job {job_id} weight", INFO)
         try:
             if job_id in self.job_id_model_adapter_map:
-                self.job_id_model_adapter_map[job_id].set_weights(weight, self.logger)
+                self.job_id_model_adapter_map[job_id].set_weights(weight)
                 ack = True
             else:
                 ack = False
