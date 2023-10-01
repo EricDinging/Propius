@@ -49,7 +49,7 @@ class TorchServerOptimizer:
                 [pb-pa for pa, pb in zip(last_model, current_model)])
 
             new_state_dict = {
-                name: torch.from_numpy(np.array(last_model[idx].cpu() + diff_weight[idx].cpu(), dtype=np.float32))
+                name: last_model[idx] + diff_weight[idx]
                 for idx, name in enumerate(target_model.state_dict().keys())
             }
             target_model.load_state_dict(new_state_dict)
@@ -58,8 +58,10 @@ class TorchServerOptimizer:
             hs = current_model[1] # scalar
             Deltas = current_model[0] # tensor
 
+            Deltas = [x.to(device=self.device) for x in Deltas]
+
             new_state_dict = {
-                name: torch.from_numpy(np.array(last_model[idx].cpu() - Deltas[idx] / (hs+1e-10), dtype=np.float32))
+                name: last_model[idx] - Deltas[idx] / (hs)
                 for idx, name in enumerate(target_model.state_dict().keys())
             }
             target_model.load_state_dict(new_state_dict)

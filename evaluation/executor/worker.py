@@ -265,8 +265,10 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         criterion = self._get_criterion(conf)
 
         self.global_model = None
-        if conf['gradient_policy'] in ['fed-prox', 'q-fedavg']:
+        if conf['gradient_policy'] == 'fed-prox':
             self.global_model = [param.data.clone() for param in model.parameters()]
+        elif conf['gradient_policy'] == 'q-fedavg':
+            last_model = [param.data.clone() for param in model.state_dict().values()]
         
         while self._completed_steps < conf['local_steps']:
             try:
@@ -282,8 +284,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         
         if conf['gradient_policy'] == 'q-fedavg':
             lr, q = conf['learning_rate'], conf['qfed_q']
-            update_weight = [param.data.clone() for param in model.parameters()]
-            grads = [(u - v) / lr for u, v in zip(self.global_model, update_weight)]
+            update_weight = [param.data.clone() for param in model.state_dict().values()]
+            grads = [(u - v) / lr for u, v in zip(last_model, update_weight)]
 
             coeff = np.float_power(self._epoch_train_loss + 1e-10, q)
             delta_gpu = [coeff * grad for grad in grads]
