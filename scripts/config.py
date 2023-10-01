@@ -8,11 +8,11 @@ compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
 propius_config_file = './propius/global_config.yml'
 
-profile_folder = './evaluation/job/profile_mixed'
-job_trace = './evaluation/job/profile_mixed/job_trace.txt'
-total_job = 1
+profile_folder = './evaluation/job/profile_benchmark'
+job_trace = './evaluation/job/trace/job_trace_10.txt'
+total_job = 10
 
-worker_num_list = [4, 0, 0, 0]
+worker_num_list = [4, 4, 0, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
@@ -22,9 +22,9 @@ allow_exceed_total_round = True
 
 ideal_client = False
 client_per_container = 2000
-client_num = 2000
-sched_alg = 'random'
-speedup_factor = 5
+client_num = 8000
+sched_alg = 'fifo'
+speedup_factor = 3
 
 # dataset = "openImg"
 dataset = "femnist"

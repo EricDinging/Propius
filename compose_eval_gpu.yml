@@ -117,6 +117,10 @@ services:
     - worker_1
     - worker_2
     - worker_3
+    - worker_4
+    - worker_5
+    - worker_6
+    - worker_7
     environment:
     - TZ=America/Detroit
 
@@ -220,6 +224,106 @@ services:
             - gpu
     environment:
     - TZ=America/Detroit
+  worker_4:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation/executor:/evaluation/executor
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets:/datasets
+    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
+    stop_signal: SIGINT
+    command:
+    - '4'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_5:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation/executor:/evaluation/executor
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets:/datasets
+    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
+    stop_signal: SIGINT
+    command:
+    - '5'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_6:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation/executor:/evaluation/executor
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets:/datasets
+    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
+    stop_signal: SIGINT
+    command:
+    - '6'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_7:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation/executor:/evaluation/executor
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets:/datasets
+    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
+    stop_signal: SIGINT
+    command:
+    - '7'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
   jobs_0:
     build:
       context: .
@@ -234,8 +338,80 @@ services:
     - job_manager
     command:
     - '0'
-    - '1'
+    - '2'
     - '0'
+    environment:
+    - TZ=America/Detroit
+  jobs_1:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation/job:/evaluation/job
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - executor
+    - job_manager
+    command:
+    - '2'
+    - '4'
+    - '1'
+    environment:
+    - TZ=America/Detroit
+  jobs_2:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation/job:/evaluation/job
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - executor
+    - job_manager
+    command:
+    - '4'
+    - '6'
+    - '2'
+    environment:
+    - TZ=America/Detroit
+  jobs_3:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation/job:/evaluation/job
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - executor
+    - job_manager
+    command:
+    - '6'
+    - '8'
+    - '3'
+    environment:
+    - TZ=America/Detroit
+  jobs_4:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation/job:/evaluation/job
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - executor
+    - job_manager
+    command:
+    - '8'
+    - '10'
+    - '4'
     environment:
     - TZ=America/Detroit
   clients_0:
@@ -255,3 +431,54 @@ services:
     command:
     - '2000'
     - '0'
+  clients_1:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '2000'
+    - '1'
+  clients_2:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '2000'
+    - '2'
+  clients_3:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '2000'
+    - '3'
