@@ -5,8 +5,8 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-version = "6000"
-time_cutoff = 700000
+version = "10000"
+time_cutoff = 60000
 round_cutoff = 150
 
 sched_alg_list = [
@@ -16,8 +16,8 @@ sched_alg_list = [
                   'amg'
                   ]
 
-plot_option = 'acc' 
-# plot_option = 'test_loss'
+# plot_option = 'acc' 
+plot_option = 'test_loss'
 
 plot_folder = f'./evaluation_result/plot-{version}'
 line_styles = ['-.', ':', '-']
@@ -102,16 +102,20 @@ for i, sched_alg in enumerate(sched_alg_list):
             
             # round_list_dict[job_id] = round_list
             round_info_dict[f"{job_id}-{sched_alg}"] = time_stamp_list[-1]
+
+            if time_stamp_list[-1] > time_cutoff:
+                continue
+            end_time_list.append(time_stamp_list[-1])
+            
             round_time_list_dict[job_id] = time_stamp_list
             acc_list_dict[job_id] = acc_list
             avg_tloss_dict[job_id] = avg_tloss_list
 
-            end_time_list.append(time_stamp_list[-1])
-
     avg_end_time = sum(end_time_list) / len(end_time_list)
-    round_info_dict[f"avg-{sched_alg}"] = avg_end_time
+    end_time = max(end_time_list)
+    round_info_dict[f"avg-{sched_alg}"] = (avg_end_time, end_time)
     
-    mean_x_axis = [i for i in range(int(avg_end_time))]
+    mean_x_axis = [i for i in range(int(end_time))]
     if plot_option == 'acc':
         ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], acc_list_dict[j]) for j in range(job_num)]
     elif plot_option == 'test_loss':
