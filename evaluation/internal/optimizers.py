@@ -58,11 +58,11 @@ class TorchServerOptimizer:
             hs = current_model[1] # scalar
             Deltas = current_model[0] # tensor
 
-            last_model = [x.to(device=self.device) for x in last_model]
-            Deltas = [x.to(device=self.device) for x in Deltas]
-
-            for idx, param in enumerate(target_model.parameters()):
-                param.data = last_model[idx] - Deltas[idx] / (hs+1e-10)
+            new_state_dict = {
+                name: torch.from_numpy(np.array(last_model[idx].cpu() - Deltas[idx] / (hs+1e-10), dtype=np.float32))
+                for idx, name in enumerate(target_model.state_dict().keys())
+            }
+            target_model.load_state_dict(new_state_dict)
 
         else:
             # fed-avg, fed-prox
