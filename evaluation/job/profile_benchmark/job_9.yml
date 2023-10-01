@@ -1,6 +1,6 @@
 # Training and testing aggregator setting
 demand: 400
-total_round: 150
+total_round: 250
 over_selection: 1.3
 
 sched_timeout: 800
