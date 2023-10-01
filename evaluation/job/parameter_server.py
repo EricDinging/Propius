@@ -118,7 +118,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 client_id=-1,
                 round=self.cur_round,
                 event=AGGREGATE,
-                task_meta=pickle.dumps({}),
+                task_meta=pickle.dumps({
+                    "gradient_policy": self.config["gradient_policy"]
+                }),
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
             custom_print(f"PS {self.id}-{self.cur_round}: aggregrate event reported", INFO)
@@ -275,7 +277,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         "num_loaders": self.config["num_loaders"],
                         "loss_decay": self.config["loss_decay"],
                         "gradient_policy": self.config["gradient_policy"],
-                        "proxy_mu": self.config["proxy_mu"] if "proxy_mu" in self.config else 0
+                        "proxy_mu": self.config["proxy_mu"] if "proxy_mu" in self.config else 0,
+                        "qfed_q": self.config["qfed_q"] if "qfed_q" in self.config else 0,
                     }
 
                     if self.do_compute:

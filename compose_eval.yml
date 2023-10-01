@@ -114,6 +114,7 @@ services:
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./datasets:/datasets
       - ./evaluation/monitor:/evaluation/monitor
+      - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command: ["0"]
     environment:
@@ -130,6 +131,7 @@ services:
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./datasets:/datasets
       - ./evaluation/monitor:/evaluation/monitor
+      - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command: ["1"]
     environment:
@@ -146,6 +148,7 @@ services:
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./datasets:/datasets
       - ./evaluation/monitor:/evaluation/monitor
+      - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command: ["2"]
     environment:
@@ -162,6 +165,7 @@ services:
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./datasets:/datasets
       - ./evaluation/monitor:/evaluation/monitor
+      - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command: ["3"]
     environment:
@@ -175,6 +179,7 @@ services:
       - ./evaluation/executor:/evaluation/executor
       - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
       - ./evaluation/monitor:/evaluation/monitor
+      - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     depends_on:
       - worker_0

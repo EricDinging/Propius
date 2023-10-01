@@ -194,6 +194,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def UPDATE(self, request, context):
         job_id = request.job_id
         weight = pickle.loads(request.job_data)
+        
         self.logger.print(f"Update job {job_id} weight", INFO)
         try:
             if job_id in self.job_id_model_adapter_map:
@@ -250,12 +251,14 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def _train(self, client_id, partition: Data_partitioner, model, conf: dict)->dict:
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
+
         client_data = select_dataset(client_id=client_id, 
                                      partition=partition,
                                      batch_size=conf['batch_size'],
                                      args=conf,
                                      is_test=False,
                                      )
+        
         model = model.to(device=self.device)
         model.train()
         optimizer = self._get_optimizer(model, conf)
@@ -264,6 +267,8 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         self.global_model = None
         if conf['gradient_policy'] == 'fed-prox':
             self.global_model = [param.data.clone() for param in model.parameters()]
+        elif conf['gradient_policy'] == 'q-fedavg':
+            last_model = [param.data.clone() for param in model.state_dict().values()]
         
         while self._completed_steps < conf['local_steps']:
             try:
@@ -271,20 +276,38 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             except Exception as ex:
                 self.logger.print(ex, ERROR)
                 break
-        
-        state_dict = model.state_dict()
-        model_param = [state_dict[p].data.cpu().numpy() for p in state_dict]
-        results = {
-            'model_weight': model_param,
-            'moving_loss': self._epoch_train_loss, 
-            'trained_size': self._completed_steps * conf['batch_size'],
-        }  
 
-        self.logger.print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: training complete, local steps: {conf['local_steps']}", INFO)
+        results = {
+                'moving_loss': self._epoch_train_loss,
+                'trained_size': self._completed_steps * conf['batch_size']
+            }
+        
+        if conf['gradient_policy'] == 'q-fedavg':
+            lr, q = conf['learning_rate'], conf['qfed_q']
+            update_weight = [param.data.clone() for param in model.state_dict().values()]
+            grads = [(u - v) / lr for u, v in zip(last_model, update_weight)]
+
+            coeff = np.float_power(self._epoch_train_loss + 1e-10, q)
+            delta_gpu = [coeff * grad for grad in grads]
+            # Move the result back to the CPU
+            results['Delta'] = [delta.cpu() for delta in delta_gpu]
+
+            square_sum = torch.sum(torch.stack([torch.square(
+                    grad).sum() for grad in grads])).item()
+               
+            results['h'] = q * np.float_power(self._epoch_train_loss + 1e-10, (q - 1)) \
+                     * square_sum + (1.0/lr) * np.float_power(self._epoch_train_loss + 1e-10, q)
+
+        else:
+            state_dict = model.state_dict()
+            model_param = [state_dict[p].data.cpu().numpy() for p in state_dict]
+            results['model_weight'] = model_param
+
+        self.logger.print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}:"
+                          f" training complete, local steps: {conf['local_steps']}", INFO)
 
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
-
         return results
     
     async def _test(self, client_id: int, partition: Data_partitioner, model, conf: dict)->dict:
@@ -338,6 +361,22 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
         self.logger.print(f"Worker {self.id}: Job {conf['job_id']}: testing complete, {results}===", INFO)
         return results
+    
+    def update_agg_results(self, agg_results: dict, results: dict):
+        agg_results["cnt"] += 1
+        agg_results["trained_size"] += results["trained_size"]
+
+        if agg_results["gradient_policy"] == "q-fedavg":
+            agg_results["result_list"].append({
+                "Delta": results["Delta"],
+                "h": results["h"],
+                "moving_loss": results["moving_loss"]
+            })
+        else:
+            agg_results["result_list"].append({
+                "model_weight": results["model_weight"],
+                "moving_loss": results["moving_loss"]
+            })
         
     async def execute(self):
         while True:
@@ -359,26 +398,22 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 if event == CLIENT_TRAIN:
                     agg_results = {
                         "cnt": 0,
-                        "model_weight": None,
-                        "moving_loss": 0,
-                        "trained_size": 0, 
+                        "trained_size": 0,
+                        "gradient_policy": task_conf["gradient_policy"],
+                        "result_list": [],
                     }
                     
                     for client_id in client_id_list:
-                        results = await self._train(client_id=client_id,
-                                    partition=partition,
-                                    model=model,
-                                    conf=task_conf)
-                        agg_results["cnt"] += 1
-                        model_weight = results["model_weight"]
-                        if not agg_results["model_weight"]:
-                            agg_results["model_weight"] = model_weight
-                        else:
-                            agg_results["model_weight"] = [weight + model_weight[i] 
-                                                           for i, weight in enumerate(agg_results["model_weight"])]
-                        agg_results["moving_loss"] += results["moving_loss"]
-                        agg_results["trained_size"] += results["trained_size"]
-
+                        try:
+                            results = await self._train(client_id=client_id,
+                                        partition=partition,
+                                        model=model,
+                                        conf=task_conf)
+                            
+                            self.update_agg_results(agg_results, results)
+                        except Exception as e:
+                            self.logger.print(e, ERROR)
+                        
                 elif event == MODEL_TEST:
                     agg_results = {
                         "test_loss": 0,

@@ -110,6 +110,7 @@ services:
     - ./evaluation/executor:/evaluation/executor
     - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     depends_on:
     - worker_0
@@ -134,6 +135,7 @@ services:
     - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     - ./datasets:/datasets
     - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '0'
@@ -158,6 +160,7 @@ services:
     - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     - ./datasets:/datasets
     - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '1'
@@ -182,6 +185,7 @@ services:
     - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     - ./datasets:/datasets
     - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '2'
@@ -206,6 +210,7 @@ services:
     - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     - ./datasets:/datasets
     - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '3'
@@ -230,6 +235,7 @@ services:
     - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     - ./datasets:/datasets
     - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '4'
@@ -254,6 +260,7 @@ services:
     - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     - ./datasets:/datasets
     - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '5'
@@ -278,6 +285,7 @@ services:
     - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     - ./datasets:/datasets
     - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '6'
@@ -302,6 +310,7 @@ services:
     - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
     - ./datasets:/datasets
     - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '7'
@@ -473,20 +482,3 @@ services:
     command:
     - '2000'
     - '3'
-  clients_4:
-    build:
-      context: .
-      dockerfile: ./evaluation/client/Dockerfile
-    volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
-    stop_signal: SIGINT
-    depends_on:
-    - load_balancer
-    environment:
-    - TZ=America/Detroit
-    command:
-    - '2000'
-    - '4'

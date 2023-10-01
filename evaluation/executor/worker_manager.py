@@ -105,7 +105,7 @@ class Worker_manager:
         for worker_stub in self.worker_stub_dict.values():
             await worker_stub.INIT(job_init_msg)
         
-        self.job_id_agg_weight_map[job_id] = []
+        self.job_id_agg_weight_map[job_id] = None
         self.job_id_agg_meta[job_id] = {"cnt": 0, "moving_loss": 0, "trained_size": 0}
         self.job_id_agg_test_map[job_id] = {
             "cnt": 0,
@@ -135,6 +135,29 @@ class Worker_manager:
         except asyncio.CancelledError:
             pass
 
+    def update_agg(self, agg_weight, agg_meta: list, result_list: list, meta: dict, gradient_policy):
+        for key, value in meta.items():
+            # cnt, trained_size
+            agg_meta[key] += value
+
+        for result in result_list:
+            agg_meta["moving_loss"] += result["moving_loss"]
+            if gradient_policy != 'q-fedavg':
+                model_weight = result["model_weight"]
+                if not agg_weight:
+                    agg_weight = model_weight
+                else:
+                    agg_weight = [weight + model_weight[i] for i, weight in enumerate(agg_weight)]
+            else:
+                Delta, h = result["Delta"], result["h"]
+                if not agg_weight:
+                    agg_weight = [Delta, h]
+                else:
+                    agg_weight[1] += h
+                    for idx in range(len(Delta)):
+                        agg_weight[0][idx] += Delta[idx]
+        return agg_weight
+        
     async def execute(self, event: str, job_id: int, client_id_list: list, round: int, args: dict)->dict:
         try:
             results = None
@@ -175,19 +198,18 @@ class Worker_manager:
                     await asyncio.sleep(0.5)
 
                 if event == CLIENT_TRAIN:
-                    model_param = results["model_weight"]
-                    del results["model_weight"]
+                    result_list = results["result_list"]
+                    del results["result_list"]
+                    gradient_policy = results["gradient_policy"]
+                    del results["gradient_policy"]
 
                     agg_weight = self.job_id_agg_weight_map[job_id]
-                    if not agg_weight:
-                        agg_weight = model_param
-                    else:
-                        agg_weight = [weight + model_param[i] for i, weight in enumerate(agg_weight)]
-                    
-                    self.job_id_agg_weight_map[job_id] = agg_weight
+                    agg_meta = self.job_id_agg_meta[job_id]
 
-                    for key, value in results.items():
-                        self.job_id_agg_meta[job_id][key] += value
+                    self.job_id_agg_weight_map[job_id] = \
+                        self.update_agg(agg_weight, agg_meta, result_list, results, gradient_policy)
+                    
+                    self.job_id_agg_meta[job_id] = agg_meta 
                 
                 elif event == MODEL_TEST:
                     agg_test_result = self.job_id_agg_test_map[job_id]
@@ -196,12 +218,18 @@ class Worker_manager:
                             
             elif event == AGGREGATE:
                 agg_weight = self.job_id_agg_weight_map[job_id]
-                cnt = self.job_id_agg_meta[job_id]["cnt"]
-                agg_results = self.job_id_agg_meta[job_id]
-                agg_results["avg_moving_loss"] = 0
+
+                if not agg_weight:
+                    raise RuntimeError("Cannot aggregate None object")
+
+                agg_meta = self.job_id_agg_meta[job_id]
+                agg_meta["avg_moving_loss"] = 0
+                cnt = agg_meta["cnt"]
+            
                 self.job_id_agg_meta[job_id] = {"cnt":0, "moving_loss": 0, "trained_size": 0}
                 if cnt > 0:
-                    agg_weight = [np.divide(weight, cnt) for weight in agg_weight]
+                    if args["gradient_policy"] != 'q-fedavg':
+                        agg_weight = [np.divide(weight, cnt) for weight in agg_weight]
 
                     job_weight_msg = executor_pb2.job_weight(
                         job_id = job_id,
@@ -216,11 +244,10 @@ class Worker_manager:
                         except Exception as e:
                             self.logger.print(e, ERROR)
 
-                    agg_results["avg_moving_loss"] = agg_results["moving_loss"] / cnt
+                    agg_meta["avg_moving_loss"] = agg_meta["moving_loss"] / cnt
                 
                 self.job_id_agg_weight_map[job_id] = None
-
-                results = agg_results
+                results = agg_meta
             
             elif event == AGGREGATE_TEST:
                 agg_test = self.job_id_agg_test_map[job_id]
