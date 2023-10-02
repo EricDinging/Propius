@@ -17,11 +17,11 @@ worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
 avg_job_interval = 1800
-job_per_container = 2
+job_per_container = 1
 allow_exceed_total_round = True
 
 ideal_client = False
-client_per_container = 2000
+client_per_container = 1000
 client_num = 6000
 sched_alg = 'fifo'
 speedup_factor = 3
