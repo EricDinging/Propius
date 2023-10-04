@@ -5,14 +5,14 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-version = "10000"
+version = "6000-mixed"
 time_cutoff = 60000
-round_cutoff = 150
+round_cutoff = 350
 
 sched_alg_list = [
-                  'fifo',
+                #   'fifo',
                   'random',
-                  'srsf',
+                #   'srsf',
                   'amg'
                   ]
 
@@ -23,6 +23,9 @@ plot_folder = f'./evaluation_result/plot-{version}'
 line_styles = ['-.', ':', '-']
 color_list = ['grey', 'gold', 'darkorange', 'blueviolet', 'teal', 'skyblue' ,'darkblue', 'blueviolet']
 job_num = 10
+
+job_group_list = [(0, 2, 1), (5, 4, 3), (6, 8, 7, 9)]
+job_group_end_time = {job_group: [] for job_group in job_group_list}
 
 if not os.path.exists(plot_folder):
     os.makedirs(plot_folder)
@@ -43,8 +46,8 @@ for i, sched_alg in enumerate(sched_alg_list):
     avg_tloss_dict = {}
     end_time_list = []
 
-    execute_folder = f'evaluation_result/{sched_alg}-{version}/executor'
-    job_folder = f'evaluation_result/{sched_alg}-{version}/job'
+    execute_folder = f'data/{sched_alg}-{version}/executor'
+    job_folder = f'data/{sched_alg}-{version}/job'
 
     for exe_res_name in os.listdir(execute_folder):
         match = re.search(pattern, exe_res_name)
@@ -87,6 +90,8 @@ for i, sched_alg in enumerate(sched_alg_list):
                 for row in reader:
                     round_num = int(row[round_idx])
                     round_time = float(row[idx])
+                    if int(row[0]) == -1:
+                        break
                     if round_time > time_cutoff:
                         break
                     if round_num in round_list:
@@ -106,7 +111,12 @@ for i, sched_alg in enumerate(sched_alg_list):
             if time_stamp_list[-1] > time_cutoff:
                 continue
             end_time_list.append(time_stamp_list[-1])
-            
+
+            for job_group, group_end_time_list in job_group_end_time.items():
+                if job_id in job_group:
+                    group_end_time_list.append(time_stamp_list[-1])
+                    break
+
             round_time_list_dict[job_id] = time_stamp_list
             acc_list_dict[job_id] = acc_list
             avg_tloss_dict[job_id] = avg_tloss_list
@@ -115,23 +125,47 @@ for i, sched_alg in enumerate(sched_alg_list):
     end_time = max(end_time_list)
     round_info_dict[f"avg-{sched_alg}"] = (avg_end_time, end_time)
     
-    mean_x_axis = [i for i in range(int(end_time))]
-    if plot_option == 'acc':
-        ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], acc_list_dict[j]) for j in range(job_num)]
-    elif plot_option == 'test_loss':
-        ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], avg_tloss_dict[j]) for j in range(job_num)]
+    for group_idx, job_group in enumerate(job_group_list):
+        end_time = sum(job_group_end_time[job_group]) / len(job_group_end_time[job_group])
+        mean_x_axis = [i for i in range(int(end_time))]
 
-    mean_y_axis = np.mean(ys_interp, axis=0)
+        if plot_option == 'acc':
+            ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], acc_list_dict[j]) for j in job_group]
+        elif plot_option == 'test_loss':
+            ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], avg_tloss_dict[j]) for j in job_group]
+        
+        mean_y_axis = np.mean(ys_interp, axis=0)
 
-    if sched_alg == 'irs2':
-        alg_label = 'AMG'
-    elif sched_alg == 'fifo':
-        alg_label = 'FIFO'
-    elif sched_alg == 'random':
-        alg_label = 'Random'
-    elif sched_alg == 'srsf':
-        alg_label = 'SRSF'
-    plt.plot(mean_x_axis, mean_y_axis, label=f"Policy: {alg_label}", color=color_list[i])
+        if sched_alg == 'irs2':
+            alg_label = 'AMG'
+        elif sched_alg == 'fifo':
+            alg_label = 'FIFO'
+        elif sched_alg == 'random':
+            alg_label = 'Random'
+        elif sched_alg == 'srsf':
+            alg_label = 'SRSF'
+
+        plt.plot(mean_x_axis, mean_y_axis, label=f"{alg_label}, {job_group}", color=color_list[i], linestyle=line_styles[group_idx])
+
+
+
+    # plot mean
+    # mean_x_axis = [i for i in range(int(end_time))]
+    # if plot_option == 'acc':
+    #     ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], acc_list_dict[j]) for j in range(job_num)]
+    # elif plot_option == 'test_loss':
+    #     ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], avg_tloss_dict[j]) for j in range(job_num)]
+
+    # mean_y_axis = np.mean(ys_interp, axis=0)
+    # if sched_alg == 'irs2':
+    #     alg_label = 'AMG'
+    # elif sched_alg == 'fifo':
+    #     alg_label = 'FIFO'
+    # elif sched_alg == 'random':
+    #     alg_label = 'Random'
+    # elif sched_alg == 'srsf':
+    #     alg_label = 'SRSF'
+    # plt.plot(mean_x_axis, mean_y_axis, label=f"Policy: {alg_label}", color=color_list[i])
 
     # Indivial job
     # for job_id in range(job_num):
