@@ -5,7 +5,7 @@ import time
 import json
 from propius.database import Temp_client_db
 import random
-from propius.util import Msg_level, Propius_logger, geq
+from propius.util import Msg_level, Propius_logger, geq, Job_group
 import ast
 
 class CM_temp_client_db_portal(Temp_client_db):
@@ -26,6 +26,9 @@ class CM_temp_client_db_portal(Temp_client_db):
         """
 
         super().__init__(gconfig, cm_id, True, logger)
+        self.job_group = Job_group()
+
+        #TODO hardcode
 
     def insert(self, id: int, specifications: tuple):
         """Insert client metadata to database, set expiration time and start time
