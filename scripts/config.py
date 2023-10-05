@@ -8,7 +8,7 @@ compose_file = './compose_eval_gpu.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
 propius_config_file = './propius/global_config.yml'
 
-profile_folder = './evaluation/job/profile_benchmark'
+profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
 total_job = 10
 
@@ -17,12 +17,12 @@ worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
 avg_job_interval = 1800
-job_per_container = 2
+job_per_container = 1
 allow_exceed_total_round = True
 
 ideal_client = False
-client_per_container = 2000
-client_num = 6000
+client_per_container = 1000
+client_num = 5000
 sched_alg = 'fifo'
 speedup_factor = 3
 

@@ -181,7 +181,9 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             # Update every job socre using IRS with a slight tweek that has experimental
             # performance improvement
             await self._irs2_score(job_id)
-
+        elif self.sched_alg == 'irs3':
+            # Latest version of irs3
+            await self._irs3_score(job_id)
         elif self.sched_alg == 'fifo':
             # Give every job which doesn't have a score yet a score of
             # -timestamp
