@@ -1,5 +1,5 @@
 # Global config
-use_docker: true
+use_docker: false
 
 # ---Addresses---
 load_balancer_ip: localhost
@@ -10,10 +10,6 @@ client_manager:
 - ip: localhost
   port: 50003
   client_db_port: 6380
-- ip: localhost
-  port: 50004
-  client_db_port: 6381
-
 job_db_ip: localhost
 job_db_port: 6379
 
@@ -25,7 +21,7 @@ scheduler_port: 50000
 
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'las']
-sched_alg: random
+sched_alg: fifo
 max_task_offer_list_len: 20
 
 # Scheduling context

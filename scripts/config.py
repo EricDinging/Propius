@@ -26,6 +26,12 @@ client_num = 6000
 sched_alg = 'fifo'
 speedup_factor = 3
 
+client_manager_num = 1
+client_manager_port_start = 50003
+client_db_port_start = 6380
+
+propius_use_docker = False
+
 # dataset = "openImg"
 dataset = "femnist"
 
@@ -40,7 +46,6 @@ yaml = ruamel.yaml.YAML()
 with open(compose_file, 'r') as yaml_file:
     compose_data = yaml.load(yaml_file)
 
-# Load the existing evaluation config YAML file
 with open(evaluation_config_file, 'r') as evaluation_config_yaml_file:
     config_data = yaml.load(evaluation_config_yaml_file)
 
@@ -205,6 +210,17 @@ elif dataset == 'openImg':
     config_data['data_map_file'] = './datasets/openImg/client_data_mapping/train.csv'
 
 propius_data["allow_exceed_total_round"] = allow_exceed_total_round
+propius_data["use_docker"] = propius_use_docker
+
+# client_manager
+propius_data["client_manager"] = [
+    {"ip": "localhost",
+     "port": client_manager_port_start + i,
+     "client_db_port": client_db_port_start + i}
+     for i in range(client_manager_num)
+]
+#TODO edit docker
+
 # Write the updated YAML back to the file
 
 with open(propius_config_file, 'w') as propius_config_yaml_file:

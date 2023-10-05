@@ -13,26 +13,26 @@ job_public_constraint:
 job_private_constraint:
 - dataset_size
 
-sched_alg: random
+sched_alg: fifo
 
 # ---Evaluation setting---
-speedup_factor: 8
+speedup_factor: 3
 test_bsz: 128
 test_ratio: 1
 eval_interval: 5
 
 # Client number
-client_num: 4000
+client_num: 6000
 client_test_num: 356
 ideal_client: false
 
 # Job
-total_job: 5
+total_job: 10
 # profile_folder: ./evaluation/job/profile/
-profile_folder: ./evaluation/job/profile_mixed
+profile_folder: ./evaluation/job/profile_benchmark
 # profile_folder: ./evaluation/job/dry_profile/   # no training
 # profile_folder: './evaluation/job/test_profile/'
-job_trace: ./evaluation/job/profile_mixed/job_trace.txt
+job_trace: ./evaluation/job/trace/job_trace_10.txt
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
