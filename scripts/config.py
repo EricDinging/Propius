@@ -211,6 +211,7 @@ elif dataset == 'openImg':
 
 propius_data["allow_exceed_total_round"] = allow_exceed_total_round
 propius_data["use_docker"] = propius_use_docker
+propius_data["verbose"] = False
 
 # client_manager
 propius_data["client_manager"] = [

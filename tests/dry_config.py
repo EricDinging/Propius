@@ -22,6 +22,7 @@ def set_client_manager_db(propius_data, redis_data,
     ]
 
     propius_data["use_docker"] = propius_use_docker
+    propius_data["verbose"] = True
 
     for i in range(100):
         if f'client_db_{i}' in redis_data['services']:

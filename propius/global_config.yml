@@ -56,5 +56,5 @@ public_max:
   android_os: 15
 
 # ---General---
-verbose: false
+verbose: true
 plot: false
