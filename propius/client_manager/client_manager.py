@@ -3,6 +3,7 @@
 from propius.util import Propius_logger, Msg_level
 from propius.client_manager.cm_monitor import CM_monitor
 from propius.client_manager.cm_db_portal import CM_client_db_portal, CM_job_db_portal
+from propius.client_manager.cm_matching_buffer import CM_temp_client_db_portal
 from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import pickle
@@ -36,12 +37,15 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.port = gconfig['client_manager'][self.cm_id]['port']
         self.sched_alg = gconfig['sched_alg']
         self.client_db_portal = CM_client_db_portal(gconfig, self.cm_id, logger)
+        self.temp_client_db_portal = CM_temp_client_db_portal(gconfig, self.cm_id, logger)
         self.job_db_portal = CM_job_db_portal(gconfig, logger)
         self.cm_monitor = CM_monitor(self.sched_alg, logger, gconfig['plot'])
         self.max_client_num = gconfig['client_manager_id_weight']
         self.lock = asyncio.Lock()
         self.client_num = 0
         self.logger = logger
+
+        self.sched_alg = gconfig["sched_alg"]
 
     async def CLIENT_CHECKIN(self, request, context):
         """Hanle client check in, store client meatadata to database, and 
@@ -66,9 +70,13 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         public_specification = pickle.loads(request.public_specification)
 
         self.client_db_portal.insert(client_id, public_specification)
+        self.temp_client_db_portal.insert(client_id, public_specification)
 
-        task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
-            public_specification, self.sched_alg)
+        task_offer_list, task_private_constraint, job_size = [], [], 0
+
+        if self.sched_alg != "irs3":
+            task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
+                public_specification, self.sched_alg)
         
         await self.cm_monitor.client_checkin()
 
@@ -100,12 +108,20 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         public_specification = self.client_db_portal.get(request.id)
 
-        task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
-            public_specification, self.sched_alg)
+        task_offer_list, task_private_constraint, job_size = [], [], 0
+
+        if self.sched_alg != "irs3":
+            task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
+                public_specification, self.sched_alg)
+        else:
+            task_offer_list = self.temp_client_db_portal.get_task_id(request.id)
+            self.logger.print(f"Task offer: {task_offer_list}", Msg_level.WARNING)
+            if task_offer_list:
+                self.temp_client_db_portal.remove_client(request.id)
 
         await self.cm_monitor.client_ping()
 
-        if len(task_offer_list) > 0:
+        if task_offer_list > 0:
             self.logger.print(
                 f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}",  Msg_level.INFO)
 

@@ -3,7 +3,7 @@ from propius.channels import propius_pb2
 import pickle
 import grpc
 import asyncio
-from propius.util.commons import *
+from propius.util.commons import Msg_level, get_time, geq
 import logging
 
 #TODO state flow check
@@ -53,17 +53,17 @@ class Propius_client_aio():
     async def __del__(self):
         await self._cleanup_routine()
 
-    def _custom_print(self, message: str, level: int=PRINT):
+    def _custom_print(self, message: str, level: int=Msg_level.PRINT):
         if self.verbose:
             print(f"{get_time()} {message}")
         if self.logging:
-            if level == DEBUG:
+            if level == Msg_level.DEBUG:
                 logging.debug(message)
-            elif level == INFO:
+            elif level == Msg_level.INFO:
                 logging.info(message)
-            elif level == WARNING:
+            elif level == Msg_level.WARNING:
                 logging.warning(message)
-            elif level == ERROR:
+            elif level == Msg_level.ERROR:
                 logging.error(message)
 
     def _connect_lb(self) -> None:
@@ -88,7 +88,7 @@ class Propius_client_aio():
                 self._custom_print(f"Client: connected to Propius")
                 return
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(2)
 
         raise RuntimeError(
@@ -130,7 +130,7 @@ class Propius_client_aio():
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(2)
         raise RuntimeError("Unable to connect to Propius at the moment")
     
@@ -158,7 +158,7 @@ class Propius_client_aio():
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
@@ -213,11 +213,11 @@ class Propius_client_aio():
                     self._custom_print(f"Client {self.id}: client task selection is recieved")
                     return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
                 else:
-                    self._custom_print(f"Client {self.id}: client task selection is rejected", WARNING)
+                    self._custom_print(f"Client {self.id}: client task selection is rejected", Msg_level.WARNING)
                     return None
             
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
@@ -271,7 +271,7 @@ class Propius_client_aio():
                 else:
                     continue
             else:
-                self._custom_print(f"Client {self.id}: scheduled with {task_id}", INFO)
+                self._custom_print(f"Client {self.id}: scheduled with {task_id}", Msg_level.INFO)
                 break
         
         return self.id, True, task_id, result[0], result[1]

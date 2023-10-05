@@ -210,7 +210,7 @@ class Client:
                 
                 await self.propius_client_stub.connect()
 
-                result = await self.propius_client_stub.auto_assign(0)
+                result = await self.propius_client_stub.auto_assign(ttl=5)
 
                 _, status, self.task_id, ps_ip, ps_port = result
 
@@ -246,6 +246,10 @@ if __name__ == '__main__':
             config["load_balancer_ip"] = eval_config["load_balancer_ip"]
             config["load_balancer_port"] = eval_config["load_balancer_port"]
             config["use_docker"] = eval_config["use_docker"]
+            config["eval_start_time"] = time.time()
+            config["use_docker"] = False
+            config["speedup_factor"] = 1
+            config["is_FA"] = False
             client = Client(config)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(client.run())

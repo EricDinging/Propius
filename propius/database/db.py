@@ -158,7 +158,7 @@ class Client_db:
             host = gconfig['client_manager'][cm_id]['ip']
         port = gconfig['client_manager'][cm_id]['client_db_port']
         self.logger = logger
-        self.r = redis.Redis(host=host, port=port)
+        self.r = redis.Redis(host=host, port=port, db=0)
         self.start_time = int(time.time())
         self.client_exp_time = int(gconfig['client_expire_time'])
 
@@ -167,6 +167,56 @@ class Client_db:
         if is_cm:
             schema = (
                 NumericField("$.client.timestamp", as_name="timestamp"),
+            )
+
+            schema = schema + tuple([NumericField(f"$.client.{name}", as_name=name)
+                                    for name in self.public_constraint_name])
+
+            try:
+                self.flushdb()
+                self.r.ft("client").create_index(
+                    schema, definition=IndexDefinition(
+                        prefix=["client:"], index_type=IndexType.JSON))
+            except BaseException:
+                pass
+
+    def flushdb(self):
+        self.r.flushdb()
+
+
+class Temp_client_db:
+    def __init__(self, gconfig, cm_id: int, is_cm: bool, logger: Propius_logger):
+        """Initialize temp client db portal. 
+
+        Temp client db is to store ready-to-be-assigned clients
+
+        Args:
+            gconfig: config dictionary
+                client_manager: list of client manager address
+                    ip:
+                    client_db_port
+                client_expire_time: expiration time of clients in the db
+                job_public_constraint: name of public constraint
+
+            cm_id: id of the client manager is the user is client manager
+            is_cm: bool indicating whether the user is client manager
+            logger
+        """
+        if gconfig['use_docker']:
+            host = f'client_db_{cm_id}'
+        else:
+            host = gconfig['client_manager'][cm_id]['ip']
+        port = gconfig['client_manager'][cm_id]['client_db_port']
+        self.logger = logger
+        self.r = redis.Redis(host=host, port=port, db=1)
+        self.start_time = int(time.time())
+        self.client_exp_time = int(60)
+
+        self.public_constraint_name = gconfig['job_public_constraint']
+
+        if is_cm:
+            schema = (
+                TextField("$.client.job_ids", as_name="job_ids"),
             )
 
             schema = schema + tuple([NumericField(f"$.client.{name}", as_name=name)

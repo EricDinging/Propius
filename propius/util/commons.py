@@ -76,18 +76,9 @@ class Propius_logger:
 class Group_condition:
     def __init__(self):
         # a list of condition
-        self.condition_list = []
-    def insert_condition(self, condition: list):
-        # a condition is a tuple of two tuples. 
-        # First tuple is the lower bound, the second is the upper bound
-        # Logic relation between subcondition is AND
-        # Logic relation between condition is OR  
-        self.condition_list.append(condition)
-    def check_condition(self, spec: tuple)->bool:
-        for condition in self.condition_list:
-            if geq(spec, condition[0]) and gt(condition[1], spec):
-                return True
-        return False
+        self.condition_list = ""
+    def insert_condition(self, condition: str):
+        self.condition_list + condition
 
 
 class Job_group:
@@ -95,21 +86,18 @@ class Job_group:
         self.cst_job_group_map = {}
         self.cst_group_condition_map = {}
 
-    def update(self, cst: tuple, job_list: list, condition_list: Group_condition):
+    def insert(self, cst: tuple, job_list: list):
         self.cst_job_group_map[cst] = job_list
-        self.cst_group_condition_map[cst] = condition_list
+        self.cst_group_condition_map[cst] = Group_condition()
+
+    def update(self, cst: tuple, condition: str):
+        if cst in self.cst_group_condition_map:
+            self.cst_group_condition_map[cst].insert_condition(condition)
 
     def remove(self, cst: tuple):
-        del self.cst_job_group_map[cst]
-        del self.cst_group_condition_map[cst]
-
-    def get_job_list(self, spec: tuple)->list:
-        for cst, group_condition in self.cst_group_condition_map.items():
-            if group_condition.check_condition(spec):
-                return self.cst_job_group_map[cst]
-        return []
-
-
+        if cst in self.cst_job_group_map:
+            del self.cst_job_group_map[cst]
+            del self.cst_group_condition_map[cst]
 
 
     

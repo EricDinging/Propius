@@ -16,6 +16,7 @@ async def serve(gconfig, cm_id: int, logger: Propius_logger):
         logger.print(f"=====Client manager shutting down=====", Msg_level.WARNING)
         client_manager.cm_monitor.report(client_manager.cm_id)
         client_manager.client_db_portal.flushdb()
+        client_manager.temp_client_db_portal.flushdb()
         await server.stop(5)
 
     server = grpc.aio.server()

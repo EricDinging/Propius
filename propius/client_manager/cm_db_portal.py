@@ -51,13 +51,8 @@ class CM_job_db_portal(Job_db):
                 q = Query('*').sort_by('score', asc=False)
                 result = self.r.ft('job').search(q)
         except Exception as e:
-<<<<<<< HEAD
-            self.logger.print(e, WARNING)
-
-=======
             self.logger.print(e, Msg_level.WARNING)
-            result = None
->>>>>>> refactor
+
         if result:
             size = result.total
             open_list = []
