@@ -37,7 +37,7 @@ class CM_temp_client_db_portal(Temp_client_db):
 
         if len(specifications) != len(self.public_constraint_name):
             self.logger.print("Specification length does not match required", Msg_level.ERROR)
-        client_dict = {"job_id": "[]"}
+        client_dict = {"job_ids": "[]"}
         spec_dict = {self.public_constraint_name[i]: specifications[i]
                      for i in range(len(specifications))}
         client_dict.update(spec_dict)
@@ -65,7 +65,7 @@ class CM_temp_client_db_portal(Temp_client_db):
                 try:
                     id = f"client:{client_id}"
                     pipe.watch(id)
-                    task_ids_str = self.r.json().get(id, "$.client.job_ids")[0]
+                    task_ids_str = str(self.r.json().get(id, "$.client.job_ids")[0])
                     pipe.unwatch()
                     task_list = ast.literal_eval(task_ids_str)
                     return task_list

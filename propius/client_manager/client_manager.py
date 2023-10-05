@@ -121,7 +121,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         await self.cm_monitor.client_ping()
 
-        if task_offer_list > 0:
+        if task_offer_list:
             self.logger.print(
                 f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}",  Msg_level.INFO)
 

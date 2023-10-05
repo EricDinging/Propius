@@ -43,6 +43,12 @@ class Msg_level(Enum):
     WARNING = 3
     ERROR = 4
 
+CPU_F = "cpu_f"
+RAM = "ram"
+FP16_MEM = "fp16_mem"
+ANDROID_OS = "android_os"
+DATASET_SIZE = "dataset_size"
+
 def encode_specs(**kargs) -> tuple[list, list]:
     """Encode client specs. Eg. encode_specs(CPU_F=18, RAM=8).
 
@@ -136,6 +142,4 @@ class Job_group:
         if cst in self.cst_job_group_map:
             del self.cst_job_group_map[cst]
             del self.cst_group_condition_map[cst]
-
-
     
