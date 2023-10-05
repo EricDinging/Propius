@@ -43,6 +43,44 @@ class Msg_level(Enum):
     WARNING = 3
     ERROR = 4
 
+def encode_specs(**kargs) -> tuple[list, list]:
+    """Encode client specs. Eg. encode_specs(CPU_F=18, RAM=8).
+
+    Args:
+        Keyword arguments
+
+    Raises:
+        ValueError: if input key is not recognized
+    """
+
+    public_spec_dict = {
+        CPU_F: 0,
+        RAM: 0,
+        FP16_MEM: 0,
+        ANDROID_OS: 0,
+    }
+
+    private_spec_dict = {
+        DATASET_SIZE: 0
+    }
+
+    for key in public_spec_dict.keys():
+        if key in kargs:
+            public_spec_dict[key] = kargs[key]
+
+    for key in private_spec_dict.keys():
+        if key in kargs:
+            private_spec_dict[key] = kargs[key]
+
+    for key in kargs.keys():
+        if key not in public_spec_dict and key not in private_spec_dict:
+            raise ValueError(f"{key} spec is not supported")
+
+    # TODO encoding, value check
+
+    return (list(public_spec_dict.values()),
+            list(private_spec_dict.values()))
+
 class Propius_logger:
     def __init__(self, log_file:str=None, verbose:bool=True, use_logging:bool=True):
         self.verbose = verbose

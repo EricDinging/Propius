@@ -4,7 +4,7 @@ import pickle
 import grpc
 import asyncio
 import time
-from propius.util.commons import Msg_level, get_time, geq
+from propius.util.commons import Msg_level, get_time, geq, encode_specs
 import logging
 
 def gen_client_config():

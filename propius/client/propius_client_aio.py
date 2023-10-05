@@ -3,7 +3,7 @@ from propius.channels import propius_pb2
 import pickle
 import grpc
 import asyncio
-from propius.util.commons import Msg_level, get_time, geq
+from propius.util.commons import Msg_level, get_time, geq, encode_specs
 import logging
 
 #TODO state flow check
