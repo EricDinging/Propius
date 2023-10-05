@@ -1,16 +1,11 @@
 import redis
 from redis.commands.json.path import Path
-import redis.commands.search.reducers as reducers
-from redis.commands.search.field import TextField, NumericField, TagField
-from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-from redis.commands.search.query import NumericFilter, Query
 import time
-import json
-from propius.database.db import *
-
+from propius.database import Job_db
+from propius.util import Msg_level, Propius_logger
 
 class JM_job_db_portal(Job_db):
-    def __init__(self, gconfig, logger):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
         """Init job database portal class
 
         Args:
@@ -100,7 +95,7 @@ class JM_job_db_portal(Job_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
                     return False
                 
     def prune(self):
@@ -169,10 +164,10 @@ class JM_job_db_portal(Job_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
 
         if job_finished:
-            self.logger.print(f"Job {job_id} reached final round", ERROR)
+            self.logger.print(f"Job {job_id} reached final round", Msg_level.ERROR)
             self.remove_job(job_id)
         return False
     
@@ -261,7 +256,7 @@ class JM_job_db_portal(Job_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
                     return False
 
     def finish(self, job_id: int) -> tuple[tuple, int, int, float, float]:

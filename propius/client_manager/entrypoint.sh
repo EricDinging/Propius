@@ -1,2 +1,2 @@
 #! /bin/bash
-python ./propius/client_manager/client_manager.py "$@"
+python -m propius.client_manager "$@"

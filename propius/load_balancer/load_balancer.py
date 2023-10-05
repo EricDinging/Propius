@@ -1,18 +1,14 @@
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
-from propius.util.commons import *
-from propius.load_balancer.lb_monitor import *
+"""Load Balancer class"""
+
+from propius.util import Msg_level, Propius_logger
+from propius.load_balancer.lb_monitor import LB_monitor
 from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
-import yaml
 import grpc
 import asyncio
 
-_cleanup_coroutines = []
-
-
 class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
-    def __init__(self, gconfig, logger):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
         self.gconfig = gconfig
         self.ip = gconfig['load_balancer_ip'] if not gconfig['use_docker'] else '0.0.0.0'
         self.port = gconfig['load_balancer_port']
@@ -97,47 +93,3 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
                     pass
         except asyncio.CancelledError:
             pass
-
-
-async def serve(gconfig, logger):
-    async def server_graceful_shutdown():
-        logger.print(f"=====Load balancer shutting down=====", WARNING)
-        load_balancer.lb_monitor.report()
-
-        heartbeat_task.cancel()
-        await heartbeat_task
-
-        await load_balancer._disconnect_cm()
-        await server.stop(5)
-
-    server = grpc.aio.server()
-    load_balancer = Load_balancer(gconfig, logger)
-    propius_pb2_grpc.add_Load_balancerServicer_to_server(load_balancer, server)
-    server.add_insecure_port(f'{load_balancer.ip}:{load_balancer.port}')
-    _cleanup_coroutines.append(server_graceful_shutdown())
-    await server.start()
-    logger.print(f"Load balancer: server started, listening on {load_balancer.ip}:{load_balancer.port}", INFO)
-
-    heartbeat_task = asyncio.create_task(load_balancer.heartbeat_routine())
-
-    await server.wait_for_termination()
-
-if __name__ == '__main__':
-    log_file = './propius/monitor/log/lb.log'
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    global_setup_file = './propius/global_config.yml'
-
-    with open(global_setup_file, "r") as gyamlfile:
-        try:
-            gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            logger = My_logger(log_file=log_file, verbose=gconfig["verbose"], use_logging=True)
-            logger.print(f"Load balancer read config successfully", INFO)
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(serve(gconfig, logger))
-        except KeyboardInterrupt:
-            pass
-        except Exception as e:
-            logger.print(e, ERROR)
-        finally:
-            loop.run_until_complete(*_cleanup_coroutines)
-            loop.close()

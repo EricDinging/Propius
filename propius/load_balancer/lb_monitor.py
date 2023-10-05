@@ -1,11 +1,11 @@
-from propius.util.monitor import *
-from propius.util.commons import *
+from propius.util import get_time, Propius_logger, Monitor
+import matplotlib.pyplot as plt
 import asyncio
 import os
 
 
 class LB_monitor(Monitor):
-    def __init__(self, sched_alg: str, logger: My_logger, plot: bool=False):
+    def __init__(self, sched_alg: str, logger: Propius_logger, plot: bool=False):
         super().__init__("Load balancer", logger, plot)
         self.sched_alg = sched_alg
         self.lock = asyncio.Lock()

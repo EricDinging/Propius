@@ -1,18 +1,11 @@
-import random
-from propius.database.db import *
+from propius.database.db import Job_db, Client_db
 import json
 import time
-from redis.commands.search.query import NumericFilter, Query
-from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-from redis.commands.search.field import TextField, NumericField, TagField
-import redis.commands.search.reducers as reducers
-from redis.commands.json.path import Path
-import redis
-import sys
-from propius.util.commons import *
+from redis.commands.search.query import Query
+from propius.util import Msg_level, Propius_logger
 
 class SC_job_db_portal(Job_db):
-    def __init__(self, gconfig, logger):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
         """Initialize job db portal
 
         Args:
@@ -44,7 +37,7 @@ class SC_job_db_portal(Job_db):
                     id, f"$.job.public_constraint.{name}")[0]))
             return tuple(constraint_list)
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
             return None
 
     def get_job_list(self, public_constraint: tuple,
@@ -73,7 +66,7 @@ class SC_job_db_portal(Job_db):
             if result.total == 0:
                 return False
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
             return False
 
         for doc in result.docs:
@@ -115,9 +108,9 @@ class SC_job_db_portal(Job_db):
         try:
             self.r.execute_command(
                 'JSON.SET', f"job:{job_id}", "$.job.score", score)
-            self.logger.print(f"-------job:{job_id} {score:.3f} ", INFO)
+            self.logger.print(f"-------job:{job_id} {score:.3f} ", Msg_level.INFO)
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
 
     def fifo_update_all_job_score(self):
         """Give every job which doesn't have a score yet a score of -timestamp
@@ -135,10 +128,10 @@ class SC_job_db_portal(Job_db):
                 id = doc.id
                 job_time = json.loads(doc.json)["job"]["timestamp"]
                 score  = -(job_time - self.start_time)
-                self.logger.print(f"-------{id} {score:.3f} ", INFO)
+                self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
 
     def random_update_all_job_score(self):
         """Do not assign score to jobs. Instead, client will recieved a randomly shuffled offer list
@@ -161,10 +154,10 @@ class SC_job_db_portal(Job_db):
                 job_dict = json.loads(doc.json)['job']
                 remain_demand = max(job_dict['total_demand'] - job_dict['attained_service'], 0)
                 score = -remain_demand
-                self.logger.print(f"-------{id} {score:.3f} ", INFO)
+                self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
 
     def srtf_update_all_job_score(self, std_round_time: float):
         """Give every job a score of -remaining time
@@ -190,10 +183,10 @@ class SC_job_db_portal(Job_db):
                     remain_time = runtime
 
                 score = -remain_time
-                self.logger.print(f"-------{id} {score:.3f} ", INFO)
+                self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
 
     def las_update_all_job_score(self):
         """Give every job a score of -attained service.
@@ -219,7 +212,7 @@ class SC_job_db_portal(Job_db):
             timestamp = float(self.r.json().get(id, "$.job.timestamp")[0])
             return time.time() - timestamp
         except Exception as e:
-            self.logger.print(e, WARNING)
+            self.logger.print(e, Msg_level.WARNING)
             return 0
 
     def _get_est_JCT(self, job_id: int, std_round_time: float) -> float:
@@ -238,12 +231,12 @@ class SC_job_db_portal(Job_db):
             return est_jct
             
         except Exception as e:
-            self.logger.print(e, WARNING)
+            self.logger.print(e, Msg_level.WARNING)
             return 1000 * std_round_time
 
 
 class SC_client_db_portal(Client_db):
-    def __init__(self, gconfig, logger):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
         """Initialize client db portal
 
         Args:
@@ -269,7 +262,7 @@ class SC_client_db_portal(Client_db):
             info = self.r.ft('client').info()
             num = int(info['num_docs'])
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
 
         return num
 
@@ -295,7 +288,7 @@ class SC_client_db_portal(Client_db):
             q = Query(qstr).no_content()
             size = int(self.r.ft('client').search(q).total)
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
 
         if size == 0:
             return 0.01
@@ -316,7 +309,7 @@ class SC_client_db_portal(Client_db):
         try:
             size = int(self.r.ft('client').search(q).total)
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
 
         if size == 0:
             return 0.01

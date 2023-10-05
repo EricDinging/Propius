@@ -1,19 +1,16 @@
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
-from propius.util.commons import *
-from propius.scheduler.sc_monitor import *
-from propius.scheduler.sc_db_portal import *
+"""Job scheduler class."""
+
+from propius.util import Msg_level, Propius_logger
+from propius.scheduler.sc_monitor import SC_monitor
+from propius.scheduler.sc_db_portal import SC_client_db_portal, SC_job_db_portal
 from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import asyncio
 import yaml
 import grpc
 
-_cleanup_routines = []
-
-
 class Scheduler(propius_pb2_grpc.SchedulerServicer):
-    def __init__(self, gconfig, logger):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
         """Init scheduler class
 
         Args:
@@ -99,10 +96,10 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             bq = bq + f"-{this_q}"
 
         # update all score
-        self.logger.print("Scheduler: starting to update scores", INFO)
+        self.logger.print("Scheduler: starting to update scores", Msg_level.INFO)
         for cst in self.constraints:
             try:
-                self.logger.print(f"Scheduler: update score for {cst}: ", INFO)
+                self.logger.print(f"Scheduler: update score for {cst}: ", Msg_level.INFO)
                 for idx, job in enumerate(constraints_job_map[cst]):
                     groupsize = len(constraints_job_map[cst])
                     self.job_db_portal.irs_update_score(
@@ -113,7 +110,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
                         self.irs_epsilon,
                         self.std_round_time)
             except Exception as e:
-                self.logger.print(e, WARNING)
+                self.logger.print(e, Msg_level.WARNING)
 
     async def _irs2_score(self, job_id: int):
         """Update all jobs' score in database according to IRS2, a derivant from IRS
@@ -122,8 +119,6 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             job_id: id of job that has just been registered by job manager
         """
 
-        constraints_client_map = {}
-        constraints_job_map = {}
         # get constraints
         constraints = self.job_db_portal.get_job_constraints(job_id)
         if not constraints:
@@ -133,33 +128,24 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
 
         # search job for each group, remove if empty
         for cst in self.constraints:
-            constraints_job_map[cst] = []
-            if not self.job_db_portal.get_job_list(
-                    cst, constraints_job_map[cst]):
-                self.constraints.remove(cst)
-
-        # search elig client size for each group
-        for cst in self.constraints:
-            constraints_client_map[cst] = self.client_db_portal.\
-                get_client_proportion(cst)
-        # sort constraints
-        self.constraints.sort(key=lambda x: constraints_client_map[x])
-    
-        # update all score
-        self.logger.print("Scheduler: starting to update scores", INFO)
-        for cst in self.constraints:
             try:
-                self.logger.print(f"Scheduler: update score for {cst}: ", INFO)
-                for idx, job in enumerate(constraints_job_map[cst]):
-                    groupsize = len(constraints_job_map[cst])
+                constraints_job_list = []
+                if not self.job_db_portal.get_job_list(
+                        cst, constraints_job_list):
+                    self.constraints.remove(cst)
+                    continue
+
+                client_prop = self.client_db_portal.\
+                    get_client_proportion(cst)
+                
+                self.logger.print(f"Scheduler: upd score for {cst}: ", Msg_level.INFO)
+                groupsize = len(constraints_job_list)
+                for idx, job in enumerate(constraints_job_list):
                     self.job_db_portal.irs_update_score(
-                        job,
-                        groupsize,
-                        idx,
-                        constraints_client_map[cst],
-                    )
+                        job, groupsize, idx, client_prop)
+
             except Exception as e:
-                self.logger.print(e, WARNING)
+                    self.logger.print(e, Msg_level.WARNING)
 
     async def JOB_SCORE_UPDATE(self, request, context) -> propius_pb2.ack:
         """Service function that update scores of job in database
@@ -212,47 +198,3 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
     
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)
-
-
-async def serve(gconfig, logger):
-    async def server_graceful_shutdown():
-        logger.print("=====Scheduler shutting down=====", WARNING)
-        scheduler.sc_monitor.report()
-        await server.stop(5)
-
-    # def sigterm_handler(signum, frame):
-    #     loop = asyncio.get_event_loop()
-    #     loop.run_until_complete(server_graceful_shutdown())
-    #     loop.stop()
-    
-    server = grpc.aio.server()
-    scheduler = Scheduler(gconfig, logger)
-    propius_pb2_grpc.add_SchedulerServicer_to_server(scheduler, server)
-    server.add_insecure_port(f'{scheduler.ip}:{scheduler.port}')
-    await server.start()
-    
-    logger.print(f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}",
-                 INFO)
-    _cleanup_routines.append(server_graceful_shutdown())
-    # signal.signal(signal.SIGTERM, sigterm_handler)
-    await server.wait_for_termination()
-
-if __name__ == '__main__':
-    log_file = './propius/monitor/log/sc.log'
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    global_setup_file = './propius/global_config.yml'
-
-    with open(global_setup_file, "r") as gyamlfile:
-        try:
-            gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            logger = My_logger(log_file=log_file, verbose=gconfig["verbose"], use_logging=True)
-            logger.print(f"scheduler read config successfully")
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(serve(gconfig, logger))
-        except KeyboardInterrupt:
-            pass
-        except Exception as e:
-            logger.print(e, ERROR)
-        finally:
-            loop.run_until_complete(*_cleanup_routines)
-            loop.close()

@@ -11,4 +11,4 @@ COPY ./propius/requirements.txt propius/requirements.txt
 
 RUN pip3 install -r propius/requirements.txt
 
-CMD ["python", "propius/job_manager/job_manager.py"]
+CMD ["python", "-m", "propius.job_manager"]

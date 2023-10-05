@@ -11,4 +11,4 @@ COPY ./propius/requirements.txt propius/requirements.txt
 
 RUN pip3 install -r propius/requirements.txt
 
-CMD ["python", "propius/load_balancer/load_balancer.py"]
+CMD ["python", "-m", "propius.load_balancer"]
