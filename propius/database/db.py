@@ -213,6 +213,7 @@ class Temp_client_db:
         self.client_exp_time = int(60)
 
         self.public_constraint_name = gconfig['job_public_constraint']
+        self.public_max = gconfig['public_max']
 
         if is_cm:
             schema = (

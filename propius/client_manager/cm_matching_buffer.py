@@ -5,7 +5,7 @@ import time
 import json
 from propius.database import Temp_client_db
 import random
-from propius.util import Msg_level, Propius_logger, geq, Job_group
+from propius.util import Msg_level, Propius_logger, geq, Job_group, Group_condtition
 import ast
 
 class CM_temp_client_db_portal(Temp_client_db):
@@ -27,8 +27,30 @@ class CM_temp_client_db_portal(Temp_client_db):
 
         super().__init__(gconfig, cm_id, True, logger)
         self.job_group = Job_group()
+        self.max_task_len = gconfig['max_task_offer_list_len']
 
         #TODO hardcode
+        q = ""
+        for i, name in enumerate(self.public_constraint_name):
+            q += f"@{name}: [0, {self.public_max[i]}]"
+        cst = (0, 0, 0, 0)
+        self.job_group.insert(cst, [0, 1])
+        self.job_group[cst].insert_condition_and(q)
+
+    def client_assign(self):
+        for cst, job_list in self.job_group.cst_job_group_map:
+            condition_q = self.job_group[cst].str()
+            q = Query(condition_q)
+            
+            result = self.r.ft('client').search(q)
+            job_list = job_list[:self.max_task_len]
+            if result:
+                for doc in result.docs:
+                    client = json.loads(doc.json)
+                    client['client']['job_ids'] = str(job_list)
+
+                    modified_client_json_str = json.dumps(client)
+                    doc.json = modified_client_json_str
 
     def insert(self, id: int, specifications: tuple):
         """Insert client metadata to database, set expiration time and start time

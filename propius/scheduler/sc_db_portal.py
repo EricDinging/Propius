@@ -201,10 +201,10 @@ class SC_job_db_portal(Job_db):
                 job_dict = json.loads(doc.json)['job']
                 attained_service = job_dict['attained_service']
                 score = -attained_service
-                self.logger.print(f"-------{id} {score:.3f} ", INFO)
+                self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
-            self.logger.print(e, ERROR)
+            self.logger.print(e, Msg_level.ERROR)
 
     def _get_job_time(self, job_id: int) -> float:
         id = f"job:{job_id}"

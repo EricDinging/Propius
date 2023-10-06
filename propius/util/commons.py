@@ -121,8 +121,12 @@ class Group_condition:
     def __init__(self):
         # a list of condition
         self.condition_list = ""
-    def insert_condition(self, condition: str):
-        self.condition_list + condition
+    def insert_condition_and(self, condition: str):
+        self.condition_list + f" ({condition}) "
+    def insert_condition_or(self, condition: str):
+        self.condition_list + f" | ({condition}) "
+    def str(self):
+        return self.condition_list
 
 
 class Job_group:
@@ -134,9 +138,11 @@ class Job_group:
         self.cst_job_group_map[cst] = job_list
         self.cst_group_condition_map[cst] = Group_condition()
 
-    def update(self, cst: tuple, condition: str):
-        if cst in self.cst_group_condition_map:
-            self.cst_group_condition_map[cst].insert_condition(condition)
+    def __getitem__(self, index)->Group_condition:
+        return self.cst_group_condition_map.get(index)
+
+    def __setitem__(self, index, value: Group_condition):
+        self.cst_group_condition_map[index] = value
 
     def remove(self, cst: tuple):
         if cst in self.cst_job_group_map:
