@@ -11,13 +11,13 @@ round_cutoff = 350
 
 sched_alg_list = [
                 #   'fifo',
-                  'random',
-                #   'srsf',
+                #   'random',
+                  'srsf',
                   'amg'
                   ]
 
-# plot_option = 'acc' 
-plot_option = 'test_loss'
+plot_option = 'acc' 
+# plot_option = 'test_loss'
 
 plot_folder = f'./evaluation_result/plot-{version}'
 line_styles = ['-.', ':', '-']
