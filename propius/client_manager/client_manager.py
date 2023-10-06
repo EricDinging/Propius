@@ -117,11 +117,12 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         else:
             task_offer_list = self.temp_client_db_portal.get_task_id(request.id)
             self.logger.print(f"Task offer: {task_offer_list}", Msg_level.WARNING)
-            if task_offer_list:
-                self.temp_client_db_portal.remove_client(request.id)
             
             #TODO get task private constraints
             task_private_constraint = [(0,), (0,)]
+            task_offer_list, task_private_constraint = self.job_db_portal.get_job_private_constraint(task_offer_list)
+            if task_offer_list:
+                self.temp_client_db_portal.remove_client(request.id)
 
         await self.cm_monitor.client_ping()
 

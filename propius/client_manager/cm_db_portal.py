@@ -60,14 +60,15 @@ class CM_job_db_portal(Job_db):
 
             max_task_len = self.gconfig['max_task_offer_list_len']
             for doc in result.docs:
+                if len(open_list) > max_task_len:
+                    break
                 job = json.loads(doc.json)
                 job_id = int(doc.id.split(':')[1])
                 job_public_constraint = tuple(
                     [job['job']['public_constraint'][name]
                         for name in self.public_constraint_name])
 
-                if len(open_list) >= max_task_len:
-                    break
+                
                 if job['job']['amount'] < job['job']['demand']:
                     if geq(specification, job_public_constraint):
                         open_list.append(job_id)
@@ -84,6 +85,35 @@ class CM_job_db_portal(Job_db):
             return open_list, open_private_constraint, size
 
         return [], [], 0
+    
+    def get_job_private_constraint(self, job_list: list) -> tuple[list, list]:
+        """Get job private constraint in task_offer_list
+
+        The client public specification would satisfy returned task public constraints, 
+        but client private specification might not satisfy the returned task private constraints. 
+        The returned tasks' current allocation amount would be smaller than their respective demand.
+
+        Args:
+            job_list: list of job ids
+        
+        Returns:
+            task_offer_list: list of job id, with size no greater than max_task_len
+            task_private_constraint_list: list of tuple of private constraint 
+                                            for client local task selection
+        """
+        task_offer_list = []
+        task_private_constraint = []
+        max_task_len = self.gconfig['max_task_offer_list_len']
+        for job_id in job_list:
+            if len(task_offer_list) > max_task_len:
+                break
+            # amount
+            # demand
+            # private_constaint
+            pass
+
+        return task_offer_list, task_private_constraint
+
 
     def incr_amount(self, job_id: int) -> tuple[str, int]:
         """Increase the job allocation amount if current allocation amount is less than demand, 

@@ -27,7 +27,6 @@ class CM_temp_client_db_portal(Temp_client_db):
 
         super().__init__(gconfig, cm_id, True, logger)
         self.job_group = Job_group()
-        self.max_task_len = gconfig['max_task_offer_list_len']
 
         #TODO hardcode
         q = ""
@@ -43,7 +42,6 @@ class CM_temp_client_db_portal(Temp_client_db):
             q = Query(condition_q)
             
             result = self.r.ft('temp').search(q)
-            job_list = job_list[:self.max_task_len]
 
             if result:
                 for doc in result.docs:
