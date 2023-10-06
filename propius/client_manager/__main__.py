@@ -17,6 +17,8 @@ async def serve(gconfig, cm_id: int, logger: Propius_logger):
         client_manager.cm_monitor.report(client_manager.cm_id)
         client_manager.client_db_portal.flushdb()
         client_manager.temp_client_db_portal.flushdb()
+        client_assign_task.cancel()
+        await client_assign_task
         await server.stop(5)
 
     server = grpc.aio.server()
@@ -26,6 +28,8 @@ async def serve(gconfig, cm_id: int, logger: Propius_logger):
     server.add_insecure_port(f'{client_manager.ip}:{client_manager.port}')
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.start()
+
+    client_assign_task = asyncio.create_task(client_manager.client_assign_routine())
     logger.print(f"Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}",
                  Msg_level.INFO)
     await server.wait_for_termination()
@@ -47,7 +51,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print(e, Msg_level.ERROR)
+            logger.print(e, Msg_level.ERROR)
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()

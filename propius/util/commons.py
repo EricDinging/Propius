@@ -122,10 +122,10 @@ class Group_condition:
         # a list of condition
         self.condition_list = ""
     def insert_condition_and(self, condition: str):
-        self.condition_list + f" ({condition}) "
+        self.condition_list += f" ({condition}) "
     def insert_condition_or(self, condition: str):
-        self.condition_list + f" | ({condition}) "
-    def str(self):
+        self.condition_list += f" | ({condition}) "
+    def str(self)->str:
         return self.condition_list
 
 

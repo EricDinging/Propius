@@ -158,7 +158,7 @@ class Client_db:
             host = gconfig['client_manager'][cm_id]['ip']
         port = gconfig['client_manager'][cm_id]['client_db_port']
         self.logger = logger
-        self.r = redis.Redis(host=host, port=port, db=0)
+        self.r = redis.Redis(host=host, port=port)
         self.start_time = int(time.time())
         self.client_exp_time = int(gconfig['client_expire_time'])
 
@@ -177,8 +177,8 @@ class Client_db:
                 self.r.ft("client").create_index(
                     schema, definition=IndexDefinition(
                         prefix=["client:"], index_type=IndexType.JSON))
-            except BaseException:
-                pass
+            except Exception as e:
+                self.logger.print(e, Msg_level.ERROR)
 
     def flushdb(self):
         self.r.flushdb()
@@ -208,7 +208,7 @@ class Temp_client_db:
             host = gconfig['client_manager'][cm_id]['ip']
         port = gconfig['client_manager'][cm_id]['client_db_port']
         self.logger = logger
-        self.r = redis.Redis(host=host, port=port, db=1)
+        self.r = redis.Redis(host=host, port=port)
         self.start_time = int(time.time())
         self.client_exp_time = int(60)
 
@@ -217,19 +217,19 @@ class Temp_client_db:
 
         if is_cm:
             schema = (
-                TextField("$.client.job_ids", as_name="job_ids"),
+                TextField("$.temp.job_ids", as_name="job_ids"),
             )
 
-            schema = schema + tuple([NumericField(f"$.client.{name}", as_name=name)
+            schema = schema + tuple([NumericField(f"$.temp.{name}", as_name=name)
                                     for name in self.public_constraint_name])
 
             try:
                 self.flushdb()
-                self.r.ft("client").create_index(
+                self.r.ft("temp").create_index(
                     schema, definition=IndexDefinition(
-                        prefix=["client:"], index_type=IndexType.JSON))
-            except BaseException:
-                pass
+                        prefix=["temp:"], index_type=IndexType.JSON))
+            except Exception as e:
+                self.logger.print(e, Msg_level.ERROR)
 
     def flushdb(self):
         self.r.flushdb()

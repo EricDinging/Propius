@@ -3,7 +3,7 @@
 from propius.util import Propius_logger, Msg_level
 from propius.client_manager.cm_monitor import CM_monitor
 from propius.client_manager.cm_db_portal import CM_client_db_portal, CM_job_db_portal
-from propius.client_manager.cm_matching_buffer import CM_temp_client_db_portal
+from propius.client_manager.cm_temp_db_portal import CM_temp_client_db_portal
 from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import pickle
@@ -162,6 +162,19 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}", Msg_level.INFO)
         return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]),
                                   job_port=result[1])
+    
+    async def client_assign_routine(self):
+        if self.sched_alg == 'irs3':
+            try:
+                while True:
+                    try:
+                        #TODO update job group from scheduler
+                        self.temp_client_db_portal.client_assign()
+                    except Exception as e:
+                        self.logger.print(e, Msg_level.ERROR)
+                    await asyncio.sleep(5)
+            except asyncio.CancelledError:
+                pass
     
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)

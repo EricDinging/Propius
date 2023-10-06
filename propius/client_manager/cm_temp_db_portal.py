@@ -5,7 +5,7 @@ import time
 import json
 from propius.database import Temp_client_db
 import random
-from propius.util import Msg_level, Propius_logger, geq, Job_group, Group_condtition
+from propius.util import Msg_level, Propius_logger, geq, Job_group
 import ast
 
 class CM_temp_client_db_portal(Temp_client_db):
@@ -31,26 +31,24 @@ class CM_temp_client_db_portal(Temp_client_db):
 
         #TODO hardcode
         q = ""
-        for i, name in enumerate(self.public_constraint_name):
-            q += f"@{name}: [0, {self.public_max[i]}]"
+        for _, name in enumerate(self.public_constraint_name):
+            q += f"@{name}: [0, {self.public_max[name]}] "
         cst = (0, 0, 0, 0)
         self.job_group.insert(cst, [0, 1])
         self.job_group[cst].insert_condition_and(q)
 
     def client_assign(self):
-        for cst, job_list in self.job_group.cst_job_group_map:
+        for cst, job_list in self.job_group.cst_job_group_map.items():
             condition_q = self.job_group[cst].str()
             q = Query(condition_q)
             
-            result = self.r.ft('client').search(q)
+            result = self.r.ft('temp').search(q)
             job_list = job_list[:self.max_task_len]
+
             if result:
                 for doc in result.docs:
-                    client = json.loads(doc.json)
-                    client['client']['job_ids'] = str(job_list)
-
-                    modified_client_json_str = json.dumps(client)
-                    doc.json = modified_client_json_str
+                    client_id = int(doc.id.split(':')[1])
+                    self.r.json().set(f"temp:{client_id}", "$.temp.job_ids", str(job_list))
 
     def insert(self, id: int, specifications: tuple):
         """Insert client metadata to database, set expiration time and start time
@@ -67,11 +65,11 @@ class CM_temp_client_db_portal(Temp_client_db):
                      for i in range(len(specifications))}
         client_dict.update(spec_dict)
         client = {
-            "client": client_dict
+            "temp": client_dict
         }
         try:
-            self.r.json().set(f"client:{id}", Path.root_path(), client)
-            self.r.expire(f"client:{id}", self.client_exp_time)
+            self.r.json().set(f"temp:{id}", Path.root_path(), client)
+            self.r.expire(f"temp:{id}", self.client_exp_time)
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
 
@@ -88,9 +86,9 @@ class CM_temp_client_db_portal(Temp_client_db):
         with self.r.json().pipeline() as pipe:
             while True:
                 try:
-                    id = f"client:{client_id}"
+                    id = f"temp:{client_id}"
                     pipe.watch(id)
-                    task_ids_str = str(self.r.json().get(id, "$.client.job_ids")[0])
+                    task_ids_str = str(self.r.json().get(id, "$.temp.job_ids")[0])
                     pipe.unwatch()
                     task_list = ast.literal_eval(task_ids_str)
                     return task_list
@@ -110,11 +108,11 @@ class CM_temp_client_db_portal(Temp_client_db):
         with self.r.json().pipeline() as pipe:
             while True:
                 try:
-                    id = f"client:{client_id}"
+                    id = f"temp:{client_id}"
                     pipe.watch(id)
                     pipe.delete(id)
                     pipe.unwatch()
-                    self.logger.print(f"Remove client:{client_id}", Msg_level.WARNING)
+                    self.logger.print(f"Remove temp client:{client_id}", Msg_level.WARNING)
                     return
                 except redis.WatchError:
                     pass
