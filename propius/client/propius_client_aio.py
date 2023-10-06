@@ -240,42 +240,40 @@ class Propius_client_aio():
             RuntimeError: if can't establish connection after multiple trial
         """
 
-        task_ids, task_private_constraint = await self.client_check_in()
-        
-        self._custom_print(
-                f"Client {self.id}: recieve client manager offer: {task_ids}")
-            
-        while True:
+        while ttl > 0:
+            ttl -= 1
+            task_ids, task_private_constraint = await self.client_check_in()
+
             while ttl > 0:
                 if len(task_ids) > 0:
                     break
                 await asyncio.sleep(2)
                 ttl -= 1
                 task_ids, task_private_constraint = await self.client_ping()
+
+            if len(task_ids) == 0:
+                await asyncio.sleep(2)
+                continue
+            
+            self._custom_print(
+                f"Client {self.id}: recieve client manager offer: {task_ids}")
             
             task_id = await self.select_task(task_ids, task_private_constraint)
+            
             if task_id == -1:
-                task_ids = []
-                task_private_constraint = []
-                if ttl <= 0:
-                    return self.id, False, -1, None, None
-                else:
-                    continue
+                await asyncio.sleep(2)
+                continue
 
             result = await self.client_accept(task_id)
 
             if not result:
-                task_ids = []
-                task_private_constraint = []
-                if ttl <= 0:
-                    return self.id, False, -1, None, None
-                else:
-                    continue
+                await asyncio.sleep(2)
+                continue
             else:
                 self._custom_print(f"Client {self.id}: scheduled with {task_id}", Msg_level.INFO)
-                break
-        
-        return self.id, True, task_id, result[0], result[1]
+                return (self.id, True, task_id, result[0], result[1])
+            
+        return (self.id, False, -1, None, None)
     
 
 

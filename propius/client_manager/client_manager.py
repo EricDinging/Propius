@@ -70,13 +70,14 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         public_specification = pickle.loads(request.public_specification)
 
         self.client_db_portal.insert(client_id, public_specification)
-        self.temp_client_db_portal.insert(client_id, public_specification)
 
         task_offer_list, task_private_constraint, job_size = [], [], 0
 
         if self.sched_alg != "irs3":
             task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
                 public_specification, self.sched_alg)
+        else:
+            self.temp_client_db_portal.insert(client_id, public_specification)
         
         await self.cm_monitor.client_checkin()
 

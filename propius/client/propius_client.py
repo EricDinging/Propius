@@ -222,7 +222,7 @@ class Propius_client():
         
         raise RuntimeError("Unable to connect to Propius at the moment")
 
-    def auto_assign(self, ttl:int=0)->tuple[int, bool, int, str, int]:
+    def auto_assign(self, ttl:int=1)->tuple[int, bool, int, str, int]:
         """Automate client register, client ping, and client task selection process
 
         Args:
@@ -238,43 +238,41 @@ class Propius_client():
         Raises:
             RuntimeError: if can't establish connection after multiple trial
         """
-
-        task_ids, task_private_constraint = self.client_check_in()
-        
-        self._custom_print(
-                f"Client {self.id}: recieve client manager offer: {task_ids}")
             
-        while True:
+        while ttl > 0:
+            ttl -= 1
+            task_ids, task_private_constraint = self.client_check_in()
+
             while ttl > 0:
                 if len(task_ids) > 0:
                     break
                 time.sleep(2)
                 ttl -= 1
                 task_ids, task_private_constraint = self.client_ping()
+
+            if len(task_ids) == 0:
+                time.sleep(2)
+                continue
+            
+            self._custom_print(
+                f"Client {self.id}: recieve client manager offer: {task_ids}")
             
             task_id = self.select_task(task_ids, task_private_constraint)
+            
             if task_id == -1:
-                task_ids = []
-                task_private_constraint = []
-                if ttl <= 0:
-                    return (self.id, False, -1, None, None)
-                else:
-                    continue
+                time.sleep(2)
+                continue
 
             result = self.client_accept(task_id)
 
             if not result:
-                task_ids = []
-                task_private_constraint = []
-                if ttl <= 0:
-                    return (self.id, False, -1, None, None)
-                else:
-                    continue
+                time.sleep(2)
+                continue
             else:
                 self._custom_print(f"Client {self.id}: scheduled with {task_id}", Msg_level.INFO)
-                break
-        
-        return (self.id, True, task_id, result[0], result[1])
+                return (self.id, True, task_id, result[0], result[1])
+            
+        return (self.id, False, -1, None, None)
     
 
 

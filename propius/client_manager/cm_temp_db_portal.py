@@ -95,7 +95,6 @@ class CM_temp_client_db_portal(Temp_client_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, Msg_level.ERROR)
                     return []
 
     def remove_client(self, client_id: int):
@@ -117,7 +116,6 @@ class CM_temp_client_db_portal(Temp_client_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, Msg_level.ERROR)
                     return
 
     
