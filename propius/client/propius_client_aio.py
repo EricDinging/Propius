@@ -164,7 +164,8 @@ class Propius_client_aio():
         raise RuntimeError("Unable to connect to Propius at the moment")
     
     async def select_task(self, task_ids: list, private_constraints: list)->int:
-        """Client select a task locally. The default strategy is to select the first task in task offer list of which the private constraint is satisfied by the client private specs. 
+        """Client select a task locally. The default strategy is to select the first task in 
+        task offer list of which the private constraint is satisfied by the client private specs. 
 
         Args:   
             task_ids: list of task id

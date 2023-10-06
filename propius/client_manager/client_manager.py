@@ -118,6 +118,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             self.logger.print(f"Task offer: {task_offer_list}", Msg_level.WARNING)
             if task_offer_list:
                 self.temp_client_db_portal.remove_client(request.id)
+            
+            #TODO get task private constraints
+            task_private_constraint = [(0,), (0,)]
 
         await self.cm_monitor.client_ping()
 

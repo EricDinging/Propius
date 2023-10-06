@@ -1,6 +1,8 @@
 import redis
 from redis.commands.json.path import Path
+from redis.commands.search.query import Query
 import time
+import json
 from propius.database import Job_db
 from propius.util import Msg_level, Propius_logger
 
@@ -109,7 +111,7 @@ class JM_job_db_portal(Job_db):
             q = Query('*')
             result = self.r.ft('job').search(q)
         except Exception as e:
-            self.logger.print(e, WARNING)
+            self.logger.print(e, Msg_level.WARNING)
 
         if result:
             for doc in result.docs:
@@ -214,7 +216,7 @@ class JM_job_db_portal(Job_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
 
     def end_request(self, job_id: int) -> bool:
         """Update job metadata based on end request
