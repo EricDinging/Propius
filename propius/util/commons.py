@@ -127,25 +127,42 @@ class Group_condition:
         self.condition_list += f" | ({condition}) "
     def str(self)->str:
         return self.condition_list
+    def clear(self):
+        self.condition_list = ""
 
 
 class Job_group:
     def __init__(self):
+        self.constraint_list = []
         self.cst_job_group_map = {}
         self.cst_group_condition_map = {}
 
-    def insert(self, cst: tuple, job_list: list, group_condition: Group_condition):
-        self.cst_job_group_map[cst] = job_list
-        self.cst_group_condition_map[cst] = group_condition
+    def insert_cst(self, cst: tuple):
+        if cst not in self.constraint_list:
+            self.constraint_list.append(cst)
+            self.cst_job_group_map[cst] = []
+            self.cst_group_condition_map[cst] = Group_condition()
 
-    def __getitem__(self, index)->Group_condition:
-        return self.cst_group_condition_map.get(index)
-
-    def __setitem__(self, index, value: Group_condition):
-        self.cst_group_condition_map[index] = value
-
-    def remove(self, cst: tuple):
-        if cst in self.cst_job_group_map:
+    def remove_cst(self, cst: tuple):
+        if cst in self.constraint_list:
+            self.constraint_list.remove(cst)
             del self.cst_job_group_map[cst]
             del self.cst_group_condition_map[cst]
+
+    def clear_group_info(self):
+        for cst in self.constraint_list:
+            self.cst_job_group_map[cst].clear()
+            self.cst_group_condition_map[cst].clear()
+
+    def __getitem__(self, index: tuple)->Group_condition:
+        return self.cst_group_condition_map.get(index)
+
+    def __setitem__(self, index: tuple, value: Group_condition):
+        self.cst_group_condition_map[index] = value
+
+    # def remove(self, cst: tuple):
+    #     if cst in self.constraint_list:
+    #         del self.cst_job_group_map[cst]
+    #         del self.cst_group_condition_map[cst]
+    #         self.constraint_list.remove(cst)
     
