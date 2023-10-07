@@ -10,9 +10,7 @@ services:
     - ./propius/global_config.yml:/propius/global_config.yml
     - ./propius/monitor:/propius/monitor
     depends_on:
-    - job_db
     - client_db_0
-    - client_db_1
     stop_signal: SIGINT
     environment:
     - TZ=America/Detroit
@@ -70,5 +68,15 @@ services:
     - client_db_0
     command:
     - '0'
+    environment:
+    - TZ=America/Detroit
+  client_db_0:
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command:
+    - '6380'
+    ports:
+    - 6380:6380
     environment:
     - TZ=America/Detroit

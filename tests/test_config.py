@@ -1,5 +1,4 @@
 import ruamel.yaml
-import os
 
 propius_config_file = './propius/global_config.yml'
 compose_redis_file = './compose_redis.yml'
@@ -38,7 +37,7 @@ def set_client_manager_db(propius_data, redis_data, config_data, propius_compose
             del propius_compose_data['services'][f'client_manager_{i}']
 
     for i in range(client_manager_num):
-        new_service = {
+        new_client_db_service = {
             f"client_db_{i}": {
                 'build': {
                 'context': '.',
@@ -69,11 +68,15 @@ def set_client_manager_db(propius_data, redis_data, config_data, propius_compose
                 'environment': ['TZ=America/Detroit']
             }
         }
-        redis_data['services'].update(new_service)
+        redis_data['services'].update(new_client_db_service)
         propius_compose_data['services'].update(new_client_manger_service)
+        propius_compose_data['services'].update(new_client_db_service)
 
     propius_compose_data['services']['load_balancer']['depends_on'] = [
         f'client_manager_{i}' for i in range(client_manager_num)
+    ]
+    propius_compose_data['services']['scheduler']['depends_on'] = [
+        f'client_db_{i}' for i in range(client_manager_num)
     ]
 
     config_data["use_docker"] = evaluation_use_docker

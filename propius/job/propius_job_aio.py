@@ -18,9 +18,6 @@ class Propius_job_aio(Propius_job):
                 await self._jm_channel.close()
             except Exception:
                 pass
-    
-    async def __del__(self):
-        await self._cleanup_routine()
 
     def _connect_jm(self) -> None:
         try:
@@ -28,12 +25,12 @@ class Propius_job_aio(Propius_job):
             self._jm_stub = None
             gc.collect()
         except Exception as e:
-            self._custom_print(e, ERROR)
+            self._custom_print(e, Msg_level.ERROR)
 
         self._jm_channel = grpc.aio.insecure_channel(f'{self._jm_ip}:{self._jm_port}')
         self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
 
-        self._custom_print(f"Job: connecting to job manager at {self._jm_ip}:{self._jm_port}", INFO)
+        self._custom_print(f"Job: connecting to job manager at {self._jm_ip}:{self._jm_port}", Msg_level.INFO)
 
     async def connect(self):
         """Connect to Propius job manager
@@ -46,7 +43,7 @@ class Propius_job_aio(Propius_job):
                 self._connect_jm()
                 return
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(5)
 
         raise RuntimeError(
@@ -57,7 +54,7 @@ class Propius_job_aio(Propius_job):
         """
         
         await self._cleanup_routine()
-        self._custom_print(f"Job {self.id}: closing connection to Propius", INFO)
+        self._custom_print(f"Job {self.id}: closing connection to Propius", Msg_level.INFO)
 
     async def register(self) -> bool:
         """Register job. Send job config to Propius job manager. This configuration will expire
@@ -87,15 +84,15 @@ class Propius_job_aio(Propius_job):
                 await self._cleanup_routine()
                 if not ack:
                     if self.verbose:
-                        self._custom_print(f"Job {self.id}: register failed", WARNING)
+                        self._custom_print(f"Job {self.id}: register failed", Msg_level.WARNING)
                     return False
                 else:
                     if self.verbose:
-                        self._custom_print(f"Job {self.id}: register success", INFO)
+                        self._custom_print(f"Job {self.id}: register success", Msg_level.INFO)
                     return True
             except Exception as e:
                 if self.verbose:
-                    self._custom_print(e, ERROR)
+                    self._custom_print(e, Msg_level.ERROR)
                 await self._cleanup_routine()
                 await asyncio.sleep(5)
                 
@@ -141,13 +138,13 @@ class Propius_job_aio(Propius_job):
                 ack_msg = await self._jm_stub.JOB_REQUEST(request_msg)
                 await self._cleanup_routine()
                 if not ack_msg.ack:
-                    self._custom_print(f"Job {self.id}: round request failed", WARNING)
+                    self._custom_print(f"Job {self.id}: round request failed", Msg_level.WARNING)
                     return False
                 else:
-                    self._custom_print(f"Job {self.id}: round request succeeded", INFO)
+                    self._custom_print(f"Job {self.id}: round request succeeded", Msg_level.INFO)
                     return True
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await self._cleanup_routine()
                 await asyncio.sleep(5)
 
@@ -170,13 +167,13 @@ class Propius_job_aio(Propius_job):
                 ack_msg = await self._jm_stub.JOB_END_REQUEST(request_msg)
                 await self._cleanup_routine()
                 if not ack_msg.ack:
-                    self._custom_print(f"Job {self.id}: end request failed", WARNING)
+                    self._custom_print(f"Job {self.id}: end request failed", Msg_level.WARNING)
                     return False
                 else:
-                    self._custom_print(f"Job {self.id}: end request succeeded", INFO)
+                    self._custom_print(f"Job {self.id}: end request succeeded", Msg_level.INFO)
                     return True
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await self._cleanup_routine()
                 await asyncio.sleep(5)
 
@@ -197,10 +194,10 @@ class Propius_job_aio(Propius_job):
             try:
                 await self._jm_stub.JOB_FINISH(req_msg)
                 await self._cleanup_routine()
-                self._custom_print(f"Job {self.id}: job completed", WARNING)
+                self._custom_print(f"Job {self.id}: job completed", Msg_level.WARNING)
                 return
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await self._cleanup_routine()
                 await asyncio.sleep(5)
 

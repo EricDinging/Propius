@@ -5,9 +5,6 @@ from propius.scheduler.sc_monitor import SC_monitor
 from propius.scheduler.sc_db_portal import SC_client_db_portal, SC_job_db_portal
 from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
-import asyncio
-import yaml
-import grpc
 
 class Scheduler(propius_pb2_grpc.SchedulerServicer):
     def __init__(self, gconfig: dict, logger: Propius_logger):

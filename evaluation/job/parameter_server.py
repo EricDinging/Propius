@@ -386,6 +386,7 @@ async def run(config):
                      f"sched timeout {ps.num_sched_timeover} "
                      f"response timeout {ps.num_response_timeover}", WARNING)
         
+        del ps.propius_stub
         await ps.stop_server(5)
     
     ps = Parameter_server(config)

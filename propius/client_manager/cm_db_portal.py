@@ -116,7 +116,7 @@ class CM_job_db_portal(Job_db):
                     if amount >= demand:
                         continue
                     private_constraint = tuple(
-                        float(self.r.json().get(id, f"$.job.private_constraint.{name}"))
+                        float(self.r.json().get(id, f"$.job.private_constraint.{name}")[0])
                         for name in self.private_constraint_name
                     )
                     task_offer_list.append(job_id)

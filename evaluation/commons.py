@@ -103,7 +103,7 @@ class My_logger:
                 self.logger.error(message)
 
 def custom_print(message: str, level: int=PRINT):
-    if level > INFO:
+    if level >= PRINT:
         print(f"{get_time()} {message}")
 
     if level == DEBUG:

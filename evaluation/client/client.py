@@ -22,7 +22,7 @@ class Client:
             
         self.propius_client_stub = Propius_client_aio(
             client_config=client_config, 
-            verbose=False,
+            verbose=client_config['verbose'] if 'verbose' in client_config else False,
             logging=True)
         
         self.ps_channel = None
@@ -45,6 +45,7 @@ class Client:
         self.is_FA = client_config["is_FA"]
 
         self.local_steps = 0
+        self.verbose = client_config['verbose'] if 'verbose' in client_config else False
 
     def _deallocate(self):
         self.event_queue.clear()
@@ -155,10 +156,16 @@ class Client:
         
         await asyncio.sleep(3)
 
+        if self.verbose:
+            custom_print(f"Client {self.id}: checked in")
+
         for _ in range(50):
             if not await self.client_ping():
                 break
             await asyncio.sleep(3)
+
+        if self.verbose:
+            custom_print(f"Client {self.id}: executing")
 
         for _ in range(10):  
             if not await self.execute():
@@ -223,7 +230,11 @@ class Client:
                     continue
                 
                 await self._connect_to_ps(ps_ip, ps_port)
+                if self.verbose:
+                    custom_print(f"Client {self.id}: connecting to {ps_ip}:{ps_port}")
                 await self.event_monitor()
+                if self.verbose:
+                    custom_print(f"Client {self.id}: disconnect from {ps_ip}:{ps_port}")
 
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
@@ -250,6 +261,7 @@ if __name__ == '__main__':
             config["use_docker"] = False
             config["speedup_factor"] = 1
             config["is_FA"] = False
+            config["verbose"] = True
             client = Client(config)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(client.run())
