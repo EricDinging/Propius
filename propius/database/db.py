@@ -173,7 +173,6 @@ class Client_db:
                                     for name in self.public_constraint_name])
 
             try:
-                self.flushdb()
                 self.r.ft("client").create_index(
                     schema, definition=IndexDefinition(
                         prefix=["client:"], index_type=IndexType.JSON))
@@ -224,7 +223,6 @@ class Temp_client_db:
                                     for name in self.public_constraint_name])
 
             try:
-                self.flushdb()
                 self.r.ft("temp").create_index(
                     schema, definition=IndexDefinition(
                         prefix=["temp:"], index_type=IndexType.JSON))

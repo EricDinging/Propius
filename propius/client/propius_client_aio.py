@@ -240,6 +240,8 @@ class Propius_client_aio():
             RuntimeError: if can't establish connection after multiple trial
         """
 
+        ttl = min(ttl, 10)
+
         while ttl > 0:
             ttl -= 1
             task_ids, task_private_constraint = await self.client_check_in()

@@ -238,6 +238,8 @@ class Propius_client():
         Raises:
             RuntimeError: if can't establish connection after multiple trial
         """
+
+        ttl = min(ttl, 10)
             
         while ttl > 0:
             ttl -= 1

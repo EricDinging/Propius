@@ -107,10 +107,23 @@ class CM_job_db_portal(Job_db):
         for job_id in job_list:
             if len(task_offer_list) > max_task_len:
                 break
-            # amount
-            # demand
-            # private_constaint
-            pass
+            id = f"job:{job_id}"
+            
+            try:
+                if self.r.json().get(id, "$.job.amount"):
+                    amount = int(self.r.json().get(id, "$.job.amount")[0])
+                    demand = int(self.r.json().get(id, "$.job.demand")[0])
+                    if amount >= demand:
+                        continue
+                    private_constraint = tuple(
+                        float(self.r.json().get(id, f"$.job.private_constraint.{name}"))
+                        for name in self.private_constraint_name
+                    )
+                    task_offer_list.append(job_id)
+                    task_private_constraint.append(private_constraint)
+
+            except Exception as e:
+                self.logger.print(e, Msg_level.ERROR)
 
         return task_offer_list, task_private_constraint
 
