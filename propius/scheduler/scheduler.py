@@ -91,7 +91,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             q = this_q + bq
             constraints_denom_map[cst] = self.client_db_portal.get_irs_denominator(
                 client_size, q)
-            bq = bq + f" -{this_q}"
+            bq = bq + f" -({this_q})"
 
         # update all score
         self.logger.print("Scheduler: starting to update scores", Msg_level.INFO)

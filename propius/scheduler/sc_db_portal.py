@@ -22,6 +22,39 @@ class SC_job_db_portal(Job_db):
         super().__init__(gconfig, False, logger)
         self.start_time = time.time()
 
+    def get_affected_len(self, job_list_1: list, job_list_2: list, 
+                         alloc_1: float, alloc_2: float) -> int:
+        """Get job list 1's affected job number by job_list_2.
+        
+        Args:
+            job_list_1: the group with 
+        """
+        group_2_queue_time = 0
+        for job_id in job_list_2:
+            try:
+                qid = f"job:{job_id}"
+                demand = int(self.r.json().get(qid, f"$.job.demand")[0])
+                group_2_queue_time += demand
+            except:
+                pass
+        
+        group_2_queue_time /= alloc_2
+
+        group_1_queue_time = 0
+        cnt = 0
+        for job_id in job_list_1:
+            try:
+                qid = f"job:{job_id}"
+                demand = int(self.r.json().get(qid, f"$.job.demand")[0])
+                group_1_queue_time += demand / alloc_1
+                cnt += 1
+                if group_1_queue_time > group_2_queue_time:
+                    break
+            except:
+                pass
+
+        return cnt
+
     def get_job_constraints(self, job_id: int) -> tuple:
         """Get job constraint values of the job in a tuple
 

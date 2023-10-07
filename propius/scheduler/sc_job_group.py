@@ -14,8 +14,9 @@ class SC_job_group_manager:
         self.public_constraint_name = public_constraint_name
 
     def update_job_group(self, job_id: int) -> bool:
-
         constraints_client_map = {}
+        constraints_alloc_map = {}
+        origin_group_condition = {}
         # Get constraints
         constraints = self.job_db_portal.get_job_constraints(job_id)
         if not constraints:
@@ -37,19 +38,40 @@ class SC_job_group_manager:
             constraints_client_map[cst] = self.client_db_portal.\
                 get_client_proportion(cst)
             
+        # Update group query 1
+        client_size = self.client_db_portal.get_client_size()
         self.job_group.constraint_list.sort(key=lambda x: constraints_client_map[x])
-
-        # Update group query
         bq = ""
         for cst in self.job_group.constraint_list:
             this_q = ""
             for idx, name in enumerate(self.public_constraint_name):
                 this_q += f"@{name}: [{cst[idx]}, {self.public_max[name]}] "
 
+            origin_group_condition[cst] = this_q
+
             q = this_q + bq
             self.job_group[cst].insert_condition_and(q)
-            bq = bq + f" -{this_q}"
-        
+            constraints_alloc_map[cst] = self.client_db_portal.get_irs_denominator(
+                client_size, q)
+            bq = bq + f" -({this_q})"
+
+        # Update group query 2
+        self.job_group.constraint_list.sort(key=lambda x: constraints_client_map[x], reverse=True)
+        for idx, cst in enumerate(self.job_group.constraint_list):
+            for h_cst in self.job_group.constraint_list[idx+1:]:
+                m = self.job_db_portal.get_affected_len(
+                    self.job_group.cst_job_group_map[cst],
+                    self.job_group.cst_job_group_map[h_cst],
+                    constraints_client_map[cst],
+                    constraints_client_map[h_cst]
+                )
+                m_h = len(self.job_group.cst_job_group_map[h_cst])
+                if m / constraints_alloc_map[cst] > m_h / constraints_alloc_map[h_cst]:
+                    or_condition = origin_group_condition[cst] + origin_group_condition[h_cst]
+                    self.job_group[cst].insert_condition_or(or_condition)
+                    self.job_group[h_cst].insert_condition_and(f"-({self.job_group[cst]})")
+                else:
+                    break
 
     def fetch_job_group(self) -> Job_group:
         return self.job_group

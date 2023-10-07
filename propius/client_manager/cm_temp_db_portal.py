@@ -30,15 +30,18 @@ class CM_temp_client_db_portal(Temp_client_db):
 
     def client_assign(self):
         for cst, job_list in self.job_group.cst_job_group_map.items():
-            condition_q = self.job_group[cst].str()
-            q = Query(condition_q)
-            
-            result = self.r.ft('temp').search(q)
+            try:
+                condition_q = self.job_group[cst].str()
+                q = Query(condition_q)
+                
+                result = self.r.ft('temp').search(q)
 
-            if result:
-                for doc in result.docs:
-                    client_id = int(doc.id.split(':')[1])
-                    self.r.json().set(f"temp:{client_id}", "$.temp.job_ids", str(job_list))
+                if result:
+                    for doc in result.docs:
+                        client_id = int(doc.id.split(':')[1])
+                        self.r.json().set(f"temp:{client_id}", "$.temp.job_ids", str(job_list))
+            except Exception:
+                self.logger.print(e, Msg_level.ERROR)
 
     def insert(self, id: int, specifications: tuple):
         """Insert client metadata to database, set expiration time and start time
