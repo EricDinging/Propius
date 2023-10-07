@@ -30,7 +30,10 @@ client_manager_num = 1
 client_manager_port_start = 50003
 client_db_port_start = 6380
 
-propius_use_docker = False
+use_docker = True
+do_compute = True
+is_FA = False
+use_cuda = True
 
 # dataset = "openImg"
 dataset = "femnist"
@@ -210,7 +213,7 @@ elif dataset == 'openImg':
     config_data['data_map_file'] = './datasets/openImg/client_data_mapping/train.csv'
 
 propius_data["allow_exceed_total_round"] = allow_exceed_total_round
-propius_data["use_docker"] = propius_use_docker
+propius_data["use_docker"] = use_docker
 propius_data["verbose"] = False
 
 # client_manager
@@ -220,7 +223,11 @@ propius_data["client_manager"] = [
      "client_db_port": client_db_port_start + i}
      for i in range(client_manager_num)
 ]
-#TODO edit docker
+
+config_data["use_docker"] = use_docker
+config_data["do_compute"] = do_compute
+config_data["is_FA"] = is_FA
+config_data["use_cuda"] = use_cuda
 
 # Write the updated YAML back to the file
 
