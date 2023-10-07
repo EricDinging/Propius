@@ -134,9 +134,9 @@ class Job_group:
         self.cst_job_group_map = {}
         self.cst_group_condition_map = {}
 
-    def insert(self, cst: tuple, job_list: list):
+    def insert(self, cst: tuple, job_list: list, group_condition: Group_condition):
         self.cst_job_group_map[cst] = job_list
-        self.cst_group_condition_map[cst] = Group_condition()
+        self.cst_group_condition_map[cst] = group_condition
 
     def __getitem__(self, index)->Group_condition:
         return self.cst_group_condition_map.get(index)

@@ -52,7 +52,7 @@ class SC_job_db_portal(Job_db):
             constraints_job_list: a list that the sorted job will be stored in
         """
 
-        job_total_demand_map = {}
+        job_demand_map = {}
         job_time_map = {}
         # if constraints exist, insert as a list to dict, return true
         qstr = ""
@@ -71,13 +71,17 @@ class SC_job_db_portal(Job_db):
 
         for doc in result.docs:
             id = doc.id.split(':')[1]
-            constraints_job_list.append(id)
             job_dict = json.loads(doc.json)["job"]
-            job_total_demand_map[id] = job_dict["total_demand"]
-            job_time_map[id] = job_dict['timestamp']
+            job_demand = job_dict["demand"]
+            job_amount = job_dict["amount"]
+            if job_amount < job_demand:
+                job_time_map[id] = job_dict['timestamp']
+                job_demand_map[id] = job_demand
+                constraints_job_list.append(id)
+                
         constraints_job_list.sort(
             key=lambda x: (
-                job_total_demand_map[x],
+                job_demand[x],
                 job_time_map[x]))
 
         return True

@@ -28,14 +28,6 @@ class CM_temp_client_db_portal(Temp_client_db):
         super().__init__(gconfig, cm_id, True, logger)
         self.job_group = Job_group()
 
-        #TODO hardcode
-        q = ""
-        for _, name in enumerate(self.public_constraint_name):
-            q += f"@{name}: [0, {self.public_max[name]}] "
-        cst = (0, 0, 0, 0)
-        self.job_group.insert(cst, [0, 1])
-        self.job_group[cst].insert_condition_and(q)
-
     def client_assign(self):
         for cst, job_list in self.job_group.cst_job_group_map.items():
             condition_q = self.job_group[cst].str()

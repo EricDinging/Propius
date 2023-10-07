@@ -31,7 +31,7 @@ Propius will calculate a priority score $s$ for every job. A job has higher prio
     - Calculate the score upon job request (every round)
     - $s = -d_r$
 5. IRS (AMG)
-    - Calculate the score upon job check in (every round)
+    - Calculate the score upon job request (every round)
 6. LAS
     - Calculate the score upon job request (every round)
     - $s = -d_a$
