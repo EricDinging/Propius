@@ -55,7 +55,8 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             self.job_db_portal,
             self.client_db_portal,
             self.public_constraint_name,
-            self.public_max
+            self.public_max,
+            logger
         )
 
     async def _irs_score(self, job_id: int):
@@ -166,6 +167,8 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         await self.sc_monitor.request(job_id)
 
         job_size = self.job_db_portal.get_job_size()
+
+        self.logger.print("Receive update score request", Msg_level.INFO)
 
         if self.sched_alg == 'irs':
             # Update every job score using IRS

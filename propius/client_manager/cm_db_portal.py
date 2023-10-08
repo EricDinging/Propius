@@ -182,7 +182,7 @@ class CM_job_db_portal(Job_db):
 
 
 class CM_client_db_portal(Client_db):
-    def __init__(self, gconfig, cm_id: int, logger: Propius_logger):
+    def __init__(self, gconfig, cm_id: int, logger: Propius_logger, flush: bool = False):
         """Initialize client db portal
 
         Args:
@@ -192,13 +192,14 @@ class CM_client_db_portal(Client_db):
                     client_db_port
                 client_expire_time: expiration time of clients in the db
                 job_public_constraint: name of public constraint
+                flush: whether to flush the db first
 
             cm_id: id of the client manager is the user is client manager
             is_cm: bool indicating whether the user is client manager
             logger
         """
 
-        super().__init__(gconfig, cm_id, True, logger)
+        super().__init__(gconfig, cm_id, True, logger, flush)
 
     def insert(self, id: int, specifications: tuple):
         """Insert client metadata to database, set expiration time and start time

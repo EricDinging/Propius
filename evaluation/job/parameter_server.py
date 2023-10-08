@@ -415,7 +415,8 @@ async def run(config):
         executor_ack = await ps.executor_stub.JOB_REGISTER(job_info_msg)
         ps.model_size = executor_ack.model_size
     else:
-        ps.model_size = 74016 # for mobilenetv2 and femnist dryrun profile
+        ps.model_size = config["model_size"] if "model_size" in config else 74016
+        # for mobilenetv2 and femnist dryrun profile
 
     ps.start_time = time.time()
     await ps.init_report()
@@ -511,6 +512,7 @@ if __name__ == '__main__':
                 config['sched_alg'] = eval_config['sched_alg']
                 config['do_compute'] = eval_config['do_compute']
                 config['speedup_factor'] = eval_config['speedup_factor']
+                config['model_size'] = 10
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(run(config))
                 

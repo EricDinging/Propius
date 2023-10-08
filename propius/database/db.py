@@ -137,7 +137,8 @@ class Job_db:
 
 
 class Client_db:
-    def __init__(self, gconfig, cm_id: int, is_cm: bool, logger: Propius_logger):
+    def __init__(self, gconfig, cm_id: int, 
+                 is_cm: bool, logger: Propius_logger, flush: bool = False):
         """Initialize client db portal
 
         Args:
@@ -147,6 +148,7 @@ class Client_db:
                     client_db_port
                 client_expire_time: expiration time of clients in the db
                 job_public_constraint: name of public constraint
+                flush: whether to flush the db first
 
             cm_id: id of the client manager is the user is client manager
             is_cm: bool indicating whether the user is client manager
@@ -159,6 +161,7 @@ class Client_db:
         port = gconfig['client_manager'][cm_id]['client_db_port']
         self.logger = logger
         self.r = redis.Redis(host=host, port=port)
+
         self.start_time = int(time.time())
         self.client_exp_time = int(gconfig['client_expire_time'])
 
@@ -173,6 +176,8 @@ class Client_db:
                                     for name in self.public_constraint_name])
 
             try:
+                if flush:
+                    self.flushdb()
                 self.r.ft("client").create_index(
                     schema, definition=IndexDefinition(
                         prefix=["client:"], index_type=IndexType.JSON))
@@ -184,7 +189,8 @@ class Client_db:
 
 
 class Temp_client_db:
-    def __init__(self, gconfig, cm_id: int, is_cm: bool, logger: Propius_logger):
+    def __init__(self, gconfig, cm_id: int, is_cm: bool, 
+                 logger: Propius_logger, flush: bool = False):
         """Initialize temp client db portal. 
 
         Temp client db is to store ready-to-be-assigned clients
@@ -196,6 +202,7 @@ class Temp_client_db:
                     client_db_port
                 client_expire_time: expiration time of clients in the db
                 job_public_constraint: name of public constraint
+                flush: whether to flush the db first
 
             cm_id: id of the client manager is the user is client manager
             is_cm: bool indicating whether the user is client manager
@@ -223,6 +230,8 @@ class Temp_client_db:
                                     for name in self.public_constraint_name])
 
             try:
+                if flush:
+                    self.flushdb()
                 self.r.ft("temp").create_index(
                     schema, definition=IndexDefinition(
                         prefix=["temp:"], index_type=IndexType.JSON))

@@ -9,6 +9,9 @@ services:
     - ./propius/scheduler:/propius/scheduler
     - ./propius/global_config.yml:/propius/global_config.yml
     - ./propius/monitor:/propius/monitor
+    - ./propius/channels:/propius/channels
+    - ./propius/util:/propius/util
+    - ./propius/database:/propius/database
     depends_on:
     - job_db
     - client_db_0
@@ -25,6 +28,9 @@ services:
     - ./propius/job_manager:/propius/job_manager
     - ./propius/global_config.yml:/propius/global_config.yml
     - ./propius/monitor:/propius/monitor
+    - ./propius/channels:/propius/channels
+    - ./propius/util:/propius/util
+    - ./propius/database:/propius/database
     depends_on:
     - scheduler
     stop_signal: SIGINT
@@ -39,6 +45,9 @@ services:
     - ./propius/client_manager:/propius/client_manager
     - ./propius/global_config.yml:/propius/global_config.yml
     - ./propius/monitor:/propius/monitor
+    - ./propius/channels:/propius/channels
+    - ./propius/util:/propius/util
+    - ./propius/database:/propius/database
     depends_on:
     - job_db
     - client_db_0
@@ -55,6 +64,9 @@ services:
     - ./propius/client_manager:/propius/client_manager
     - ./propius/global_config.yml:/propius/global_config.yml
     - ./propius/monitor:/propius/monitor
+    - ./propius/channels:/propius/channels
+    - ./propius/util:/propius/util
+    - ./propius/database:/propius/database
     depends_on:
     - job_db
     - client_db_1
@@ -71,6 +83,9 @@ services:
     - ./propius/load_balancer:/propius/load_balancer
     - ./propius/global_config.yml:/propius/global_config.yml
     - ./propius/monitor:/propius/monitor
+    - ./propius/channels:/propius/channels
+    - ./propius/util:/propius/util
+    - ./propius/database:/propius/database
     depends_on:
     - client_manager_0
     - client_manager_1

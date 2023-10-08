@@ -6,7 +6,7 @@ from propius.util import Msg_level, Propius_logger, geq, Job_group
 import ast
 
 class CM_temp_client_db_portal(Temp_client_db):
-    def __init__(self, gconfig, cm_id: int, logger: Propius_logger):
+    def __init__(self, gconfig, cm_id: int, logger: Propius_logger, flush: bool = False):
         """Initialize temp client db portal
 
         Args:
@@ -16,13 +16,14 @@ class CM_temp_client_db_portal(Temp_client_db):
                     client_db_port
                 client_expire_time: expiration time of clients in the db
                 job_public_constraint: name of public constraint
+                flush: whether to flush the db first
 
             cm_id: id of the client manager is the user is client manager
             is_cm: bool indicating whether the user is client manager
             logger
         """
 
-        super().__init__(gconfig, cm_id, True, logger)
+        super().__init__(gconfig, cm_id, True, logger, flush)
         self.job_group = Job_group()
 
     def update_job_group(self, new_job_group: Job_group):

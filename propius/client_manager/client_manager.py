@@ -37,8 +37,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.ip = gconfig['client_manager'][self.cm_id]['ip'] if not gconfig['use_docker'] else '0.0.0.0'
         self.port = gconfig['client_manager'][self.cm_id]['port']
         self.sched_alg = gconfig['sched_alg']
-        self.client_db_portal = CM_client_db_portal(gconfig, self.cm_id, logger)
-        self.temp_client_db_portal = CM_temp_client_db_portal(gconfig, self.cm_id, logger)
+
+        self.client_db_portal = CM_client_db_portal(gconfig, self.cm_id, logger, True)
+        self.temp_client_db_portal = CM_temp_client_db_portal(gconfig, self.cm_id, logger, False)
         self.job_db_portal = CM_job_db_portal(gconfig, logger)
         self.cm_monitor = CM_monitor(self.sched_alg, logger, gconfig['plot'])
         self.max_client_num = gconfig['client_manager_id_weight']

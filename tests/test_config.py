@@ -59,6 +59,9 @@ def set_client_manager_db(propius_data, redis_data, config_data, propius_compose
                     './propius/client_manager:/propius/client_manager',
                     './propius/global_config.yml:/propius/global_config.yml',
                     './propius/monitor:/propius/monitor',
+                    './propius/channels:/propius/channels',
+                    './propius/util:/propius/util',
+                    './propius/database:/propius/database'
                 ],
                 'depends_on': [
                     'job_db',
