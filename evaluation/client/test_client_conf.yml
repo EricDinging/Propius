@@ -3,10 +3,10 @@ data_set: femnist
 public_specifications:
     cpu_f: 10
     ram: 8
-    fp16_mem: 800.5
-    android_os: 6
+    fp16_mem: 1400
+    android_os: 10
 private_specifications:
-    dataset_size: 150
+    dataset_size: 170
 
 # TODO
 task: cv

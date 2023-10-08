@@ -69,6 +69,7 @@ async def run(config):
                     "use_docker": config["use_docker"],
                     "speedup_factor": config["speedup_factor"],
                     "is_FA": config["is_FA"],
+                    "verbose": True
                 }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)

@@ -47,6 +47,9 @@ class Client:
         self.local_steps = 0
         self.verbose = client_config['verbose'] if 'verbose' in client_config else False
 
+        self.update_model_comm_time = 0
+        self.upload_model_comm_time = 0
+
     def _deallocate(self):
         self.event_queue.clear()
         self.meta_queue.clear()
@@ -99,9 +102,6 @@ class Client:
     
         exe_time = 0
 
-        update_model_comm_time = 0
-        upload_model_comm_time = 0
-
         if event == CLIENT_TRAIN:
             self.local_steps = meta["local_steps"]
             one_step_exe_time = max(3 * meta["batch_size"] * float(self.comp_speed) / (1000 * self.speedup_factor), 0.0001)
@@ -109,12 +109,12 @@ class Client:
             remain_time = self.remain_time()
 
             if meta["gradient_policy"] == 'fed-prox':
-                self.local_steps = max(min(self.local_steps, int((remain_time - upload_model_comm_time) / one_step_exe_time)), 1)
+                self.local_steps = max(min(self.local_steps, int((remain_time - self.upload_model_comm_time) / one_step_exe_time)), 1)
 
             exe_time = one_step_exe_time * self.local_steps
 
             if meta["gradient_policy"] != 'fed-prox':
-                if exe_time + upload_model_comm_time > remain_time:
+                if exe_time + self.upload_model_comm_time > remain_time:
                     return False
 
             if self.is_FA:
@@ -125,12 +125,12 @@ class Client:
         
         elif event == UPDATE_MODEL:
             self.round = meta["round"]
-            exe_time = update_model_comm_time
-            update_model_comm_time = meta["download_size"] / (float(self.comm_speed) * self.speedup_factor)
-            upload_model_comm_time = meta["upload_size"] / (float(self.comm_speed) * self.speedup_factor)
+            self.update_model_comm_time = meta["download_size"] / (float(self.comm_speed) * self.speedup_factor)
+            self.upload_model_comm_time = meta["upload_size"] / (float(self.comm_speed) * self.speedup_factor)
+            exe_time = self.update_model_comm_time
 
         elif event == UPLOAD_MODEL:
-            exe_time = upload_model_comm_time
+            exe_time = self.upload_model_comm_time
             if self.is_FA:
                 exe_time = 0 
 

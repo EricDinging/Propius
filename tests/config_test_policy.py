@@ -22,7 +22,7 @@ sched_alg = 'irs3'
 profile_folder = './evaluation/job/test_profile'
 job_trace = './evaluation/job/test_profile/job_trace.txt'
 total_job = 5
-ideal_client = False
+ideal_client = True
 client_num = 5000
 
 

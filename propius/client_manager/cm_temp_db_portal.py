@@ -39,8 +39,13 @@ class CM_temp_client_db_portal(Temp_client_db):
 
                 if result:
                     for doc in result.docs:
-                        client_id = int(doc.id.split(':')[1])
-                        self.r.json().set(f"temp:{client_id}", "$.temp.job_ids", str(job_list))
+                        job_list_str = str(job_list)
+                        with self.r.json().pipeline() as pipe:
+                            try:
+                                pipe.execute_command('JSON.SET', doc.id, "$.temp.job_ids", job_list_str)
+                                pipe.execute()
+                            except Exception as e:
+                                self.logger.print(e, Msg_level.ERROR)
             except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)
 
@@ -76,20 +81,14 @@ class CM_temp_client_db_portal(Temp_client_db):
         Returns: 
             a list of task id
         """
-
-        with self.r.json().pipeline() as pipe:
-            while True:
-                try:
-                    id = f"temp:{client_id}"
-                    pipe.watch(id)
-                    task_ids_str = str(self.r.json().get(id, "$.temp.job_ids")[0])
-                    pipe.unwatch()
-                    task_list = ast.literal_eval(task_ids_str)
-                    return task_list
-                except redis.WatchError:
-                    pass
-                except Exception as e:
-                    return []
+        try:
+            id = f"temp:{client_id}"
+            task_ids_str = str(self.r.json().get(id, "$.temp.job_ids")[0])
+            task_list = ast.literal_eval(task_ids_str)
+            return task_list
+        except Exception as e:
+            self.logger.print(e, Msg_level.ERROR)
+            return []
 
     def remove_client(self, client_id: int):
         """Remove the temp client from database. 

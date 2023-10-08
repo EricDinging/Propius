@@ -24,7 +24,7 @@ eval_interval: 5
 # Client number
 client_num: 5000
 client_test_num: 356
-ideal_client: false
+ideal_client: true
 
 # Job
 total_job: 5
