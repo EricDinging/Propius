@@ -18,6 +18,12 @@ async def serve(gconfig, cm_id: int, logger: Propius_logger):
         client_manager.client_db_portal.flushdb()
         client_manager.temp_client_db_portal.flushdb()
         client_assign_task.cancel()
+
+        try:
+            await client_manager.sched_channel.close()
+        except Exception as e:
+            logger.print(e, Msg_level.WARNING)
+            
         await client_assign_task
         await server.stop(5)
 

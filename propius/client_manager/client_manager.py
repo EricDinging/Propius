@@ -134,7 +134,6 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 public_specification, self.sched_alg)
         else:
             task_offer_list = self.temp_client_db_portal.get_task_id(request.id)
-            self.logger.print(f"Task offer: {task_offer_list}", Msg_level.WARNING)
             
             task_offer_list, task_private_constraint = self.job_db_portal.get_job_private_constraint(task_offer_list)
             if task_offer_list:

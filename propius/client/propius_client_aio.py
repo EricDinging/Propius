@@ -261,6 +261,7 @@ class Propius_client_aio():
                 f"Client {self.id}: recieve client manager offer: {task_ids}")
             
             task_id = await self.select_task(task_ids, task_private_constraint)
+            self._custom_print(f"Client {self.id}: {task_id} selected", Msg_level.INFO)
             
             if task_id == -1:
                 await asyncio.sleep(2)
@@ -269,6 +270,7 @@ class Propius_client_aio():
             result = await self.client_accept(task_id)
 
             if not result:
+                self._custom_print(f"Client {self.id}: {task_id} not accepted", Msg_level.INFO)
                 await asyncio.sleep(2)
                 continue
             else:

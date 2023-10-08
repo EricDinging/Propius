@@ -159,7 +159,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             while True:
                 await asyncio.sleep(30)
                 try:
-                    self.sched_portal.HEART_BEAT(propius_pb2.empty())
+                    await self.sched_portal.HEART_BEAT(propius_pb2.empty())
                 except:
                     pass
                 self.job_db_portal.prune()

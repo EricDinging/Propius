@@ -52,6 +52,7 @@ services:
     depends_on:
       - job_db
       - client_db_0
+      - scheduler
     stop_signal: SIGINT
     command: ["0"]
     environment:
@@ -68,6 +69,7 @@ services:
     depends_on:
       - job_db
       - client_db_1
+      - scheduler
     stop_signal: SIGINT
     command: ["1"]
     environment:

@@ -103,7 +103,7 @@ class SC_job_db_portal(Job_db):
             return False
 
         for doc in result.docs:
-            id = doc.id.split(':')[1]
+            id = int(doc.id.split(':')[1])
             job_dict = json.loads(doc.json)["job"]
             job_demand = job_dict["demand"]
             job_amount = job_dict["amount"]
@@ -114,7 +114,7 @@ class SC_job_db_portal(Job_db):
                 
         constraints_job_list.sort(
             key=lambda x: (
-                job_demand[x],
+                job_demand_map[x],
                 job_time_map[x]))
 
         return True

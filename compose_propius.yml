@@ -72,9 +72,13 @@ services:
     - ./propius/client_manager:/propius/client_manager
     - ./propius/global_config.yml:/propius/global_config.yml
     - ./propius/monitor:/propius/monitor
+    - ./propius/channels:/propius/channels
+    - ./propius/util:/propius/util
+    - ./propius/database:/propius/database
     depends_on:
     - job_db
     - client_db_0
+    - scheduler
     command:
     - '0'
     environment:

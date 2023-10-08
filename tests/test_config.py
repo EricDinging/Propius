@@ -66,6 +66,7 @@ def set_client_manager_db(propius_data, redis_data, config_data, propius_compose
                 'depends_on': [
                     'job_db',
                     f'client_db_{i}',
+                    'scheduler',
                 ],
                 'command': ['0'],
                 'environment': ['TZ=America/Detroit']

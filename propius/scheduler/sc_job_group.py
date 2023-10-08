@@ -48,7 +48,6 @@ class SC_job_group_manager:
                 constraints_client_map[cst] = self.client_db_portal.\
                     get_client_proportion(cst)
             
-            self.logger.print("Update group query step 1", Msg_level.INFO)
             # Update group query 1
             client_size = self.client_db_portal.get_client_size()
             self.job_group.constraint_list.sort(key=lambda x: constraints_client_map[x])
@@ -66,7 +65,6 @@ class SC_job_group_manager:
                     client_size, q)
                 bq = bq + f" -({this_q})"
 
-            self.logger.print("Update group query step 2", Msg_level.INFO)
             # Update group query 2
             self.job_group.constraint_list.sort(key=lambda x: constraints_client_map[x], reverse=True)
             for idx, cst in enumerate(self.job_group.constraint_list):
