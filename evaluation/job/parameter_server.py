@@ -512,7 +512,7 @@ if __name__ == '__main__':
                 config['sched_alg'] = eval_config['sched_alg']
                 config['do_compute'] = eval_config['do_compute']
                 config['speedup_factor'] = eval_config['speedup_factor']
-                config['model_size'] = 10
+                # config['model_size'] = 10
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(run(config))
                 
