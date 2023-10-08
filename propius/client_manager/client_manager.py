@@ -8,6 +8,7 @@ from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import pickle
 import asyncio
+import grpc
 
 class Client_manager(propius_pb2_grpc.Client_managerServicer):
     def __init__(self, gconfig, cm_id: int, logger: Propius_logger):
@@ -46,6 +47,22 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.logger = logger
 
         self.sched_alg = gconfig["sched_alg"]
+
+        self.gconfig = gconfig
+        self.sched_channel = None
+        self.sched_portal = None
+        self._connect_sched(
+            gconfig['scheduler_ip'], int(
+                gconfig['scheduler_port']))
+
+    def _connect_sched(self, sched_ip: str, sched_port: int) -> None:
+        if self.gconfig['use_docker']:
+            sched_ip = 'scheduler'
+        self.sched_channel = grpc.aio.insecure_channel(
+            f'{sched_ip}:{sched_port}')
+        self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
+        self.logger.print(
+            f"Client manager {self.cm_id}: connecting to scheduler at {sched_ip}:{sched_port}", Msg_level.INFO)
 
     async def CLIENT_CHECKIN(self, request, context):
         """Hanle client check in, store client meatadata to database, and 
@@ -171,7 +188,10 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             try:
                 while True:
                     try:
-                        #TODO update job group from scheduler
+                        group_info = await self.sched_portal.GET_JOB_GROUP(propius_pb2.empty())
+                        self.temp_client_db_portal.update_job_group(
+                            pickle.loads(group_info.group)
+                        )
                         self.temp_client_db_portal.client_assign()
                     except Exception as e:
                         self.logger.print(e, Msg_level.ERROR)

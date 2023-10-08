@@ -15,6 +15,7 @@ service Job_manager {
 
 service Scheduler {
     rpc JOB_SCORE_UPDATE (job_id) returns (ack) {}
+    rpc GET_JOB_GROUP (empty) returns (group_info) {}
     rpc HEART_BEAT (empty) returns (ack) {}
 }
 
@@ -42,6 +43,10 @@ message cm_offer {
     bytes task_offer = 2;
     bytes private_constraint = 3;
     int32 total_job_num = 4; //for analytics
+}
+
+message group_info {
+    bytes group = 1;
 }
 
 message client_accept {

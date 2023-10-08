@@ -124,6 +124,9 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         ack = self.job_db_portal.end_request(job_id=job_id)
         self.logger.print(f"Job manager: ack job {job_id} end round request: {ack}", Msg_level.INFO)
 
+        if self.sched_alg == 'irs3':
+            await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=-1))
+
         await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
 

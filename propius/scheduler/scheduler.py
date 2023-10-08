@@ -3,8 +3,10 @@
 from propius.util import Msg_level, Propius_logger
 from propius.scheduler.sc_monitor import SC_monitor
 from propius.scheduler.sc_db_portal import SC_client_db_portal, SC_job_db_portal
+from propius.scheduler.sc_job_group import SC_job_group_manager
 from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
+import pickle
 
 class Scheduler(propius_pb2_grpc.SchedulerServicer):
     def __init__(self, gconfig: dict, logger: Propius_logger):
@@ -48,6 +50,13 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
 
         self.sc_monitor = SC_monitor(self.sched_alg, logger, gconfig['plot'])
         self.logger = logger
+
+        self.job_group_manager = SC_job_group_manager(
+            self.job_db_portal,
+            self.client_db_portal,
+            self.public_constraint_name,
+            self.public_max
+        )
 
     async def _irs_score(self, job_id: int):
         """Update all jobs' score in database according to IRS
@@ -166,6 +175,10 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             # performance improvement
             await self._irs2_score(job_id)
 
+        elif self.sched_alg == 'irs3':
+            # Update every job score using IRS
+            self.job_group_manager.update_job_group(job_id != -1, job_id)
+
         elif self.sched_alg == 'fifo':
             # Give every job which doesn't have a score yet a score of
             # -timestamp
@@ -193,6 +206,10 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             self.job_db_portal.las_update_all_job_score()
             
         return propius_pb2.ack(ack=True)
+    
+    async def GET_JOB_GROUP(self, request, context):
+        return propius_pb2.group_info(
+            group=pickle.dumps(self.job_group_manager.fetch_job_group()))
     
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)

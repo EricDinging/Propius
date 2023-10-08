@@ -7,24 +7,28 @@ class SC_job_group_manager:
     def __init__(self, 
                  job_db_portal: SC_job_db_portal, 
                  client_db_portal: SC_client_db_portal,
-                 public_constraint_name: list):
+                 public_constraint_name: list,
+                 public_max: dict):
         self.job_group = Job_group()
         self.job_db_portal = job_db_portal
         self.client_db_portal = client_db_portal
         self.public_constraint_name = public_constraint_name
+        self.public_max = public_max
 
-    def update_job_group(self, job_id: int) -> bool:
+    def update_job_group(self, is_new_job: bool, job_id: int = 0) -> bool:
         constraints_client_map = {}
         constraints_alloc_map = {}
         origin_group_condition = {}
-        # Get constraints
-        constraints = self.job_db_portal.get_job_constraints(job_id)
-        if not constraints:
-            return False
         # Clear past job group info
         self.job_group.clear_group_info()
-        # Insert cst to job group
-        self.job_group.insert_cst(constraints)
+
+        if is_new_job:
+            # Get constraints
+            constraints = self.job_db_portal.get_job_constraints(job_id)
+            if not constraints:
+                return False
+            # Insert cst to job group
+            self.job_group.insert_cst(constraints)
 
         for cst in self.job_group.constraint_list:
             # iterate over constraint, get updated and sorted job list
@@ -72,6 +76,8 @@ class SC_job_group_manager:
                     self.job_group[h_cst].insert_condition_and(f"-({self.job_group[cst]})")
                 else:
                     break
+
+        return True
 
     def fetch_job_group(self) -> Job_group:
         return self.job_group

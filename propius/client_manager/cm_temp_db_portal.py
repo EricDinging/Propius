@@ -1,10 +1,7 @@
 import redis
 from redis.commands.json.path import Path
 from redis.commands.search.query import Query
-import time
-import json
 from propius.database import Temp_client_db
-import random
 from propius.util import Msg_level, Propius_logger, geq, Job_group
 import ast
 
@@ -28,6 +25,9 @@ class CM_temp_client_db_portal(Temp_client_db):
         super().__init__(gconfig, cm_id, True, logger)
         self.job_group = Job_group()
 
+    def update_job_group(self, new_job_group: Job_group):
+        self.job_group = new_job_group
+
     def client_assign(self):
         for cst, job_list in self.job_group.cst_job_group_map.items():
             try:
@@ -40,7 +40,7 @@ class CM_temp_client_db_portal(Temp_client_db):
                     for doc in result.docs:
                         client_id = int(doc.id.split(':')[1])
                         self.r.json().set(f"temp:{client_id}", "$.temp.job_ids", str(job_list))
-            except Exception:
+            except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)
 
     def insert(self, id: int, specifications: tuple):
