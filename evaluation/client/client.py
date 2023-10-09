@@ -59,7 +59,7 @@ class Client:
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
         self.ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(self.ps_channel)
         custom_print(
-            f"Client {self.id}: connecting to parameter server on {ps_ip}:{ps_port}")
+            f"c-{self.id}: connecting to parameter server on {ps_ip}:{ps_port}")
         
     async def handle_server_response(self, server_response: parameter_server_pb2.server_response):
         event = server_response.event
@@ -134,7 +134,7 @@ class Client:
             if self.is_FA:
                 exe_time = 0 
 
-        custom_print(f"Client {self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
+        custom_print(f"c-{self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
         await asyncio.sleep(exe_time)
 
         compl_event = event
@@ -157,7 +157,7 @@ class Client:
         await asyncio.sleep(3)
 
         if self.verbose:
-            custom_print(f"Client {self.id}: checked in")
+            custom_print(f"c-{self.id}: checked in")
 
         for _ in range(50):
             if not await self.client_ping():
@@ -165,7 +165,7 @@ class Client:
             await asyncio.sleep(3)
 
         if self.verbose:
-            custom_print(f"Client {self.id}: executing")
+            custom_print(f"c-{self.id}: executing")
 
         for _ in range(10):  
             if not await self.execute():
@@ -177,7 +177,7 @@ class Client:
             self._deallocate()
             if propius:
                 await self.propius_client_stub.close()
-                custom_print(f"Client {self.id}: ==shutting down==", ERROR)
+                custom_print(f"c-{self.id}: ==shutting down==", ERROR)
             await self.ps_channel.close()
         except Exception:
             pass
@@ -190,7 +190,7 @@ class Client:
                     custom_print(f"Period: {self.cur_period}", ERROR)
                     custom_print(f"Active time: {self.active_time[-1]}", ERROR)
                     custom_print(f"Inactive time: {self.inactive_time[-1]}", ERROR)
-                    custom_print(f"Client {self.id}: ==shutting down==", WARNING)
+                    custom_print(f"c-{self.id}: ==shutting down==", WARNING)
                     break
                 cur_time = time.time() - self.eval_start_time
 
@@ -202,7 +202,7 @@ class Client:
                 
                 if cur_time < self.active_time[self.cur_period]:
                     sleep_time = self.active_time[self.cur_period] - cur_time
-                    # custom_print(f"Client {self.id}: sleep for {sleep_time}")
+                    # custom_print(f"c-{self.id}: sleep for {sleep_time}")
                     await asyncio.sleep(sleep_time)
                     continue
                 elif cur_time >= self.inactive_time[self.cur_period]:
@@ -231,15 +231,15 @@ class Client:
                 
                 await self._connect_to_ps(ps_ip, ps_port)
                 if self.verbose:
-                    custom_print(f"Client {self.id}: connecting to {ps_ip}:{ps_port}")
+                    custom_print(f"c-{self.id}: connecting to {ps_ip}:{ps_port}")
                 await self.event_monitor()
                 if self.verbose:
-                    custom_print(f"Client {self.id}: disconnect from {ps_ip}:{ps_port}")
+                    custom_print(f"c-{self.id}: disconnect from {ps_ip}:{ps_port}")
 
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
-                custom_print(f"Client {self.id}: {e}", ERROR)
+                custom_print(f"c-{self.id}: {e}", ERROR)
             
         await self.cleanup_routines(True)
         
