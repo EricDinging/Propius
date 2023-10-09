@@ -1,5 +1,5 @@
 import redis
-from redis.commands.search.field import TextField, NumericField
+from redis.commands.search.field import TextField, NumericField, Field
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 import time
 from propius.util import Propius_logger, Msg_level

@@ -1,10 +1,10 @@
 data_set: femnist
 # Specification
 public_specifications:
-    cpu_f: 10
-    ram: 8
-    fp16_mem: 1400
-    android_os: 10
+    cpu_f: 11
+    ram: 9
+    fp16_mem: 1500
+    android_os: 12
 private_specifications:
     dataset_size: 170
 

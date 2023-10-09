@@ -4,6 +4,7 @@ from redis.commands.search.query import Query
 from propius.database import Temp_client_db
 from propius.util import Msg_level, Propius_logger, geq, Job_group
 import ast
+import json
 
 class CM_temp_client_db_portal(Temp_client_db):
     def __init__(self, gconfig, cm_id: int, logger: Propius_logger, flush: bool = False):
@@ -30,20 +31,19 @@ class CM_temp_client_db_portal(Temp_client_db):
         self.job_group = new_job_group
 
     def client_assign(self):
+        
         for cst, job_list in self.job_group.cst_job_group_map.items():
             try:
                 condition_q = self.job_group[cst].str()
                 q = Query(condition_q)
-                
                 result = self.r.ft('temp').search(q)
 
-                if result:
-                    for doc in result.docs:
-                        job_list_str = str(job_list)
-                        try:
-                            self.r.execute_command('JSON.SET', doc.id, "$.temp.job_ids", job_list_str)
-                        except Exception as e:
-                            self.logger.print(e, Msg_level.ERROR)
+                job_list_str = str(job_list)
+                for doc in result.docs:
+                    temp_client = json.loads(doc.json)
+                    temp_client['temp']['job_ids'] = job_list_str
+                    self.r.json().set(doc.id, Path.root_path(), temp_client)
+                # self.logger.print(f"Insert job {job_list_str} to {len(result.docs)} clients", Msg_level.INFO)
             except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)
 
@@ -83,8 +83,8 @@ class CM_temp_client_db_portal(Temp_client_db):
         try:
             id = f"temp:{client_id}"
             if self.r.execute_command("EXISTS", id):
-                result = self.r.json().get(id, "$.temp.job_ids")[0]
-                task_list = ast.literal_eval(str(result))
+                result = str(self.r.json().get(id, "$.temp.job_ids")[0])
+                task_list = ast.literal_eval(result)
             else:
                 self.insert(client_id, specifications)
 

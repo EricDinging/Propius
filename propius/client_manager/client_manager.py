@@ -191,6 +191,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             try:
                 while True:
                     try:
+                        self.logger.print(f"Client manager: {self.cm_id}: Update job group", Msg_level.INFO)
                         group_info = await self.sched_portal.GET_JOB_GROUP(propius_pb2.empty())
                         self.temp_client_db_portal.update_job_group(
                             pickle.loads(group_info.group)
@@ -198,7 +199,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                         self.temp_client_db_portal.client_assign()
                     except Exception as e:
                         self.logger.print(e, Msg_level.ERROR)
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(3)
             except asyncio.CancelledError:
                 pass
     
