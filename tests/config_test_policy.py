@@ -77,7 +77,7 @@ def set(propius_data, redis_data, config_data, propius_compose_data):
                     f'client_db_{i}',
                     'scheduler',
                 ],
-                'command': ['0'],
+                'command': [f'{i}'],
                 'environment': ['TZ=America/Detroit']
             }
         }

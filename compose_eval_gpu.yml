@@ -611,7 +611,7 @@ services:
     - client_db_1
     - scheduler
     command:
-    - '0'
+    - '1'
     environment:
     - TZ=America/Detroit
   client_db_1:

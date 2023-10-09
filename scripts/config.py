@@ -260,7 +260,7 @@ for i in range(client_manager_num):
                 f'client_db_{i}',
                 'scheduler',
             ],
-            'command': ['0'],
+            'command': [f'{i}'],
             'environment': ['TZ=America/Detroit']
         }
     }
