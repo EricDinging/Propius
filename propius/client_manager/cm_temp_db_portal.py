@@ -40,9 +40,12 @@ class CM_temp_client_db_portal(Temp_client_db):
 
                 job_list_str = str(job_list)
                 for doc in result.docs:
-                    temp_client = json.loads(doc.json)
-                    temp_client['temp']['job_ids'] = job_list_str
-                    self.r.json().set(doc.id, Path.root_path(), temp_client)
+                    try:
+                        temp_client = json.loads(doc.json)
+                        temp_client['temp']['job_ids'] = job_list_str
+                        self.r.json().set(doc.id, Path.root_path(), temp_client)
+                    except:
+                        pass
                 # self.logger.print(f"Insert job {job_list_str} to {len(result.docs)} clients", Msg_level.INFO)
             except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)

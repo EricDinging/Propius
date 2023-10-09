@@ -17,7 +17,7 @@ is_FA = False
 use_cuda = False
 speedup_factor = 2.5
 
-sched_alg = 'irs3'
+sched_alg = 'fifo'
 
 profile_folder = './evaluation/job/profile_policy_test'
 job_trace = './evaluation/job/profile_policy_test/job_trace.txt'
