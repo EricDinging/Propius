@@ -12,21 +12,21 @@ profile_folder = './evaluation/job/profile_benchmark'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
 total_job = 10
 
-worker_num_list = [4, 4, 0, 0]
+worker_num_list = [4, 4, 4, 4]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
 avg_job_interval = 1800
-job_per_container = 2
+job_per_container = 1
 allow_exceed_total_round = True
 
 ideal_client = False
-client_per_container = 2000
+client_per_container = 1000
 client_num = 6000
-sched_alg = 'fifo'
+sched_alg = 'irs3'
 speedup_factor = 3
 
-client_manager_num = 1
+client_manager_num = 3
 client_manager_port_start = 50003
 client_db_port_start = 6380
 
@@ -66,6 +66,10 @@ for i in range(100):
         del compose_data['services'][f'jobs_{i}']
     if f'clients_{i}' in compose_data['services']:
         del compose_data['services'][f'clients_{i}']
+    if f'client_db_{i}' in compose_data['services']:
+        del compose_data['services'][f'client_db_{i}']
+    if f'client_manager_{i}' in compose_data['services']:
+        del compose_data['services'][f'client_manager_{i}']
 
 for i in range(worker_num):
     new_service = {
@@ -222,6 +226,52 @@ propius_data["client_manager"] = [
      "port": client_manager_port_start + i,
      "client_db_port": client_db_port_start + i}
      for i in range(client_manager_num)
+]
+
+for i in range(client_manager_num):
+    new_client_db_service = {
+        f"client_db_{i}": {
+            'build': {
+            'context': '.',
+            'dockerfile': './propius/database/Dockerfile'
+            },
+            'command': [f'{client_db_port_start + i}'],
+            'ports': [f'{client_db_port_start + i}:{client_db_port_start + i}'],
+            'environment': ['TZ=America/Detroit']
+        }
+    }
+
+    new_client_manger_service = {
+        f"client_manager_{i}": {
+            'build': {
+            'context': '.',
+            'dockerfile': './propius/client_manager/Dockerfile'
+            },
+            'volumes': [
+                './propius/client_manager:/propius/client_manager',
+                './propius/global_config.yml:/propius/global_config.yml',
+                './propius/monitor:/propius/monitor',
+                './propius/channels:/propius/channels',
+                './propius/util:/propius/util',
+                './propius/database:/propius/database'
+            ],
+            'depends_on': [
+                'job_db',
+                f'client_db_{i}',
+                'scheduler',
+            ],
+            'command': ['0'],
+            'environment': ['TZ=America/Detroit']
+        }
+    }
+    compose_data['services'].update(new_client_manger_service)
+    compose_data['services'].update(new_client_db_service)
+
+compose_data['services']['load_balancer']['depends_on'] = [
+    f'client_manager_{i}' for i in range(client_manager_num)
+]
+compose_data['services']['scheduler']['depends_on'] = [
+    f'client_db_{i}' for i in range(client_manager_num)
 ]
 
 config_data["use_docker"] = use_docker

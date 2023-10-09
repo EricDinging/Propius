@@ -10,6 +10,12 @@ client_manager:
 - ip: localhost
   port: 50003
   client_db_port: 6380
+- ip: localhost
+  port: 50004
+  client_db_port: 6381
+- ip: localhost
+  port: 50005
+  client_db_port: 6382
 job_db_ip: localhost
 job_db_port: 6379
 
@@ -21,7 +27,7 @@ scheduler_port: 50000
 
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
-sched_alg: fifo
+sched_alg: irs3
 max_task_offer_list_len: 20
 
 # Scheduling context
@@ -56,5 +62,5 @@ public_max:
   android_os: 15
 
 # ---General---
-verbose: true
+verbose: false
 plot: false
