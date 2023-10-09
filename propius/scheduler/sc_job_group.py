@@ -79,7 +79,7 @@ class SC_job_group_manager:
                     if m / constraints_alloc_map[cst] > m_h / constraints_alloc_map[h_cst]:
                         or_condition = origin_group_condition[cst] + origin_group_condition[h_cst]
                         self.job_group[cst].insert_condition_or(or_condition)
-                        self.job_group[h_cst].insert_condition_and(f"-({self.job_group[cst]})")
+                        self.job_group[h_cst].insert_condition_and(f"-({self.job_group[cst].str()})")
                     else:
                         break
                 self.logger.print(f"{cst} group, condition: {self.job_group[cst].str()}", Msg_level.INFO)

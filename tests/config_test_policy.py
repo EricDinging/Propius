@@ -19,11 +19,11 @@ speedup_factor = 2.5
 
 sched_alg = 'irs3'
 
-profile_folder = './evaluation/job/test_profile'
-job_trace = './evaluation/job/test_profile/job_trace.txt'
+profile_folder = './evaluation/job/profile_policy_test'
+job_trace = './evaluation/job/profile_policy_test/job_trace.txt'
 total_job = 5
 ideal_client = True
-client_num = 5000
+client_num = 50
 
 
 def set(propius_data, redis_data, config_data, propius_compose_data):

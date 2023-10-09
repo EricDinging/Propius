@@ -70,9 +70,6 @@ class Propius_job():
             elif level == Msg_level.ERROR:
                 logging.error(message)
 
-    def __del__(self):
-        self._cleanup_routine()
-
     def _connect_jm(self) -> None:
         try:
             self._jm_channel = None

@@ -22,17 +22,17 @@ test_ratio: 1
 eval_interval: 5
 
 # Client number
-client_num: 5000
+client_num: 50
 client_test_num: 356
 ideal_client: true
 
 # Job
 total_job: 5
 # profile_folder: ./evaluation/job/profile/
-profile_folder: ./evaluation/job/test_profile
+profile_folder: ./evaluation/job/profile_policy_test
 # profile_folder: ./evaluation/job/dry_profile/   # no training
 # profile_folder: './evaluation/job/test_profile/'
-job_trace: ./evaluation/job/test_profile/job_trace.txt
+job_trace: ./evaluation/job/profile_policy_test/job_trace.txt
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
