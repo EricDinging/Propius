@@ -241,11 +241,8 @@ class Propius_client_aio():
         """
 
         ttl = min(ttl, 10)
-
+        task_ids, task_private_constraint = await self.client_check_in()
         while ttl > 0:
-            ttl -= 1
-            task_ids, task_private_constraint = await self.client_check_in()
-
             while ttl > 0:
                 if len(task_ids) > 0:
                     break
@@ -254,8 +251,7 @@ class Propius_client_aio():
                 task_ids, task_private_constraint = await self.client_ping()
 
             if len(task_ids) == 0:
-                await asyncio.sleep(2)
-                continue
+                break
             
             self._custom_print(
                 f"Client {self.id}: recieve client manager offer: {task_ids}")
@@ -264,14 +260,14 @@ class Propius_client_aio():
             self._custom_print(f"Client {self.id}: {task_id} selected", Msg_level.INFO)
             
             if task_id == -1:
-                await asyncio.sleep(2)
+                task_ids, task_private_constraint = [], []
                 continue
 
             result = await self.client_accept(task_id)
 
             if not result:
                 self._custom_print(f"Client {self.id}: {task_id} not accepted", Msg_level.INFO)
-                await asyncio.sleep(2)
+                task_ids, task_private_constraint = [], []
                 continue
             else:
                 self._custom_print(f"Client {self.id}: scheduled with {task_id}", Msg_level.INFO)

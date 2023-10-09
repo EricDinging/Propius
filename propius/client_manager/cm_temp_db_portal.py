@@ -40,12 +40,10 @@ class CM_temp_client_db_portal(Temp_client_db):
                 if result:
                     for doc in result.docs:
                         job_list_str = str(job_list)
-                        with self.r.json().pipeline() as pipe:
-                            try:
-                                pipe.execute_command('JSON.SET', doc.id, "$.temp.job_ids", job_list_str)
-                                pipe.execute()
-                            except Exception as e:
-                                self.logger.print(e, Msg_level.ERROR)
+                        try:
+                            self.r.execute_command('JSON.SET', doc.id, "$.temp.job_ids", job_list_str)
+                        except Exception as e:
+                            self.logger.print(e, Msg_level.ERROR)
             except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)
 
@@ -72,8 +70,8 @@ class CM_temp_client_db_portal(Temp_client_db):
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
 
-    def get_task_id(self, client_id: int)->list:
-        """Return task id of client id.
+    def get_task_id(self, client_id: int, specifications: tuple)->list:
+        """Return task id of client id. If client not found in temp db, insert client
         
         Args: 
             client_id
@@ -81,14 +79,19 @@ class CM_temp_client_db_portal(Temp_client_db):
         Returns: 
             a list of task id
         """
+        task_list = []
         try:
             id = f"temp:{client_id}"
-            task_ids_str = str(self.r.json().get(id, "$.temp.job_ids")[0])
-            task_list = ast.literal_eval(task_ids_str)
-            return task_list
+            if self.r.execute_command("EXISTS", id):
+                result = self.r.json().get(id, "$.temp.job_ids")[0]
+                task_list = ast.literal_eval(str(result))
+            else:
+                self.insert(client_id, specifications)
+
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
-            return []
+        
+        return task_list
 
     def remove_client(self, client_id: int):
         """Remove the temp client from database. 

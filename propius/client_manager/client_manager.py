@@ -133,11 +133,10 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
                 public_specification, self.sched_alg)
         else:
-            task_offer_list = self.temp_client_db_portal.get_task_id(request.id)
+            task_offer_list = self.temp_client_db_portal.get_task_id(
+                request.id, public_specification)
             
             task_offer_list, task_private_constraint = self.job_db_portal.get_job_private_constraint(task_offer_list)
-            if task_offer_list:
-                self.temp_client_db_portal.remove_client(request.id)
 
         await self.cm_monitor.client_ping()
 
@@ -178,6 +177,10 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 f"Client manager {self.cm_id}: job {task_id} over-assign",  Msg_level.WARNING)
             return propius_pb2.cm_ack(
                 ack=False, job_ip=pickle.dumps(""), job_port=-1)
+        
+        if self.sched_alg == 'irs3':
+            self.temp_client_db_portal.remove_client(client_id)
+
         self.logger.print(
             f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}", Msg_level.INFO)
         return propius_pb2.cm_ack(ack=True, job_ip=pickle.dumps(result[0]),

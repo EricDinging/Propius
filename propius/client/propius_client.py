@@ -240,11 +240,8 @@ class Propius_client():
         """
 
         ttl = min(ttl, 10)
-            
+        task_ids, task_private_constraint = self.client_check_in()
         while ttl > 0:
-            ttl -= 1
-            task_ids, task_private_constraint = self.client_check_in()
-
             while ttl > 0:
                 if len(task_ids) > 0:
                     break
@@ -253,22 +250,23 @@ class Propius_client():
                 task_ids, task_private_constraint = self.client_ping()
 
             if len(task_ids) == 0:
-                time.sleep(2)
-                continue
+                break
             
             self._custom_print(
                 f"Client {self.id}: recieve client manager offer: {task_ids}")
             
             task_id = self.select_task(task_ids, task_private_constraint)
-            
+            self._custom_print(f"Client {self.id}: {task_id} selected", Msg_level.INFO)
+
             if task_id == -1:
-                time.sleep(2)
+                task_ids, task_private_constraint = [], []
                 continue
 
             result = self.client_accept(task_id)
 
             if not result:
-                time.sleep(2)
+                self._custom_print(f"Client {self.id}: {task_id} not accepted", Msg_level.INFO)
+                task_ids, task_private_constraint = [], []
                 continue
             else:
                 self._custom_print(f"Client {self.id}: scheduled with {task_id}", Msg_level.INFO)
