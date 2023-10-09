@@ -13,9 +13,6 @@ client_manager:
 - ip: localhost
   port: 50004
   client_db_port: 6381
-- ip: localhost
-  port: 50005
-  client_db_port: 6382
 job_db_ip: localhost
 job_db_port: 6379
 

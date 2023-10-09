@@ -12,7 +12,7 @@ profile_folder = './evaluation/job/profile_benchmark'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
 total_job = 10
 
-worker_num_list = [4, 4, 4, 4]
+worker_num_list = [4, 4, 0, 0]
 worker_num = sum(worker_num_list)
 
 allocate_list = worker_num_list
@@ -26,7 +26,7 @@ client_num = 6000
 sched_alg = 'irs3'
 speedup_factor = 3
 
-client_manager_num = 3
+client_manager_num = 2
 client_manager_port_start = 50003
 client_db_port_start = 6380
 
