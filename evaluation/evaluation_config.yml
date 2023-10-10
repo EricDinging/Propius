@@ -22,12 +22,12 @@ test_ratio: 1
 eval_interval: 5
 
 # Client number
-client_num: 500
+client_num: 6000
 client_test_num: 356
-ideal_client: true
+ideal_client: false
 
 # Job
-total_job: 2
+total_job: 10
 # profile_folder: ./evaluation/job/profile/
 profile_folder: ./evaluation/job/profile_benchmark
 # profile_folder: ./evaluation/job/dry_profile/   # no training
@@ -52,7 +52,7 @@ do_compute: false
 is_FA: false
 
 use_cuda: false
-use_docker: false
+use_docker: true
 
 executor_ip: localhost
 executor_port: 49999

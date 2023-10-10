@@ -16,7 +16,7 @@ client_manager_port_start = 50003
 client_db_port_start = 6380
 
 evaluation_config_file = './evaluation/evaluation_config.yml'
-evaluation_use_docker = False
+evaluation_use_docker = True
 do_compute = False
 is_FA = False
 use_cuda = False
