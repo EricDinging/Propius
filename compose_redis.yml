@@ -21,3 +21,13 @@ services:
     - 6380:6380
     environment:
     - TZ=America/Detroit
+  client_db_1:
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command:
+    - '6381'
+    ports:
+    - 6381:6381
+    environment:
+    - TZ=America/Detroit
