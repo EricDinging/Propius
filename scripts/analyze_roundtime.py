@@ -5,7 +5,7 @@ response time across all simulated jobs
 import os
 import csv
 
-folder_path = './evaluation_result/irs3-test/job/'
+folder_path = './evaluation/monitor/job/'
 
 analyze_certain_rounds = False
 
