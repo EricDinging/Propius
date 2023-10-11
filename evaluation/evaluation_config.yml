@@ -13,10 +13,10 @@ job_public_constraint:
 job_private_constraint:
 - dataset_size
 
-sched_alg: fifo
+sched_alg: irs3
 
 # ---Evaluation setting---
-speedup_factor: 2.5
+speedup_factor: 3
 test_bsz: 128
 test_ratio: 1
 eval_interval: 5
@@ -29,7 +29,7 @@ ideal_client: false
 # Job
 total_job: 10
 # profile_folder: ./evaluation/job/profile/
-profile_folder: ./evaluation/job/profile_benchmark
+profile_folder: ./evaluation/job/profile_mobilenet
 # profile_folder: ./evaluation/job/dry_profile/   # no training
 # profile_folder: './evaluation/job/test_profile/'
 job_trace: ./evaluation/job/trace/job_trace_10.txt
@@ -52,7 +52,7 @@ do_compute: false
 is_FA: false
 
 use_cuda: false
-use_docker: true
+use_docker: false
 
 executor_ip: localhost
 executor_port: 49999

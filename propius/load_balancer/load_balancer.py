@@ -83,6 +83,11 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)
     
+    async def plot_routine(self):
+        while True:
+            self.lb_monitor.report()
+            await asyncio.sleep(60)
+    
     async def heartbeat_routine(self):
         try:
             while True:

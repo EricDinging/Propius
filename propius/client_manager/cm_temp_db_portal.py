@@ -26,6 +26,7 @@ class CM_temp_client_db_portal(Temp_client_db):
 
         super().__init__(gconfig, cm_id, True, logger, flush)
         self.job_group = Job_group()
+        self.assigned_ttl = self.client_exp_time / 2
 
     def update_job_group(self, new_job_group: Job_group):
         self.job_group = new_job_group
@@ -35,7 +36,7 @@ class CM_temp_client_db_portal(Temp_client_db):
         for cst, job_list in self.job_group.cst_job_group_map.items():
             try:
                 condition_q = self.job_group[cst].str()
-                q = Query(condition_q)
+                q = Query(condition_q).paging(0, 10000)
                 result = self.r.ft('temp').search(q)
 
                 job_list_str = str(job_list)
@@ -44,9 +45,10 @@ class CM_temp_client_db_portal(Temp_client_db):
                         temp_client = json.loads(doc.json)
                         temp_client['temp']['job_ids'] = job_list_str
                         self.r.json().set(doc.id, Path.root_path(), temp_client)
+                        self.r.expire(doc.id, self.assigned_ttl)
                     except:
                         pass
-                # self.logger.print(f"Insert job {job_list_str} to {len(result.docs)} clients", Msg_level.INFO)
+                self.logger.print(f"Insert job {job_list_str} to {len(result.docs)} clients", Msg_level.INFO)
             except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)
 
@@ -88,8 +90,8 @@ class CM_temp_client_db_portal(Temp_client_db):
             if self.r.execute_command("EXISTS", id):
                 result = str(self.r.json().get(id, "$.temp.job_ids")[0])
                 task_list = ast.literal_eval(result)
-            else:
-                self.insert(client_id, specifications)
+            # else:
+            #     self.insert(client_id, specifications)
 
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)

@@ -92,7 +92,7 @@ class SC_job_db_portal(Job_db):
         for idx, name in enumerate(self.public_constraint_name):
             qstr += f"@{name}: [{public_constraint[idx]}, {public_constraint[idx]}] "
 
-        q = Query(qstr)
+        q = Query(qstr).paging(0, 100)
 
         try:
             result = self.r.ft('job').search(q)
@@ -155,7 +155,7 @@ class SC_job_db_portal(Job_db):
         Returns:
             boolean indicating whether there is a score updated
         """
-        q = Query('@score: [0, 0]')
+        q = Query('@score: [0, 0]').paging(0, 100)
         try:
             result = self.r.ft('job').search(q)
         
@@ -182,7 +182,7 @@ class SC_job_db_portal(Job_db):
             Prioritize job with the smallest remaining demand.
         """
         try:
-            q = Query('*')
+            q = Query('*').paging(0, 100)
             result = self.r.ft('job').search(q)
             if result.total == 0:
                 return
@@ -202,7 +202,7 @@ class SC_job_db_portal(Job_db):
             Prioritize job with the shortest remaining demand
         """
         try:
-            q = Query('*')
+            q = Query('*').paging(0, 100)
             result = self.r.ft('job').search(q)
             if result.total == 0:
                 return
@@ -229,7 +229,7 @@ class SC_job_db_portal(Job_db):
         """Give every job a score of -attained service.
         """
         try:
-            q = Query('*')
+            q = Query('*').paging(0, 100)
             result = self.r.ft('job').search(q)
             if result.total == 0:
                 return
@@ -322,7 +322,7 @@ class SC_client_db_portal(Client_db):
 
         size = 0
         try:
-            q = Query(qstr).no_content()
+            q = Query(qstr).no_content().paging(0, 10000)
             size = int(self.r.ft('client').search(q).total)
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
@@ -342,7 +342,7 @@ class SC_client_db_portal(Client_db):
         if client_size == 0:
             return 0.01
         size = 0
-        q = Query(q).no_content()
+        q = Query(q).no_content().paging(0, 10000)
         try:
             size = int(self.r.ft('client').search(q).total)
         except Exception as e:

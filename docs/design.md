@@ -44,3 +44,6 @@ Propius will calculate a priority score $s$ for every job. A job has higher prio
         - Job will be removed after $r_{total}$ 
     - Job does not provide total round estimation
         - Job will be removed after MAX_ROUND
+
+## Limitation
+- Max job 100

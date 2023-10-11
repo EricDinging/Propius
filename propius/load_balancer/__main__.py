@@ -16,6 +16,7 @@ async def serve(gconfig, logger):
         load_balancer.lb_monitor.report()
 
         heartbeat_task.cancel()
+        plot_task.cancel()
         await heartbeat_task
 
         await load_balancer._disconnect_cm()
@@ -30,6 +31,7 @@ async def serve(gconfig, logger):
     logger.print(f"Load balancer: server started, listening on {load_balancer.ip}:{load_balancer.port}", Msg_level.INFO)
 
     heartbeat_task = asyncio.create_task(load_balancer.heartbeat_routine())
+    plot_task = asyncio.create_task(load_balancer.plot_routine())
 
     await server.wait_for_termination()
 

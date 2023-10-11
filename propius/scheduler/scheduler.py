@@ -7,6 +7,7 @@ from propius.scheduler.sc_job_group import SC_job_group_manager
 from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import pickle
+import asyncio
 
 class Scheduler(propius_pb2_grpc.SchedulerServicer):
     def __init__(self, gconfig: dict, logger: Propius_logger):
@@ -216,3 +217,8 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
     
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)
+    
+    async def plot_routine(self):
+        while True:
+            self.sc_monitor.report()
+            await asyncio.sleep(60)

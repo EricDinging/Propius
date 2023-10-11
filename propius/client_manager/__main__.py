@@ -18,6 +18,7 @@ async def serve(gconfig, cm_id: int, logger: Propius_logger):
         client_manager.client_db_portal.flushdb()
         client_manager.temp_client_db_portal.flushdb()
         client_assign_task.cancel()
+        plot_task.cancel()
 
         try:
             await client_manager.sched_channel.close()
@@ -36,6 +37,7 @@ async def serve(gconfig, cm_id: int, logger: Propius_logger):
     await server.start()
 
     client_assign_task = asyncio.create_task(client_manager.client_assign_routine())
+    plot_task = asyncio.create_task(client_manager.plot_routine())
     logger.print(f"Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}",
                  Msg_level.INFO)
     await server.wait_for_termination()

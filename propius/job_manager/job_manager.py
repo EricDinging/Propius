@@ -153,6 +153,11 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)
     
+    async def plot_routine(self):
+        while True:
+            self.jm_monitor.report()
+            await asyncio.sleep(60)
+    
     async def heartbeat_routine(self):
         """Send heartbeat routine to scheduler and prune job db if needed."""
         try:

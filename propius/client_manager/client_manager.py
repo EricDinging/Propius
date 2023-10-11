@@ -202,6 +202,11 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                     await asyncio.sleep(3)
             except asyncio.CancelledError:
                 pass
+
+    async def plot_routine(self):
+        while True:
+            self.cm_monitor.report(self.cm_id)
+            await asyncio.sleep(60)
     
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)

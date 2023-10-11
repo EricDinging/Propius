@@ -45,10 +45,10 @@ class CM_job_db_portal(Job_db):
         result = None
         try:
             if self.sched_alg == 'fifo':
-                q = Query('*').sort_by('timestamp', asc=True)
+                q = Query('*').sort_by('timestamp', asc=True).paging(0, 100)
                 result = self.r.ft('job').search(q)
             else:
-                q = Query('*').sort_by('score', asc=False)
+                q = Query('*').sort_by('score', asc=False).paging(0, 100)
                 result = self.r.ft('job').search(q)
         except Exception as e:
             self.logger.print(e, Msg_level.WARNING)

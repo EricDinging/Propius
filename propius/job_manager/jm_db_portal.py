@@ -108,7 +108,7 @@ class JM_job_db_portal(Job_db):
         """
         result = None
         try:
-            q = Query('*')
+            q = Query('*').paging(0, 100)
             result = self.r.ft('job').search(q)
         except Exception as e:
             self.logger.print(e, Msg_level.WARNING)

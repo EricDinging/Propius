@@ -17,6 +17,7 @@ async def serve(gconfig, logger):
         job_manager.job_db_portal.flushdb()
 
         heartbeat_task.cancel()
+        plot_task.cancel()
         await heartbeat_task
 
         try:
@@ -32,6 +33,7 @@ async def serve(gconfig, logger):
     await server.start()
 
     heartbeat_task = asyncio.create_task(job_manager.heartbeat_routine())
+    plot_task = asyncio.create_task(job_manager.plot_routine())
 
     logger.print(f"Job manager: server started, listening on {job_manager.ip}:{job_manager.port}", Msg_level.INFO)
     _cleanup_coroutines.append(server_graceful_shutdown())

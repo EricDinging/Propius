@@ -5,7 +5,7 @@ propius_config_file = './propius/global_config.yml'
 compose_redis_file = './compose_redis.yml'
 propius_use_docker = True
 
-propius_compose_file = './compose_eval.yml'
+propius_compose_file = './compose_propius.yml'
 
 if propius_compose_file == './compose_eval.yml':
     client_per_container = 1000
@@ -16,15 +16,15 @@ client_manager_port_start = 50003
 client_db_port_start = 6380
 
 evaluation_config_file = './evaluation/evaluation_config.yml'
-evaluation_use_docker = True
+evaluation_use_docker = False
 do_compute = False
 is_FA = False
 use_cuda = False
-speedup_factor = 2.5
+speedup_factor = 3
 
-sched_alg = 'fifo'
+sched_alg = 'irs3'
 
-profile_folder = './evaluation/job/profile_benchmark'
+profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
 total_job = 10
 ideal_client = False
@@ -113,65 +113,67 @@ def set(propius_data, redis_data, config_data, propius_compose_data):
     config_data["total_job"] = total_job
     config_data["client_num"] = client_num
 
-    for i in range(math.ceil(total_job / job_per_container)):
-        start_row = i * job_per_container
-        end_row = min(total_job, start_row + job_per_container)
+    if propius_compose_file == './compose_eval.yml':
 
-        new_job_container = {
-            f'jobs_{i}': {
-                'build': {
-                    'context': '.',
-                    'dockerfile': './evaluation/job/Dockerfile'
-                },
-                'volumes': [
-                    './evaluation/job:/evaluation/job',
-                    './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
-                    './evaluation/monitor:/evaluation/monitor',
-                ],
-                'stop_signal': 'SIGINT',
-                'depends_on': [
-                    'job_manager'
-                ],
-                'command': [
-                    f'{start_row}',
-                    f'{end_row}',
-                    f'{i}'
-                ],
-                'environment': ['TZ=America/Detroit']
+        for i in range(math.ceil(total_job / job_per_container)):
+            start_row = i * job_per_container
+            end_row = min(total_job, start_row + job_per_container)
+
+            new_job_container = {
+                f'jobs_{i}': {
+                    'build': {
+                        'context': '.',
+                        'dockerfile': './evaluation/job/Dockerfile'
+                    },
+                    'volumes': [
+                        './evaluation/job:/evaluation/job',
+                        './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
+                        './evaluation/monitor:/evaluation/monitor',
+                    ],
+                    'stop_signal': 'SIGINT',
+                    'depends_on': [
+                        'job_manager'
+                    ],
+                    'command': [
+                        f'{start_row}',
+                        f'{end_row}',
+                        f'{i}'
+                    ],
+                    'environment': ['TZ=America/Detroit']
+                }
             }
-        }
-        
-        propius_compose_data['services'].update(new_job_container)
+            
+            propius_compose_data['services'].update(new_job_container)
 
 
-    for i in range(math.ceil(client_num / client_per_container)):
-        num = min(client_per_container, client_num - i * client_per_container)
+        for i in range(math.ceil(client_num / client_per_container)):
+            num = min(client_per_container, client_num - i * client_per_container)
 
-        new_client_container = {
-            f'clients_{i}': {
-                'build': {
-                    'context': '.',
-                    'dockerfile': './evaluation/client/Dockerfile',
-                },
-                'volumes': [
-                    './evaluation/client:/evaluation/client',
-                    './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
-                    './datasets/device_info:/datasets/device_info',
-                    './evaluation/monitor:/evaluation/monitor'
-                ],
-                'stop_signal': 'SIGINT',
-                'depends_on': [
-                    'load_balancer'
-                ],
-                'environment': ['TZ=America/Detroit'],
-                'command': [
-                    f'{num}',
-                    f'{i}'
-                ],
+            new_client_container = {
+                f'clients_{i}': {
+                    'build': {
+                        'context': '.',
+                        'dockerfile': './evaluation/client/Dockerfile',
+                    },
+                    'volumes': [
+                        './evaluation/client:/evaluation/client',
+                        './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
+                        './datasets/device_info:/datasets/device_info',
+                        './evaluation/monitor:/evaluation/monitor'
+                    ],
+                    'stop_signal': 'SIGINT',
+                    'depends_on': [
+                        'load_balancer'
+                    ],
+                    'environment': ['TZ=America/Detroit'],
+                    'command': [
+                        f'{num}',
+                        f'{i}'
+                    ],
 
+                }
             }
-        }
-        propius_compose_data['services'].update(new_client_container)
+            propius_compose_data['services'].update(new_client_container)
 
 yaml = ruamel.yaml.YAML()
 with open(compose_redis_file, 'r') as redis_file:

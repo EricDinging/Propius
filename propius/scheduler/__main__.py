@@ -14,6 +14,7 @@ async def serve(gconfig, logger):
     async def server_graceful_shutdown():
         logger.print("=====Scheduler shutting down=====", Msg_level.WARNING)
         scheduler.sc_monitor.report()
+        plot_task.cancel()
         await server.stop(5)
     
     server = grpc.aio.server()
@@ -21,6 +22,8 @@ async def serve(gconfig, logger):
     propius_pb2_grpc.add_SchedulerServicer_to_server(scheduler, server)
     server.add_insecure_port(f'{scheduler.ip}:{scheduler.port}')
     await server.start()
+
+    plot_task = asyncio.create_task(scheduler.plot_routine())
     
     logger.print(f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}",
                  Msg_level.INFO)
