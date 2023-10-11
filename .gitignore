@@ -21,7 +21,7 @@ math/
 # log
 *.log*
 *logging*
-*csv
+# *csv
 
 # dataset
 open_images
