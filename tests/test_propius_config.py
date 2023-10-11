@@ -22,13 +22,13 @@ is_FA = False
 use_cuda = False
 speedup_factor = 3
 
-sched_alg = 'irs3'
+sched_alg = 'fifo'
 
 profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
 total_job = 10
 ideal_client = False
-client_num = 6000
+client_num = 8000
 
 def set(propius_data, redis_data, config_data, propius_compose_data):
     propius_data["client_manager"] = [

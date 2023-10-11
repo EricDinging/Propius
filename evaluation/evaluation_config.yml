@@ -13,7 +13,7 @@ job_public_constraint:
 job_private_constraint:
 - dataset_size
 
-sched_alg: irs3
+sched_alg: fifo
 
 # ---Evaluation setting---
 speedup_factor: 3
@@ -22,7 +22,7 @@ test_ratio: 1
 eval_interval: 5
 
 # Client number
-client_num: 6000
+client_num: 8000
 client_test_num: 356
 ideal_client: false
 

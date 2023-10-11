@@ -5,7 +5,8 @@ response time across all simulated jobs
 import os
 import csv
 
-folder_path = './evaluation/monitor/job/'
+folder_path = './data/fifo-6000/job/'
+# folder_path = './evaluation/monitor/job'
 
 analyze_certain_rounds = False
 
@@ -70,9 +71,14 @@ else:
         
         if filename.endswith(".csv"):
             csv_file_path = os.path.join(folder_path, filename)
+            # if csv_file_path in ['./data/fifo-6000/job/job_60004_fifo.csv', './data/fifo-6000/job/job_60009_fifo.csv']:
+            #     continue
+            # if csv_file_path in ['./evaluation/monitor/job/job_60009_irs3.csv', './evaluation/monitor/job/job_60004_irs3.csv']:
+            #     continue
             # print(csv_file_path)
             round_time, sched, response = read_last_line(csv_file_path)
-
+            print(csv_file_path)
+            
             num += 1 
             total_round += round_time
             total_sched += sched
