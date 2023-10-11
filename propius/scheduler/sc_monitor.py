@@ -9,13 +9,11 @@ class SC_monitor(Monitor):
         super().__init__("Scheduler", logger, plot)
         # self.job_size_latency_map = {}
         # self.job_request_map = {}
-        self.lock = asyncio.Lock()
         self.sched_alg = sched_alg
         self.plot = plot
 
     async def request(self, job_id: int):
-        async with self.lock:
-            self._request()
+        self._request()
             # self.job_request_map[job_id] = time.time()
 
     # async def request_end(self, job_id: int, job_size: int):

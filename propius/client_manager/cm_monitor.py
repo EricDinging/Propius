@@ -7,7 +7,6 @@ class CM_monitor(Monitor):
     def __init__(self, sched_alg: str, logger: Propius_logger, plot: bool=False):
         super().__init__("Client manager", logger, plot)
         self.sched_alg = sched_alg
-        self.lock = asyncio.Lock()
         self.client_check_in_num = 0
         self.client_ping_num = 0
         self.client_accept_num = 0
@@ -15,22 +14,19 @@ class CM_monitor(Monitor):
         self.plot = plot
 
     async def client_checkin(self):
-        async with self.lock:
-            self._request()
-            self.client_check_in_num += 1
+        self._request()
+        self.client_check_in_num += 1
 
     async def client_ping(self):
-        async with self.lock:
-            self._request()
-            self.client_ping_num += 1
+        self._request()
+        self.client_ping_num += 1
 
     async def client_accept(self, success: bool):
-        async with self.lock:
-            self._request()
-            if success:
-                self.client_accept_num += 1
-            else:
-                self.client_over_assign_num += 1
+        self._request()
+        if success:
+            self.client_accept_num += 1
+        else:
+            self.client_over_assign_num += 1
 
     def report(self, id: int):
         self._gen_report()

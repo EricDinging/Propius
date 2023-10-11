@@ -8,12 +8,10 @@ class LB_monitor(Monitor):
     def __init__(self, sched_alg: str, logger: Propius_logger, plot: bool=False):
         super().__init__("Load balancer", logger, plot)
         self.sched_alg = sched_alg
-        self.lock = asyncio.Lock()
         self.plot = plot
 
     async def request(self):
-        async with self.lock:
-            self._request()
+        self._request()
 
     def report(self):
         self._gen_report()

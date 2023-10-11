@@ -7,7 +7,6 @@ import os
 class JM_monitor(Monitor):
     def __init__(self, sched_alg: str, logger: Propius_logger, plot: bool=False):
         super().__init__("Job manager", logger, plot)
-        self.lock = asyncio.Lock()
         self.sched_alg = sched_alg
 
         self.total_job = 0
@@ -22,36 +21,33 @@ class JM_monitor(Monitor):
         self.plot = plot
 
     async def job_register(self):
-        async with self.lock:
-            self.total_job += 1
-            if self.plot:
-                runtime = int(time.time()) - self.start_time
-                self.job_timestamp.append(runtime)
-                self.job_timestamp.append(self.job_timestamp[-1])
-                self.job_time_num.append(self.job_time_num[-1])
-                self.job_time_num.append(self.job_time_num[-1] + 1)
-
-    async def job_finish(self, constraint: tuple,
-                         demand: int, total_round: int, job_runtime: float, sched_latency: float):
-        async with self.lock:
+        self.total_job += 1
+        if self.plot:
             runtime = int(time.time()) - self.start_time
             self.job_timestamp.append(runtime)
             self.job_timestamp.append(self.job_timestamp[-1])
             self.job_time_num.append(self.job_time_num[-1])
-            self.job_time_num.append(self.job_time_num[-1] - 1)
+            self.job_time_num.append(self.job_time_num[-1] + 1)
 
-            key = (constraint, demand, total_round)
-            if key not in self.constraint_jct_dict:
-                self.constraint_jct_dict[key] = 0
-                self.constraint_sched_dict[key] = 0
-                self.constraint_cnt[key] = 0
-            self.constraint_jct_dict[key] += job_runtime
-            self.constraint_cnt[key] += 1                
-            self.constraint_sched_dict[key] += sched_latency
+    async def job_finish(self, constraint: tuple,
+                         demand: int, total_round: int, job_runtime: float, sched_latency: float):
+        runtime = int(time.time()) - self.start_time
+        self.job_timestamp.append(runtime)
+        self.job_timestamp.append(self.job_timestamp[-1])
+        self.job_time_num.append(self.job_time_num[-1])
+        self.job_time_num.append(self.job_time_num[-1] - 1)
+
+        key = (constraint, demand, total_round)
+        if key not in self.constraint_jct_dict:
+            self.constraint_jct_dict[key] = 0
+            self.constraint_sched_dict[key] = 0
+            self.constraint_cnt[key] = 0
+        self.constraint_jct_dict[key] += job_runtime
+        self.constraint_cnt[key] += 1                
+        self.constraint_sched_dict[key] += sched_latency
 
     async def request(self):
-        async with self.lock:
-            self._request()
+        self._request()
 
     def _plot_job(self):
         plt.plot(self.job_timestamp, self.job_time_num)
