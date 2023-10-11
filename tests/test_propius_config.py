@@ -22,7 +22,7 @@ is_FA = False
 use_cuda = False
 speedup_factor = 3
 
-sched_alg = 'fifo'
+sched_alg = 'irs3'
 
 profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
