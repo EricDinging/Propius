@@ -92,8 +92,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         task_offer_list, task_private_constraint, job_size = [], [], 0
 
         if self.sched_alg != "irs3":
-            task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
-                public_specification, self.sched_alg)
+            # task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
+            #     public_specification, self.sched_alg)
+            pass
         else:
             self.temp_client_db_portal.insert(client_id, public_specification)
         

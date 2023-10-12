@@ -5,24 +5,26 @@ propius_config_file = './propius/global_config.yml'
 compose_redis_file = './compose_redis.yml'
 propius_use_docker = True
 
-propius_compose_file = './compose_propius.yml'
+propius_compose_file = './compose_eval.yml'
+evaluation_use_docker = False
 
 if propius_compose_file == './compose_eval.yml':
     client_per_container = 1000
     job_per_container = 1
+    evaluation_use_docker = True
 
 client_manager_num = 2
 client_manager_port_start = 50003
 client_db_port_start = 6380
 
 evaluation_config_file = './evaluation/evaluation_config.yml'
-evaluation_use_docker = False
+
 do_compute = False
 is_FA = False
 use_cuda = False
 speedup_factor = 3
 
-sched_alg = 'irs3'
+sched_alg = 'random'
 
 profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
