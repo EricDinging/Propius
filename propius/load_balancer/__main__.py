@@ -15,7 +15,7 @@ async def serve(gconfig, logger):
         logger.print(f"=====Load balancer shutting down=====", Msg_level.WARNING)
         load_balancer.lb_monitor.report()
         plot_task.cancel()
-        await heartbeat_task
+        await plot_task
 
         await load_balancer._disconnect_cm()
         await server.stop(5)
