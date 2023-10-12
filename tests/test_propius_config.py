@@ -5,7 +5,7 @@ propius_config_file = './propius/global_config.yml'
 compose_redis_file = './compose_redis.yml'
 propius_use_docker = True
 
-propius_compose_file = './compose_eval.yml'
+propius_compose_file = './compose_propius.yml'
 evaluation_use_docker = False
 
 if propius_compose_file == './compose_eval.yml':
@@ -24,7 +24,7 @@ is_FA = False
 use_cuda = False
 speedup_factor = 3
 
-sched_alg = 'random'
+sched_alg = 'fifo'
 
 profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
@@ -141,7 +141,18 @@ def set(propius_data, redis_data, config_data, propius_compose_data):
                         f'{end_row}',
                         f'{i}'
                     ],
-                    'environment': ['TZ=America/Detroit']
+                    'environment': ['TZ=America/Detroit'],
+
+                    'resources': {
+                        'limits': {
+                            'cpus': '0.50',
+                            'memory': '50M',
+                        },
+                        'reservations': {
+                            'cpus': '0.25',
+                            'memory': '20M',
+                        }
+                    }
                 }
             }
             
