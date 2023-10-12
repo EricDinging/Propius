@@ -142,15 +142,16 @@ def set(propius_data, redis_data, config_data, propius_compose_data):
                         f'{i}'
                     ],
                     'environment': ['TZ=America/Detroit'],
-
-                    'resources': {
-                        'limits': {
-                            'cpus': '0.50',
-                            'memory': '50M',
-                        },
-                        'reservations': {
-                            'cpus': '0.25',
-                            'memory': '20M',
+                    'deploy': {
+                        'resources': {
+                            'limits': {
+                                'cpus': '0.50',
+                                'memory': '50M',
+                            },
+                            'reservations': {
+                                'cpus': '0.25',
+                                'memory': '20M',
+                            }
                         }
                     }
                 }
