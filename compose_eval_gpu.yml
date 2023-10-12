@@ -6,12 +6,7 @@ services:
       context: .
       dockerfile: ./propius/scheduler/Dockerfile
     volumes:
-    - ./propius/scheduler:/propius/scheduler
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - client_db_0
     - client_db_1
@@ -24,12 +19,7 @@ services:
       context: .
       dockerfile: ./propius/job_manager/Dockerfile
     volumes:
-    - ./propius/job_manager:/propius/job_manager
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - scheduler
     stop_signal: SIGINT
@@ -41,12 +31,7 @@ services:
       context: .
       dockerfile: ./propius/load_balancer/Dockerfile
     volumes:
-    - ./propius/load_balancer:/propius/load_balancer
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - client_manager_0
     - client_manager_1
@@ -67,10 +52,7 @@ services:
       context: .
       dockerfile: ./evaluation/executor/Dockerfile_executor
     volumes:
-    - ./evaluation/executor:/evaluation/executor
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
-    - ./evaluation/internal:/evaluation/internal
+    - ./evaluation:/evaluation
     stop_signal: SIGINT
     depends_on:
     - worker_0
@@ -91,11 +73,8 @@ services:
       args:
         WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
-    - ./evaluation/executor:/evaluation/executor
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets:/datasets
-    - ./evaluation/monitor:/evaluation/monitor
-    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '0'
@@ -116,11 +95,8 @@ services:
       args:
         WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
-    - ./evaluation/executor:/evaluation/executor
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets:/datasets
-    - ./evaluation/monitor:/evaluation/monitor
-    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '1'
@@ -141,11 +117,8 @@ services:
       args:
         WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
-    - ./evaluation/executor:/evaluation/executor
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets:/datasets
-    - ./evaluation/monitor:/evaluation/monitor
-    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '2'
@@ -166,11 +139,8 @@ services:
       args:
         WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
-    - ./evaluation/executor:/evaluation/executor
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets:/datasets
-    - ./evaluation/monitor:/evaluation/monitor
-    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '3'
@@ -191,11 +161,8 @@ services:
       args:
         WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
-    - ./evaluation/executor:/evaluation/executor
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets:/datasets
-    - ./evaluation/monitor:/evaluation/monitor
-    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '4'
@@ -216,11 +183,8 @@ services:
       args:
         WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
-    - ./evaluation/executor:/evaluation/executor
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets:/datasets
-    - ./evaluation/monitor:/evaluation/monitor
-    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '5'
@@ -241,11 +205,8 @@ services:
       args:
         WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
-    - ./evaluation/executor:/evaluation/executor
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets:/datasets
-    - ./evaluation/monitor:/evaluation/monitor
-    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '6'
@@ -266,11 +227,8 @@ services:
       args:
         WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
     volumes:
-    - ./evaluation/executor:/evaluation/executor
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets:/datasets
-    - ./evaluation/monitor:/evaluation/monitor
-    - ./evaluation/internal:/evaluation/internal
     stop_signal: SIGINT
     command:
     - '7'
@@ -289,9 +247,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -307,9 +264,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -325,9 +281,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -343,9 +298,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -361,9 +315,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -379,9 +332,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -397,9 +349,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -415,9 +366,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -433,9 +383,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -451,9 +400,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - executor
@@ -469,10 +417,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -486,10 +432,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -503,10 +447,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -520,10 +462,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -537,10 +477,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -554,10 +492,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -571,12 +507,7 @@ services:
       context: .
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
-    - ./propius/client_manager:/propius/client_manager
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - job_db
     - client_db_0
@@ -585,14 +516,13 @@ services:
     - '0'
     environment:
     - TZ=America/Detroit
+    stop_signal: SIGINT
   client_db_0:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command:
     - '6380'
-    ports:
-    - 6380:6380
     environment:
     - TZ=America/Detroit
   client_manager_1:
@@ -600,12 +530,7 @@ services:
       context: .
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
-    - ./propius/client_manager:/propius/client_manager
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - job_db
     - client_db_1
@@ -614,13 +539,12 @@ services:
     - '1'
     environment:
     - TZ=America/Detroit
+    stop_signal: SIGINT
   client_db_1:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command:
     - '6381'
-    ports:
-    - 6381:6381
     environment:
     - TZ=America/Detroit

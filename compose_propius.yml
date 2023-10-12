@@ -6,13 +6,9 @@ services:
       context: .
       dockerfile: ./propius/scheduler/Dockerfile
     volumes:
-    - ./propius/scheduler:/propius/scheduler
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
+    - job_db
     - client_db_0
     - client_db_1
     stop_signal: SIGINT
@@ -26,14 +22,10 @@ services:
     ports:
     - 50001:50001
     volumes:
-    - ./propius/job_manager:/propius/job_manager
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - scheduler
+    - job_db
     stop_signal: SIGINT
     environment:
     - TZ=America/Detroit
@@ -45,12 +37,7 @@ services:
     ports:
     - 50002:50002
     volumes:
-    - ./propius/load_balancer:/propius/load_balancer
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - client_manager_0
     - client_manager_1

@@ -82,11 +82,8 @@ for i in range(worker_num):
                 }
             },
             'volumes': [
-                './evaluation/executor:/evaluation/executor',
-                './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
+                './evaluation:/evaluation',
                 './datasets:/datasets',
-                './evaluation/monitor:/evaluation/monitor',
-                './evaluation/internal:/evaluation/internal',
             ],
             'stop_signal': 'SIGINT',
             'command': [f'{i}'],
@@ -161,10 +158,8 @@ for i in range(math.ceil(client_num / client_per_container)):
                 'dockerfile': './evaluation/client/Dockerfile',
             },
             'volumes': [
-                './evaluation/client:/evaluation/client',
-                './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
+                './evaluation:/evaluation',
                 './datasets/device_info:/datasets/device_info',
-                './evaluation/monitor:/evaluation/monitor'
             ],
             'stop_signal': 'SIGINT',
             'depends_on': [
@@ -235,7 +230,6 @@ for i in range(client_manager_num):
             'dockerfile': './propius/database/Dockerfile'
             },
             'command': [f'{client_db_port_start + i}'],
-            'ports': [f'{client_db_port_start + i}:{client_db_port_start + i}'],
             'environment': ['TZ=America/Detroit']
         }
     }
@@ -247,12 +241,7 @@ for i in range(client_manager_num):
             'dockerfile': './propius/client_manager/Dockerfile'
             },
             'volumes': [
-                './propius/client_manager:/propius/client_manager',
-                './propius/global_config.yml:/propius/global_config.yml',
-                './propius/monitor:/propius/monitor',
-                './propius/channels:/propius/channels',
-                './propius/util:/propius/util',
-                './propius/database:/propius/database'
+                './propius:/propius'
             ],
             'depends_on': [
                 'job_db',

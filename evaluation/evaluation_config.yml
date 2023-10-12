@@ -13,7 +13,7 @@ job_public_constraint:
 job_private_constraint:
 - dataset_size
 
-sched_alg: fifo
+sched_alg: irs3
 
 # ---Evaluation setting---
 speedup_factor: 3
@@ -22,14 +22,14 @@ test_ratio: 1
 eval_interval: 5
 
 # Client number
-client_num: 8000
+client_num: 6000
 client_test_num: 356
 ideal_client: false
 
 # Job
 total_job: 10
 # profile_folder: ./evaluation/job/profile/
-profile_folder: ./evaluation/job/profile_mobilenet
+profile_folder: ./evaluation/job/profile_benchmark
 # profile_folder: ./evaluation/job/dry_profile/   # no training
 # profile_folder: './evaluation/job/test_profile/'
 job_trace: ./evaluation/job/trace/job_trace_10.txt
@@ -48,11 +48,11 @@ data_dir: ./datasets/femnist
 data_map_file: ./datasets/femnist/client_data_mapping/train.csv
 test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
 
-do_compute: false
+do_compute: true
 is_FA: false
 
-use_cuda: false
-use_docker: false
+use_cuda: true
+use_docker: true
 
 executor_ip: localhost
 executor_port: 49999

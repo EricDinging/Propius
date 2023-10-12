@@ -104,6 +104,11 @@ def set(propius_data, redis_data, config_data, propius_compose_data):
         f'client_db_{i}' for i in range(client_manager_num)
     ]
 
+    if propius_compose_file == './compose_propius.yml':
+        propius_compose_data['services']['job_manager']['ports']= ['50001:50001']
+        propius_compose_data['services']['load_balancer']['ports'] = ['50002:50002']
+        
+
     config_data["use_docker"] = evaluation_use_docker
     config_data["do_compute"] = do_compute
     config_data["is_FA"] = is_FA
