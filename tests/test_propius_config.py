@@ -145,12 +145,12 @@ def set(propius_data, redis_data, config_data, propius_compose_data):
                     'deploy': {
                         'resources': {
                             'limits': {
-                                'cpus': '0.50',
-                                'memory': '50M',
+                                'cpus': '1',
+                                'memory': '1G',
                             },
                             'reservations': {
-                                'cpus': '0.25',
-                                'memory': '20M',
+                                'cpus': '0.75',
+                                'memory': '800M',
                             }
                         }
                     }
@@ -184,7 +184,18 @@ def set(propius_data, redis_data, config_data, propius_compose_data):
                         f'{num}',
                         f'{i}'
                     ],
-
+                    'deploy': {
+                        'resources': {
+                            'limits': {
+                                'cpus': '1',
+                                'memory': '1G',
+                            },
+                            'reservations': {
+                                'cpus': '0.75',
+                                'memory': '500M',
+                            }
+                        }
+                    }
                 }
             }
             propius_compose_data['services'].update(new_client_container)
