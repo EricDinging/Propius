@@ -6,55 +6,38 @@ services:
       context: .
       dockerfile: ./propius/scheduler/Dockerfile
     volumes:
-    - ./propius/scheduler:/propius/scheduler
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - client_db_0
     - client_db_1
+    - job_db
     stop_signal: SIGINT
     environment:
     - TZ=America/Detroit
-
-
   job_manager:
     build:
       context: .
       dockerfile: ./propius/job_manager/Dockerfile
     volumes:
-    - ./propius/job_manager:/propius/job_manager
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - scheduler
+    - job_db
     stop_signal: SIGINT
     environment:
     - TZ=America/Detroit
-
   load_balancer:
     build:
       context: .
       dockerfile: ./propius/load_balancer/Dockerfile
     volumes:
-    - ./propius/load_balancer:/propius/load_balancer
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - client_manager_0
     - client_manager_1
     stop_signal: SIGINT
     environment:
     - TZ=America/Detroit
-
   job_db:
     build:
       context: .
@@ -62,18 +45,12 @@ services:
     command: ['6379']
     environment:
     - TZ=America/Detroit
-
   client_manager_0:
     build:
       context: .
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
-    - ./propius/client_manager:/propius/client_manager
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - job_db
     - client_db_0
@@ -82,14 +59,13 @@ services:
     - '0'
     environment:
     - TZ=America/Detroit
+    stop_signal: SIGINT
   client_db_0:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command:
     - '6380'
-    ports:
-    - 6380:6380
     environment:
     - TZ=America/Detroit
   client_manager_1:
@@ -97,12 +73,7 @@ services:
       context: .
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
-    - ./propius/client_manager:/propius/client_manager
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - job_db
     - client_db_1
@@ -111,14 +82,13 @@ services:
     - '1'
     environment:
     - TZ=America/Detroit
+    stop_signal: SIGINT
   client_db_1:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command:
     - '6381'
-    ports:
-    - 6381:6381
     environment:
     - TZ=America/Detroit
   jobs_0:
@@ -126,9 +96,8 @@ services:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -138,14 +107,21 @@ services:
     - '0'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   jobs_1:
     build:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -155,14 +131,21 @@ services:
     - '1'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   jobs_2:
     build:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -172,14 +155,21 @@ services:
     - '2'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   jobs_3:
     build:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -189,14 +179,21 @@ services:
     - '3'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   jobs_4:
     build:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -206,14 +203,21 @@ services:
     - '4'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   jobs_5:
     build:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -223,14 +227,21 @@ services:
     - '5'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   jobs_6:
     build:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -240,14 +251,21 @@ services:
     - '6'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   jobs_7:
     build:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -257,14 +275,21 @@ services:
     - '7'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   jobs_8:
     build:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -274,14 +299,21 @@ services:
     - '8'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   jobs_9:
     build:
       context: .
       dockerfile: ./evaluation/job/Dockerfile
     volumes:
-    - ./evaluation/job:/evaluation/job
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
-    - ./evaluation/monitor:/evaluation/monitor
+    - ./evaluation:/evaluation
+    - ./propius:/propius
     stop_signal: SIGINT
     depends_on:
     - job_manager
@@ -291,6 +323,14 @@ services:
     - '9'
     environment:
     - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
   clients_0:
     build:
       context: .
@@ -308,6 +348,14 @@ services:
     command:
     - '1000'
     - '0'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
   clients_1:
     build:
       context: .
@@ -325,6 +373,14 @@ services:
     command:
     - '1000'
     - '1'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
   clients_2:
     build:
       context: .
@@ -342,6 +398,14 @@ services:
     command:
     - '1000'
     - '2'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
   clients_3:
     build:
       context: .
@@ -359,6 +423,14 @@ services:
     command:
     - '1000'
     - '3'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
   clients_4:
     build:
       context: .
@@ -376,6 +448,14 @@ services:
     command:
     - '1000'
     - '4'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
   clients_5:
     build:
       context: .
@@ -393,6 +473,14 @@ services:
     command:
     - '1000'
     - '5'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
   clients_6:
     build:
       context: .
@@ -410,6 +498,14 @@ services:
     command:
     - '1000'
     - '6'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
   clients_7:
     build:
       context: .
@@ -427,3 +523,11 @@ services:
     command:
     - '1000'
     - '7'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M

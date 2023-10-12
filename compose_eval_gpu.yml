@@ -10,10 +10,10 @@ services:
     depends_on:
     - client_db_0
     - client_db_1
+    - job_db
     stop_signal: SIGINT
     environment:
     - TZ=America/Detroit
-
   job_manager:
     build:
       context: .
@@ -25,7 +25,6 @@ services:
     stop_signal: SIGINT
     environment:
     - TZ=America/Detroit
-
   load_balancer:
     build:
       context: .
@@ -38,7 +37,6 @@ services:
     stop_signal: SIGINT
     environment:
     - TZ=America/Detroit
-
   job_db:
     build:
       context: .
@@ -46,7 +44,6 @@ services:
     command: ['6379']
     environment:
     - TZ=America/Detroit
-
   executor:
     build:
       context: .
@@ -66,442 +63,6 @@ services:
     environment:
     - TZ=America/Detroit
 
-  worker_0:
-    build:
-      context: .
-      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
-      args:
-        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets:/datasets
-    stop_signal: SIGINT
-    command:
-    - '0'
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: 4
-            capabilities:
-            - gpu
-    environment:
-    - TZ=America/Detroit
-  worker_1:
-    build:
-      context: .
-      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
-      args:
-        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets:/datasets
-    stop_signal: SIGINT
-    command:
-    - '1'
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: 4
-            capabilities:
-            - gpu
-    environment:
-    - TZ=America/Detroit
-  worker_2:
-    build:
-      context: .
-      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
-      args:
-        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets:/datasets
-    stop_signal: SIGINT
-    command:
-    - '2'
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: 4
-            capabilities:
-            - gpu
-    environment:
-    - TZ=America/Detroit
-  worker_3:
-    build:
-      context: .
-      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
-      args:
-        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets:/datasets
-    stop_signal: SIGINT
-    command:
-    - '3'
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: 4
-            capabilities:
-            - gpu
-    environment:
-    - TZ=America/Detroit
-  worker_4:
-    build:
-      context: .
-      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
-      args:
-        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets:/datasets
-    stop_signal: SIGINT
-    command:
-    - '4'
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: 4
-            capabilities:
-            - gpu
-    environment:
-    - TZ=America/Detroit
-  worker_5:
-    build:
-      context: .
-      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
-      args:
-        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets:/datasets
-    stop_signal: SIGINT
-    command:
-    - '5'
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: 4
-            capabilities:
-            - gpu
-    environment:
-    - TZ=America/Detroit
-  worker_6:
-    build:
-      context: .
-      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
-      args:
-        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets:/datasets
-    stop_signal: SIGINT
-    command:
-    - '6'
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: 4
-            capabilities:
-            - gpu
-    environment:
-    - TZ=America/Detroit
-  worker_7:
-    build:
-      context: .
-      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
-      args:
-        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets:/datasets
-    stop_signal: SIGINT
-    command:
-    - '7'
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: 4
-            capabilities:
-            - gpu
-    environment:
-    - TZ=America/Detroit
-  jobs_0:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '0'
-    - '1'
-    - '0'
-    environment:
-    - TZ=America/Detroit
-  jobs_1:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '1'
-    - '2'
-    - '1'
-    environment:
-    - TZ=America/Detroit
-  jobs_2:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '2'
-    - '3'
-    - '2'
-    environment:
-    - TZ=America/Detroit
-  jobs_3:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '3'
-    - '4'
-    - '3'
-    environment:
-    - TZ=America/Detroit
-  jobs_4:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '4'
-    - '5'
-    - '4'
-    environment:
-    - TZ=America/Detroit
-  jobs_5:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '5'
-    - '6'
-    - '5'
-    environment:
-    - TZ=America/Detroit
-  jobs_6:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '6'
-    - '7'
-    - '6'
-    environment:
-    - TZ=America/Detroit
-  jobs_7:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '7'
-    - '8'
-    - '7'
-    environment:
-    - TZ=America/Detroit
-  jobs_8:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '8'
-    - '9'
-    - '8'
-    environment:
-    - TZ=America/Detroit
-  jobs_9:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - executor
-    - job_manager
-    command:
-    - '9'
-    - '10'
-    - '9'
-    environment:
-    - TZ=America/Detroit
-  clients_0:
-    build:
-      context: .
-      dockerfile: ./evaluation/client/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets/device_info:/datasets/device_info
-    stop_signal: SIGINT
-    depends_on:
-    - load_balancer
-    environment:
-    - TZ=America/Detroit
-    command:
-    - '1000'
-    - '0'
-  clients_1:
-    build:
-      context: .
-      dockerfile: ./evaluation/client/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets/device_info:/datasets/device_info
-    stop_signal: SIGINT
-    depends_on:
-    - load_balancer
-    environment:
-    - TZ=America/Detroit
-    command:
-    - '1000'
-    - '1'
-  clients_2:
-    build:
-      context: .
-      dockerfile: ./evaluation/client/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets/device_info:/datasets/device_info
-    stop_signal: SIGINT
-    depends_on:
-    - load_balancer
-    environment:
-    - TZ=America/Detroit
-    command:
-    - '1000'
-    - '2'
-  clients_3:
-    build:
-      context: .
-      dockerfile: ./evaluation/client/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets/device_info:/datasets/device_info
-    stop_signal: SIGINT
-    depends_on:
-    - load_balancer
-    environment:
-    - TZ=America/Detroit
-    command:
-    - '1000'
-    - '3'
-  clients_4:
-    build:
-      context: .
-      dockerfile: ./evaluation/client/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets/device_info:/datasets/device_info
-    stop_signal: SIGINT
-    depends_on:
-    - load_balancer
-    environment:
-    - TZ=America/Detroit
-    command:
-    - '1000'
-    - '4'
-  clients_5:
-    build:
-      context: .
-      dockerfile: ./evaluation/client/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets/device_info:/datasets/device_info
-    stop_signal: SIGINT
-    depends_on:
-    - load_balancer
-    environment:
-    - TZ=America/Detroit
-    command:
-    - '1000'
-    - '5'
   client_manager_0:
     build:
       context: .
@@ -548,3 +109,443 @@ services:
     - '6381'
     environment:
     - TZ=America/Detroit
+  jobs_0:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '0'
+    - '1'
+    - '0'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  jobs_1:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '1'
+    - '2'
+    - '1'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  jobs_2:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '2'
+    - '3'
+    - '2'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  jobs_3:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '3'
+    - '4'
+    - '3'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  jobs_4:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '4'
+    - '5'
+    - '4'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  jobs_5:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '5'
+    - '6'
+    - '5'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  jobs_6:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '6'
+    - '7'
+    - '6'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  jobs_7:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '7'
+    - '8'
+    - '7'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  jobs_8:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '8'
+    - '9'
+    - '8'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  jobs_9:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '9'
+    - '10'
+    - '9'
+    environment:
+    - TZ=America/Detroit
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 800M
+  clients_0:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '0'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
+  clients_1:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '1'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
+  clients_2:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '2'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
+  clients_3:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '3'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
+  clients_4:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '4'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
+  clients_5:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '5'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
+  clients_6:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '6'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M
+  clients_7:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation/client:/evaluation/client
+    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./datasets/device_info:/datasets/device_info
+    - ./evaluation/monitor:/evaluation/monitor
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '7'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 500M

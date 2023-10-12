@@ -8,9 +8,9 @@ services:
     volumes:
     - ./propius:/propius
     depends_on:
-    - job_db
     - client_db_0
     - client_db_1
+    - job_db
     stop_signal: SIGINT
     environment:
     - TZ=America/Detroit
@@ -58,12 +58,7 @@ services:
       context: .
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
-    - ./propius/client_manager:/propius/client_manager
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - job_db
     - client_db_0
@@ -72,14 +67,13 @@ services:
     - '0'
     environment:
     - TZ=America/Detroit
+    stop_signal: SIGINT
   client_db_0:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command:
     - '6380'
-    ports:
-    - 6380:6380
     environment:
     - TZ=America/Detroit
   client_manager_1:
@@ -87,12 +81,7 @@ services:
       context: .
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
-    - ./propius/client_manager:/propius/client_manager
-    - ./propius/global_config.yml:/propius/global_config.yml
-    - ./propius/monitor:/propius/monitor
-    - ./propius/channels:/propius/channels
-    - ./propius/util:/propius/util
-    - ./propius/database:/propius/database
+    - ./propius:/propius
     depends_on:
     - job_db
     - client_db_1
@@ -101,13 +90,12 @@ services:
     - '1'
     environment:
     - TZ=America/Detroit
+    stop_signal: SIGINT
   client_db_1:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
     command:
     - '6381'
-    ports:
-    - 6381:6381
     environment:
     - TZ=America/Detroit
