@@ -130,9 +130,8 @@ for i in range(math.ceil(total_job / job_per_container)):
                 'dockerfile': './evaluation/job/Dockerfile'
             },
             'volumes': [
-                './evaluation/job:/evaluation/job',
-                './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
-                './evaluation/monitor:/evaluation/monitor',
+                './evaluation:/evaluation',
+                './propius:/propius',
             ],
             'stop_signal': 'SIGINT',
             'depends_on': [
@@ -261,7 +260,8 @@ for i in range(client_manager_num):
                 'scheduler',
             ],
             'command': [f'{i}'],
-            'environment': ['TZ=America/Detroit']
+            'environment': ['TZ=America/Detroit'],
+            'stop_signal': 'SIGINT'
         }
     }
     compose_data['services'].update(new_client_manger_service)

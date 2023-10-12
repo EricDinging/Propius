@@ -305,7 +305,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         data=pickle.dumps(next_event_dict["data"])
                     )
 
-                    custom_print(f"PS {self.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event", INFO)
+                    custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} compl, "
+                                 f"issue {next_event_dict['event']} event", INFO)
 
                 if self.round_result_cnt >= self.demand:
                     self.cv.notify()

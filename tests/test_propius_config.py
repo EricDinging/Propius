@@ -89,7 +89,8 @@ def set(propius_data, redis_data, config_data, propius_compose_data):
                     'scheduler',
                 ],
                 'command': [f'{i}'],
-                'environment': ['TZ=America/Detroit']
+                'environment': ['TZ=America/Detroit'],
+                'stop_signal': 'SIGINT'
             }
         }
         redis_data['services'].update(new_client_db_service)
@@ -128,9 +129,8 @@ def set(propius_data, redis_data, config_data, propius_compose_data):
                         'dockerfile': './evaluation/job/Dockerfile'
                     },
                     'volumes': [
-                        './evaluation/job:/evaluation/job',
-                        './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
-                        './evaluation/monitor:/evaluation/monitor',
+                        './evaluation:/evaluation',
+                        './propius:/propius',
                     ],
                     'stop_signal': 'SIGINT',
                     'depends_on': [
