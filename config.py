@@ -8,7 +8,7 @@ PROPIUS_SYS = 0
 PROPIUS_POLICY = 1
 PROPIUS_EVAL = 2
 
-option = PROPIUS_EVAL
+option = PROPIUS_POLICY
 
 propius_config_file = './propius/global_config.yml'
 compose_file = ''
@@ -24,13 +24,12 @@ client_num = 8000
 is_FA = False
 
 speedup_factor = 3
-sched_alg = 'fifo'
+sched_alg = 'irs3'
 
 profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
 total_job = 10
 allow_exceed_total_round = True
-
 
 if option == PROPIUS_SYS:
     compose_file = './compose_propius.yml'
@@ -38,6 +37,7 @@ if option == PROPIUS_SYS:
     use_cuda = False
     evaluation_use_docker = False
 else:
+    dataset = "femnist"
     evaluation_use_docker = True
     client_per_container = 1000
     job_per_container = 1
@@ -53,7 +53,6 @@ else:
         worker_num_list = [4, 4, 0, 0]
         worker_num = sum(worker_num_list)
         worker_starting_port = 49998
-        dataset = "femnist"
 
 def cleanup():
     for i in range(100):
@@ -265,10 +264,8 @@ def config_dispatcher():
                     'dockerfile': './evaluation/client/Dockerfile',
                 },
                 'volumes': [
-                    './evaluation/client:/evaluation/client',
-                    './evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml',
+                    './evaluation:/evaluation',
                     './datasets/device_info:/datasets/device_info',
-                    './evaluation/monitor:/evaluation/monitor'
                 ],
                 'stop_signal': 'SIGINT',
                 'depends_on': [
@@ -315,6 +312,8 @@ config_propius()
 config_evaluation()
 if option in [PROPIUS_POLICY, PROPIUS_EVAL]:
     config_dispatcher()
+if option in [PROPIUS_EVAL]:
+    config_worker()
 
 with open(propius_config_file, 'w') as propius_config_yaml_file:
     yaml.dump(propius_data, propius_config_yaml_file) 

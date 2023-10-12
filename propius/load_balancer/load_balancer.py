@@ -17,7 +17,6 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
 
         # Round robin
         self.idx = 0
-        self.lock = asyncio.Lock()
 
         self.cm_num = len(gconfig['client_manager'])
         self.cm_addr_list = gconfig['client_manager']
@@ -43,41 +42,28 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
             #     f"Load balancer: connecting to client manager {cm_id} at {cm_ip}:{cm_port}")
 
     async def _disconnect_cm(self):
-        async with self.lock:
-            for cm_channel in self.cm_channel_dict.values():
-                await cm_channel.close()
+        for cm_channel in self.cm_channel_dict.values():
+            await cm_channel.close()
 
     def _next_idx(self):
-        # locked
         self.idx = (self.idx + 1) % len(self.cm_channel_dict)
 
     async def CLIENT_CHECKIN(self, request, context):
-        async with self.lock:
-            await self.lb_monitor.request()
-            self.idx %= len(self.cm_channel_dict)
-            # self.logger.print(
-            #     f"Load balancer: client check in, route to client manager {self.idx}")
-            return_msg = await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
-            self._next_idx()
+        return_msg = await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
+        self._next_idx()
+        await self.lb_monitor.request()
         return return_msg
 
     async def CLIENT_PING(self, request, context):
-        async with self.lock:
-            await self.lb_monitor.request()
-            idx = int(request.id / self.id_weight)
-            # self.logger.print(
-            #     f"Load balancer: client ping, route to client manager {idx}")
-            return_msg = await self.cm_stub_dict[idx].CLIENT_PING(request)
+        idx = int(request.id / self.id_weight)
+        return_msg =  await self.cm_stub_dict[idx].CLIENT_PING(request)
+        await self.lb_monitor.request()
         return return_msg
 
     async def CLIENT_ACCEPT(self, request, context):
-        async with self.lock:
-            await self.lb_monitor.request()
-            self.idx %= len(self.cm_channel_dict)
-            # self.logger.print(
-            #     f"Load balancer: client accept, route to client manager {self.idx}")
-            return_msg = await self.cm_stub_dict[self.idx].CLIENT_ACCEPT(request)
-            self._next_idx()
+        idx = int(request.id / self.id_weight)
+        return_msg = await self.cm_stub_dict[idx].CLIENT_ACCEPT(request)
+        await self.lb_monitor.request()
         return return_msg
     
     async def HEART_BEAT(self, request, context):
@@ -87,14 +73,3 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         while True:
             self.lb_monitor.report()
             await asyncio.sleep(60)
-    
-    async def heartbeat_routine(self):
-        try:
-            while True:
-                await asyncio.sleep(30)
-                try:
-                    self.sched_portal.HEART_BEAT(propius_pb2.empty())
-                except:
-                    pass
-        except asyncio.CancelledError:
-            pass

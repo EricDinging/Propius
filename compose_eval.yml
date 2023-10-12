@@ -336,10 +336,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -361,10 +359,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -386,10 +382,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -411,10 +405,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -436,10 +428,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -461,10 +451,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -486,10 +474,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer
@@ -511,10 +497,8 @@ services:
       context: .
       dockerfile: ./evaluation/client/Dockerfile
     volumes:
-    - ./evaluation/client:/evaluation/client
-    - ./evaluation/evaluation_config.yml:/evaluation/evaluation_config.yml
+    - ./evaluation:/evaluation
     - ./datasets/device_info:/datasets/device_info
-    - ./evaluation/monitor:/evaluation/monitor
     stop_signal: SIGINT
     depends_on:
     - load_balancer

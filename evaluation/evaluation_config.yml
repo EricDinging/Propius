@@ -13,7 +13,7 @@ job_public_constraint:
 job_private_constraint:
 - dataset_size
 
-sched_alg: fifo
+sched_alg: irs3
 
 # ---Evaluation setting---
 speedup_factor: 3
@@ -45,10 +45,10 @@ data_dir: ./datasets/femnist
 data_map_file: ./datasets/femnist/client_data_mapping/train.csv
 test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
 
-do_compute: true
+do_compute: false
 is_FA: false
 
-use_cuda: true
+use_cuda: false
 use_docker: true
 
 executor_ip: localhost
