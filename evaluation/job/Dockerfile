@@ -14,7 +14,10 @@ RUN mkdir propius
 
 COPY ./evaluation/requirements_peripheral.txt evaluation/requirements_peripheral.txt
 
-RUN python3.9 -m pip install --upgrade pip
-RUN python3.9 -m pip install -r evaluation/requirements_peripheral.txt
+RUN python3.9 -m venv venv
+ENV PATH="/venv/bin:$PATH"
+
+RUN python -m pip install --upgrade pip
+RUN python -m pip install -r evaluation/requirements_peripheral.txt
 
 ENTRYPOINT ["/evaluation/job/entrypoint.sh"]
