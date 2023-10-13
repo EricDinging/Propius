@@ -5,4 +5,4 @@ numpy
 matplotlib
 pandas
 torch==1.13.0
-torchvision==0.10.1
+torchvision==0.14

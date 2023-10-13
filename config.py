@@ -11,7 +11,6 @@ PROPIUS_EVAL = 2
 option = PROPIUS_EVAL
 
 propius_config_file = './propius/global_config.yml'
-compose_file = ''
 evaluation_config_file = './evaluation/evaluation_config.yml'
 
 propius_use_docker = True
@@ -41,7 +40,7 @@ if option == PROPIUS_SYS:
 else:
     evaluation_use_docker = True
     client_per_container = 1000
-    job_per_container = 2
+    job_per_container = 2   
     if option == PROPIUS_POLICY:
         compose_file = './compose_eval.yml'
         do_compute = False
