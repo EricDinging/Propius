@@ -19,11 +19,11 @@ propius_use_docker = True
 client_manager_num = 2
 client_manager_port_start = 50003
 client_db_port_start = 6380
-ideal_client = False
-client_num = 8000
+ideal_client = True
+client_num = 6000
 is_FA = False
 
-speedup_factor = 3
+speedup_factor = 1
 sched_alg = 'irs3'
 
 profile_folder = './evaluation/job/profile_mobilenet'
@@ -40,7 +40,7 @@ else:
     dataset = "femnist"
     evaluation_use_docker = True
     client_per_container = 1000
-    job_per_container = 1
+    job_per_container = 2
     if option == PROPIUS_POLICY:
         compose_file = './compose_eval.yml'
         do_compute = False
@@ -237,18 +237,6 @@ def config_dispatcher():
                     f'{i}'
                 ],
                 'environment': ['TZ=America/Detroit'],
-                'deploy': {
-                    'resources': {
-                        'limits': {
-                            'cpus': '1',
-                            'memory': '1G',
-                        },
-                        'reservations': {
-                            'cpus': '0.75',
-                            'memory': '800M',
-                        }
-                    }
-                }
             }
         }
         
@@ -276,18 +264,6 @@ def config_dispatcher():
                     f'{num}',
                     f'{i}'
                 ],
-                'deploy': {
-                    'resources': {
-                        'limits': {
-                            'cpus': '1',
-                            'memory': '1G',
-                        },
-                        'reservations': {
-                            'cpus': '0.75',
-                            'memory': '500M',
-                        }
-                    }
-                }
             }
         }
         compose_data['services'].update(new_client_container)

@@ -19,6 +19,7 @@ async def serve(gconfig, logger):
         heartbeat_task.cancel()
         plot_task.cancel()
         await heartbeat_task
+        await plot_task
 
         try:
             await job_manager.sched_channel.close()

@@ -49,22 +49,19 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.idx = (self.idx + 1) % len(self.cm_channel_dict)
 
     async def CLIENT_CHECKIN(self, request, context):
-        return_msg = await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
+        self.lb_monitor.request()
         self._next_idx()
-        await self.lb_monitor.request()
-        return return_msg
+        return await self.cm_stub_dict[self.idx].CLIENT_CHECKIN(request)
 
     async def CLIENT_PING(self, request, context):
+        self.lb_monitor.request()
         idx = int(request.id / self.id_weight)
-        return_msg =  await self.cm_stub_dict[idx].CLIENT_PING(request)
-        await self.lb_monitor.request()
-        return return_msg
+        return await self.cm_stub_dict[idx].CLIENT_PING(request)
 
     async def CLIENT_ACCEPT(self, request, context):
-        idx = int(request.id / self.id_weight)
-        return_msg = await self.cm_stub_dict[idx].CLIENT_ACCEPT(request)
-        await self.lb_monitor.request()
-        return return_msg
+        self.lb_monitor.request()
+        idx = int(request.client_id / self.id_weight)
+        return await self.cm_stub_dict[idx].CLIENT_ACCEPT(request)
     
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)

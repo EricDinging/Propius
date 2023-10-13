@@ -103,18 +103,10 @@ services:
     - job_manager
     command:
     - '0'
-    - '1'
+    - '2'
     - '0'
     environment:
     - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
   jobs_1:
     build:
       context: .
@@ -126,19 +118,11 @@ services:
     depends_on:
     - job_manager
     command:
-    - '1'
     - '2'
+    - '4'
     - '1'
     environment:
     - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
   jobs_2:
     build:
       context: .
@@ -150,19 +134,11 @@ services:
     depends_on:
     - job_manager
     command:
-    - '2'
-    - '3'
+    - '4'
+    - '6'
     - '2'
     environment:
     - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
   jobs_3:
     build:
       context: .
@@ -174,19 +150,11 @@ services:
     depends_on:
     - job_manager
     command:
-    - '3'
-    - '4'
+    - '6'
+    - '8'
     - '3'
     environment:
     - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
   jobs_4:
     build:
       context: .
@@ -198,139 +166,11 @@ services:
     depends_on:
     - job_manager
     command:
-    - '4'
-    - '5'
-    - '4'
-    environment:
-    - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
-  jobs_5:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - job_manager
-    command:
-    - '5'
-    - '6'
-    - '5'
-    environment:
-    - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
-  jobs_6:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - job_manager
-    command:
-    - '6'
-    - '7'
-    - '6'
-    environment:
-    - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
-  jobs_7:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - job_manager
-    command:
-    - '7'
     - '8'
-    - '7'
-    environment:
-    - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
-  jobs_8:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - job_manager
-    command:
-    - '8'
-    - '9'
-    - '8'
-    environment:
-    - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
-  jobs_9:
-    build:
-      context: .
-      dockerfile: ./evaluation/job/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./propius:/propius
-    stop_signal: SIGINT
-    depends_on:
-    - job_manager
-    command:
-    - '9'
     - '10'
-    - '9'
+    - '4'
     environment:
     - TZ=America/Detroit
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 800M
   clients_0:
     build:
       context: .
@@ -346,14 +186,6 @@ services:
     command:
     - '1000'
     - '0'
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 500M
   clients_1:
     build:
       context: .
@@ -369,14 +201,6 @@ services:
     command:
     - '1000'
     - '1'
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 500M
   clients_2:
     build:
       context: .
@@ -392,14 +216,6 @@ services:
     command:
     - '1000'
     - '2'
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 500M
   clients_3:
     build:
       context: .
@@ -415,14 +231,6 @@ services:
     command:
     - '1000'
     - '3'
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 500M
   clients_4:
     build:
       context: .
@@ -438,14 +246,6 @@ services:
     command:
     - '1000'
     - '4'
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 500M
   clients_5:
     build:
       context: .
@@ -461,57 +261,3 @@ services:
     command:
     - '1000'
     - '5'
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 500M
-  clients_6:
-    build:
-      context: .
-      dockerfile: ./evaluation/client/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets/device_info:/datasets/device_info
-    stop_signal: SIGINT
-    depends_on:
-    - load_balancer
-    environment:
-    - TZ=America/Detroit
-    command:
-    - '1000'
-    - '6'
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 500M
-  clients_7:
-    build:
-      context: .
-      dockerfile: ./evaluation/client/Dockerfile
-    volumes:
-    - ./evaluation:/evaluation
-    - ./datasets/device_info:/datasets/device_info
-    stop_signal: SIGINT
-    depends_on:
-    - load_balancer
-    environment:
-    - TZ=America/Detroit
-    command:
-    - '1000'
-    - '7'
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.75'
-          memory: 500M

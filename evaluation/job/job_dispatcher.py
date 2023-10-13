@@ -33,7 +33,7 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
             
             command = [
                 "python",
-                "./evaluation/job/parameter_server_mt.py",
+                "./evaluation/job/parameter_server.py",
                 os.path.join(config['profile_folder'], f"job_{line[1]}.yml"),
                 f"{ip}",
                 f"{port + i}"]

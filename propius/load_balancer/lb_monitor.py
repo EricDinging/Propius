@@ -10,7 +10,7 @@ class LB_monitor(Monitor):
         self.sched_alg = sched_alg
         self.plot = plot
 
-    async def request(self):
+    def request(self):
         self._request()
 
     def report(self):

@@ -15,6 +15,7 @@ async def serve(gconfig, logger):
         logger.print("=====Scheduler shutting down=====", Msg_level.WARNING)
         scheduler.sc_monitor.report()
         plot_task.cancel()
+        await plot_task
         await server.stop(5)
     
     server = grpc.aio.server()

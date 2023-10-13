@@ -103,7 +103,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             )
 
     def _clear_event_dict(self):
-        self.client_event_dict.clear()
+        self.client_event_dict = {}
 
     async def close_round(self):
         custom_print(f"PS {self.id}-{self.cur_round}: round finish", INFO)
@@ -186,30 +186,31 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
             )
-        try:
-            async with self.lock:
-                if not self.execution_start and client_id not in self.client_event_dict:
-                    if self.round_client_num < self.over_demand \
-                        and self.cur_round <= self.total_round:
-                        
-                        self._init_event_queue(client_id)
-                        custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} check-in, "
-                            f"{self.round_client_num}/{self.demand}", INFO)
-                        
-                        server_response_msg = parameter_server_pb2.server_response(
-                            event=DUMMY_EVENT,
-                            meta=pickle.dumps(DUMMY_RESPONSE),
-                            data=pickle.dumps(DUMMY_RESPONSE)
-                        )
 
-                        self.round_client_num += 1
+        async with self.lock:
+            if not self.execution_start and \
+                client_id not in self.client_event_dict \
+                and self.round_client_num < self.over_demand \
+                    and self.cur_round <= self.total_round:
+                    
+                self._init_event_queue(client_id)
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} check-in, "
+                    f"{self.round_client_num}/{self.demand}", INFO)
+                
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=DUMMY_EVENT,
+                    meta=pickle.dumps(DUMMY_RESPONSE),
+                    data=pickle.dumps(DUMMY_RESPONSE)
+                )
 
-                        if self.round_client_num >= self.over_demand:
-                            self.cv.notify()
+                self.round_client_num += 1
+
+                if self.round_client_num >= self.over_demand:
+                    self.cv.notify()
+            else:
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} check-in rejected", WARNING)
         
-        except Exception as e:
-            custom_print(e, ERROR)
-        return server_response_msg
+            return server_response_msg
     
     async def CLIENT_PING(self, request, context):
         client_id = request.id
@@ -218,28 +219,27 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
             )
-        try:
-            async with self.lock:
-                if self.execution_start:
-                    if client_id in self.client_event_dict:
-                        event_dict = self.client_event_dict[client_id].popleft()
-                        server_response_msg = parameter_server_pb2.server_response(
-                            event=event_dict["event"],
-                            meta=pickle.dumps(event_dict["meta"]),
-                            data=pickle.dumps(event_dict["data"])
-                        )
-                        custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} start execute", INFO)
-                        
-                else:        
-                    if client_id in self.client_event_dict:
-                        server_response_msg = parameter_server_pb2.server_response(
-                            event=DUMMY_EVENT,
-                            meta=pickle.dumps(DUMMY_RESPONSE),
-                            data=pickle.dumps(DUMMY_RESPONSE)
-                        )
-        except Exception as e:
-            custom_print(e, ERROR)
-        return server_response_msg
+        async with self.lock:
+            if self.execution_start and client_id in self.client_event_dict:
+                event_dict = self.client_event_dict[client_id].popleft()
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=event_dict["event"],
+                    meta=pickle.dumps(event_dict["meta"]),
+                    data=pickle.dumps(event_dict["data"])
+                )
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} start execute", INFO)
+                    
+            else:        
+                if client_id in self.client_event_dict:
+                    server_response_msg = parameter_server_pb2.server_response(
+                        event=DUMMY_EVENT,
+                        meta=pickle.dumps(DUMMY_RESPONSE),
+                        data=pickle.dumps(DUMMY_RESPONSE)
+                    )
+                    custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping", INFO)
+                else:
+                    custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping rejected", WARNING)
+            return server_response_msg
 
     async def CLIENT_EXECUTE_COMPLETION(self, request, context):
         client_id = request.id
@@ -252,58 +252,55 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
             )
-        try:
-            async with self.lock:
-                if self.execution_start and \
-                    meta["round"] == self.cur_round and \
-                        client_id in self.client_event_dict and \
-                            self.round_result_cnt <= self.demand:
-                    
-                    if compl_event == UPLOAD_MODEL:
-                        custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} complete, "
-                                    f"{self.round_result_cnt}/{self.demand}", INFO)            
-                        self.round_result_cnt += 1
+        async with self.lock:
+            if self.execution_start and \
+                meta["round"] == self.cur_round and \
+                    client_id in self.client_event_dict and \
+                        self.round_result_cnt <= self.demand:
+                
+                if compl_event == UPLOAD_MODEL:
+                    custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} complete, "
+                                f"{self.round_result_cnt}/{self.demand}", INFO)            
+                    self.round_result_cnt += 1
 
-                        if self.do_compute:
-                            local_steps = meta["local_steps"]
-                            task_meta = {
-                                "local_steps": local_steps,
-                                "learning_rate": self.config["learning_rate"],
-                                "batch_size": self.config["batch_size"],
-                                "num_loaders": self.config["num_loaders"],
-                                "loss_decay": self.config["loss_decay"],
-                                "gradient_policy": self.config["gradient_policy"],
-                                "proxy_mu": self.config["proxy_mu"] if "proxy_mu" in self.config else 0,
-                                "qfed_q": self.config["qfed_q"] if "qfed_q" in self.config else 0,
-                            }
-                            job_task_info_msg = executor_pb2.job_task_info(
-                                job_id=self.id,
-                                client_id=client_exec_id,
-                                round=self.cur_round,
-                                event=CLIENT_TRAIN,
-                                task_meta=pickle.dumps(task_meta),
-                            )
-                            await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
-                            
-                    # Get next event
-                    if len(self.client_event_dict[client_id]) == 0:
-                        del self.client_event_dict[client_id]
-                    else:
-                        next_event_dict = self.client_event_dict[client_id].popleft()
-                        if len(self.client_event_dict[client_id]) == 0:
-                            del self.client_event_dict[client_id]
-                        
-                        server_response_msg = parameter_server_pb2.server_response(
-                            event=next_event_dict["event"],
-                            meta=pickle.dumps(next_event_dict["meta"]),
-                            data=pickle.dumps(next_event_dict["data"])
+                    if self.do_compute:
+                        local_steps = meta["local_steps"]
+                        task_meta = {
+                            "local_steps": local_steps,
+                            "learning_rate": self.config["learning_rate"],
+                            "batch_size": self.config["batch_size"],
+                            "num_loaders": self.config["num_loaders"],
+                            "loss_decay": self.config["loss_decay"],
+                            "gradient_policy": self.config["gradient_policy"],
+                            "proxy_mu": self.config["proxy_mu"] if "proxy_mu" in self.config else 0,
+                            "qfed_q": self.config["qfed_q"] if "qfed_q" in self.config else 0,
+                        }
+                        job_task_info_msg = executor_pb2.job_task_info(
+                            job_id=self.id,
+                            client_id=client_exec_id,
+                            round=self.cur_round,
+                            event=CLIENT_TRAIN,
+                            task_meta=pickle.dumps(task_meta),
                         )
+                        await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
+                        
+                # Get next event
+                next_event_dict = self.client_event_dict[client_id].popleft()
+                if not self.client_event_dict[client_id]:
+                    del self.client_event_dict[client_id]
+                
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=next_event_dict["event"],
+                    meta=pickle.dumps(next_event_dict["meta"]),
+                    data=pickle.dumps(next_event_dict["data"])
+                )
 
-                    if self.round_result_cnt >= self.demand:
-                        self.cv.notify()
-        except Exception as e:
-            custom_print(e, ERROR)
-        return server_response_msg
+                if self.round_result_cnt >= self.demand:
+                    self.cv.notify()
+
+            else:
+                custom_print(f"PS {self.id}-{self.cur_round}: client execution rejected", WARNING)
+            return server_response_msg
             
     def gen_report(self):
         csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}.csv"
@@ -443,9 +440,6 @@ async def run(config):
                 ps.total_sched_delay += config['sched_timeout']
                 ps.num_sched_timeover += 1
                 continue
-            except Exception as e:
-                custom_print(e, ERROR)
-                continue
                 
             await ps.round_exec_start()
             ps.response_time = time.time()
@@ -459,9 +453,6 @@ async def run(config):
                 await ps.close_failed_round()
                 ps.total_response_time += config['exec_timeout']
                 ps.num_response_timeover += 1
-                continue
-            except Exception as e:
-                custom_print(e, ERROR)
                 continue
 
             ps.round_time = time.time()
