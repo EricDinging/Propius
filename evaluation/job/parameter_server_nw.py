@@ -55,7 +55,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.cv = asyncio.Condition(self.lock)
 
         self.cur_round = 1
-        self.client_event_dict = {} # key is client id, value is an event queue
+        # self.client_event_dict = {} # key is client id, value is an event queue
 
         self.round_client_num = 0
         self.round_result_cnt = 0
@@ -82,7 +82,29 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
         self.model_size = 0
         self.speedup_factor = config['speedup_factor']
+
+        self.event_meta = [
+            {
+                "download_size": self.model_size,
+                "upload_size": self.model_size,
+                "round": self.cur_round
+            },
+            {
+                "batch_size": self.config["batch_size"],
+                "local_steps": self.config["local_steps"],
+                "gradient_policy": self.config["gradient_policy"]
+            },
+            {},
+            {},
+        ]
+        self.event = [
+            UPDATE_MODEL,
+            CLIENT_TRAIN,
+            UPLOAD_MODEL,
+            SHUT_DOWN
+        ]
         
+        self.client_event_map = {}
 
     def _connect_to_executor(self):
         self.executor_channel = grpc.aio.insecure_channel(f"{self.executor_ip}:{self.executor_port}")
@@ -146,37 +168,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         return True
 
     def _init_event_queue(self, client_id:int):
-        event_q = deque()
-        event_q.append({
-            "event": UPDATE_MODEL,
-            "meta": {
-                "download_size": self.model_size,
-                "upload_size": self.model_size,
-                "round": self.cur_round
-            },
-            "data": {}
-        })
-        event_q.append({
-            "event": CLIENT_TRAIN,
-            "meta": {
-                "batch_size": self.config["batch_size"],
-                "local_steps": self.config["local_steps"],
-                "gradient_policy": self.config["gradient_policy"]
-            },
-            "data": {}
-        })
-        event_q.append({
-            "event": UPLOAD_MODEL,
-            "meta": {
-            },
-            "data": {}
-        })
-        event_q.append({
-            "event": SHUT_DOWN,
-            "meta": {},
-            "data": {}
-        })
-        self.client_event_dict[client_id] = event_q
+        self.client_event_map[client_id] = 0
 
     async def CLIENT_CHECKIN(self, request, context):
         client_id = request.id
@@ -206,9 +198,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             if self.round_client_num >= self.over_demand:
                 async with self.lock:
                     self.cv.notify()
-            else:
-                custom_print(f"PS {self.id}-{self.cur_round}: "
-                             f"client {client_id} check-in rejected", WARNING)
+        else:
+            custom_print(f"PS {self.id}-{self.cur_round}: "
+                            f"client {client_id} check-in rejected", WARNING)
     
         return server_response_msg
     
@@ -220,11 +212,14 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             data=pickle.dumps(DUMMY_RESPONSE)
             )
         if client_id in self.client_event_dict:
-            event_dict = self.client_event_dict[client_id].popleft()
+            event_idx = self.client_event_dict[client_id]
+            self.client_event_dict[client_id] += 1
+
+            event_idx = min(event_idx, 3)
             server_response_msg = parameter_server_pb2.server_response(
-                event=event_dict["event"],
-                meta=pickle.dumps(event_dict["meta"]),
-                data=pickle.dumps(event_dict["data"])
+                event=self.event[event_idx],
+                meta=pickle.dumps(self.event_meta[event_idx]),
+                data=pickle.dumps({})
             )
             custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} start execute", INFO)
         else:
@@ -273,14 +268,18 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
                     
             # Get next event
-            next_event_dict = self.client_event_dict[client_id].popleft()
-            if not self.client_event_dict[client_id]:
+            event_idx = self.client_event_map[client_id]
+            if event_idx >= 3:
                 del self.client_event_dict[client_id]
+            else:
+                self.client_event_map[client_id] += 1
+
+            event_idx = min(event_idx, 3)
             
             server_response_msg = parameter_server_pb2.server_response(
-                event=next_event_dict["event"],
-                meta=pickle.dumps(next_event_dict["meta"]),
-                data=pickle.dumps(next_event_dict["data"])
+                event=self.event[event_idx],
+                meta=pickle.dumps(self.event_meta[event_idx]),
+                data=pickle.dumps({})
             )
 
             if self.round_result_cnt >= self.demand:
