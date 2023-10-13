@@ -144,7 +144,7 @@ def get_model_size(model_name, dataset_name):
     elif model_name == "mobilenet_v2":
         from evaluation.internal.models.specialized.resnet_speech import mobilenet_v2
 
-        model = _v2(num_classes=out_put_class[dataset_name])
+        model = mobilenet_v2(num_classes=out_put_class[dataset_name])
 
     model_size = sys.getsizeof(pickle.dumps(model)) / 1024.0 * 8.0  # kbits
     return model_size
