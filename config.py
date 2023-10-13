@@ -8,7 +8,7 @@ PROPIUS_SYS = 0
 PROPIUS_POLICY = 1
 PROPIUS_EVAL = 2
 
-option = PROPIUS_SYS
+option = PROPIUS_EVAL
 
 propius_config_file = './propius/global_config.yml'
 compose_file = ''
