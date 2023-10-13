@@ -49,3 +49,4 @@ coqa
 # evaluation_result/
 experiment/
 *.tar.gz
+*.jpg
