@@ -45,11 +45,11 @@ data_dir: ./datasets/femnist
 data_map_file: ./datasets/femnist/client_data_mapping/train.csv
 test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
 
-do_compute: true
+do_compute: false
 is_FA: false
 
-use_cuda: true
-use_docker: true
+use_cuda: false
+use_docker: false
 
 executor_ip: localhost
 executor_port: 49999

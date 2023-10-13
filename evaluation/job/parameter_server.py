@@ -415,9 +415,9 @@ async def run(config):
     await ps.start_server()
     async with ps.lock:
         while ps.cur_round <= ps.total_round:
-            if ps.cur_round % 10 == 0 or ps.num_sched_timeover % 5 == 0 or ps.num_response_timeover % 5 == 0:
-                await ps.stop_server()
-                await ps.start_server()
+            # if ps.cur_round % 10 == 0 or ps.num_sched_timeover % 5 == 4 or ps.num_response_timeover % 5 == 4:
+            #     await ps.stop_server()
+            #     await ps.start_server()
 
             ps.execution_start = False
             ps.round_client_num = 0

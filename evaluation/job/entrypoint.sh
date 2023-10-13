@@ -1,2 +1,2 @@
 #! /bin/bash
-python evaluation/job/job_dispatcher.py "$@"
+python3 evaluation/job/job_dispatcher.py "$@"
