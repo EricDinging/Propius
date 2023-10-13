@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y python3.9 python3-pip && \
+    apt-get install -y python3.9 python3-pip python3.9-venv && \
     apt-get clean
 
 WORKDIR /
