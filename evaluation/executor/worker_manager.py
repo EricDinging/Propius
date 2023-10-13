@@ -82,7 +82,7 @@ class Worker_manager:
                 num_classes=out_put_class[dataset_name],
                 in_channels=1
             )
-        elif model_name == "mobilenet":
+        elif model_name == "mobilenet_v2":
             from evaluation.internal.models.specialized.resnet_speech import \
             mobilenet_v2
             model = mobilenet_v2(num_classes=out_put_class[dataset_name])
