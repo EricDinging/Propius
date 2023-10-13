@@ -16,6 +16,7 @@ import logging
 import logging.handlers
 import time
 import pickle
+import aiorwlock
 
 _cleanup_coroutines = []
 
@@ -51,8 +52,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.port = config["port"]
         self.id = self.port
 
-        self.lock = asyncio.Lock()
-        self.cv = asyncio.Condition(self.lock)
+        self.lock = aiorwlock.RWLock()
+        self.cv = asyncio.Condition(self.lock.writer_lock)
 
         self.cur_round = 1
 
@@ -171,59 +172,64 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     async def CLIENT_CHECKIN(self, request, context):
         client_id = request.id
-        server_response_msg = parameter_server_pb2.server_response(
-            event=SHUT_DOWN,
-            meta=pickle.dumps(DUMMY_RESPONSE),
-            data=pickle.dumps(DUMMY_RESPONSE)
-            )
-
-        if not self.execution_start and \
-            client_id not in self.client_event_map \
-            and self.round_client_num < self.over_demand \
-                and self.cur_round <= self.total_round:
+        async with self.lock.reader_lock:
+            if not self.execution_start and \
+                client_id not in self.client_event_map \
+                and self.round_client_num < self.over_demand \
+                    and self.cur_round <= self.total_round:
+                    
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} check-in, "
+                    f"{self.round_client_num}/{self.demand}", INFO)
                 
-            self._init_event_queue(client_id)
-            custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} check-in, "
-                f"{self.round_client_num}/{self.demand}", INFO)
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=DUMMY_EVENT,
+                    meta=pickle.dumps(DUMMY_RESPONSE),
+                    data=pickle.dumps(DUMMY_RESPONSE)
+                )
+
+                self.round_client_num += 1                
+            else:
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=SHUT_DOWN,
+                    meta=pickle.dumps(DUMMY_RESPONSE),
+                    data=pickle.dumps(DUMMY_RESPONSE)
+                )
+                custom_print(f"PS {self.id}-{self.cur_round}: "
+                                f"client {client_id} check-in rejected", WARNING)
+                return server_response_msg
             
-            server_response_msg = parameter_server_pb2.server_response(
-                event=DUMMY_EVENT,
-                meta=pickle.dumps(DUMMY_RESPONSE),
-                data=pickle.dumps(DUMMY_RESPONSE)
-            )
-
-            self.round_client_num += 1
-
+        async with self.lock.writer_lock:
+            self._init_event_queue(client_id)
             if self.round_client_num >= self.over_demand:
-                async with self.lock:
-                    self.cv.notify()
-        else:
-            custom_print(f"PS {self.id}-{self.cur_round}: "
-                            f"client {client_id} check-in rejected", WARNING)
+                self.cv.notify()
     
         return server_response_msg
     
     async def CLIENT_PING(self, request, context):
         client_id = request.id
-        server_response_msg = parameter_server_pb2.server_response(
-            event=SHUT_DOWN,
-            meta=pickle.dumps(DUMMY_RESPONSE),
-            data=pickle.dumps(DUMMY_RESPONSE)
-            )
-        if client_id in self.client_event_map:
-            event_idx = self.client_event_map[client_id]
+        
+        async with self.lock.reader_lock:
+            if client_id in self.client_event_map:
+                event_idx = self.client_event_map[client_id]
+                
+                event_idx = min(event_idx, 3)
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=self.event[event_idx],
+                    meta=pickle.dumps(self.event_meta[event_idx]),
+                    data=pickle.dumps({})
+                )
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} start execute", INFO)
+            else:
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=SHUT_DOWN,
+                    meta=pickle.dumps(DUMMY_RESPONSE),
+                    data=pickle.dumps(DUMMY_RESPONSE)
+                )
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping rejected", WARNING)
+                return server_response_msg
+            
+        async with self.lock.writer_lock:
             self.client_event_map[client_id] += 1
-
-            event_idx = min(event_idx, 3)
-            server_response_msg = parameter_server_pb2.server_response(
-                event=self.event[event_idx],
-                meta=pickle.dumps(self.event_meta[event_idx]),
-                data=pickle.dumps({})
-            )
-            custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} start execute", INFO)
-        else:
-            custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping rejected", WARNING)
-        return server_response_msg
 
     async def CLIENT_EXECUTE_COMPLETION(self, request, context):
         client_id = request.id
@@ -231,13 +237,31 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         meta, _ = pickle.loads(request.meta), pickle.loads(request.data)
         client_exec_id = meta["exec_id"]
 
-        server_response_msg = parameter_server_pb2.server_response(
-            event=SHUT_DOWN,
-            meta=pickle.dumps(DUMMY_RESPONSE),
-            data=pickle.dumps(DUMMY_RESPONSE)
-            )
-        if client_id in self.client_event_map and \
+        event_idx = 3
+
+        async with self.lock.reader_lock:
+            if client_id in self.client_event_map and \
                 self.round_result_cnt <= self.demand:
+
+                event_idx = self.client_event_map[client_id]
+                event_idx = min(event_idx, 3)
+            
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=self.event[event_idx],
+                    meta=pickle.dumps(self.event_meta[event_idx]),
+                    data=pickle.dumps({})
+                )
+
+            else:
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=SHUT_DOWN,
+                    meta=pickle.dumps(DUMMY_RESPONSE),
+                    data=pickle.dumps(DUMMY_RESPONSE)
+                )
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} execution rejected", WARNING)
+                return server_response_msg
+
+        async with self.lock.writer_lock:
             
             if compl_event == UPLOAD_MODEL:
                 custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} complete, "
@@ -264,28 +288,15 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         task_meta=pickle.dumps(task_meta),
                     )
                     await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
-                    
-            # Get next event
-            event_idx = self.client_event_map[client_id]
+
+                if self.round_result_cnt >= self.demand:
+                    self.cv.notify()
+
             if event_idx >= 3:
                 del self.client_event_map[client_id]
             else:
                 self.client_event_map[client_id] += 1
 
-            event_idx = min(event_idx, 3)
-            
-            server_response_msg = parameter_server_pb2.server_response(
-                event=self.event[event_idx],
-                meta=pickle.dumps(self.event_meta[event_idx]),
-                data=pickle.dumps({})
-            )
-
-            if self.round_result_cnt >= self.demand:
-                async with self.lock:
-                    self.cv.notify()
-
-        else:
-            custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} execution rejected", WARNING)
         return server_response_msg
             
     def gen_report(self):
@@ -400,24 +411,26 @@ async def run(config):
 
     await ps.start_server()
 
-    while ps.cur_round <= ps.total_round:
-        # if ps.cur_round % 10 == 0 or ps.num_sched_timeover % 5 == 0 or ps.num_response_timeover % 5 == 0:
-        #     await ps.stop_server()
-        #     await ps.start_server()
+    async with ps.lock.writer_lock:
+        while ps.cur_round <= ps.total_round:
+            if ps.cur_round % 10 == 0 or ps.num_sched_timeover % 5 == 0 \
+                or ps.num_response_timeover % 5 == 0:
 
-        ps.execution_start = False
-        ps.round_client_num = 0
-        ps.round_result_cnt = 0
-        ps.sched_time = time.time()
-        ps.event_meta[0]["round"] = ps.cur_round
+                await ps.stop_server()
+                await ps.start_server()
 
-        if not await ps.propius_stub.start_request(new_demand=False):
-            if not await ps.re_register():
-                return
-            await asyncio.sleep(3)
-            continue
-        
-        async with ps.lock:
+            ps.execution_start = False
+            ps.round_client_num = 0
+            ps.round_result_cnt = 0
+            ps.sched_time = time.time()
+            ps.event_meta[0]["round"] = ps.cur_round
+
+            if not await ps.propius_stub.start_request(new_demand=False):
+                if not await ps.re_register():
+                    return
+                await asyncio.sleep(3)
+                continue
+            
             try:
                 timeout = config['sched_timeout'] / config['speedup_factor']
                 custom_print(f"Being scheduled, wait for {timeout}", INFO)
@@ -428,11 +441,10 @@ async def run(config):
                 ps.total_sched_delay += config['sched_timeout']
                 ps.num_sched_timeover += 1
                 continue
-            
-        await ps.round_exec_start()
-        ps.response_time = time.time()
+                
+            await ps.round_exec_start()
+            ps.response_time = time.time()
 
-        async with ps.lock:
             try:
                 timeout = config['exec_timeout'] / config['speedup_factor']
                 custom_print(f"Start execute, wait for {timeout}", INFO)
@@ -444,11 +456,11 @@ async def run(config):
                 ps.num_response_timeover += 1
                 continue
 
-        ps.round_time = time.time()
-        await ps.close_round()
-        await ps.gen_round_report()
-        ps.cur_round += 1
-        ps._update_task_config()
+            ps.round_time = time.time()
+            await ps.close_round()
+            await ps.gen_round_report()
+            ps.cur_round += 1
+            ps._update_task_config()
             
     custom_print(
         f"Parameter server: All round finished", INFO)
