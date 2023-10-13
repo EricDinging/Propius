@@ -19,7 +19,7 @@ propius_use_docker = True
 client_manager_num = 2
 client_manager_port_start = 50003
 client_db_port_start = 6380
-ideal_client = True
+ideal_client = False
 client_num = 6000
 is_FA = False
 
