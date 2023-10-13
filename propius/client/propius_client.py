@@ -221,7 +221,7 @@ class Propius_client():
         
         raise RuntimeError("Unable to connect to Propius at the moment")
 
-    def auto_assign(self, ttl:int=0)->tuple[int, bool, int, str, int]:
+    def auto_assign(self, ttl:int=5)->tuple[int, bool, int, str, int]:
         """Automate client register, client ping, and client task selection process
 
         Args:

@@ -75,6 +75,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
             public_specification, self.sched_alg)
         
+        task_offer_list = []
+        task_private_constraint = []
+        
         await self.cm_monitor.client_checkin()
 
         if len(task_offer_list) > 0:

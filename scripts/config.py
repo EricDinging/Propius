@@ -22,7 +22,7 @@ allow_exceed_total_round = True
 
 ideal_client = False
 client_per_container = 1000
-client_num = 8000
+client_num = 6000
 sched_alg = 'fifo'
 speedup_factor = 3
 
