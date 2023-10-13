@@ -55,7 +55,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.cv = asyncio.Condition(self.lock)
 
         self.cur_round = 1
-        # self.client_event_dict = {} # key is client id, value is an event queue
 
         self.round_client_num = 0
         self.round_result_cnt = 0
@@ -125,7 +124,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             )
 
     def _clear_event_dict(self):
-        self.client_event_dict = {}
+        self.client_event_map = {}
 
     async def close_round(self):
         custom_print(f"PS {self.id}-{self.cur_round}: round finish", INFO)
@@ -179,7 +178,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             )
 
         if not self.execution_start and \
-            client_id not in self.client_event_dict \
+            client_id not in self.client_event_map \
             and self.round_client_num < self.over_demand \
                 and self.cur_round <= self.total_round:
                 
@@ -211,9 +210,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
             )
-        if client_id in self.client_event_dict:
-            event_idx = self.client_event_dict[client_id]
-            self.client_event_dict[client_id] += 1
+        if client_id in self.client_event_map:
+            event_idx = self.client_event_map[client_id]
+            self.client_event_map[client_id] += 1
 
             event_idx = min(event_idx, 3)
             server_response_msg = parameter_server_pb2.server_response(
@@ -238,7 +237,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             data=pickle.dumps(DUMMY_RESPONSE)
             )
         if meta["round"] == self.cur_round and \
-                client_id in self.client_event_dict and \
+                client_id in self.client_event_map and \
                     self.round_result_cnt <= self.demand:
             
             if compl_event == UPLOAD_MODEL:
@@ -270,7 +269,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             # Get next event
             event_idx = self.client_event_map[client_id]
             if event_idx >= 3:
-                del self.client_event_dict[client_id]
+                del self.client_event_map[client_id]
             else:
                 self.client_event_map[client_id] += 1
 
