@@ -49,7 +49,7 @@ do_compute: false
 is_FA: false
 
 use_cuda: false
-use_docker: true
+use_docker: false
 
 executor_ip: localhost
 executor_port: 49999

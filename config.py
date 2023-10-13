@@ -8,7 +8,7 @@ PROPIUS_SYS = 0
 PROPIUS_POLICY = 1
 PROPIUS_EVAL = 2
 
-option = PROPIUS_POLICY
+option = PROPIUS_SYS
 
 propius_config_file = './propius/global_config.yml'
 compose_file = ''
@@ -31,13 +31,14 @@ job_trace = './evaluation/job/trace/job_trace_10.txt'
 total_job = 10
 allow_exceed_total_round = True
 
+dataset = "femnist"
+
 if option == PROPIUS_SYS:
     compose_file = './compose_propius.yml'
     do_compute = False
     use_cuda = False
     evaluation_use_docker = False
 else:
-    dataset = "femnist"
     evaluation_use_docker = True
     client_per_container = 1000
     job_per_container = 2
