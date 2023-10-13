@@ -236,9 +236,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
             )
-        if meta["round"] == self.cur_round and \
-                client_id in self.client_event_map and \
-                    self.round_result_cnt <= self.demand:
+        if client_id in self.client_event_map and \
+                self.round_result_cnt <= self.demand:
             
             if compl_event == UPLOAD_MODEL:
                 custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} complete, "
@@ -286,7 +285,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     self.cv.notify()
 
         else:
-            custom_print(f"PS {self.id}-{self.cur_round}: client execution rejected", WARNING)
+            custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} execution rejected", WARNING)
         return server_response_msg
             
     def gen_report(self):
@@ -410,6 +409,7 @@ async def run(config):
         ps.round_client_num = 0
         ps.round_result_cnt = 0
         ps.sched_time = time.time()
+        ps.event_meta[0]["round"] = ps.cur_round
 
         if not await ps.propius_stub.start_request(new_demand=False):
             if not await ps.re_register():
