@@ -12,4 +12,3 @@ dependencies:
   - redis-py
   - pandas
   - ruamel.yaml
-  - aiorwlock

@@ -14,10 +14,10 @@ import gc
 class Propius_job_aio(Propius_job):
 
     async def _cleanup_routine(self):
-            try:
-                await self._jm_channel.close()
-            except Exception:
-                pass
+        try:
+            await self._jm_channel.close()
+        except Exception:
+            pass
 
     def _connect_jm(self) -> None:
         try:

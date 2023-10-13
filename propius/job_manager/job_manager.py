@@ -144,6 +144,9 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             self.job_db_portal.finish(job_id)
         self.logger.print(f"Job manager: job {job_id} completed"
                           f", executed {total_round} rounds", Msg_level.INFO)
+        
+        if self.sched_alg == 'irs3':
+            await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=-1))
 
         if runtime:
             await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)

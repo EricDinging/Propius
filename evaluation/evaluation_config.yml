@@ -16,7 +16,7 @@ job_private_constraint:
 sched_alg: irs3
 
 # ---Evaluation setting---
-speedup_factor: 1
+speedup_factor: 10
 test_bsz: 128
 test_ratio: 1
 eval_interval: 5
@@ -24,7 +24,7 @@ eval_interval: 5
 # Client number
 client_num: 6000
 client_test_num: 356
-ideal_client: true
+ideal_client: false
 
 # Job
 total_job: 10

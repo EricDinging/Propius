@@ -19,15 +19,13 @@ client_manager_num = 2
 client_manager_port_start = 50003
 client_db_port_start = 6380
 ideal_client = False
-client_num = 6000
 is_FA = False
 
-speedup_factor = 1
+speedup_factor = 3
 sched_alg = 'irs3'
 
 profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10.txt'
-total_job = 10
 allow_exceed_total_round = True
 
 dataset = "femnist"
@@ -38,6 +36,9 @@ if option == PROPIUS_SYS:
     use_cuda = False
     evaluation_use_docker = False
 else:
+    total_job = 10
+    client_num = 6000
+
     evaluation_use_docker = True
     client_per_container = 1000
     job_per_container = 2   
@@ -162,8 +163,10 @@ def config_evaluation():
     config_data["job_trace"] = job_trace
     config_data["profile_folder"] = profile_folder
     config_data["ideal_client"] = ideal_client
-    config_data["total_job"] = total_job
-    config_data["client_num"] = client_num
+
+    if option in [PROPIUS_EVAL, PROPIUS_POLICY]:
+        config_data["total_job"] = total_job
+        config_data["client_num"] = client_num
 
     if dataset == 'femnist':
         config_data['data_dir'] = "./datasets/femnist"

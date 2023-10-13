@@ -236,7 +236,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         meta=pickle.dumps(DUMMY_RESPONSE),
                         data=pickle.dumps(DUMMY_RESPONSE)
                     )
-                    custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping", INFO)
+                    # custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping", INFO)
                 else:
                     custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping rejected", WARNING)
             return server_response_msg
