@@ -3,7 +3,7 @@ import csv
 import os
 # Define your threshold for relative change
 threshold = 0.01  # 1% change
-folder = 'evaluation_result/fifo-6000-new/executor/'
+folder = 'evaluation_result/irs3-6000-new/executor/'
 
 def read_file(csv_file):
     with open(csv_file, 'r', newline='') as file:

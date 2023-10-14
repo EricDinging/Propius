@@ -13,7 +13,7 @@ job_public_constraint:
 job_private_constraint:
 - dataset_size
 
-sched_alg: irs3
+sched_alg: fifo
 
 # ---Evaluation setting---
 speedup_factor: 3
