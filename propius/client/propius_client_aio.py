@@ -242,6 +242,10 @@ class Propius_client_aio():
 
         ttl = min(ttl, 10)
         task_ids, task_private_constraint = await self.client_check_in()
+
+        #TODO
+        await asyncio.sleep(4)
+        
         while ttl > 0:
             while ttl > 0:
                 if len(task_ids) > 0:

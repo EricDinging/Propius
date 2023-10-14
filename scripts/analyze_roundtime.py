@@ -70,11 +70,12 @@ else:
         
         if filename.endswith(".csv"):
             csv_file_path = os.path.join(folder_path, filename)
-            if csv_file_path in ['./evaluation_result/irs3-6000-new/job/job_60000_irs3.csv', './evaluation_result/fifo-6000-new/job/job_60000_fifo.csv']:
-                continue
+            # if csv_file_path in ['./evaluation_result/irs3-6000-new/job/job_60000_irs3.csv', './evaluation_result/fifo-6000-new/job/job_60000_fifo.csv']:
+            #     continue
             
-            print(csv_file_path)
+            print(filename)
             round_time, sched, response = read_last_line(csv_file_path)
+            print("")
             
             num += 1 
             total_round += round_time
