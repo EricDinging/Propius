@@ -189,7 +189,8 @@ class SC_job_db_portal(Job_db):
             for doc in result.docs:
                 id = doc.id
                 job_dict = json.loads(doc.json)['job']
-                remain_demand = max(job_dict['total_demand'] - job_dict['attained_service'], 0)
+                # remain_demand = max(job_dict['total_demand'] - job_dict['attained_service'], 0)
+                remain_demand = max(job_dict['demand'] - job_dict['amount'], 0)
                 score = -remain_demand
                 self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
                 self.r.execute_command('JSON.SET', id, "$.job.score", score)
