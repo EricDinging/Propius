@@ -22,10 +22,10 @@ ideal_client = False
 is_FA = False
 
 speedup_factor = 3
-sched_alg = 'irs3'
+sched_alg = 'fifo'
 
-profile_folder = './evaluation/job/profile_mobilenet'
-job_trace = './evaluation/job/trace/job_trace_10.txt'
+profile_folder = './evaluation/job/profile_mobilenet_new'
+job_trace = './evaluation/job/trace/job_trace_10_new.txt'
 allow_exceed_total_round = True
 
 dataset = "femnist"
