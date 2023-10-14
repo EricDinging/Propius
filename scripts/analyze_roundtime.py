@@ -5,7 +5,7 @@ response time across all simulated jobs
 import os
 import csv
 
-folder_path = './evaluation_result/irs3-8000/job/'
+folder_path = './evaluation_result/irs3-6000-new/job/'
 # folder_path = './evaluation/monitor/job'
 
 analyze_certain_rounds = False
@@ -22,7 +22,6 @@ def read_last_line(csv_file):
         resp_time = 0
         last_row = None
         for row in csv_reader:
-            # print(row)
             if row[0] == "-1":
                 print(row)
                 round_time = float(last_row[1])
@@ -71,13 +70,11 @@ else:
         
         if filename.endswith(".csv"):
             csv_file_path = os.path.join(folder_path, filename)
-            # if csv_file_path in ['./data/fifo-6000/job/job_60004_fifo.csv', './data/fifo-6000/job/job_60009_fifo.csv']:
-            #     continue
-            # if csv_file_path in ['./evaluation/monitor/job/job_60009_irs3.csv', './evaluation/monitor/job/job_60004_irs3.csv']:
-            #     continue
-            # print(csv_file_path)
-            round_time, sched, response = read_last_line(csv_file_path)
+            if csv_file_path in ['./evaluation_result/irs3-6000-new/job/job_60000_irs3.csv', './evaluation_result/fifo-6000-new/job/job_60000_fifo.csv']:
+                continue
+            
             print(csv_file_path)
+            round_time, sched, response = read_last_line(csv_file_path)
             
             num += 1 
             total_round += round_time

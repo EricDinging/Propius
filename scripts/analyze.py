@@ -5,19 +5,19 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-version = "10000"
+version = "6000-new"
 time_cutoff = 60000
 round_cutoff = 150
 
 sched_alg_list = [
                   'fifo',
-                  'random',
-                  'srsf',
+                #   'random',
+                #   'srsf',
                   'amg'
                   ]
 
-# plot_option = 'acc' 
-plot_option = 'test_loss'
+plot_option = 'acc' 
+# plot_option = 'test_loss'
 
 plot_folder = f'./evaluation_result/plot-{version}'
 line_styles = ['-.', ':', '-']
@@ -35,7 +35,7 @@ round_info_dict = {}
 
 for i, sched_alg in enumerate(sched_alg_list):
     if sched_alg == 'amg':
-        sched_alg = 'irs2'
+        sched_alg = 'irs3'
     pattern = re.compile(f"test_(\d+)\_{sched_alg}.csv")
     round_list_dict = {}
     round_time_list_dict = {}
@@ -99,6 +99,9 @@ for i, sched_alg in enumerate(sched_alg_list):
             # round_list = round_list[0:len(time_stamp_list)]
             
             job_id = int(job_id) % 100
+
+            if job_id == 0:
+                continue
             
             # round_list_dict[job_id] = round_list
             round_info_dict[f"{job_id}-{sched_alg}"] = time_stamp_list[-1]
@@ -115,15 +118,19 @@ for i, sched_alg in enumerate(sched_alg_list):
     end_time = max(end_time_list)
     round_info_dict[f"avg-{sched_alg}"] = (avg_end_time, end_time)
     
-    mean_x_axis = [i for i in range(int(end_time))]
-    if plot_option == 'acc':
-        ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], acc_list_dict[j]) for j in range(job_num)]
-    elif plot_option == 'test_loss':
-        ys_interp = [np.interp(mean_x_axis, round_time_list_dict[j], avg_tloss_dict[j]) for j in range(job_num)]
+    mean_x_axis = [i for i in range(int(avg_end_time))]
+    ys_interp = []
+    for j in range(job_num):
+        if j == 0:
+            continue
+        if plot_option == 'acc':
+            ys_interp.append(np.interp(mean_x_axis, round_time_list_dict[j], acc_list_dict[j]))
+        elif plot_option == 'test_loss':
+            ys_interp.append(np.interp(mean_x_axis, round_time_list_dict[j], avg_tloss_dict[j]))
 
     mean_y_axis = np.mean(ys_interp, axis=0)
 
-    if sched_alg == 'irs2':
+    if sched_alg == 'irs3':
         alg_label = 'AMG'
     elif sched_alg == 'fifo':
         alg_label = 'FIFO'
