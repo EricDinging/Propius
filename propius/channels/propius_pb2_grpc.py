@@ -212,6 +212,11 @@ class SchedulerStub(object):
                 request_serializer=propius__pb2.job_id.SerializeToString,
                 response_deserializer=propius__pb2.ack.FromString,
                 )
+        self.GET_JOB_GROUP = channel.unary_unary(
+                '/propius.Scheduler/GET_JOB_GROUP',
+                request_serializer=propius__pb2.empty.SerializeToString,
+                response_deserializer=propius__pb2.group_info.FromString,
+                )
         self.HEART_BEAT = channel.unary_unary(
                 '/propius.Scheduler/HEART_BEAT',
                 request_serializer=propius__pb2.empty.SerializeToString,
@@ -223,6 +228,12 @@ class SchedulerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def JOB_SCORE_UPDATE(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GET_JOB_GROUP(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -241,6 +252,11 @@ def add_SchedulerServicer_to_server(servicer, server):
                     servicer.JOB_SCORE_UPDATE,
                     request_deserializer=propius__pb2.job_id.FromString,
                     response_serializer=propius__pb2.ack.SerializeToString,
+            ),
+            'GET_JOB_GROUP': grpc.unary_unary_rpc_method_handler(
+                    servicer.GET_JOB_GROUP,
+                    request_deserializer=propius__pb2.empty.FromString,
+                    response_serializer=propius__pb2.group_info.SerializeToString,
             ),
             'HEART_BEAT': grpc.unary_unary_rpc_method_handler(
                     servicer.HEART_BEAT,
@@ -271,6 +287,23 @@ class Scheduler(object):
         return grpc.experimental.unary_unary(request, target, '/propius.Scheduler/JOB_SCORE_UPDATE',
             propius__pb2.job_id.SerializeToString,
             propius__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GET_JOB_GROUP(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Scheduler/GET_JOB_GROUP',
+            propius__pb2.empty.SerializeToString,
+            propius__pb2.group_info.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

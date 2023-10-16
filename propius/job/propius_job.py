@@ -34,7 +34,7 @@ class Propius_job():
         try:
             # TODO arguments check
             # TODO add state flow check
-            public, private = encode_constraints(**job_config['public_constraint'], **job_config['private_constraint'])
+            public, private = encode_specs(**job_config['public_constraint'], **job_config['private_constraint'])
             self.public_constraint = tuple(public)
             self.private_constraint = tuple(private)
             self.est_total_round = job_config['total_round'] if 'total_round' in job_config else 0
@@ -57,21 +57,18 @@ class Propius_job():
         except Exception:
             pass
 
-    def _custom_print(self, message: str, level: int=PRINT):
+    def _custom_print(self, message: str, level: int=Msg_level.PRINT):
         if self.verbose:
             print(f"{get_time()} {message}")
         if self.logging:
-            if level == DEBUG:
+            if level == Msg_level.DEBUG:
                 logging.debug(message)
-            elif level == INFO:
+            elif level == Msg_level.INFO:
                 logging.info(message)
-            elif level == WARNING:
+            elif level == Msg_level.WARNING:
                 logging.warning(message)
-            elif level == ERROR:
+            elif level == Msg_level.ERROR:
                 logging.error(message)
-
-    def __del__(self):
-        self._cleanup_routine()
 
     def _connect_jm(self) -> None:
         try:
@@ -79,12 +76,12 @@ class Propius_job():
             self._jm_stub = None
             gc.collect()
         except Exception as e:
-            self._custom_print(e, ERROR)
+            self._custom_print(e, Msg_level.ERROR)
 
         self._jm_channel = grpc.insecure_channel(f'{self._jm_ip}:{self._jm_port}')
         self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
 
-        self._custom_print(f"Job: connecting to job manager at {self._jm_ip}:{self._jm_port}", INFO)
+        self._custom_print(f"Job: connecting to job manager at {self._jm_ip}:{self._jm_port}", Msg_level.INFO)
 
     def connect(self):
         """Connect to Propius job manager
@@ -97,7 +94,7 @@ class Propius_job():
                 self._connect_jm()
                 return
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 time.sleep(5)
 
         raise RuntimeError(
@@ -108,7 +105,7 @@ class Propius_job():
         """
         
         self._cleanup_routine()
-        self._custom_print(f"Job {self.id}: closing connection to Propius", INFO)
+        self._custom_print(f"Job {self.id}: closing connection to Propius", Msg_level.INFO)
 
     def register(self) -> bool:
         """Register job. Send job config to Propius job manager. This configuration will expire
@@ -122,7 +119,7 @@ class Propius_job():
         """
 
         job_info_msg = propius_pb2.job_info(
-            est_demand=math.ceil(1.1 * self.demand),
+            est_demand=int(1.1 * self.demand),
             est_total_round=self.est_total_round,
             public_constraint=pickle.dumps(self.public_constraint),
             private_constraint=pickle.dumps(self.private_constraint),
@@ -138,15 +135,15 @@ class Propius_job():
                 self._cleanup_routine()
                 if not ack:
                     if self.verbose:
-                        self._custom_print(f"Job {self.id}: register failed", WARNING)
+                        self._custom_print(f"Job {self.id}: register failed", Msg_level.WARNING)
                     return False
                 else:
                     if self.verbose:
-                        self._custom_print(f"Job {self.id}: register success", INFO)
+                        self._custom_print(f"Job {self.id}: register success", Msg_level.INFO)
                     return True
             except Exception as e:
                 if self.verbose:
-                    self._custom_print(e, ERROR)
+                    self._custom_print(e, Msg_level.ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
                 
@@ -192,13 +189,13 @@ class Propius_job():
                 ack_msg = self._jm_stub.JOB_REQUEST(request_msg)
                 self._cleanup_routine()
                 if not ack_msg.ack:
-                    self._custom_print(f"Job {self.id}: round request failed", WARNING)
+                    self._custom_print(f"Job {self.id}: round request failed", Msg_level.WARNING)
                     return False
                 else:
-                    self._custom_print(f"Job {self.id}: round request succeeded", INFO)
+                    self._custom_print(f"Job {self.id}: round request succeeded", Msg_level.INFO)
                     return True
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
 
@@ -221,13 +218,13 @@ class Propius_job():
                 ack_msg = self._jm_stub.JOB_END_REQUEST(request_msg)
                 self._cleanup_routine()
                 if not ack_msg.ack:
-                    self._custom_print(f"Job {self.id}: end request failed", WARNING)
+                    self._custom_print(f"Job {self.id}: end request failed", Msg_level.WARNING)
                     return False
                 else:
-                    self._custom_print(f"Job {self.id}: end request succeeded", INFO)
+                    self._custom_print(f"Job {self.id}: end request succeeded", Msg_level.INFO)
                     return True
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
 
@@ -248,10 +245,10 @@ class Propius_job():
             try:
                 self._jm_stub.JOB_FINISH(req_msg)
                 self._cleanup_routine()
-                self._custom_print(f"Job {self.id}: job completed", WARNING)
+                self._custom_print(f"Job {self.id}: job completed", Msg_level.WARNING)
                 return
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
 

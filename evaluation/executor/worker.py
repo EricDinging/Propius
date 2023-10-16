@@ -101,6 +101,11 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             loss.backward()
             optimizer.step()
 
+            if conf['gradient_policy'] == 'fed-prox':
+                for idx, param in enumerate(model.parameters()):
+                    param.data += conf['learning_rate'] * conf['proxy_mu'] * \
+                    (param.data - self.global_model[idx])
+
             self._completed_steps += 1
 
             if self._completed_steps == conf['local_steps']:
@@ -112,9 +117,9 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         model = pickle.loads(request.model_weight)
         model_adapter = Torch_model_adapter(model,
                                             optimizer=TorchServerOptimizer(
-                                            job_meta["gradient_policy"], 
-                                            job_meta, 
-                                            self.device)
+                                            mode=job_meta["gradient_policy"], 
+                                            args=job_meta, 
+                                            device=self.device)
                                             )
         dataset_name = job_meta["dataset"]
 
@@ -126,34 +131,34 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
                 train_transform, test_transform = get_data_transform("mnist")
                 train_dataset = FEMNIST(
-                    self.config['femnist_data_dir'],
+                    self.config['data_dir'],
                     dataset='train',
                     transform=train_transform
                 )
                 test_dataset = FEMNIST(
-                    self.config['femnist_data_dir'],
+                    self.config['data_dir'],
                     dataset='test',
                     transform=test_transform
                 )
                 
                 train_partitioner = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
-                train_partitioner.partition_data_helper(0, data_map_file=self.config['femnist_data_map_file'])
+                train_partitioner.partition_data_helper(0, data_map_file=self.config['data_map_file'])
                 self.data_partitioner_dict[dataset_name] = train_partitioner
                 
                 test_partitioner = Data_partitioner(data=test_dataset, num_of_labels=out_put_class[dataset_name])
-                test_partitioner.partition_data_helper(0, data_map_file=self.config['femnist_test_data_map_file'])
+                test_partitioner.partition_data_helper(0, data_map_file=self.config['test_data_map_file'])
                 self.test_data_partition_dict[dataset_name] = test_partitioner
             
             elif dataset_name == "openImg":
                 from evaluation.internal.dataloaders.openimage import OpenImage
                 train_transform, test_transform = get_data_transform("openImg")
                 train_dataset = OpenImage(
-                    self.config['openImg_data_dir'], split='train', download=False, transform=train_transform)
+                    self.config['data_dir'], split='train', download=False, transform=train_transform)
                 test_dataset = OpenImage(
-                    self.config["openImg_data_dir"], split='val', download=False, transform=test_transform)
+                    self.config["data_dir"], split='val', download=False, transform=test_transform)
                 
                 train_partitioner = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
-                train_partitioner.partition_data_helper(0, data_map_file=self.config['openImg_data_map_file'])
+                train_partitioner.partition_data_helper(0, data_map_file=self.config['data_map_file'])
                 self.data_partitioner_dict[dataset_name] = train_partitioner
                 
                 test_partitioner = Data_partitioner(data=test_dataset, num_of_labels=out_put_class[dataset_name])
@@ -189,6 +194,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def UPDATE(self, request, context):
         job_id = request.job_id
         weight = pickle.loads(request.job_data)
+        
         self.logger.print(f"Update job {job_id} weight", INFO)
         try:
             if job_id in self.job_id_model_adapter_map:
@@ -245,16 +251,24 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     async def _train(self, client_id, partition: Data_partitioner, model, conf: dict)->dict:
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
+
         client_data = select_dataset(client_id=client_id, 
                                      partition=partition,
                                      batch_size=conf['batch_size'],
                                      args=conf,
                                      is_test=False,
                                      )
+        
         model = model.to(device=self.device)
         model.train()
         optimizer = self._get_optimizer(model, conf)
         criterion = self._get_criterion(conf)
+
+        self.global_model = None
+        if conf['gradient_policy'] == 'fed-prox':
+            self.global_model = [param.data.clone() for param in model.parameters()]
+        elif conf['gradient_policy'] == 'q-fedavg':
+            last_model = [param.data.clone() for param in model.state_dict().values()]
         
         while self._completed_steps < conf['local_steps']:
             try:
@@ -262,20 +276,38 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             except Exception as ex:
                 self.logger.print(ex, ERROR)
                 break
-        
-        state_dict = model.state_dict()
-        model_param = [state_dict[p].data.cpu().numpy() for p in state_dict]
-        results = {
-            'model_weight': model_param,
-            'moving_loss': self._epoch_train_loss, 
-            'trained_size': self._completed_steps * conf['batch_size'],
-        }  
 
-        self.logger.print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}: training complete===", INFO)
+        results = {
+                'moving_loss': self._epoch_train_loss,
+                'trained_size': self._completed_steps * conf['batch_size']
+            }
+        
+        if conf['gradient_policy'] == 'q-fedavg':
+            lr, q = conf['learning_rate'], conf['qfed_q']
+            update_weight = [param.data.clone() for param in model.state_dict().values()]
+            grads = [(u - v) / lr for u, v in zip(last_model, update_weight)]
+
+            coeff = np.float_power(self._epoch_train_loss + 1e-10, q)
+            delta_gpu = [coeff * grad for grad in grads]
+            # Move the result back to the CPU
+            results['Delta'] = [delta.cpu() for delta in delta_gpu]
+
+            square_sum = torch.sum(torch.stack([torch.square(
+                    grad).sum() for grad in grads])).item()
+               
+            results['h'] = q * np.float_power(self._epoch_train_loss + 1e-10, (q - 1)) \
+                     * square_sum + (1.0/lr) * np.float_power(self._epoch_train_loss + 1e-10, q)
+
+        else:
+            state_dict = model.state_dict()
+            model_param = [state_dict[p].data.cpu().numpy() for p in state_dict]
+            results['model_weight'] = model_param
+
+        self.logger.print(f"Worker {self.id}: Job {conf['job_id']} Client {client_id}:"
+                          f" training complete, local steps: {conf['local_steps']}", INFO)
 
         self._completed_steps = 0
         self._epoch_train_loss = 1e-4
-
         return results
     
     async def _test(self, client_id: int, partition: Data_partitioner, model, conf: dict)->dict:
@@ -329,6 +361,22 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
         self.logger.print(f"Worker {self.id}: Job {conf['job_id']}: testing complete, {results}===", INFO)
         return results
+    
+    def update_agg_results(self, agg_results: dict, results: dict):
+        agg_results["cnt"] += 1
+        agg_results["trained_size"] += results["trained_size"]
+
+        if agg_results["gradient_policy"] == "q-fedavg":
+            agg_results["result_list"].append({
+                "Delta": results["Delta"],
+                "h": results["h"],
+                "moving_loss": results["moving_loss"]
+            })
+        else:
+            agg_results["result_list"].append({
+                "model_weight": results["model_weight"],
+                "moving_loss": results["moving_loss"]
+            })
         
     async def execute(self):
         while True:
@@ -350,26 +398,22 @@ class Worker(executor_pb2_grpc.WorkerServicer):
                 if event == CLIENT_TRAIN:
                     agg_results = {
                         "cnt": 0,
-                        "model_weight": None,
-                        "moving_loss": 0,
-                        "trained_size": 0, 
+                        "trained_size": 0,
+                        "gradient_policy": task_conf["gradient_policy"],
+                        "result_list": [],
                     }
                     
                     for client_id in client_id_list:
-                        results = await self._train(client_id=client_id,
-                                    partition=partition,
-                                    model=model,
-                                    conf=task_conf)
-                        agg_results["cnt"] += 1
-                        model_weight = results["model_weight"]
-                        if not agg_results["model_weight"]:
-                            agg_results["model_weight"] = model_weight
-                        else:
-                            agg_results["model_weight"] = [weight + model_weight[i] 
-                                                           for i, weight in enumerate(agg_results["model_weight"])]
-                        agg_results["moving_loss"] += results["moving_loss"]
-                        agg_results["trained_size"] += results["trained_size"]
-
+                        try:
+                            results = await self._train(client_id=client_id,
+                                        partition=partition,
+                                        model=model,
+                                        conf=task_conf)
+                            
+                            self.update_agg_results(agg_results, results)
+                        except Exception as e:
+                            self.logger.print(e, ERROR)
+                        
                 elif event == MODEL_TEST:
                     agg_results = {
                         "test_loss": 0,

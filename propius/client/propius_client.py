@@ -2,8 +2,9 @@ from propius.channels import propius_pb2_grpc
 from propius.channels import propius_pb2
 import pickle
 import grpc
+import asyncio
 import time
-from propius.util.commons import *
+from propius.util.commons import Msg_level, get_time, geq, encode_specs
 import logging
 
 def gen_client_config():
@@ -53,17 +54,17 @@ class Propius_client():
     def __del__(self):
         self._cleanup_routine()
 
-    def _custom_print(self, message: str, level: int=PRINT):
+    def _custom_print(self, message: str, level: int=Msg_level.PRINT):
         if self.verbose:
             print(f"{get_time()} {message}")
         if self.logging:
-            if level == DEBUG:
+            if level == Msg_level.DEBUG:
                 logging.debug(message)
-            elif level == INFO:
+            elif level == Msg_level.INFO:
                 logging.info(message)
-            elif level == WARNING:
+            elif level == Msg_level.WARNING:
                 logging.warning(message)
-            elif level == ERROR:
+            elif level == Msg_level.ERROR:
                 logging.error(message)
         
     def _connect_lb(self) -> None:
@@ -88,7 +89,7 @@ class Propius_client():
                 self._custom_print(f"Client: connected to Propius")
                 return
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 time.sleep(2)
 
         raise RuntimeError(
@@ -130,7 +131,7 @@ class Propius_client():
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 time.sleep(2)
         raise RuntimeError("Unable to connect to Propius at the moment")
     
@@ -158,7 +159,7 @@ class Propius_client():
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 time.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
@@ -212,16 +213,16 @@ class Propius_client():
                     self._custom_print(f"Client {self.id}: client task selection is recieved")
                     return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
                 else:
-                    self._custom_print(f"Client {self.id}: client task selection is rejected", WARNING)
+                    self._custom_print(f"Client {self.id}: client task selection is rejected", Msg_level.WARNING)
                     return None
             
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 time.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
 
-    def auto_assign(self, ttl:int=0)->tuple[int, bool, int, str, int]:
+    def auto_assign(self, ttl:int=1)->tuple[int, bool, int, str, int]:
         """Automate client register, client ping, and client task selection process
 
         Args:
@@ -238,42 +239,40 @@ class Propius_client():
             RuntimeError: if can't establish connection after multiple trial
         """
 
+        ttl = min(ttl, 10)
         task_ids, task_private_constraint = self.client_check_in()
-        
-        self._custom_print(
-                f"Client {self.id}: recieve client manager offer: {task_ids}")
-            
-        while True:
+        while ttl > 0:
             while ttl > 0:
                 if len(task_ids) > 0:
                     break
                 time.sleep(2)
                 ttl -= 1
                 task_ids, task_private_constraint = self.client_ping()
+
+            if len(task_ids) == 0:
+                break
+            
+            self._custom_print(
+                f"Client {self.id}: recieve client manager offer: {task_ids}")
             
             task_id = self.select_task(task_ids, task_private_constraint)
+            self._custom_print(f"Client {self.id}: {task_id} selected", Msg_level.INFO)
+
             if task_id == -1:
-                task_ids = []
-                task_private_constraint = []
-                if ttl <= 0:
-                    return (self.id, False, -1, None, None)
-                else:
-                    continue
+                task_ids, task_private_constraint = [], []
+                continue
 
             result = self.client_accept(task_id)
 
             if not result:
-                task_ids = []
-                task_private_constraint = []
-                if ttl <= 0:
-                    return (self.id, False, -1, None, None)
-                else:
-                    continue
+                self._custom_print(f"Client {self.id}: {task_id} not accepted", Msg_level.INFO)
+                task_ids, task_private_constraint = [], []
+                continue
             else:
-                self._custom_print(f"Client {self.id}: scheduled with {task_id}", INFO)
-                break
-        
-        return (self.id, True, task_id, result[0], result[1])
+                self._custom_print(f"Client {self.id}: scheduled with {task_id}", Msg_level.INFO)
+                return (self.id, True, task_id, result[0], result[1])
+            
+        return (self.id, False, -1, None, None)
     
 
 

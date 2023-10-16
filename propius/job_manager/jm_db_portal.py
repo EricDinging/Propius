@@ -1,16 +1,13 @@
 import redis
 from redis.commands.json.path import Path
-import redis.commands.search.reducers as reducers
-from redis.commands.search.field import TextField, NumericField, TagField
-from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-from redis.commands.search.query import NumericFilter, Query
+from redis.commands.search.query import Query
 import time
 import json
-from propius.database.db import *
-
+from propius.database import Job_db
+from propius.util import Msg_level, Propius_logger
 
 class JM_job_db_portal(Job_db):
-    def __init__(self, gconfig, logger):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
         """Init job database portal class
 
         Args:
@@ -100,7 +97,7 @@ class JM_job_db_portal(Job_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
                     return False
                 
     def prune(self):
@@ -111,10 +108,10 @@ class JM_job_db_portal(Job_db):
         """
         result = None
         try:
-            q = Query('*')
+            q = Query('*').paging(0, 100)
             result = self.r.ft('job').search(q)
         except Exception as e:
-            self.logger.print(e, WARNING)
+            self.logger.print(e, Msg_level.WARNING)
 
         if result:
             for doc in result.docs:
@@ -150,10 +147,11 @@ class JM_job_db_portal(Job_db):
                     total_round = int(
                         self.r.json().get(
                             id, "$.job.total_round")[0])
-                    if (total_round > 0 and cur_round >= total_round) or \
-                        (total_round == 0 and cur_round >= self.gconfig["max_round"]):
-                        job_finished = True
-                        break
+                    if not self.gconfig["allow_exceed_total_round"]:
+                        if (total_round > 0 and cur_round >= total_round) or \
+                            (total_round == 0 and cur_round >= self.gconfig["max_round"]):
+                            job_finished = True
+                            break
 
                     pipe.multi()
                     pipe.execute_command(
@@ -168,10 +166,10 @@ class JM_job_db_portal(Job_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
 
         if job_finished:
-            self.logger.print(f"Job {job_id} reached final round", ERROR)
+            self.logger.print(f"Job {job_id} reached final round", Msg_level.ERROR)
             self.remove_job(job_id)
         return False
     
@@ -206,7 +204,7 @@ class JM_job_db_portal(Job_db):
                         round = int(
                             self.r.json().get(id, "$.job.round")[0]
                         )
-                        total_demand = attained_service + (total_round - round) * demand
+                        total_demand = attained_service + max(total_round - round, 0) * demand
                     else:
                         total_demand = max(2 * attained_service, demand)
                     
@@ -218,7 +216,7 @@ class JM_job_db_portal(Job_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
 
     def end_request(self, job_id: int) -> bool:
         """Update job metadata based on end request
@@ -260,7 +258,7 @@ class JM_job_db_portal(Job_db):
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
                     return False
 
     def finish(self, job_id: int) -> tuple[tuple, int, int, float, float]:

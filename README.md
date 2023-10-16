@@ -23,9 +23,7 @@ Under construction
 │   └── global_config.yml           #   - Configuration for Propius system
 │
 ├── evaluation/                     # Framework for evaluating scheduling policies
-│   ├── analyze/                    #   - Analysis functions for time and accuracy logs
 │   ├── executor/                   #   - Executor for FL training and testing tasks using multiple GPU processes
-│   ├── single_executor/            #   - Light-weight executor for FL training and testing worker using one GPU process
 │   ├── client/                     #   - Dispatcher of simulated clients
 │   ├── job/                        #   - Dispatcher of simulated jobs
 │   └── evaluation_config.yml       #   - Configuration for evaluation
@@ -51,10 +49,19 @@ pip install -e .
 
 ## Usage
 ### Quick Launch
-We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network. The config is specified in `compose_propius.yml`.
-- Edit `compose_propius.yml` and `propius/global_config.yml`. By default, the network address of load balancer (client interface) is `localhost:50002`, and the address of job manager (job interface) is `localhost:50001`
-- Make sure the setup is consistent across two config files
-- By default, Propius has two client managers and two client databases. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services in `compose_propius.yml`, and edit `propius/global_config.yml` accordingly
+We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network.
+- Run:
+```bash
+chmod +x propius/client_manager/entrypoint.sh
+```
+- Edit and run `config.py` for configuring docker compose files and Propius config file
+```bash
+python config.py
+```
+    - Alternatively:
+        - Edit `compose_propius.yml` and `propius/global_config.yml`. By default, the network address of load balancer (client interface) is `localhost:50002`, and the address of job manager (job interface) is `localhost:50001`
+        - Make sure the setup is consistent across two config files
+        - By default, Propius has two client managers and two client databases. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services in `compose_propius.yml`, and edit `propius/global_config.yml` accordingly
 - Run docker compose
 ```bash
 docker compose -f compose_propius.yml up --build # -d if want to run Propius in background
@@ -116,15 +123,18 @@ For the ease of evaluation, we containerize Propius and essential peripherals fo
 ```bash
 source ./datasets/download.sh
 ```
+- Create or edit job profile in `evaluation/job/profile/`
 - Edit and run configuration script
 ```bash
-python ./scripts/config.py
+python config.py
 ```
-- Create or edit job profile in `evaluation/job/profile/`. Make sure the profile number is the same as total job number
 - Start docker network
 ```bash
-chmod +x ./init.sh
-./init.sh
+chmod +x evaluation/executor/entrypoint.sh
+chmod +x propius/client_manager/entrypoint.sh
+chmod +x evaluation/job/entrypoint.sh
+chmod +x evaluation/client/entrypoint.sh
+docker compose -f compose_eval_gpu.yml up --build -d
 ```
 - Monitoring
 ```bash

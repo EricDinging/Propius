@@ -1,9 +1,9 @@
 import time
 import matplotlib.pyplot as plt
-from propius.util.commons import *
+from propius.util.commons import Propius_logger, Msg_level
 
 class Monitor:
-    def __init__(self, server_name: str, logger: My_logger, plot: bool = False):
+    def __init__(self, server_name: str, logger: Propius_logger, plot: bool = False):
         self.start_time = int(time.time())
         self.plot = plot
         self.request_num_log = {}
@@ -45,4 +45,4 @@ class Monitor:
             report = self.server_name + \
                 f": avg request per second: {avg_request_per_second:.3f}"
         
-        self.logger.print(report, INFO)
+        self.logger.print(report, Msg_level.INFO)

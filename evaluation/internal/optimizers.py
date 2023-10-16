@@ -3,6 +3,8 @@
 
 import numpy as np
 import torch
+from evaluation.commons import *
+
 class TorchServerOptimizer:
     """This is a abstract server optimizer class
     
@@ -29,31 +31,45 @@ class TorchServerOptimizer:
         
         Args:
             last_model (list of tensor weight): A list of global model weight in last round.
-            current_model (list of tensor weight): A list of global model weight in this round.
+            current_model (list of tensor weight): A list of global model weight / updates in this round.
             target_model (PyTorch or TensorFlow nn module): Aggregated model.
         
         """
-
         if self.mode == 'fed-yogi':
             """
             "Adaptive Federated Optimizations", 
             Sashank J. Reddi, Zachary Charles, Manzil Zaheer, Zachary Garrett, Keith Rush, Jakub Konecný, Sanjiv Kumar, H. Brendan McMahan,
             ICLR 2021.
             """
+            current_model = [torch.tensor(x) for x in current_model]
             last_model = [x.to(device=self.device) for x in last_model]
             current_model = [x.to(device=self.device) for x in current_model]
 
-            diff_weight = self.gradient_controller.update([
-                pb - pa for pa, pb in zip(last_model, current_model) 
-            ])
+            diff_weight = self.gradient_controller.update(
+                [pb-pa for pa, pb in zip(last_model, current_model)])
 
             new_state_dict = {
-                name: torch.from_numpy(np.array(last_model[idx].cpu() + diff_weight[idx].cpu(), dtype=np.float32)) for idx, name in enumerate(target_model.state_dict().keys())
+                name: last_model[idx] + diff_weight[idx]
+                for idx, name in enumerate(target_model.state_dict().keys())
             }
+            target_model.load_state_dict(new_state_dict)
         
-        elif self.mode == 'fed-avg':
-            new_state_dict = {
-                name: torch.from_numpy(np.array(current_model[i].cpu(), dtype=np.float32)) for i, name in enumerate(target_model.state_dict().keys())
-            }
+        elif self.mode == 'q-fedavg':    
+            hs = current_model[1] # scalar
+            Deltas = current_model[0] # tensor
 
-        target_model.load_state_dict(new_state_dict)
+            Deltas = [x.to(device=self.device) for x in Deltas]
+
+            new_state_dict = {
+                name: last_model[idx] - Deltas[idx] / (hs)
+                for idx, name in enumerate(target_model.state_dict().keys())
+            }
+            target_model.load_state_dict(new_state_dict)
+
+        else:
+            # fed-avg, fed-prox
+            current_model = [torch.tensor(x) for x in current_model]
+            new_state_dict = {
+                name: current_model[i] for i, name in enumerate(target_model.state_dict().keys())
+            }
+            target_model.load_state_dict(new_state_dict)

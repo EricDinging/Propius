@@ -10,7 +10,6 @@ RUN mkdir /evaluation
 RUN mkdir /evaluation/executor
 COPY ./evaluation/commons.py /evaluation/commons.py
 COPY ./evaluation/requirements.txt /evaluation/requirements.txt
-COPY ./evaluation/internal /evaluation/internal
 COPY ./evaluation/executor/entrypoint.sh /evaluation/executor/entrypoint.sh
 
 RUN pip3 install --upgrade pip

@@ -1,16 +1,12 @@
 import redis
-from redis.commands.json.path import Path
-import redis.commands.search.reducers as reducers
-from redis.commands.search.field import TextField, NumericField, TagField
+from redis.commands.search.field import TextField, NumericField, Field
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-from redis.commands.search.query import NumericFilter, Query
 import time
-import json
-from propius.util.commons import *
+from propius.util import Propius_logger, Msg_level
 
 
 class Job_db:
-    def __init__(self, gconfig, is_jm: bool, logger: My_logger):
+    def __init__(self, gconfig, is_jm: bool, logger: Propius_logger):
         """Initialize job db portal
 
         Args:
@@ -74,7 +70,7 @@ class Job_db:
                     schema, definition=IndexDefinition(
                         prefix=["job:"], index_type=IndexType.JSON))
             except Exception as e:
-                self.logger.print(e, ERROR)
+                self.logger.print(e, Msg_level.ERROR)
                 pass
 
     def flushdb(self):
@@ -126,7 +122,7 @@ class Job_db:
                     sched_latency = total_sched / round if round > 0 else -1
                     pipe.delete(id)
                     pipe.unwatch()
-                    self.logger.print(f"Remove job:{job_id}", WARNING)
+                    self.logger.print(f"Remove job:{job_id}", Msg_level.WARNING)
                     return (
                         tuple(constraint_list),
                         demand,
@@ -136,12 +132,13 @@ class Job_db:
                 except redis.WatchError:
                     pass
                 except Exception as e:
-                    self.logger.print(e, ERROR)
+                    self.logger.print(e, Msg_level.ERROR)
                     return (None, None, None, None, None)
 
 
 class Client_db:
-    def __init__(self, gconfig, cm_id: int, is_cm: bool, logger: My_logger):
+    def __init__(self, gconfig, cm_id: int, 
+                 is_cm: bool, logger: Propius_logger, flush: bool = False):
         """Initialize client db portal
 
         Args:
@@ -151,6 +148,7 @@ class Client_db:
                     client_db_port
                 client_expire_time: expiration time of clients in the db
                 job_public_constraint: name of public constraint
+                flush: whether to flush the db first
 
             cm_id: id of the client manager is the user is client manager
             is_cm: bool indicating whether the user is client manager
@@ -163,6 +161,7 @@ class Client_db:
         port = gconfig['client_manager'][cm_id]['client_db_port']
         self.logger = logger
         self.r = redis.Redis(host=host, port=port)
+
         self.start_time = int(time.time())
         self.client_exp_time = int(gconfig['client_expire_time'])
 
@@ -177,26 +176,67 @@ class Client_db:
                                     for name in self.public_constraint_name])
 
             try:
-                self.flushdb()
+                if flush:
+                    self.flushdb()
                 self.r.ft("client").create_index(
                     schema, definition=IndexDefinition(
                         prefix=["client:"], index_type=IndexType.JSON))
-            except BaseException:
-                pass
+            except Exception as e:
+                self.logger.print(e, Msg_level.ERROR)
 
     def flushdb(self):
         self.r.flushdb()
 
 
-def geq(t1: tuple, t2: tuple) -> bool:
-    """Compare two tuples. Return True only if every values in t1 is greater than t2
+class Temp_client_db:
+    def __init__(self, gconfig, cm_id: int, is_cm: bool, 
+                 logger: Propius_logger, flush: bool = False):
+        """Initialize temp client db portal. 
 
-    Args:
-        t1
-        t2
-    """
+        Temp client db is to store ready-to-be-assigned clients
 
-    for idx in range(len(t1)):
-        if t1[idx] < t2[idx]:
-            return False
-    return True
+        Args:
+            gconfig: config dictionary
+                client_manager: list of client manager address
+                    ip:
+                    client_db_port
+                client_expire_time: expiration time of clients in the db
+                job_public_constraint: name of public constraint
+                flush: whether to flush the db first
+
+            cm_id: id of the client manager is the user is client manager
+            is_cm: bool indicating whether the user is client manager
+            logger
+        """
+        if gconfig['use_docker']:
+            host = f'client_db_{cm_id}'
+        else:
+            host = gconfig['client_manager'][cm_id]['ip']
+        port = gconfig['client_manager'][cm_id]['client_db_port']
+        self.logger = logger
+        self.r = redis.Redis(host=host, port=port)
+        self.start_time = int(time.time())
+        self.client_exp_time = 25
+
+        self.public_constraint_name = gconfig['job_public_constraint']
+        self.public_max = gconfig['public_max']
+
+        if is_cm:
+            schema = (
+                TextField("$.temp.job_ids", as_name="job_ids"),
+            )
+
+            schema = schema + tuple([NumericField(f"$.temp.{name}", as_name=name)
+                                    for name in self.public_constraint_name])
+
+            try:
+                if flush:
+                    self.flushdb()
+                self.r.ft("temp").create_index(
+                    schema, definition=IndexDefinition(
+                        prefix=["temp:"], index_type=IndexType.JSON))
+            except Exception as e:
+                self.logger.print(e, Msg_level.ERROR)
+
+    def flushdb(self):
+        self.r.flushdb()

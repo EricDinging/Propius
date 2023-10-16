@@ -16,7 +16,6 @@ import logging
 import logging.handlers
 import time
 import pickle
-import gc
 
 _cleanup_coroutines = []
 
@@ -91,7 +90,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         custom_print(f"PS: connecting to executor on {self.executor_ip}:{self.executor_port}", INFO)
 
     async def round_exec_start(self):
-        # locked
         custom_print(f"PS {self.id}-{self.cur_round}: start execution", INFO)
         await self.propius_stub.end_request()
         self.execution_start = True
@@ -106,10 +104,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     def _clear_event_dict(self):
         self.client_event_dict = {}
-        gc.collect()
 
     async def close_round(self):
-        # locked
         custom_print(f"PS {self.id}-{self.cur_round}: round finish", INFO)
         self._clear_event_dict()
         if self.do_compute:
@@ -118,7 +114,9 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                 client_id=-1,
                 round=self.cur_round,
                 event=AGGREGATE,
-                task_meta=pickle.dumps({}),
+                task_meta=pickle.dumps({
+                    "gradient_policy": self.config["gradient_policy"]
+                }),
             )
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
             custom_print(f"PS {self.id}-{self.cur_round}: aggregrate event reported", INFO)
@@ -126,7 +124,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.response_time = time.time() - self.response_time
 
     async def close_failed_round(self):
-        # locked
         self._clear_event_dict()
         if self.do_compute:
             job_task_info_msg = executor_pb2.job_task_info(
@@ -139,7 +136,6 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
 
     async def re_register(self) -> bool:
-        # locked
         self.job_config['total_round'] = max(self.total_round - self.cur_round + 1, 1)
         
         custom_print(f"Parameter server: re-register, left round {self.job_config['total_round']}", WARNING)
@@ -151,12 +147,12 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
 
     def _init_event_queue(self, client_id:int):
-        # locked
         event_q = deque()
         event_q.append({
             "event": UPDATE_MODEL,
             "meta": {
                 "download_size": self.model_size,
+                "upload_size": self.model_size,
                 "round": self.cur_round
             },
             "data": {}
@@ -165,14 +161,14 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             "event": CLIENT_TRAIN,
             "meta": {
                 "batch_size": self.config["batch_size"],
-                "local_steps": self.config["local_steps"]
+                "local_steps": self.config["local_steps"],
+                "gradient_policy": self.config["gradient_policy"]
             },
             "data": {}
         })
         event_q.append({
             "event": UPLOAD_MODEL,
             "meta": {
-                "upload_size": self.model_size,
             },
             "data": {}
         })
@@ -190,29 +186,31 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
             )
+
         async with self.lock:
-            if not self.execution_start:
-                if client_id not in self.client_event_dict:
-                    if self.round_client_num < self.over_demand \
-                        and self.cur_round <= self.total_round:
-                       
-                        self._init_event_queue(client_id)
-                        custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} check-in, "
-                            f"{self.round_client_num}/{self.demand}", INFO)
-                        
-                        server_response_msg = parameter_server_pb2.server_response(
-                            event=DUMMY_EVENT,
-                            meta=pickle.dumps(DUMMY_RESPONSE),
-                            data=pickle.dumps(DUMMY_RESPONSE)
-                        )
+            if not self.execution_start and \
+                client_id not in self.client_event_dict \
+                and self.round_client_num < self.over_demand \
+                    and self.cur_round <= self.total_round:
+                    
+                self._init_event_queue(client_id)
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} check-in, "
+                    f"{self.round_client_num}/{self.demand}", INFO)
+                
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=DUMMY_EVENT,
+                    meta=pickle.dumps(DUMMY_RESPONSE),
+                    data=pickle.dumps(DUMMY_RESPONSE)
+                )
 
-                        self.round_client_num += 1
+                self.round_client_num += 1
 
-                        if self.round_client_num >= self.over_demand:
-                            self.cv.notify()
-
-
-        return server_response_msg
+                if self.round_client_num >= self.over_demand:
+                    self.cv.notify()
+            else:
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} check-in rejected", WARNING)
+        
+            return server_response_msg
     
     async def CLIENT_PING(self, request, context):
         client_id = request.id
@@ -222,16 +220,14 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             data=pickle.dumps(DUMMY_RESPONSE)
             )
         async with self.lock:
-            if self.execution_start:
-                if client_id in self.client_event_dict:
-                    event_dict = self.client_event_dict[client_id].popleft()
-                    server_response_msg = parameter_server_pb2.server_response(
-                        event=event_dict["event"],
-                        meta=pickle.dumps(event_dict["meta"]),
-                        data=pickle.dumps(event_dict["data"])
-                    )
-                    custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping, "
-                        f"issue {event_dict['event']} event", INFO)
+            if self.execution_start and client_id in self.client_event_dict:
+                event_dict = self.client_event_dict[client_id].popleft()
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=event_dict["event"],
+                    meta=pickle.dumps(event_dict["meta"]),
+                    data=pickle.dumps(event_dict["data"])
+                )
+                custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} start execute", INFO)
                     
             else:        
                 if client_id in self.client_event_dict:
@@ -240,13 +236,15 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                         meta=pickle.dumps(DUMMY_RESPONSE),
                         data=pickle.dumps(DUMMY_RESPONSE)
                     )
-        return server_response_msg
+                    # custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping", INFO)
+                else:
+                    custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} ping rejected", WARNING)
+            return server_response_msg
 
-    
     async def CLIENT_EXECUTE_COMPLETION(self, request, context):
         client_id = request.id
-        compl_event, status = request.event, request.status
-        meta, data = pickle.loads(request.meta), pickle.loads(request.data)
+        compl_event, _ = request.event, request.status
+        meta, _ = pickle.loads(request.meta), pickle.loads(request.data)
         client_exec_id = meta["exec_id"]
 
         server_response_msg = parameter_server_pb2.server_response(
@@ -254,26 +252,29 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
             )
-
         async with self.lock:
             if self.execution_start and \
                 meta["round"] == self.cur_round and \
                     client_id in self.client_event_dict and \
                         self.round_result_cnt <= self.demand:
-               
+                
                 if compl_event == UPLOAD_MODEL:
                     custom_print(f"PS {self.id}-{self.cur_round}: client {client_id} complete, "
-                                f"issue SHUT_DOWN event, {self.round_result_cnt}/{self.demand}", INFO)
+                                f"{self.round_result_cnt}/{self.demand}", INFO)            
                     self.round_result_cnt += 1
-                    task_meta = {
-                        "local_steps": self.config["local_steps"],
-                        "learning_rate": self.config["learning_rate"],
-                        "batch_size": self.config["batch_size"],
-                        "num_loaders": self.config["num_loaders"],
-                        "loss_decay": self.config["loss_decay"]
-                    }
 
                     if self.do_compute:
+                        local_steps = meta["local_steps"]
+                        task_meta = {
+                            "local_steps": local_steps,
+                            "learning_rate": self.config["learning_rate"],
+                            "batch_size": self.config["batch_size"],
+                            "num_loaders": self.config["num_loaders"],
+                            "loss_decay": self.config["loss_decay"],
+                            "gradient_policy": self.config["gradient_policy"],
+                            "proxy_mu": self.config["proxy_mu"] if "proxy_mu" in self.config else 0,
+                            "qfed_q": self.config["qfed_q"] if "qfed_q" in self.config else 0,
+                        }
                         job_task_info_msg = executor_pb2.job_task_info(
                             job_id=self.id,
                             client_id=client_exec_id,
@@ -282,26 +283,24 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                             task_meta=pickle.dumps(task_meta),
                         )
                         await self.executor_stub.JOB_REGISTER_TASK(job_task_info_msg)
-                    
+                        
                 # Get next event
-                if len(self.client_event_dict[client_id]) == 0:
+                next_event_dict = self.client_event_dict[client_id].popleft()
+                if not self.client_event_dict[client_id]:
                     del self.client_event_dict[client_id]
-                else:
-                    next_event_dict = self.client_event_dict[client_id].popleft()
-                    if len(self.client_event_dict[client_id]) == 0:
-                        del self.client_event_dict[client_id]
-                    
-                    server_response_msg = parameter_server_pb2.server_response(
-                        event=next_event_dict["event"],
-                        meta=pickle.dumps(next_event_dict["meta"]),
-                        data=pickle.dumps(next_event_dict["data"])
-                    )
-
-                    custom_print(f"PS {self.id}-{self.cur_round}: client compl, issue {next_event_dict['event']} event", INFO)
+                
+                server_response_msg = parameter_server_pb2.server_response(
+                    event=next_event_dict["event"],
+                    meta=pickle.dumps(next_event_dict["meta"]),
+                    data=pickle.dumps(next_event_dict["data"])
+                )
 
                 if self.round_result_cnt >= self.demand:
                     self.cv.notify()
-        return server_response_msg
+
+            else:
+                custom_print(f"PS {self.id}-{self.cur_round}: client execution rejected", WARNING)
+            return server_response_msg
             
     def gen_report(self):
         csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}.csv"
@@ -378,6 +377,7 @@ async def run(config):
                      f"sched timeout {ps.num_sched_timeover} "
                      f"response timeout {ps.num_response_timeover}", WARNING)
         
+        del ps.propius_stub
         await ps.stop_server(5)
     
     ps = Parameter_server(config)
@@ -406,7 +406,8 @@ async def run(config):
         executor_ack = await ps.executor_stub.JOB_REGISTER(job_info_msg)
         ps.model_size = executor_ack.model_size
     else:
-        ps.model_size = 74016 # for mobilenetv2 and femnist dryrun profile
+        ps.model_size = config["model_size"] if "model_size" in config else 74016
+        # for mobilenetv2 and femnist dryrun profile
 
     ps.start_time = time.time()
     await ps.init_report()
@@ -414,15 +415,13 @@ async def run(config):
     await ps.start_server()
     async with ps.lock:
         while ps.cur_round <= ps.total_round:
-            if ps.cur_round % 10 == 0 or ps.num_sched_timeover % 5 == 0 or ps.num_response_timeover % 5 == 0:
-                await ps.stop_server()
-                await ps.start_server()
+            # if ps.cur_round % 10 == 0 or ps.num_sched_timeover % 5 == 4 or ps.num_response_timeover % 5 == 4:
+            #     await ps.stop_server()
+            #     await ps.start_server()
 
-            ps.client_event_dict = {}
             ps.execution_start = False
             ps.round_client_num = 0
             ps.round_result_cnt = 0
-
             ps.sched_time = time.time()
 
             if not await ps.propius_stub.start_request(new_demand=False):
@@ -433,6 +432,7 @@ async def run(config):
             
             try:
                 timeout = config['sched_timeout'] / config['speedup_factor']
+                custom_print(f"Being scheduled, wait for {timeout}", INFO)
                 await asyncio.wait_for(ps.cv.wait(), timeout=timeout)
             except asyncio.TimeoutError:
                 custom_print(f"PS {ps.id}-{ps.cur_round}: schedule timeout", WARNING)
@@ -440,12 +440,13 @@ async def run(config):
                 ps.total_sched_delay += config['sched_timeout']
                 ps.num_sched_timeover += 1
                 continue
-
+                
             await ps.round_exec_start()
             ps.response_time = time.time()
 
             try:
                 timeout = config['exec_timeout'] / config['speedup_factor']
+                custom_print(f"Start execute, wait for {timeout}", INFO)
                 await asyncio.wait_for(ps.cv.wait(), timeout=timeout)
             except asyncio.TimeoutError:
                 custom_print(f"PS {ps.id}-{ps.cur_round}: exec timeout", WARNING)
@@ -453,6 +454,7 @@ async def run(config):
                 ps.total_response_time += config['exec_timeout']
                 ps.num_response_timeover += 1
                 continue
+
             ps.round_time = time.time()
             await ps.close_round()
             await ps.gen_round_report()
@@ -502,6 +504,8 @@ if __name__ == '__main__':
                 config['sched_alg'] = eval_config['sched_alg']
                 config['do_compute'] = eval_config['do_compute']
                 config['speedup_factor'] = eval_config['speedup_factor']
+                # config['model_size'] = 10
+
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(run(config))
                 

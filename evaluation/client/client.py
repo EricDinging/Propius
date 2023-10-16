@@ -22,7 +22,7 @@ class Client:
             
         self.propius_client_stub = Propius_client_aio(
             client_config=client_config, 
-            verbose=False,
+            verbose=client_config['verbose'] if 'verbose' in client_config else False,
             logging=True)
         
         self.ps_channel = None
@@ -44,6 +44,12 @@ class Client:
         self.speedup_factor = client_config["speedup_factor"]
         self.is_FA = client_config["is_FA"]
 
+        self.local_steps = 0
+        self.verbose = client_config['verbose'] if 'verbose' in client_config else False
+
+        self.update_model_comm_time = 0
+        self.upload_model_comm_time = 0
+
     def _deallocate(self):
         self.event_queue.clear()
         self.meta_queue.clear()
@@ -53,7 +59,7 @@ class Client:
         self.ps_channel = grpc.aio.insecure_channel(f"{ps_ip}:{ps_port}")
         self.ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(self.ps_channel)
         custom_print(
-            f"Client {self.id}: connecting to parameter server on {ps_ip}:{ps_port}")
+            f"c-{self.id}: connecting to parameter server on {ps_ip}:{ps_port}")
         
     async def handle_server_response(self, server_response: parameter_server_pb2.server_response):
         event = server_response.event
@@ -97,28 +103,45 @@ class Client:
         exe_time = 0
 
         if event == CLIENT_TRAIN:
-            exe_time = 3 * meta["batch_size"] * meta["local_steps"] * float(self.comp_speed) / 1000
+            self.local_steps = meta["local_steps"]
+            one_step_exe_time = max(3 * meta["batch_size"] * float(self.comp_speed) / (1000 * self.speedup_factor), 0.0001)
+
+            remain_time = self.remain_time()
+
+            if meta["gradient_policy"] == 'fed-prox':
+                self.local_steps = max(min(self.local_steps, int((remain_time - self.upload_model_comm_time) / one_step_exe_time)), 1)
+
+            exe_time = one_step_exe_time * self.local_steps
+            #TODO
+            exe_time += 3
+
+            if meta["gradient_policy"] != 'fed-prox':
+                if exe_time + self.upload_model_comm_time > remain_time:
+                    return False
+
             if self.is_FA:
                 exe_time /= 3
+
         elif event == SHUT_DOWN:
             return False
+        
         elif event == UPDATE_MODEL:
             self.round = meta["round"]
-            exe_time = meta["download_size"] / float(self.comm_speed)
+            self.update_model_comm_time = meta["download_size"] / (float(self.comm_speed) * self.speedup_factor)
+            self.upload_model_comm_time = meta["upload_size"] / (float(self.comm_speed) * self.speedup_factor)
+            exe_time = self.update_model_comm_time
 
         elif event == UPLOAD_MODEL:
-            exe_time = meta["upload_size"] / float(self.comm_speed)
+            exe_time = self.upload_model_comm_time
             if self.is_FA:
                 exe_time = 0 
-        
-        exe_time /= self.speedup_factor
 
-        custom_print(f"Client {self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
+        custom_print(f"c-{self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
         await asyncio.sleep(exe_time)
 
         compl_event = event
         status = True
-        compl_meta = {"round": self.round, "exec_id": self.id}
+        compl_meta = {"round": self.round, "exec_id": self.id, "local_steps": self.local_steps}
         compl_data = DUMMY_RESPONSE
         
         await self.client_execute_complete(compl_event, status, compl_meta, compl_data)
@@ -135,10 +158,16 @@ class Client:
         
         await asyncio.sleep(3)
 
+        if self.verbose:
+            custom_print(f"c-{self.id}: checked in")
+
         for _ in range(50):
             if not await self.client_ping():
                 break
             await asyncio.sleep(3)
+
+        if self.verbose:
+            custom_print(f"c-{self.id}: executing")
 
         for _ in range(10):  
             if not await self.execute():
@@ -150,7 +179,7 @@ class Client:
             self._deallocate()
             if propius:
                 await self.propius_client_stub.close()
-                custom_print(f"Client {self.id}: ==shutting down==", ERROR)
+                custom_print(f"c-{self.id}: ==shutting down==", ERROR)
             await self.ps_channel.close()
         except Exception:
             pass
@@ -163,7 +192,7 @@ class Client:
                     custom_print(f"Period: {self.cur_period}", ERROR)
                     custom_print(f"Active time: {self.active_time[-1]}", ERROR)
                     custom_print(f"Inactive time: {self.inactive_time[-1]}", ERROR)
-                    custom_print(f"Client {self.id}: ==shutting down==", WARNING)
+                    custom_print(f"c-{self.id}: ==shutting down==", WARNING)
                     break
                 cur_time = time.time() - self.eval_start_time
 
@@ -175,7 +204,7 @@ class Client:
                 
                 if cur_time < self.active_time[self.cur_period]:
                     sleep_time = self.active_time[self.cur_period] - cur_time
-                    # custom_print(f"Client {self.id}: sleep for {sleep_time}")
+                    # custom_print(f"c-{self.id}: sleep for {sleep_time}")
                     await asyncio.sleep(sleep_time)
                     continue
                 elif cur_time >= self.inactive_time[self.cur_period]:
@@ -183,13 +212,14 @@ class Client:
                     continue
 
                 
-                remain_time = self.remain_time()
-                if remain_time <= 600 / self.speedup_factor:
-                    await asyncio.sleep(remain_time)
+                # remain_time = self.remain_time()
+                # if remain_time <= 600 / self.speedup_factor:
+                #     await asyncio.sleep(remain_time)
+                #     continue
                 
                 await self.propius_client_stub.connect()
 
-                result = await self.propius_client_stub.auto_assign(0)
+                result = await self.propius_client_stub.auto_assign(ttl=5)
 
                 _, status, self.task_id, ps_ip, ps_port = result
 
@@ -202,19 +232,21 @@ class Client:
                     continue
                 
                 await self._connect_to_ps(ps_ip, ps_port)
+                if self.verbose:
+                    custom_print(f"c-{self.id}: connecting to {ps_ip}:{ps_port}")
                 await self.event_monitor()
+                if self.verbose:
+                    custom_print(f"c-{self.id}: disconnect from {ps_ip}:{ps_port}")
 
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
-                custom_print(f"Client {self.id}: {e}", ERROR)
-            finally:
-                await self.cleanup_routines()
+                custom_print(f"c-{self.id}: {e}", ERROR)
             
         await self.cleanup_routines(True)
         
 if __name__ == '__main__':
-    config_file = './evaluation/client/client_conf.yml'
+    config_file = './evaluation/client/test_client_conf.yml'
     with open(config_file, 'r') as config:
         config = yaml.load(config, Loader=yaml.FullLoader)
         if len(sys.argv) != 2:
@@ -227,6 +259,11 @@ if __name__ == '__main__':
             config["load_balancer_ip"] = eval_config["load_balancer_ip"]
             config["load_balancer_port"] = eval_config["load_balancer_port"]
             config["use_docker"] = eval_config["use_docker"]
+            config["eval_start_time"] = time.time()
+            config["use_docker"] = False
+            config["speedup_factor"] = 1
+            config["is_FA"] = False
+            config["verbose"] = True
             client = Client(config)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(client.run())

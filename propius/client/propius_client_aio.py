@@ -3,7 +3,7 @@ from propius.channels import propius_pb2
 import pickle
 import grpc
 import asyncio
-from propius.util.commons import *
+from propius.util.commons import Msg_level, get_time, geq, encode_specs
 import logging
 
 #TODO state flow check
@@ -53,17 +53,17 @@ class Propius_client_aio():
     async def __del__(self):
         await self._cleanup_routine()
 
-    def _custom_print(self, message: str, level: int=PRINT):
+    def _custom_print(self, message: str, level: int=Msg_level.PRINT):
         if self.verbose:
             print(f"{get_time()} {message}")
         if self.logging:
-            if level == DEBUG:
+            if level == Msg_level.DEBUG:
                 logging.debug(message)
-            elif level == INFO:
+            elif level == Msg_level.INFO:
                 logging.info(message)
-            elif level == WARNING:
+            elif level == Msg_level.WARNING:
                 logging.warning(message)
-            elif level == ERROR:
+            elif level == Msg_level.ERROR:
                 logging.error(message)
 
     def _connect_lb(self) -> None:
@@ -88,7 +88,7 @@ class Propius_client_aio():
                 self._custom_print(f"Client: connected to Propius")
                 return
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(2)
 
         raise RuntimeError(
@@ -130,7 +130,7 @@ class Propius_client_aio():
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(2)
         raise RuntimeError("Unable to connect to Propius at the moment")
     
@@ -158,13 +158,14 @@ class Propius_client_aio():
                 return (task_ids, task_private_constraint)
             
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
     
     async def select_task(self, task_ids: list, private_constraints: list)->int:
-        """Client select a task locally. The default strategy is to select the first task in task offer list of which the private constraint is satisfied by the client private specs. 
+        """Client select a task locally. The default strategy is to select the first task in 
+        task offer list of which the private constraint is satisfied by the client private specs. 
 
         Args:   
             task_ids: list of task id
@@ -213,11 +214,11 @@ class Propius_client_aio():
                     self._custom_print(f"Client {self.id}: client task selection is recieved")
                     return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
                 else:
-                    self._custom_print(f"Client {self.id}: client task selection is rejected", WARNING)
+                    self._custom_print(f"Client {self.id}: client task selection is rejected", Msg_level.WARNING)
                     return None
             
             except Exception as e:
-                self._custom_print(e, ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(2)
         
         raise RuntimeError("Unable to connect to Propius at the moment")
@@ -239,42 +240,44 @@ class Propius_client_aio():
             RuntimeError: if can't establish connection after multiple trial
         """
 
+        ttl = min(ttl, 10)
         task_ids, task_private_constraint = await self.client_check_in()
+
+        #TODO
+        await asyncio.sleep(4)
         
-        self._custom_print(
-                f"Client {self.id}: recieve client manager offer: {task_ids}")
-            
-        while True:
+        while ttl > 0:
             while ttl > 0:
                 if len(task_ids) > 0:
                     break
                 await asyncio.sleep(2)
                 ttl -= 1
                 task_ids, task_private_constraint = await self.client_ping()
+
+            if len(task_ids) == 0:
+                break
+            
+            self._custom_print(
+                f"Client {self.id}: recieve client manager offer: {task_ids}")
             
             task_id = await self.select_task(task_ids, task_private_constraint)
+            self._custom_print(f"Client {self.id}: {task_id} selected", Msg_level.INFO)
+            
             if task_id == -1:
-                task_ids = []
-                task_private_constraint = []
-                if ttl <= 0:
-                    return self.id, False, -1, None, None
-                else:
-                    continue
+                task_ids, task_private_constraint = [], []
+                continue
 
             result = await self.client_accept(task_id)
 
             if not result:
-                task_ids = []
-                task_private_constraint = []
-                if ttl <= 0:
-                    return self.id, False, -1, None, None
-                else:
-                    continue
+                self._custom_print(f"Client {self.id}: {task_id} not accepted", Msg_level.INFO)
+                task_ids, task_private_constraint = [], []
+                continue
             else:
-                self._custom_print(f"Client {self.id}: scheduled with {task_id}", INFO)
-                break
-        
-        return self.id, True, task_id, result[0], result[1]
+                self._custom_print(f"Client {self.id}: scheduled with {task_id}", Msg_level.INFO)
+                return (self.id, True, task_id, result[0], result[1])
+            
+        return (self.id, False, -1, None, None)
     
 
 

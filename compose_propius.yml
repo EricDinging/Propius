@@ -1,107 +1,101 @@
-version: "3.9"
+version: '3.9'
 
 services:
   scheduler:
-    build: 
+    build:
       context: .
       dockerfile: ./propius/scheduler/Dockerfile
     volumes:
-      - ./propius/scheduler:/propius/scheduler
-      - ./propius/global_config.yml:/propius/global_config.yml
-      - ./propius/monitor:/propius/monitor
+    - ./propius:/propius
     depends_on:
-      - job_db
-      - client_db_0
-      - client_db_1
+    - client_db_0
+    - client_db_1
+    - job_db
     stop_signal: SIGINT
     environment:
-      - TZ=America/Detroit
+    - TZ=America/Detroit
 
   job_manager:
     build:
       context: .
       dockerfile: ./propius/job_manager/Dockerfile
     ports:
-      - "50001:50001"
+    - 50001:50001
     volumes:
-      - ./propius/job_manager:/propius/job_manager
-      - ./propius/global_config.yml:/propius/global_config.yml
-      - ./propius/monitor:/propius/monitor
+    - ./propius:/propius
     depends_on:
-      - scheduler
+    - scheduler
+    - job_db
     stop_signal: SIGINT
     environment:
-      - TZ=America/Detroit
+    - TZ=America/Detroit
+
+  load_balancer:
+    build:
+      context: .
+      dockerfile: ./propius/load_balancer/Dockerfile
+    ports:
+    - 50002:50002
+    volumes:
+    - ./propius:/propius
+    depends_on:
+    - client_manager_0
+    - client_manager_1
+    stop_signal: SIGINT
+    environment:
+    - TZ=America/Detroit
+
+  job_db:
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command: ['6379']
+    environment:
+    - TZ=America/Detroit
 
   client_manager_0:
     build:
       context: .
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
-      - ./propius/client_manager:/propius/client_manager
-      - ./propius/global_config.yml:/propius/global_config.yml
-      - ./propius/monitor:/propius/monitor
+    - ./propius:/propius
     depends_on:
-      - job_db
-      - client_db_0
-    stop_signal: SIGINT
-    command: ["0"]
+    - job_db
+    - client_db_0
+    - scheduler
+    command:
+    - '0'
     environment:
-      - TZ=America/Detroit
-
+    - TZ=America/Detroit
+    stop_signal: SIGINT
+  client_db_0:
+    build:
+      context: .
+      dockerfile: ./propius/database/Dockerfile
+    command:
+    - '6380'
+    environment:
+    - TZ=America/Detroit
   client_manager_1:
     build:
       context: .
       dockerfile: ./propius/client_manager/Dockerfile
     volumes:
-      - ./propius/client_manager:/propius/client_manager
-      - ./propius/global_config.yml:/propius/global_config.yml
-      - ./propius/monitor:/propius/monitor
+    - ./propius:/propius
     depends_on:
-      - job_db
-      - client_db_1
+    - job_db
+    - client_db_1
+    - scheduler
+    command:
+    - '1'
+    environment:
+    - TZ=America/Detroit
     stop_signal: SIGINT
-    command: ["1"]
-    environment:
-      - TZ=America/Detroit
-  
-  load_balancer:
-    build:
-      context: .
-      dockerfile: ./propius/load_balancer/Dockerfile
-    ports:
-      - "50002:50002"
-    volumes:
-      - ./propius/load_balancer:/propius/load_balancer
-      - ./propius/global_config.yml:/propius/global_config.yml
-      - ./propius/monitor:/propius/monitor
-    depends_on:
-      - client_manager_0
-      - client_manager_1
-    stop_signal: SIGINT
-    environment:
-      - TZ=America/Detroit
-
-  job_db:
-    build:
-      context: .
-      dockerfile: ./propius/database/Dockerfile
-    command: ["6379"]
-    environment:
-      - TZ=America/Detroit
-
-  client_db_0:
-    build:
-      context: .
-      dockerfile: ./propius/database/Dockerfile
-    command: ["6380"]
-    environment:
-      - TZ=America/Detroit
-
   client_db_1:
     build:
       context: .
       dockerfile: ./propius/database/Dockerfile
-    command: ["6381"]
+    command:
+    - '6381'
     environment:
-      - TZ=America/Detroit
+    - TZ=America/Detroit
