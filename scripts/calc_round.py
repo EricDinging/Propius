@@ -51,20 +51,28 @@ def read_file(csv_file):
         return round_num, test_acc_list[-1]
 
 job_info_map = {}
-total_acc = 0
+total_acc = []
 for filename in os.listdir(folder):
     if filename.endswith(".csv") and filename[:4] == "test":
         round_num, acc = read_file(filename)
         print(f"{filename}: {round_num, acc}")
 
         job_info_map[filename] = acc
-        total_acc += acc
+        total_acc.append(acc)
 
 job_info_map = dict(sorted(job_info_map.items()))
 print("File: acc")
 for key, val in job_info_map.items():
     print(f"{key}: {val}")
 
-print(f"Avg acc: {total_acc / len(job_info_map):.3f}")
+std_dev = np.std(total_acc)
+
+print(f"Avg acc: {sum(total_acc) / len(total_acc):.3f}")
+print(f"Low acc: {min(total_acc):.3f}")
+print(f"High acc: {max(total_acc):.3f}")
+print(f"Std dev: {std_dev:.3f}")
+
+
+
 
 

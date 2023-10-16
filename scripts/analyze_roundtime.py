@@ -5,7 +5,7 @@ response time across all simulated jobs
 import os
 import csv
 
-sched_alg = "irs3"
+sched_alg = "random"
 folder_path = f'./evaluation_result/{sched_alg}-6000-var/job/'
 # folder_path = './evaluation/monitor/job'
 
