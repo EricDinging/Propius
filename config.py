@@ -8,6 +8,8 @@ PROPIUS_SYS = 0
 PROPIUS_POLICY = 1
 PROPIUS_EVAL = 2
 
+### EDIT HERE!
+
 option = PROPIUS_SYS
 
 propius_config_file = './propius/global_config.yml'
@@ -29,6 +31,8 @@ job_trace = './evaluation/job/trace/job_trace_10_new.txt'
 allow_exceed_total_round = True
 
 dataset = "femnist"
+
+### STOP EDITING HERE!
 
 if option == PROPIUS_SYS:
     compose_file = './compose_propius.yml'
