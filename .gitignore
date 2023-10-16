@@ -50,3 +50,5 @@ coqa
 experiment/
 *.tar.gz
 *.jpg
+*.csv
+*.log
