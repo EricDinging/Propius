@@ -5,13 +5,13 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-version = "6000-new"
-time_cutoff = 60000
+version = "6000-fixed"
+time_cutoff = 100000
 round_cutoff = 150
 
 sched_alg_list = [
                   'fifo',
-                #   'random',
+                  'random',
                 #   'srsf',
                   'amg'
                   ]
