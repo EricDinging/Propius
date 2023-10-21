@@ -56,7 +56,7 @@ else:
         compose_file = './compose_eval_gpu.yml'
         do_compute = True
         use_cuda = True
-        worker_num_list = [2, 2, 2, 2]
+        worker_num_list = [4, 4, 4, 4]
         worker_num = sum(worker_num_list)
         worker_starting_port = 49998
 
