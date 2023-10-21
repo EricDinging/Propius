@@ -10,7 +10,7 @@ PROPIUS_EVAL = 2
 
 ### EDIT HERE!
 
-option = PROPIUS_SYS
+option = PROPIUS_EVAL
 
 propius_config_file = './propius/global_config.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
@@ -24,13 +24,13 @@ ideal_client = False
 is_FA = False
 
 speedup_factor = 3
-sched_alg = 'srsf'
+sched_alg = 'fifo'
 
-profile_folder = './evaluation/job/profile_mobilenet'
+profile_folder = './evaluation/job/profile_resnet32_speech'
 job_trace = './evaluation/job/trace/job_trace_10_new.txt'
 allow_exceed_total_round = True
 
-dataset = "femnist"
+dataset = "google_speech"
 
 ### STOP EDITING HERE!
 
@@ -143,18 +143,18 @@ def config_propius():
     propius_data["sched_alg"] = sched_alg
     propius_data["allow_exceed_total_round"] = allow_exceed_total_round
 
-    def get_gpu_idx():
-        allocate_list = copy.deepcopy(worker_num_list)
+    def get_gpu_idx(allocate_list):
         for i, _ in enumerate(allocate_list):
             if allocate_list[i] > 0:
                 allocate_list[i] -= 1
                 return i
 
     if option == PROPIUS_EVAL:
+        allocate_list = copy.deepcopy(worker_num_list)
         config_data['worker'] = [{
             'ip': 'localhost',
             'port': worker_starting_port - i,
-            'device': get_gpu_idx()
+            'device': get_gpu_idx(allocate_list)
         } for i in range(worker_num)]
 
 def config_evaluation():

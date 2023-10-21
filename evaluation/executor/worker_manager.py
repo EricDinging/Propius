@@ -78,7 +78,7 @@ class Worker_manager:
     async def init_job(self, job_id: int, dataset_name: str, model_name: str, args: dict)->float:
         model = init_model(model_name, dataset_name)
         model_size = sys.getsizeof(pickle.dumps(model)) / 1024.0 * 8.  # kbits
-
+        self.logger.print(f"model: {model_name}, size: {model_size}")
         # broadcast
         
         job_init_msg = executor_pb2.job_init(

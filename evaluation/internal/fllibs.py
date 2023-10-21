@@ -49,7 +49,7 @@ def init_model(model_name: str, dataset_name: str):
     return model
 
 def init_dataset(dataset_name: str, config: dict, data_partitioner_dict: dict, test_data_partition_dict: dict):
-    import_libs()
+    import_libs(dataset_name)
 
     if dataset_name == "femnist":
         from evaluation.internal.dataloaders.femnist import FEMNIST
@@ -98,9 +98,11 @@ def init_dataset(dataset_name: str, config: dict, data_partitioner_dict: dict, t
 
         bg_dataset = BackgroundNoiseDataset(
             os.path.join(config['data_dir'], bkg), data_aug_transform)
+
         add_bg_noise = AddBackgroundNoiseOnSTFT(bg_dataset)
         train_feature_transform = transforms.Compose([ToMelSpectrogramFromSTFT(
                 n_mels=32), DeleteSTFT(), ToTensor('mel_spectrogram', 'input')])
+
         train_dataset = SPEECH(config['data_dir'],
                                dataset='train',
                                 transform=transforms.Compose(
@@ -116,7 +118,6 @@ def init_dataset(dataset_name: str, config: dict, data_partitioner_dict: dict, t
                                 [LoadAudio(),
                                 FixAudioLength(),
                                 valid_feature_transform]))
-        
         train_partitioner = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
         train_partitioner.partition_data_helper(0, data_map_file=config['data_map_file'])
         data_partitioner_dict[dataset_name] = train_partitioner
