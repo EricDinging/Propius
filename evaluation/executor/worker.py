@@ -11,7 +11,7 @@ from evaluation.commons import *
 from evaluation.internal.torch_module_adapter import *
 from evaluation.internal.dataset_handler import *
 from evaluation.internal.test_helper import *
-from evaluation.internal.fllibs import init_data_set
+from evaluation.internal.fllibs import init_dataset
 from collections import deque
 from typing import List
 
@@ -133,8 +133,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         self.job_id_data_map[job_id] = dataset_name
 
         if dataset_name not in self.data_partitioner_dict:
-            
-            init_data_set(dataset_name, self.config,
+            init_dataset(dataset_name, self.config,
                           self.data_partitioner_dict, 
                           self.test_data_partition_dict)
             
