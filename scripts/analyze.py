@@ -12,7 +12,7 @@ round_cutoff = 150
 sched_alg_list = [
                   'fifo',
                   'random',
-                #   'srsf',
+                  'srsf',
                   'amg'
                   ]
 
