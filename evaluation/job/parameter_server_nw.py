@@ -314,7 +314,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
                     self.total_sched_delay / (total_round + self.num_sched_timeover),
                     self.total_response_time / (total_round + self.num_response_timeover),
                 ])
-            writer.writerow(-2, -2, self.num_sched_timeover, self.num_response_timeover)
+            writer.writerow([-2, -2, self.num_sched_timeover, self.num_response_timeover])
 
     async def init_report(self):
         csv_file_name = f"./evaluation/monitor/job/job_{self.port}_{self.config['sched_alg']}.csv"
