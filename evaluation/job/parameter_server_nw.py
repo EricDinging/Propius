@@ -29,7 +29,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         
         self.do_compute = config["do_compute"]
 
-        if config["use_docker"]:
+        if config["dispatcher_use_docker"]:
             config["executor_ip"] = "executor"
 
         job_config = {
@@ -38,7 +38,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             "total_round": config["total_round"],
             "demand": config["demand"] if "over_selection" not in config else \
                     int(config["over_selection"] * config["demand"]),
-            "job_manager_ip": config["job_manager_ip"] if not config["use_docker"] else "job_manager",
+            "job_manager_ip": config["job_manager_ip"] if not config["dispatcher_use_docker"] else "job_manager",
             "job_manager_port": config["job_manager_port"],
             "ip": config["ip"],
             "port": config["port"]
@@ -47,7 +47,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
         self.job_config = job_config
         self.config = config
 
-        self.ip = config["ip"] if not config["use_docker"] else "0.0.0.0"
+        self.ip = config["ip"] if not config["dispatcher_use_docker"] else "0.0.0.0"
         self.port = config["port"]
         self.id = self.port
 
@@ -499,7 +499,7 @@ if __name__ == '__main__':
                 config['executor_port'] = eval_config['executor_port']
                 config['job_manager_ip'] = eval_config['job_manager_ip']
                 config['job_manager_port'] = eval_config['job_manager_port']
-                config['use_docker'] = eval_config['use_docker']
+                config['dispatcher_use_docker'] = eval_config['dispatcher_use_docker']
                 config['sched_alg'] = eval_config['sched_alg']
                 config['do_compute'] = eval_config['do_compute']
                 config['speedup_factor'] = eval_config['speedup_factor']
