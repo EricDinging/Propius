@@ -26,7 +26,7 @@ class LoadAudio(object):
     def __call__(self, data):
         path = data['path']
         if path:
-            samples, sample_rate = librosa.load(path, self.sample_rate)
+            samples, sample_rate = librosa.load(path, sr=self.sample_rate)
         else:
             # silence
             sample_rate = self.sample_rate
