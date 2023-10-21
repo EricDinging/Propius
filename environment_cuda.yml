@@ -12,3 +12,4 @@ dependencies:
   - redis-py
   - pandas
   - ruamel.yaml
+  - librosa
