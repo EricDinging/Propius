@@ -60,6 +60,14 @@ services:
     - worker_5
     - worker_6
     - worker_7
+    - worker_8
+    - worker_9
+    - worker_10
+    - worker_11
+    - worker_12
+    - worker_13
+    - worker_14
+    - worker_15
     environment:
     - TZ=America/Detroit
 
@@ -445,6 +453,182 @@ services:
     stop_signal: SIGINT
     command:
     - '7'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_8:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets:/datasets
+    stop_signal: SIGINT
+    command:
+    - '8'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_9:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets:/datasets
+    stop_signal: SIGINT
+    command:
+    - '9'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_10:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets:/datasets
+    stop_signal: SIGINT
+    command:
+    - '10'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_11:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets:/datasets
+    stop_signal: SIGINT
+    command:
+    - '11'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_12:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets:/datasets
+    stop_signal: SIGINT
+    command:
+    - '12'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_13:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets:/datasets
+    stop_signal: SIGINT
+    command:
+    - '13'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_14:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets:/datasets
+    stop_signal: SIGINT
+    command:
+    - '14'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 4
+            capabilities:
+            - gpu
+    environment:
+    - TZ=America/Detroit
+  worker_15:
+    build:
+      context: .
+      dockerfile: ./evaluation/executor/Dockerfile_worker_gpu
+      args:
+        WORKER_IMAGE: nvidia/cuda:11.6.2-devel-ubuntu20.04
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets:/datasets
+    stop_signal: SIGINT
+    command:
+    - '15'
     deploy:
       resources:
         reservations:
