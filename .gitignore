@@ -25,7 +25,7 @@ math/
 
 # dataset
 open_images
-speech
+google_speech
 amazon_review
 charades
 europarl
