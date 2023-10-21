@@ -82,7 +82,6 @@ class Worker(executor_pb2_grpc.WorkerServicer):
             (data, target) = data_pair
 
             dataset = self.job_id_data_map[conf["job_id"]]
-
             if dataset == "google_speech":
                 data = torch.unsqueeze(data, 1).to(device=self.device)
             else: 
@@ -132,6 +131,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
         self.job_id_data_map[job_id] = dataset_name
 
+        self.logger.print(f"Worker {self.id}: job {job_id} dataset {dataset_name}")
         if dataset_name not in self.data_partitioner_dict:
             init_dataset(dataset_name, self.config,
                           self.data_partitioner_dict, 
@@ -142,7 +142,7 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         self.data_partitioner_ref_cnt_dict[dataset_name] += 1
         self.job_id_model_adapter_map[job_id] = model_adapter
         self.task_finished[job_id] = {}
-        self.logger.print(f"Worker {self.id}: recieve job {job_id} init", INFO)
+        self.logger.print(f"Worker {self.id}: job {job_id} init finish", INFO)
 
         return executor_pb2.ack(ack=True)
     
@@ -300,7 +300,11 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         with torch.no_grad():
             for data, target in test_data:
                 try:
-                    data = Variable(data).to(device=self.device)
+                    dataset = self.job_id_data_map[conf["job_id"]]
+                    if dataset == "google_speech":
+                        data = torch.unsqueeze(data, 1).to(device=self.device)
+                    else: 
+                        data = Variable(data).to(device=self.device)
                     target = Variable(target).to(device=self.device)
                     output = model(data)
                     loss = criterion(output, target)
@@ -445,7 +449,7 @@ if __name__ == '__main__':
 
     log_file = f'./evaluation/monitor/executor/wk_{id}.log'
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    logger = My_logger(log_file=log_file, verbose=False, use_logging=True)
+    logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)
