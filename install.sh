@@ -54,6 +54,8 @@ isDockerComposeNotInstalled() {
 isPackageNotInstalled conda
 
 conda init bash
+PROPIUS_HOME=$(pwd)
+echo export PROPIUS_HOME=$(pwd) >> ~/.bashrc
 . ~/.bashrc
 
 if [ "$1" == "--cuda" ]; then
