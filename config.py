@@ -26,7 +26,7 @@ is_FA = False
 speedup_factor = 3
 sched_alg = 'fifo'
 
-profile_folder = './evaluation/job/profile_resnet32_speech'
+profile_folder = './evaluation/job/profile_resnet34_speech'
 job_trace = './evaluation/job/trace/job_trace_10_new.txt'
 allow_exceed_total_round = True
 
