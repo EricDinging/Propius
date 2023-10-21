@@ -38,7 +38,7 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
                 f"{ip}",
                 f"{port + i}"]
             print(command)
-            if config["use_docker"]:
+            if config["dispatcher_use_docker"]:
                 p = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             else:
                 p = subprocess.Popen(command)

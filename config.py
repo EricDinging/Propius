@@ -44,6 +44,8 @@ else:
     client_num = 6000
 
     evaluation_use_docker = True
+    dispatcher_use_docker = False
+
     client_per_container = 1000
     job_per_container = 2   
     if option == PROPIUS_POLICY:
@@ -54,8 +56,7 @@ else:
         compose_file = './compose_eval_gpu.yml'
         do_compute = True
         use_cuda = True
-
-        worker_num_list = [4, 4, 0, 0]
+        worker_num_list = [2, 2, 2, 2]
         worker_num = sum(worker_num_list)
         worker_starting_port = 49998
 
@@ -159,6 +160,7 @@ def config_propius():
 
 def config_evaluation():
     config_data["use_docker"] = evaluation_use_docker
+    config_data["dispatcher_use_docker"] = dispatcher_use_docker
     config_data["do_compute"] = do_compute
     config_data["is_FA"] = is_FA
     config_data["use_cuda"] = use_cuda

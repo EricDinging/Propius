@@ -66,7 +66,7 @@ async def run(config):
                     "eval_start_time": eval_start_time,
                     "active": active_time,
                     "inactive": inactive_time,
-                    "use_docker": config["use_docker"],
+                    "dispatcher_use_docker": config["dispatcher_use_docker"],
                     "speedup_factor": config["speedup_factor"],
                     "is_FA": config["is_FA"],
                     "verbose": False
