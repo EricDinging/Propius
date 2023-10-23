@@ -40,7 +40,7 @@ services:
     environment:
     - TZ=America/Detroit
     ports:
-    - 5002:5002
+    - 50002:50002
   job_db:
     build:
       context: .
