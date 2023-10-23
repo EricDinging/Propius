@@ -115,7 +115,7 @@ class Client:
 
             exe_time = one_step_exe_time * self.local_steps
             #TODO
-            exe_time += 3
+            # exe_time += 3
 
             if meta["gradient_policy"] != 'fed-prox':
                 if exe_time + self.upload_model_comm_time > remain_time:

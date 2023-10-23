@@ -189,6 +189,86 @@ services:
     - '4'
     environment:
     - TZ=America/Detroit
+  jobs_5:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '10'
+    - '12'
+    - '5'
+    environment:
+    - TZ=America/Detroit
+  jobs_6:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '12'
+    - '14'
+    - '6'
+    environment:
+    - TZ=America/Detroit
+  jobs_7:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '14'
+    - '16'
+    - '7'
+    environment:
+    - TZ=America/Detroit
+  jobs_8:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '16'
+    - '18'
+    - '8'
+    environment:
+    - TZ=America/Detroit
+  jobs_9:
+    build:
+      context: .
+      dockerfile: ./evaluation/job/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./propius:/propius
+    stop_signal: SIGINT
+    depends_on:
+    - job_manager
+    command:
+    - '18'
+    - '20'
+    - '9'
+    environment:
+    - TZ=America/Detroit
   clients_0:
     build:
       context: .
@@ -279,6 +359,141 @@ services:
     command:
     - '1000'
     - '5'
+  clients_6:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '6'
+  clients_7:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '7'
+  clients_8:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '8'
+  clients_9:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '9'
+  clients_10:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '10'
+  clients_11:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '11'
+  clients_12:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '12'
+  clients_13:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '13'
+  clients_14:
+    build:
+      context: .
+      dockerfile: ./evaluation/client/Dockerfile
+    volumes:
+    - ./evaluation:/evaluation
+    - ./datasets/device_info:/datasets/device_info
+    stop_signal: SIGINT
+    depends_on:
+    - load_balancer
+    environment:
+    - TZ=America/Detroit
+    command:
+    - '1000'
+    - '14'
   worker_0:
     build:
       context: .
