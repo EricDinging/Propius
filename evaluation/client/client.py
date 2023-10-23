@@ -19,6 +19,11 @@ class Client:
 
         if client_config["dispatcher_use_docker"]:
             client_config["load_balancer_ip"] = "load_balancer"
+
+        self.comp_speed = client_config["computation_speed"]
+        self.comm_speed = client_config["communication_speed"]
+
+        client_config["option"] = 1/self.comp_speed if self.comp_speed > 0 else 0
             
         self.propius_client_stub = Propius_client_aio(
             client_config=client_config, 
@@ -33,9 +38,6 @@ class Client:
         self.meta_queue = deque()
         self.data_queue = deque()
         self.round = 0
-
-        self.comp_speed = client_config["computation_speed"]
-        self.comm_speed = client_config["communication_speed"]
 
         self.eval_start_time = client_config["eval_start_time"] if "eval_start_time" in client_config else time.time()
         self.active_time = client_config["active"]

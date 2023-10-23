@@ -224,6 +224,7 @@ class Temp_client_db:
         if is_cm:
             schema = (
                 TextField("$.temp.job_ids", as_name="job_ids"),
+                NumericField("$.temp.option", as_name="option"),
             )
 
             schema = schema + tuple([NumericField(f"$.temp.{name}", as_name=name)

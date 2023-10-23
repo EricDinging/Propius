@@ -35,7 +35,7 @@ service Load_balancer {
 }
 
 message client_checkin {
-    bytes public_specification = 1;
+    bytes public_specification = 1; // {ps: tuple, op: float}
 }
 
 message cm_offer {
