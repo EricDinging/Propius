@@ -85,7 +85,9 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 self.client_num % self.max_client_num
             self.client_num += 1
 
-        public_specification = pickle.loads(request.public_specification)
+        info = pickle.loads(request.public_specification)
+        public_specification = info["ps"]
+        option = info["op"]
 
         self.client_db_portal.insert(client_id, public_specification)
 
@@ -97,7 +99,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             #     public_specification, self.sched_alg)
             pass
         else:
-            self.temp_client_db_portal.insert(client_id, public_specification)
+            self.temp_client_db_portal.insert(client_id, public_specification, option)
         
         await self.cm_monitor.client_checkin()
 

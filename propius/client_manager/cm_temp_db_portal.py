@@ -40,10 +40,14 @@ class CM_temp_client_db_portal(Temp_client_db):
                 result = self.r.ft('temp').search(q)
 
                 job_list_str = str(job_list)
+                rem_job_list_str = str(job_list[1:])
+
                 for doc in result.docs:
                     try:
                         temp_client = json.loads(doc.json)
                         temp_client['temp']['job_ids'] = job_list_str
+
+                        #TODO: client matching
                         self.r.json().set(doc.id, Path.root_path(), temp_client)
                         self.r.expire(doc.id, self.assigned_ttl)
                     except:
@@ -52,17 +56,18 @@ class CM_temp_client_db_portal(Temp_client_db):
             except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)
 
-    def insert(self, id: int, specifications: tuple):
+    def insert(self, id: int, specifications: tuple, option: float = 0):
         """Insert client metadata to database, set expiration time and start time
 
         Args:
             id
             specification: a tuple of public spec values
+            option: a optional value
         """
 
         if len(specifications) != len(self.public_constraint_name):
             self.logger.print("Specification length does not match required", Msg_level.ERROR)
-        client_dict = {"job_ids": "[]"}
+        client_dict = {"job_ids": "[]", "option": option}
         spec_dict = {self.public_constraint_name[i]: specifications[i]
                      for i in range(len(specifications))}
         client_dict.update(spec_dict)
@@ -76,7 +81,7 @@ class CM_temp_client_db_portal(Temp_client_db):
             self.logger.print(e, Msg_level.ERROR)
 
     def get_task_id(self, client_id: int, specifications: tuple)->list:
-        """Return task id of client id. If client not found in temp db, insert client
+        """Return task id of client id.
         
         Args: 
             client_id
@@ -90,8 +95,6 @@ class CM_temp_client_db_portal(Temp_client_db):
             if self.r.execute_command("EXISTS", id):
                 result = str(self.r.json().get(id, "$.temp.job_ids")[0])
                 task_list = ast.literal_eval(result)
-            # else:
-            #     self.insert(client_id, specifications)
 
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
