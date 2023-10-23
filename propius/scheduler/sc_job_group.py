@@ -41,6 +41,11 @@ class SC_job_group_manager:
                     cst, self.job_group.cst_job_group_map[cst]
                 ):
                     self.job_group.remove_cst(cst)
+
+                for job_id in self.job_group.cst_job_group_map[cst]:
+                    sched, resp = self.job_db_portal.get_sched_resp(job_id)
+                    self.job_group.job_time_ratio_map[job_id] = \
+                        resp / sched if sched > 0 else 1
             
             self.logger.print(f"Finding eligible client size", Msg_level.INFO)
             # search elig client size for each group
@@ -83,7 +88,7 @@ class SC_job_group_manager:
                     else:
                         break
                 self.logger.print(f"{cst} group, condition: {self.job_group[cst].str()}", Msg_level.INFO)
-            return True 
+            return True
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
             return False

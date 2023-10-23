@@ -136,6 +136,7 @@ class Job_group:
         self.constraint_list = []
         self.cst_job_group_map = {}
         self.cst_group_condition_map = {}
+        self.job_time_ratio_map = {}
 
     def insert_cst(self, cst: tuple):
         if cst not in self.constraint_list:

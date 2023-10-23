@@ -10,7 +10,7 @@ PROPIUS_EVAL = 2
 
 ### EDIT HERE!
 
-option = PROPIUS_EVAL
+option = PROPIUS_SYS
 
 propius_config_file = './propius/global_config.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
@@ -24,16 +24,17 @@ ideal_client = False
 is_FA = False
 
 speedup_factor = 3
-sched_alg = 'srsf'
+sched_alg = 'irs3'
 
-profile_folder = './evaluation/job/profile_resnet34_speech'
+profile_folder = './evaluation/job/profile_mobilenet'
 job_trace = './evaluation/job/trace/job_trace_10_new.txt'
 allow_exceed_total_round = True
 
-dataset = "google_speech"
+dataset = "femnist"
+
+dispatcher_use_docker = False
 
 ### STOP EDITING HERE!
-
 if option == PROPIUS_SYS:
     compose_file = './compose_propius.yml'
     do_compute = False
@@ -44,7 +45,6 @@ else:
     client_num = 6000
 
     evaluation_use_docker = True
-    dispatcher_use_docker = False
 
     client_per_container = 1000
     job_per_container = 2   
