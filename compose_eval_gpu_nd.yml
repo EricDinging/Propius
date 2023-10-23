@@ -26,7 +26,7 @@ services:
     environment:
     - TZ=America/Detroit
     ports:
-    - 50001:50001
+    - 50011:50011
   load_balancer:
     build:
       context: .
@@ -40,7 +40,7 @@ services:
     environment:
     - TZ=America/Detroit
     ports:
-    - 50002:50002
+    - 50012:50012
   job_db:
     build:
       context: .
@@ -67,7 +67,7 @@ services:
     environment:
     - TZ=America/Detroit
     ports:
-    - 49999:49999
+    - 49989:49989
 
   client_manager_0:
     build:
