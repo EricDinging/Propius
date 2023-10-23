@@ -6,8 +6,7 @@ import os
 import csv
 
 sched_alg = "irs3"
-folder_path = f'./evaluation_result/{sched_alg}-6000-fixed/job/'
-folder_path = './evaluation/monitor/job'
+folder_path = f"./evaluation_result/{sched_alg}-6000-fixed/job/"
 
 analyze_certain_rounds = False
 
@@ -16,8 +15,9 @@ print(folder_path)
 if not os.path.exists(folder_path):
     raise FileNotFoundError("The specified folder does not exist.")
 
+
 def read_last_line(csv_file):
-    with open(csv_file, 'r', newline='') as file:
+    with open(csv_file, "r", newline="") as file:
         csv_reader = csv.reader(file)
         round_time = 0
         sched_time = 0
@@ -37,11 +37,19 @@ def read_last_line(csv_file):
 
         total_sched_time = sched_time * round_time / (sched_time + resp_time)
         total_resp_time = resp_time * round_time / (sched_time + resp_time)
-        
-        return (round_time, sched_time, resp_time, total_round, total_sched_time, total_resp_time)
+
+        return (
+            round_time,
+            sched_time,
+            resp_time,
+            total_round,
+            total_sched_time,
+            total_resp_time,
+        )
+
 
 def read_first(round, csv_file):
-    with open(csv_file, 'r', newline='') as file:
+    with open(csv_file, "r", newline="") as file:
         csv_reader = csv.reader(file)
         time_round = 0
         sched_time = 0
@@ -59,8 +67,9 @@ def read_first(round, csv_file):
 
         sched_time /= num if num > 0 else 1
         resp_time /= num if num > 0 else 1
-    
+
         return (time_round, sched_time, resp_time)
+
 
 if analyze_certain_rounds:
     round = int(input("round: "))
@@ -68,12 +77,14 @@ if analyze_certain_rounds:
         if filename.endswith(".csv"):
             csv_file_path = os.path.join(folder_path, filename)
             round_time, sched, response = read_first(round, csv_file_path)
-            print(f"{filename}, round: {round} time: {round_time}, avg sched: {sched}, avg_response: {response}")
+            print(
+                f"{filename}, round: {round} time: {round_time}, avg sched: {sched}, avg_response: {response}"
+            )
 else:
-    upper_round = upper_sched = upper_resp =  0
+    upper_round = upper_sched = upper_resp = 0
     total_round = total_sched = total_resp = 0
     lower_round = lower_sched = lower_resp = 1000000000
-    num = 0 
+    num = 0
 
     job_info_map = {}
 
@@ -82,19 +93,25 @@ else:
     sum_total_job_response = 0
 
     for filename in os.listdir(folder_path):
-        
         if filename.endswith(".csv"):
             csv_file_path = os.path.join(folder_path, filename)
             # if csv_file_path in ['./evaluation_result/irs3-6000-new/job/job_60000_irs3.csv', './evaluation_result/fifo-6000-new/job/job_60000_fifo.csv']:
             #     continue
-            
+
             print(filename)
-            round_time, sched, response, total_job_round, total_job_sched, total_job_response = read_last_line(csv_file_path)
+            (
+                round_time,
+                sched,
+                response,
+                total_job_round,
+                total_job_sched,
+                total_job_response,
+            ) = read_last_line(csv_file_path)
             print("")
 
             job_info_map[filename] = (round_time, sched, response)
 
-            num += 1 
+            num += 1
             total_round += round_time
             total_sched += sched
             total_resp += response
@@ -114,20 +131,25 @@ else:
     avg_sched = total_sched / num
     avg_response = total_resp / num
 
-    weighted_avg_rct = (sum_total_job_response + sum_total_job_sched) / sum_total_job_round
-    
-    print(f"Avg finish time: {avg_round:.3f}, avg queueing delay: {avg_sched:.3f}, avg response time: {avg_response:.3f}")
-    print(f"Avg RCT: {avg_sched + avg_response:.3f}, Weighted Avg RCT: {weighted_avg_rct:.3f}")
-    print(f"Upper finish time: {upper_round:.3f}, Lower finish time: {lower_round:.3f}")
-    print(f"Upper queueing time: {upper_sched:.3f}, Lower queueing time: {lower_sched:.3f}")
-    print(f"Upper response time: {upper_resp:.3f}, Lower response time: {lower_resp:.3f}")
+    weighted_avg_rct = (
+        sum_total_job_response + sum_total_job_sched
+    ) / sum_total_job_round
 
+    print(
+        f"Avg finish time: {avg_round:.3f}, avg queueing delay: {avg_sched:.3f}, avg response time: {avg_response:.3f}"
+    )
+    print(
+        f"Avg RCT: {avg_sched + avg_response:.3f}, Weighted Avg RCT: {weighted_avg_rct:.3f}"
+    )
+    print(f"Upper finish time: {upper_round:.3f}, Lower finish time: {lower_round:.3f}")
+    print(
+        f"Upper queueing time: {upper_sched:.3f}, Lower queueing time: {lower_sched:.3f}"
+    )
+    print(
+        f"Upper response time: {upper_resp:.3f}, Lower response time: {lower_resp:.3f}"
+    )
 
     job_info_map = dict(sorted(job_info_map.items()))
     print("File: end time, avg sched latency, avg response collection latency")
     for key, val in job_info_map.items():
         print(f"{key}: {val}")
-
-
-
-
