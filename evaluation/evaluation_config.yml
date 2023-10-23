@@ -13,7 +13,7 @@ job_public_constraint:
 job_private_constraint:
 - dataset_size
 
-sched_alg: srsf
+sched_alg: irs3
 
 # ---Evaluation setting---
 speedup_factor: 3
@@ -30,7 +30,7 @@ ideal_client: false
 
 # Job
 total_job: 10
-profile_folder: ./evaluation/job/profile_resnet34_speech
+profile_folder: ./evaluation/job/profile_mobilenet
 job_trace: ./evaluation/job/trace/job_trace_10_new.txt
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
@@ -43,15 +43,15 @@ client_comm_path: ./datasets/device_info/client_device_capacity
 client_spec_path: ./datasets/device_info/client_spec_speed
 client_size_path: ./datasets/device_info/client_dataset_size
 
-data_dir: ./datasets/google_speech
-data_map_file: ./datasets/google_speech/client_data_mapping/train.csv
-test_data_map_file: ./datasets/google_speech/client_data_mapping/test.csv
+data_dir: ./datasets/femnist
+data_map_file: ./datasets/femnist/client_data_mapping/train.csv
+test_data_map_file: ./datasets/femnist/client_data_mapping/test.csv
 
-do_compute: true
+do_compute: false
 is_FA: false
 
-use_cuda: true
-use_docker: true
+use_cuda: false
+use_docker: false
 
 dispatcher_use_docker: false
 

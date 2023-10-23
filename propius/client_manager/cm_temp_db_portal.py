@@ -42,12 +42,12 @@ class CM_temp_client_db_portal(Temp_client_db):
                 result = self.r.ft('temp').search(q)
 
                 job_list_str = str(job_list)
-                rem_job_list_str = str(job_list[1:])
                 
                 if self.tier_num > 1 and len(job_list) > 0 and len(result.docs) > 0:
                     front_job_id = job_list[0]
                     tier_lower_bound = [0 for _ in range(self.tier_num + 1)]
                     option_list = []
+                    rem_job_list_str = str(job_list[1:])
                     for doc in result.docs:
                         try:
                             temp_client = json.loads(doc.json)
@@ -62,13 +62,14 @@ class CM_temp_client_db_portal(Temp_client_db):
                         tier_lower_bound[i] = option_list[i * tier_len]
                     tier_lower_bound[-1] = option_list[-1]
 
-                    #get front job i resp-sched ratio c
-                    c = 1
+                    c = self.job_group.job_time_ratio_map[front_job_id]
 
                     u = random.randint(0, self.tier_num - 1)
                     gu = tier_lower_bound[0] / tier_lower_bound[u] if tier_lower_bound[u] > 0 else 1
 
                     if self.tier_num + gu * c < c + 1:
+                        self.logger.print(f"Job {front_job_id} tier-matching, tier_num: {self.tier_num}"
+                                        f" u: {u}, gu: {gu}, c: {c}", Msg_level.INFO)
                         for doc in result.docs:
                             try:
                                 temp_client = json.loads(doc.json)
@@ -82,6 +83,9 @@ class CM_temp_client_db_portal(Temp_client_db):
                             except:
                                 pass
                     else:
+                        self.logger.print(f"Job {front_job_id} not tier-matching,"
+                                          f"tier_num: {self.tier_num}"
+                                          f" u: {u}, gu: {gu}, c: {c}", Msg_level.INFO)
                         for doc in result.docs:
                             try:
                                 temp_client = json.loads(doc.json)
