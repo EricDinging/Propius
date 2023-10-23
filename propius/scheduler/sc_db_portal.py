@@ -54,6 +54,23 @@ class SC_job_db_portal(Job_db):
                 pass
 
         return cnt
+    
+    def get_sched_resp(self, job_id: int) -> tuple:
+        """Get job id total sched time and total response time.
+
+        Args:
+            job_id
+        """
+        
+        id = f"job:{job_id}"
+        try:
+            total_sched = float(self.r.json().get(id, f"$.job.total_sched")[0])
+            timestamp = float(self.r.json().get(id, f"$.job.timestamp")[0])
+            total_resp = time.time() - timestamp - total_sched
+            return (total_sched, total_resp)
+        except Exception as e:
+            self.logger.print(e, Msg_level.ERROR)
+            return -1, -1
 
     def get_job_constraints(self, job_id: int) -> tuple:
         """Get job constraint values of the job in a tuple
