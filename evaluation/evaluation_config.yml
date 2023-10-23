@@ -13,7 +13,7 @@ job_public_constraint:
 job_private_constraint:
 - dataset_size
 
-sched_alg: fifo
+sched_alg: random
 
 # ---Evaluation setting---
 speedup_factor: 3
@@ -86,27 +86,3 @@ worker:
 - ip: localhost
   port: 49991
   device: 1
-- ip: localhost
-  port: 49990
-  device: 2
-- ip: localhost
-  port: 49989
-  device: 2
-- ip: localhost
-  port: 49988
-  device: 2
-- ip: localhost
-  port: 49987
-  device: 2
-- ip: localhost
-  port: 49986
-  device: 3
-- ip: localhost
-  port: 49985
-  device: 3
-- ip: localhost
-  port: 49984
-  device: 3
-- ip: localhost
-  port: 49983
-  device: 3
