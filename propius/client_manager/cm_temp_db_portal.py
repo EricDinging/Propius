@@ -5,6 +5,7 @@ from propius.database import Temp_client_db
 from propius.util import Msg_level, Propius_logger, geq, Job_group
 import ast
 import json
+import random
 
 class CM_temp_client_db_portal(Temp_client_db):
     def __init__(self, gconfig, cm_id: int, logger: Propius_logger, flush: bool = False):
@@ -27,6 +28,7 @@ class CM_temp_client_db_portal(Temp_client_db):
         super().__init__(gconfig, cm_id, True, logger, flush)
         self.job_group = Job_group()
         self.assigned_ttl = self.client_exp_time / 2
+        self.tier_num = gconfig["tier_num"] if "tier_num" in gconfig else 0
 
     def update_job_group(self, new_job_group: Job_group):
         self.job_group = new_job_group
@@ -36,23 +38,71 @@ class CM_temp_client_db_portal(Temp_client_db):
         for cst, job_list in self.job_group.cst_job_group_map.items():
             try:
                 condition_q = self.job_group[cst].str()
-                q = Query(condition_q).paging(0, 10000)
+                q = Query(condition_q).paging(0, 1000)
                 result = self.r.ft('temp').search(q)
 
                 job_list_str = str(job_list)
                 rem_job_list_str = str(job_list[1:])
+                
+                if self.tier_num > 1 and len(job_list) > 0 and len(result.docs) > 0:
+                    front_job_id = job_list[0]
+                    tier_lower_bound = [0 for _ in range(self.tier_num + 1)]
+                    option_list = []
+                    for doc in result.docs:
+                        try:
+                            temp_client = json.loads(doc.json)
+                            temp_client['temp']['job_ids'] = rem_job_list_str
+                            option_list.append(temp_client['temp']['option'])
+                        except:
+                            pass
+                    
+                    option_list.sort()
+                    tier_len = int(len(option_list)/self.tier_num)
+                    for i in range(self.tier_num):
+                        tier_lower_bound[i] = option_list[i * tier_len]
+                    tier_lower_bound[-1] = option_list[-1]
 
-                for doc in result.docs:
-                    try:
-                        temp_client = json.loads(doc.json)
-                        temp_client['temp']['job_ids'] = job_list_str
+                    #get front job i resp-sched ratio c
+                    c = 1
 
-                        #TODO: client matching
-                        self.r.json().set(doc.id, Path.root_path(), temp_client)
-                        self.r.expire(doc.id, self.assigned_ttl)
-                    except:
-                        pass
-                self.logger.print(f"Insert job {job_list_str} to {len(result.docs)} clients", Msg_level.INFO)
+                    u = random.randint(0, self.tier_num - 1)
+                    gu = tier_lower_bound[0] / tier_lower_bound[u] if tier_lower_bound[u] > 0 else 1
+
+                    if self.tier_num + gu * c < c + 1:
+                        for doc in result.docs:
+                            try:
+                                temp_client = json.loads(doc.json)
+                                option = temp_client['temp']['option']
+                                if option >= tier_lower_bound[u] and option < tier_lower_bound[u+1]:
+                                    temp_client['temp']['job_ids'] = job_list_str
+                                else:
+                                    temp_client['temp']['job_ids'] = rem_job_list_str                   
+                                self.r.json().set(doc.id, Path.root_path(), temp_client)
+                                self.r.expire(doc.id, self.assigned_ttl)
+                            except:
+                                pass
+                    else:
+                        for doc in result.docs:
+                            try:
+                                temp_client = json.loads(doc.json)
+                                temp_client['temp']['job_ids'] = job_list_str
+                                self.r.json().set(doc.id, Path.root_path(), temp_client)
+                                self.r.expire(doc.id, self.assigned_ttl)
+                            except:
+                                pass
+                
+                elif self.tier_num <= 1:
+                    for doc in result.docs:
+                        try:
+                            temp_client = json.loads(doc.json)
+                            temp_client['temp']['job_ids'] = job_list_str                    
+                            self.r.json().set(doc.id, Path.root_path(), temp_client)
+                            self.r.expire(doc.id, self.assigned_ttl)
+                        except:
+                            pass
+                
+                    self.logger.print(f"Insert job {job_list_str} to {len(result.docs)} clients", Msg_level.INFO)
+
             except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)
 
