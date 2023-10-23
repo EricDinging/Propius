@@ -3,7 +3,7 @@ use_docker: true
 
 # ---Addresses---
 load_balancer_ip: localhost
-load_balancer_port: 50012
+load_balancer_port: 50002
 
 client_manager_id_weight: 100000 # for client id assignment
 client_manager:
@@ -17,7 +17,7 @@ job_db_ip: localhost
 job_db_port: 6379
 
 job_manager_ip: localhost
-job_manager_port: 50011
+job_manager_port: 50001
 
 scheduler_ip: localhost
 scheduler_port: 50000
@@ -25,7 +25,7 @@ scheduler_port: 50000
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
 sched_alg: irs3
-tier_num: 3
+tier_num: 0
 max_task_offer_list_len: 20
 
 # Scheduling context

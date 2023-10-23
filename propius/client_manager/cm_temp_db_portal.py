@@ -43,6 +43,7 @@ class CM_temp_client_db_portal(Temp_client_db):
 
                 job_list_str = str(job_list)
                 
+                self.logger.print(job_list_str, Msg_level.INFO)
                 if self.tier_num > 1 and len(job_list) > 0 and len(result.docs) > 0:
                     front_job_id = job_list[0]
                     tier_lower_bound = [0 for _ in range(self.tier_num + 1)]

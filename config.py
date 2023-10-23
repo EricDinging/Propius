@@ -10,7 +10,7 @@ PROPIUS_EVAL = 2
 
 ### EDIT HERE!
 
-option = PROPIUS_SYS
+option = PROPIUS_EVAL
 
 propius_config_file = './propius/global_config.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
@@ -26,8 +26,8 @@ is_FA = False
 speedup_factor = 3
 sched_alg = 'irs3'
 
-profile_folder = './evaluation/job/profile_mobilenet'
-job_trace = './evaluation/job/trace/job_trace_10_new.txt'
+profile_folder = './evaluation/job/profile_mobilenet_large'
+job_trace = './evaluation/job/trace/job_trace_20.txt'
 allow_exceed_total_round = True
 
 dataset = "femnist"
@@ -41,8 +41,8 @@ if option == PROPIUS_SYS:
     use_cuda = False
     evaluation_use_docker = False
 else:
-    total_job = 10
-    client_num = 6000
+    total_job = 20
+    client_num = 15000
 
     evaluation_use_docker = True
 
@@ -56,7 +56,7 @@ else:
         compose_file = './compose_eval_gpu.yml'
         do_compute = True
         use_cuda = True
-        worker_num_list = [0, 0, 4, 4]
+        worker_num_list = [4, 4, 0, 0]
         worker_num = sum(worker_num_list)
         worker_starting_port = 49998
 
