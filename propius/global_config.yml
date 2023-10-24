@@ -24,7 +24,7 @@ scheduler_port: 50000
 
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
-sched_alg: random
+sched_alg: irs3
 tier_num: 0
 max_task_offer_list_len: 20
 
