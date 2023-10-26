@@ -5,8 +5,8 @@ response time across all simulated jobs
 import os
 import csv
 
-sched_alg = "irs3"
-folder_path = f"./evaluation_result/{sched_alg}-6000-fixed/job/"
+sched_alg = "fifo"
+folder_path = f"./evaluation_result/{sched_alg}-15000/job/"
 
 analyze_certain_rounds = False
 
