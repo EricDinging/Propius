@@ -5,7 +5,7 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-version = "6000-fixed"
+version = "15000"
 time_cutoff = 100000
 round_cutoff = 150
 
@@ -13,7 +13,8 @@ sched_alg_list = [
                   'fifo',
                   'random',
                   'srsf',
-                  'amg'
+                  'venn',
+                  'vennm'
                   ]
 
 plot_option = 'acc' 
@@ -34,9 +35,11 @@ round_info_dict = {}
 #         round_info_dict[f"{job_id}-{sched_alg}"] = 0
 
 for i, sched_alg in enumerate(sched_alg_list):
-    if sched_alg == 'amg':
+    if sched_alg == 'venn':
         sched_alg = 'irs3'
-    pattern = re.compile(f"test_(\d+)\_{sched_alg}.csv")
+    elif sched_alg == 'vennm':
+        sched_alg = 'irs3m'
+    
     round_list_dict = {}
     round_time_list_dict = {}
     acc_list_dict = {}
@@ -46,13 +49,19 @@ for i, sched_alg in enumerate(sched_alg_list):
     execute_folder = f'evaluation_result/{sched_alg}-{version}/executor'
     job_folder = f'evaluation_result/{sched_alg}-{version}/job'
 
+    file_sched = sched_alg
+    if sched_alg == 'irs3m':
+        file_sched = 'irs3'
+
+    pattern = re.compile(f"test_(\d+)\_{file_sched}.csv")
+
     for exe_res_name in os.listdir(execute_folder):
         match = re.search(pattern, exe_res_name)
         if match:
             exe_res_file_path = os.path.join(execute_folder, exe_res_name)
             job_id = match.group(1)
 
-            ps_result_file_name = f"job_{job_id}_{sched_alg}.csv"
+            ps_result_file_name = f"job_{job_id}_{file_sched}.csv"
             ps_result_file_path = os.path.join(job_folder, ps_result_file_name)
 
             time_stamp_list = [0]
@@ -99,6 +108,7 @@ for i, sched_alg in enumerate(sched_alg_list):
             # round_list = round_list[0:len(time_stamp_list)]
             
             job_id = int(job_id) % 100
+            print(job_id)
 
             if job_id == 0:
                 continue
@@ -131,14 +141,16 @@ for i, sched_alg in enumerate(sched_alg_list):
     mean_y_axis = np.mean(ys_interp, axis=0)
 
     if sched_alg == 'irs3':
-        alg_label = 'AMG'
+        alg_label = 'Venn w/o match'
+    elif sched_alg == 'irs3m':
+        alg_label = 'Venn'
     elif sched_alg == 'fifo':
         alg_label = 'FIFO'
     elif sched_alg == 'random':
         alg_label = 'Random'
     elif sched_alg == 'srsf':
         alg_label = 'SRSF'
-    plt.plot(mean_x_axis, mean_y_axis, label=f"Policy: {alg_label}", color=color_list[i])
+    plt.plot(mean_x_axis, mean_y_axis, label=f"{alg_label}", color=color_list[i])
 
     # Indivial job
     # for job_id in range(job_num):
@@ -163,7 +175,7 @@ if plot_option == 'acc':
 elif plot_option == 'test_loss':
     plt.ylabel("Avg. Testing Loss")
 # plt.title(f'Average Job Time to Accuracy Plot under Various Scheduling Policies, FEMNIST, {version}')
-# plt.ylim([0.6, 0.8])
+plt.ylim([0.6, 0.8])
 # plt.xlim([10000, 20000])
 plt.grid(True)
 plt.legend()
