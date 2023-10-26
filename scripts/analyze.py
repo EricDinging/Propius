@@ -176,7 +176,7 @@ elif plot_option == 'test_loss':
     plt.ylabel("Avg. Testing Loss")
 # plt.title(f'Average Job Time to Accuracy Plot under Various Scheduling Policies, FEMNIST, {version}')
 plt.ylim([0.6, 0.8])
-# plt.xlim([10000, 20000])
+plt.xlim([0, 26000])
 plt.grid(True)
 plt.legend()
 
