@@ -6,10 +6,11 @@ import re
 threshold = 0.01  # 1% change
 # folder = 'evaluation_result/irs3-6000-var/executor/'
 sched_alg = 'irs3'
-folder = f'evaluation_result/{sched_alg}-6000-var/executor/'
+folder = f'evaluation_result/irs3m-15000/executor/'
 
 predetermined = True
-round_cutoff = [70, 105, 110, 70, 125, 80, 105, 110, 45, 140]
+# round_cutoff = [70, 105, 110, 70, 125, 80, 105, 110, 45, 140]
+round_break = 150
 
 pattern = re.compile(f"test_(\d+)\_{sched_alg}.csv")
 
@@ -25,7 +26,7 @@ def read_file(csv_file):
         match = re.search(pattern, csv_file)
         job_id = int(match.group(1)) % 10
 
-        round_break = round_cutoff[job_id]
+        # round_break = round_cutoff[job_id]
 
         consecutive_below_threshold = 0
         for row in csv_reader:
