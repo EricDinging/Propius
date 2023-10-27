@@ -10,7 +10,7 @@ PROPIUS_EVAL = 2
 
 ### EDIT HERE!
 
-option = PROPIUS_EVAL
+option = PROPIUS_SYS
 
 propius_config_file = './propius/global_config.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
@@ -24,7 +24,7 @@ ideal_client = False
 is_FA = False
 
 speedup_factor = 3
-sched_alg = 'irs3'
+sched_alg = 'random'
 
 profile_folder = './evaluation/job/profile_mobilenet_large'
 job_trace = './evaluation/job/trace/job_trace_20.txt'
