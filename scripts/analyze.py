@@ -5,22 +5,22 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-version = "15000"
+version = "15000-new"
 time_cutoff = 100000
 round_cutoff = 150
 
 plot_folder = f'./evaluation_result/plot-{version}'
 
 sched_alg_list = [
-                  # 'random',
+                  'random',
                   'fifo',
                   'srsf',
                   'venn',
                   'vennm'
                   ]
 
-color_list_cell = ['grey', 'blueviolet', 'darkorange', 'teal']
-line_style = ['-.', '--', '-', '-']
+color_list_cell = ['black', 'grey', 'blueviolet', 'darkorange', 'teal']
+line_style = [':', '-.', '--', '-', '-']
 
 plot_option = 'acc'
 plt.rcParams.update({'font.size': 18})
