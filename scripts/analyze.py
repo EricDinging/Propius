@@ -15,13 +15,14 @@ sched_alg_list = [
                   'random',
                   'fifo',
                   'srsf',
-                  'venn',
+                #   'venn',
                   'vennm'
                   ]
 
-color_list_cell = ['black', 'grey', 'blueviolet', 'darkorange', 'teal']
-line_style = [':', '-.', '--', '-', '-']
-
+# color_list_cell = ['black', 'grey', 'blueviolet', 'darkorange', 'teal']
+color_list_cell = ['black', 'grey', 'blueviolet', 'teal']
+# line_style = [':', '-.', '--', '-', '-']
+line_style = [':', '-.', '--', '-']
 plot_option = 'acc'
 plt.rcParams.update({'font.size': 18})
 fig, ax = plt.subplots(figsize=(5.4, 4), constrained_layout=True)
