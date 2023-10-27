@@ -5,8 +5,8 @@ response time across all simulated jobs
 import os
 import csv
 
-sched_alg = "fifo"
-folder_path = f"./evaluation_result/{sched_alg}-15000/job/"
+sched_alg = "irs3m"
+folder_path = f"./evaluation_result/{sched_alg}-15000-new/job/"
 
 analyze_certain_rounds = False
 
@@ -24,12 +24,18 @@ def read_last_line(csv_file):
         resp_time = 0
         last_row = None
         total_round = 0
+        sched_timeout = 0
+        resp_timeout = 0
         for row in csv_reader:
             if row[0] == "-1":
                 print(row)
                 round_time = float(last_row[1])
                 sched_time = float(row[2])
                 resp_time = float(row[3])
+            elif row[0] == "-2":
+                print(row)
+                sched_timeout += int(row[2])
+                resp_timeout += int(row[3])
                 break
             else:
                 total_round += 1
@@ -45,6 +51,8 @@ def read_last_line(csv_file):
             total_round,
             total_sched_time,
             total_resp_time,
+            sched_timeout,
+            resp_timeout,
         )
 
 
@@ -92,6 +100,9 @@ else:
     sum_total_job_sched = 0
     sum_total_job_response = 0
 
+    total_sched_timeout = 0
+    total_resp_timeout = 0
+
     for filename in os.listdir(folder_path):
         if filename.endswith(".csv"):
             csv_file_path = os.path.join(folder_path, filename)
@@ -106,6 +117,8 @@ else:
                 total_job_round,
                 total_job_sched,
                 total_job_response,
+                sched_timeout,
+                resp_timeout
             ) = read_last_line(csv_file_path)
             print("")
 
@@ -126,6 +139,9 @@ else:
             lower_sched = sched if sched < lower_sched else lower_sched
             upper_resp = response if response > upper_resp else upper_resp
             lower_resp = response if response < lower_resp else lower_resp
+
+            total_sched_timeout += sched_timeout
+            total_resp_timeout += resp_timeout
 
     avg_round = total_round / num
     avg_sched = total_sched / num
@@ -148,6 +164,8 @@ else:
     print(
         f"Upper response time: {upper_resp:.3f}, Lower response time: {lower_resp:.3f}"
     )
+
+    print(f"sched timeout: {total_sched_timeout}, resp timeout: {total_resp_timeout}")
 
     job_info_map = dict(sorted(job_info_map.items()))
     print("File: end time, avg sched latency, avg response collection latency")
