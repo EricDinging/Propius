@@ -8,6 +8,7 @@ import pickle
 import grpc
 from evaluation.executor.channels import executor_pb2
 from evaluation.executor.channels import executor_pb2_grpc
+from evaluation.internal.fllibs import init_model
 
 
 class Worker_manager:
@@ -75,25 +76,9 @@ class Worker_manager:
 
 
     async def init_job(self, job_id: int, dataset_name: str, model_name: str, args: dict)->float:
-        model = None
-        if model_name == "resnet18":
-            from evaluation.internal.models.specialized.resnet_speech import resnet18
-            model = resnet18(
-                num_classes=out_put_class[dataset_name],
-                in_channels=1
-            )
-        elif model_name == "mobilenet_v2":
-            from evaluation.internal.models.specialized.resnet_speech import \
-            mobilenet_v2
-            model = mobilenet_v2(num_classes=out_put_class[dataset_name])
-
-        else:
-            from evaluation.internal.models.torch_module_provider import get_cv_model
-            model = get_cv_model(name=model_name, num_classes=out_put_class[dataset_name])
-        
-
+        model = init_model(model_name, dataset_name)
         model_size = sys.getsizeof(pickle.dumps(model)) / 1024.0 * 8.  # kbits
-
+        self.logger.print(f"model: {model_name}, size: {model_size}")
         # broadcast
         
         job_init_msg = executor_pb2.job_init(

@@ -247,7 +247,7 @@ async def run(config, logger):
 if __name__ == '__main__':
     log_file = './evaluation/monitor/executor/exe.log'
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    logger = My_logger(log_file=log_file, verbose=False, use_logging=True)
+    logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
 
     config_file = './evaluation/evaluation_config.yml'
     with open(config_file, 'r') as config:

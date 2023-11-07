@@ -11,9 +11,10 @@ from evaluation.commons import *
 from evaluation.internal.torch_module_adapter import *
 from evaluation.internal.dataset_handler import *
 from evaluation.internal.test_helper import *
+from evaluation.internal.fllibs import init_dataset
 from collections import deque
 from typing import List
-from evaluation.internal.dataloaders.utils_data import get_data_transform
+
 
 import torch
 from torch.autograd import Variable
@@ -79,7 +80,12 @@ class Worker(executor_pb2_grpc.WorkerServicer):
     def _train_step(self, client_data: DataLoader, conf: dict, model, optimizer, criterion):
         for data_pair in client_data:
             (data, target) = data_pair
-            data = Variable(data).to(device=self.device)
+
+            dataset = self.job_id_data_map[conf["job_id"]]
+            if dataset == "google_speech":
+                data = torch.unsqueeze(data, 1).to(device=self.device)
+            else: 
+                data = Variable(data).to(device=self.device)
             target = Variable(target).to(device=self.device)
 
             output = model(data)
@@ -125,52 +131,18 @@ class Worker(executor_pb2_grpc.WorkerServicer):
 
         self.job_id_data_map[job_id] = dataset_name
 
+        self.logger.print(f"Worker {self.id}: job {job_id} dataset {dataset_name}")
         if dataset_name not in self.data_partitioner_dict:
-            if dataset_name == "femnist":
-                from evaluation.internal.dataloaders.femnist import FEMNIST
-
-                train_transform, test_transform = get_data_transform("mnist")
-                train_dataset = FEMNIST(
-                    self.config['data_dir'],
-                    dataset='train',
-                    transform=train_transform
-                )
-                test_dataset = FEMNIST(
-                    self.config['data_dir'],
-                    dataset='test',
-                    transform=test_transform
-                )
-                
-                train_partitioner = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
-                train_partitioner.partition_data_helper(0, data_map_file=self.config['data_map_file'])
-                self.data_partitioner_dict[dataset_name] = train_partitioner
-                
-                test_partitioner = Data_partitioner(data=test_dataset, num_of_labels=out_put_class[dataset_name])
-                test_partitioner.partition_data_helper(0, data_map_file=self.config['test_data_map_file'])
-                self.test_data_partition_dict[dataset_name] = test_partitioner
+            init_dataset(dataset_name, self.config,
+                          self.data_partitioner_dict, 
+                          self.test_data_partition_dict)
             
-            elif dataset_name == "openImg":
-                from evaluation.internal.dataloaders.openimage import OpenImage
-                train_transform, test_transform = get_data_transform("openImg")
-                train_dataset = OpenImage(
-                    self.config['data_dir'], split='train', download=False, transform=train_transform)
-                test_dataset = OpenImage(
-                    self.config["data_dir"], split='val', download=False, transform=test_transform)
-                
-                train_partitioner = Data_partitioner(data=train_dataset, num_of_labels=out_put_class[dataset_name])
-                train_partitioner.partition_data_helper(0, data_map_file=self.config['data_map_file'])
-                self.data_partitioner_dict[dataset_name] = train_partitioner
-                
-                test_partitioner = Data_partitioner(data=test_dataset, num_of_labels=out_put_class[dataset_name])
-                test_partitioner.partition_data_helper(self.config["client_test_num"])
-                self.test_data_partition_dict[dataset_name] = test_partitioner
-
             self.data_partitioner_ref_cnt_dict[dataset_name] = 0
         
         self.data_partitioner_ref_cnt_dict[dataset_name] += 1
         self.job_id_model_adapter_map[job_id] = model_adapter
         self.task_finished[job_id] = {}
-        self.logger.print(f"Worker {self.id}: recieve job {job_id} init", INFO)
+        self.logger.print(f"Worker {self.id}: job {job_id} init finish", INFO)
 
         return executor_pb2.ack(ack=True)
     
@@ -328,7 +300,11 @@ class Worker(executor_pb2_grpc.WorkerServicer):
         with torch.no_grad():
             for data, target in test_data:
                 try:
-                    data = Variable(data).to(device=self.device)
+                    dataset = self.job_id_data_map[conf["job_id"]]
+                    if dataset == "google_speech":
+                        data = torch.unsqueeze(data, 1).to(device=self.device)
+                    else: 
+                        data = Variable(data).to(device=self.device)
                     target = Variable(target).to(device=self.device)
                     output = model(data)
                     loss = criterion(output, target)
@@ -473,7 +449,7 @@ if __name__ == '__main__':
 
     log_file = f'./evaluation/monitor/executor/wk_{id}.log'
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    logger = My_logger(log_file=log_file, verbose=False, use_logging=True)
+    logger = My_logger(log_file=log_file, verbose=True, use_logging=True)
     with open(config_file, 'r') as config:
         try:
             config = yaml.load(config, Loader=yaml.FullLoader)

@@ -15,10 +15,15 @@ class Client:
     def __init__(self, client_config: dict):
         self.id = client_config["id"]
         self.task_id = -1
-        self.use_docker = client_config["use_docker"]
+        self.dispatcher_use_docker = client_config["dispatcher_use_docker"]
 
-        if client_config["use_docker"]:
+        if client_config["dispatcher_use_docker"]:
             client_config["load_balancer_ip"] = "load_balancer"
+
+        self.comp_speed = client_config["computation_speed"]
+        self.comm_speed = client_config["communication_speed"]
+
+        client_config["option"] = 1/self.comp_speed if self.comp_speed > 0 else 0
             
         self.propius_client_stub = Propius_client_aio(
             client_config=client_config, 
@@ -33,9 +38,6 @@ class Client:
         self.meta_queue = deque()
         self.data_queue = deque()
         self.round = 0
-
-        self.comp_speed = client_config["computation_speed"]
-        self.comm_speed = client_config["communication_speed"]
 
         self.eval_start_time = client_config["eval_start_time"] if "eval_start_time" in client_config else time.time()
         self.active_time = client_config["active"]
@@ -113,7 +115,7 @@ class Client:
 
             exe_time = one_step_exe_time * self.local_steps
             #TODO
-            exe_time += 3
+            # exe_time += 3
 
             if meta["gradient_policy"] != 'fed-prox':
                 if exe_time + self.upload_model_comm_time > remain_time:
@@ -258,9 +260,9 @@ if __name__ == '__main__':
             eval_config = yaml.load(eval_config, Loader=yaml.FullLoader)
             config["load_balancer_ip"] = eval_config["load_balancer_ip"]
             config["load_balancer_port"] = eval_config["load_balancer_port"]
-            config["use_docker"] = eval_config["use_docker"]
+            config["dispatcher_use_docker"] = eval_config["dispatcher_use_docker"]
             config["eval_start_time"] = time.time()
-            config["use_docker"] = False
+            config["dispatcher_use_docker"] = False
             config["speedup_factor"] = 1
             config["is_FA"] = False
             config["verbose"] = True

@@ -5,6 +5,7 @@ from propius.database import Temp_client_db
 from propius.util import Msg_level, Propius_logger, geq, Job_group
 import ast
 import json
+import random
 
 class CM_temp_client_db_portal(Temp_client_db):
     def __init__(self, gconfig, cm_id: int, logger: Propius_logger, flush: bool = False):
@@ -27,6 +28,7 @@ class CM_temp_client_db_portal(Temp_client_db):
         super().__init__(gconfig, cm_id, True, logger, flush)
         self.job_group = Job_group()
         self.assigned_ttl = self.client_exp_time / 2
+        self.tier_num = gconfig["tier_num"] if "tier_num" in gconfig else 0
 
     def update_job_group(self, new_job_group: Job_group):
         self.job_group = new_job_group
@@ -36,33 +38,91 @@ class CM_temp_client_db_portal(Temp_client_db):
         for cst, job_list in self.job_group.cst_job_group_map.items():
             try:
                 condition_q = self.job_group[cst].str()
-                q = Query(condition_q).paging(0, 10000)
+                q = Query(condition_q).paging(0, 1000)
                 result = self.r.ft('temp').search(q)
 
                 job_list_str = str(job_list)
-                for doc in result.docs:
-                    try:
-                        temp_client = json.loads(doc.json)
-                        temp_client['temp']['job_ids'] = job_list_str
-                        self.r.json().set(doc.id, Path.root_path(), temp_client)
-                        self.r.expire(doc.id, self.assigned_ttl)
-                    except:
-                        pass
-                self.logger.print(f"Insert job {job_list_str} to {len(result.docs)} clients", Msg_level.INFO)
+                
+                self.logger.print(job_list_str, Msg_level.INFO)
+                if self.tier_num > 1 and len(job_list) > 0 and len(result.docs) > 0:
+                    front_job_id = job_list[0]
+                    tier_lower_bound = [0 for _ in range(self.tier_num + 1)]
+                    option_list = []
+                    rem_job_list_str = str(job_list[1:])
+                    for doc in result.docs:
+                        try:
+                            temp_client = json.loads(doc.json)
+                            temp_client['temp']['job_ids'] = rem_job_list_str
+                            option_list.append(temp_client['temp']['option'])
+                        except:
+                            pass
+                    
+                    option_list.sort()
+                    tier_len = int(len(option_list)/self.tier_num)
+                    for i in range(self.tier_num):
+                        tier_lower_bound[i] = option_list[i * tier_len]
+                    tier_lower_bound[-1] = option_list[-1]
+
+                    c = self.job_group.job_time_ratio_map[front_job_id]
+
+                    u = random.randint(0, self.tier_num - 1)
+                    gu = tier_lower_bound[0] / tier_lower_bound[u] if tier_lower_bound[u] > 0 else 1
+
+                    if self.tier_num + gu * c < c + 1:
+                        self.logger.print(f"Job {front_job_id} tier-matching, tier_num: {self.tier_num}"
+                                        f" u: {u}, gu: {gu}, c: {c}", Msg_level.INFO)
+                        for doc in result.docs:
+                            try:
+                                temp_client = json.loads(doc.json)
+                                option = temp_client['temp']['option']
+                                if option >= tier_lower_bound[u] and option < tier_lower_bound[u+1]:
+                                    temp_client['temp']['job_ids'] = job_list_str
+                                else:
+                                    temp_client['temp']['job_ids'] = rem_job_list_str                   
+                                self.r.json().set(doc.id, Path.root_path(), temp_client)
+                                self.r.expire(doc.id, self.assigned_ttl)
+                            except:
+                                pass
+                    else:
+                        self.logger.print(f"Job {front_job_id} not tier-matching,"
+                                          f"tier_num: {self.tier_num}"
+                                          f" u: {u}, gu: {gu}, c: {c}", Msg_level.INFO)
+                        for doc in result.docs:
+                            try:
+                                temp_client = json.loads(doc.json)
+                                temp_client['temp']['job_ids'] = job_list_str
+                                self.r.json().set(doc.id, Path.root_path(), temp_client)
+                                self.r.expire(doc.id, self.assigned_ttl)
+                            except:
+                                pass
+                
+                elif self.tier_num <= 1:
+                    for doc in result.docs:
+                        try:
+                            temp_client = json.loads(doc.json)
+                            temp_client['temp']['job_ids'] = job_list_str                    
+                            self.r.json().set(doc.id, Path.root_path(), temp_client)
+                            self.r.expire(doc.id, self.assigned_ttl)
+                        except:
+                            pass
+                
+                    self.logger.print(f"Insert job {job_list_str} to {len(result.docs)} clients", Msg_level.INFO)
+
             except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)
 
-    def insert(self, id: int, specifications: tuple):
+    def insert(self, id: int, specifications: tuple, option: float = 0):
         """Insert client metadata to database, set expiration time and start time
 
         Args:
             id
             specification: a tuple of public spec values
+            option: a optional value
         """
 
         if len(specifications) != len(self.public_constraint_name):
             self.logger.print("Specification length does not match required", Msg_level.ERROR)
-        client_dict = {"job_ids": "[]"}
+        client_dict = {"job_ids": "[]", "option": option}
         spec_dict = {self.public_constraint_name[i]: specifications[i]
                      for i in range(len(specifications))}
         client_dict.update(spec_dict)
@@ -76,7 +136,7 @@ class CM_temp_client_db_portal(Temp_client_db):
             self.logger.print(e, Msg_level.ERROR)
 
     def get_task_id(self, client_id: int, specifications: tuple)->list:
-        """Return task id of client id. If client not found in temp db, insert client
+        """Return task id of client id.
         
         Args: 
             client_id
@@ -90,8 +150,6 @@ class CM_temp_client_db_portal(Temp_client_db):
             if self.r.execute_command("EXISTS", id):
                 result = str(self.r.json().get(id, "$.temp.job_ids")[0])
                 task_list = ast.literal_eval(result)
-            # else:
-            #     self.insert(client_id, specifications)
 
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)

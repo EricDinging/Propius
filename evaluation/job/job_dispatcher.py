@@ -10,7 +10,7 @@ driver_id = int(sys.argv[3])
 
 with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
     config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-    ip = config['job_driver_ip'] if not config["use_docker"] else f"jobs_{driver_id}"
+    ip = config['job_driver_ip'] if not config["dispatcher_use_docker"] else f"jobs_{driver_id}"
     port = int(config['job_driver_starting_port'])
     num = config['total_job']
     trace_file = config['job_trace']
@@ -38,7 +38,7 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
                 f"{ip}",
                 f"{port + i}"]
             print(command)
-            if config["use_docker"]:
+            if config["dispatcher_use_docker"]:
                 p = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             else:
                 p = subprocess.Popen(command)

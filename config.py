@@ -26,24 +26,26 @@ is_FA = False
 speedup_factor = 3
 sched_alg = 'random'
 
-profile_folder = './evaluation/job/profile_mobilenet_new'
-job_trace = './evaluation/job/trace/job_trace_10_new.txt'
+profile_folder = './evaluation/job/profile_mobilenet_large'
+job_trace = './evaluation/job/trace/job_trace_20.txt'
 allow_exceed_total_round = True
 
 dataset = "femnist"
 
-### STOP EDITING HERE!
+dispatcher_use_docker = False
 
+### STOP EDITING HERE!
 if option == PROPIUS_SYS:
     compose_file = './compose_propius.yml'
     do_compute = False
     use_cuda = False
     evaluation_use_docker = False
 else:
-    total_job = 10
-    client_num = 6000
+    total_job = 20
+    client_num = 15000
 
     evaluation_use_docker = True
+
     client_per_container = 1000
     job_per_container = 2   
     if option == PROPIUS_POLICY:
@@ -54,8 +56,7 @@ else:
         compose_file = './compose_eval_gpu.yml'
         do_compute = True
         use_cuda = True
-
-        worker_num_list = [4, 4, 0, 0]
+        worker_num_list = [0, 0, 4, 4]
         worker_num = sum(worker_num_list)
         worker_starting_port = 49998
 
@@ -143,22 +144,23 @@ def config_propius():
     propius_data["sched_alg"] = sched_alg
     propius_data["allow_exceed_total_round"] = allow_exceed_total_round
 
-    def get_gpu_idx():
-        allocate_list = copy.deepcopy(worker_num_list)
+    def get_gpu_idx(allocate_list):
         for i, _ in enumerate(allocate_list):
             if allocate_list[i] > 0:
                 allocate_list[i] -= 1
                 return i
 
     if option == PROPIUS_EVAL:
+        allocate_list = copy.deepcopy(worker_num_list)
         config_data['worker'] = [{
             'ip': 'localhost',
             'port': worker_starting_port - i,
-            'device': get_gpu_idx()
+            'device': get_gpu_idx(allocate_list)
         } for i in range(worker_num)]
 
 def config_evaluation():
     config_data["use_docker"] = evaluation_use_docker
+    config_data["dispatcher_use_docker"] = dispatcher_use_docker
     config_data["do_compute"] = do_compute
     config_data["is_FA"] = is_FA
     config_data["use_cuda"] = use_cuda

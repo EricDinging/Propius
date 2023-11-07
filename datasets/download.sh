@@ -1,10 +1,11 @@
+#!/bin/bash
 # From FedScale
 # https://github.com/SymbioticLab/FedScale/blob/master/benchmark/dataset/download.sh
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # no color
-DIR="$(PROPIUS_HOME)/datasets" 
+DIR="$PROPIUS_HOME/datasets" 
 ARGS=${@: 2};
 
 set -Eeuo pipefail
@@ -23,7 +24,7 @@ Help()
 
    echo
    echo "======= Available datasets ======="
-#    echo "speech                       Speech Commands dataset (about 2.3GB)"
+   echo "speech                       Speech Commands dataset (about 2.3GB)"
    echo "open_images                  Open Images dataset (about 66GB)"
 #    echo "amazon_review                Amazon Review dataset (about 11G)"
 #    echo "charades                     Charades dataset (about 15G)"
@@ -43,6 +44,25 @@ Help()
 #    echo "coqa                         CoQA dataset (about 7.9M)"
 #    echo "puffer                       Puffer dataset (about 2.0G)"
 #    echo "landmark                     Puffer dataset (about 954M)"
+}
+
+speech()
+{
+    if [ ! -d "${DIR}/speech_commands/train/" ];
+    then
+        echo "Downloading Speech Commands dataset(about 2.4GB)..."
+        wget -O ${DIR}/google_speech.tar.gz https://fedscale.eecs.umich.edu/dataset/google_speech.tar.gz
+
+        echo "Dataset downloaded, now decompressing..."
+        tar -xf ${DIR}/google_speech.tar.gz -C ${DIR}
+
+        echo "Removing compressed file..."
+        rm -f ${DIR}/google_speech.tar.gz
+
+        echo -e "${GREEN}Speech Commands dataset downloaded!${NC}"
+    else
+        echo -e "${RED}Speech Commands dataset already exists under ${DIR}/speech_commands/!"
+fi
 }
 
 
@@ -88,6 +108,9 @@ Download() {
     do  
         echo "Downloading ${data}"
         case $data in
+            speech )
+                speech
+                ;;
             open_images )
                 open_images
                 ;;
@@ -105,6 +128,9 @@ Remove() {
     do  
         echo "Removing ${data}"
         case $data in
+            speech )
+                rm -rf  ${DIR}/$data;
+                ;;
             open_images )
                 rm -rf  ${DIR}/$data;
                 ;;

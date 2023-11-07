@@ -20,6 +20,7 @@ class Propius_client():
                 private_specifications: dict
                 load_balancer_ip
                 load_balancer_port
+                option: float
             verbose: whether to print or not
             logging: whether to log or not
 
@@ -34,7 +35,8 @@ class Propius_client():
             public, private = encode_specs(**client_config['public_specifications'], **client_config['private_specifications'])
             self.public_specifications = tuple(public)
             self.private_specifications = tuple(private)
-            
+            self.option = client_config['option'] if 'option' in client_config else 0
+
             self._lb_ip = client_config['load_balancer_ip']
             self._lb_port = client_config['load_balancer_port']
             self._lb_channel = None
@@ -117,8 +119,12 @@ class Propius_client():
         """
 
         for _ in range(num_trial):
+            info = {
+                "ps": self.public_specifications,
+                "op": self.option
+            }
             client_checkin_msg = propius_pb2.client_checkin(
-                public_specification=pickle.dumps(self.public_specifications)
+                public_specification=pickle.dumps(info)
             )
             try:
                 cm_offer = self._lb_stub.CLIENT_CHECKIN(client_checkin_msg)
