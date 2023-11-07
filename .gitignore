@@ -46,9 +46,9 @@ landmark
 coqa
 
 # Evaluation results
-evaluation_result/
+evaluation_result*
 experiment/
-data/
+data*
 *.tar.gz
 *.jpg
 *.csv
