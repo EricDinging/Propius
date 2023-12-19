@@ -3,7 +3,7 @@ import sys
 import asyncio
 import yaml
 import grpc
-from propius.job.propius_job_aio import Propius_job_aio
+from propius_controller.job.propius_job_aio import Propius_job_aio
 from channels import parameter_server_pb2
 from channels import parameter_server_pb2_grpc
 from evaluation.commons import *
