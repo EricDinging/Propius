@@ -1,5 +1,5 @@
 # GLOBAL CONFIG
-use_docker: true
+use_docker: false
 
 # JOB MANAGER
 job_manager_ip: localhost
