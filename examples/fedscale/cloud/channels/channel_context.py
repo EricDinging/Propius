@@ -3,8 +3,8 @@ import logging
 import grpc
 
 import fedscale.cloud.channels.job_api_pb2_grpc as job_api_pb2_grpc
-from propius.channels import propius_pb2
-from propius.channels import propius_pb2_grpc
+from propius_controller.channels import propius_pb2
+from propius_controller.channels import propius_pb2_grpc
 import pickle
 
 MAX_MESSAGE_LENGTH = 1*1024*1024*1024  # 1GB

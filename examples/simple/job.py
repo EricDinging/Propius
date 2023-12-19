@@ -1,4 +1,4 @@
-from propius.job import Propius_job
+from propius_controller.job import Propius_job
 
 public_constraint = {
     "cpu_f": 8,

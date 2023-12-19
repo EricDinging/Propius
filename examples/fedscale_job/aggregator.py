@@ -24,8 +24,8 @@ from examples.fedscale.cloud.fllibs import *
 
 from argparse import Namespace
 import yaml
-from propius.channels import propius_pb2
-from propius.channels import propius_pb2_grpc
+from propius_controller.channels import propius_pb2
+from propius_controller.channels import propius_pb2_grpc
 import sys
 
 
