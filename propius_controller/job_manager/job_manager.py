@@ -9,6 +9,7 @@ import asyncio
 import pickle
 import grpc
 
+
 class Job_manager(propius_pb2_grpc.Job_managerServicer):
     def __init__(self, gconfig: dict, logger: Propius_logger):
         """Init job manager class. Connect to scheduler server
@@ -29,29 +30,32 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
                 logger
         """
         self.gconfig = gconfig
-        self.ip = gconfig['job_manager_ip'] if not gconfig['use_docker'] else '0.0.0.0'
-        self.port = int(gconfig['job_manager_port'])
+        self.ip = gconfig["job_manager_ip"] if not gconfig["use_docker"] else "0.0.0.0"
+        self.port = int(gconfig["job_manager_port"])
+
+        self.jm_monitor = JM_monitor(gconfig["sched_alg"], logger, gconfig["plot"])
+        self.logger = logger
+
         self.job_db_portal = JM_job_db_portal(gconfig, logger)
-        self.jm_monitor = JM_monitor(gconfig['sched_alg'], logger, gconfig['plot'])
+
         self.sched_channel = None
         self.sched_portal = None
-        self.logger = logger
-        self._connect_sched(
-            gconfig['scheduler_ip'], int(
-                gconfig['scheduler_port']))
-        self.sched_alg = gconfig['sched_alg']
+
+        self._connect_sched(gconfig["scheduler_ip"], int(gconfig["scheduler_port"]))
+        self.sched_alg = gconfig["sched_alg"]
 
         self.lock = asyncio.Lock()
         self.job_total_num = 0
 
     def _connect_sched(self, sched_ip: str, sched_port: int) -> None:
-        if self.gconfig['use_docker']:
-            sched_ip = 'scheduler'
-        self.sched_channel = grpc.aio.insecure_channel(
-            f'{sched_ip}:{sched_port}')
+        if self.gconfig["use_docker"]:
+            sched_ip = "scheduler"
+        self.sched_channel = grpc.aio.insecure_channel(f"{sched_ip}:{sched_port}")
         self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
         self.logger.print(
-            f"Job manager: connecting to scheduler at {sched_ip}:{sched_port}", Msg_level.INFO)
+            f"Job manager: connecting to scheduler at {sched_ip}:{sched_port}",
+            Msg_level.INFO,
+        )
 
     async def JOB_REGIST(self, request, context):
         """Insert job registration into database, return job_id assignment, and ack
@@ -76,16 +80,20 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             private_constraint=private_constraint,
             job_ip=job_ip,
             job_port=job_port,
-            total_demand=est_demand * est_total_round if est_total_round > 0 \
-                else 2 * est_demand,
-            total_round=est_total_round)
-        
-        self.logger.print(f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
-                     f", private constraint: {private_constraint}, demand: {est_demand}"
-                     , Msg_level.INFO)
+            total_demand=est_demand * est_total_round
+            if est_total_round > 0
+            else 2 * est_demand,
+            total_round=est_total_round,
+        )
+
+        self.logger.print(
+            f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
+            f", private constraint: {private_constraint}, demand: {est_demand}",
+            Msg_level.INFO,
+        )
         if ack:
             await self.jm_monitor.job_register()
-            if self.sched_alg == 'fifo':
+            if self.sched_alg == "fifo":
                 await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
         await self.jm_monitor.request()
@@ -104,10 +112,12 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         self.job_db_portal.update_total_demand_estimate(job_id, demand)
 
-        if self.sched_alg != 'fifo':
+        if self.sched_alg != "fifo":
             await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
-        self.logger.print(f"Job manager: ack job {job_id} round request: {ack}", Msg_level.INFO)
+        self.logger.print(
+            f"Job manager: ack job {job_id} round request: {ack}", Msg_level.INFO
+        )
 
         await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
@@ -122,9 +132,11 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         job_id = request.id
         ack = self.job_db_portal.end_request(job_id=job_id)
-        self.logger.print(f"Job manager: ack job {job_id} end round request: {ack}", Msg_level.INFO)
+        self.logger.print(
+            f"Job manager: ack job {job_id} end round request: {ack}", Msg_level.INFO
+        )
 
-        if self.sched_alg == 'irs3':
+        if self.sched_alg == "irs3":
             await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=-1))
 
         await self.jm_monitor.request()
@@ -139,28 +151,37 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         """
 
         job_id = request.id
-        
-        (constraints, demand, total_round, runtime, sched_latency) = \
-            self.job_db_portal.finish(job_id)
-        self.logger.print(f"Job manager: job {job_id} completed"
-                          f", executed {total_round} rounds", Msg_level.INFO)
-        
-        if self.sched_alg == 'irs3':
+
+        (
+            constraints,
+            demand,
+            total_round,
+            runtime,
+            sched_latency,
+        ) = self.job_db_portal.finish(job_id)
+        self.logger.print(
+            f"Job manager: job {job_id} completed" f", executed {total_round} rounds",
+            Msg_level.INFO,
+        )
+
+        if self.sched_alg == "irs3":
             await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=-1))
 
         if runtime:
-            await self.jm_monitor.job_finish(constraints, demand, total_round, runtime, sched_latency)
+            await self.jm_monitor.job_finish(
+                constraints, demand, total_round, runtime, sched_latency
+            )
         await self.jm_monitor.request()
         return propius_pb2.empty()
-    
+
     async def HEART_BEAT(self, request, context):
         return propius_pb2.ack(ack=True)
-    
+
     async def plot_routine(self):
         while True:
             self.jm_monitor.report()
             await asyncio.sleep(60)
-    
+
     async def heartbeat_routine(self):
         """Send heartbeat routine to scheduler and prune job db if needed."""
         try:
@@ -171,6 +192,6 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
                 except:
                     pass
                 self.job_db_portal.prune()
-                
+
         except asyncio.CancelledError:
             pass
