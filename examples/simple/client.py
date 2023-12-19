@@ -1,4 +1,4 @@
-from propius.client import Propius_client
+from propius_controller.client import Propius_client
  
 # make some system calls to get device specs
 
