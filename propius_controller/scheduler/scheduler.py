@@ -37,9 +37,11 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
 
         self.ip = gconfig['scheduler_ip'] if not gconfig['use_docker'] else '0.0.0.0'
         self.port = gconfig['scheduler_port']
+
         self.sched_alg = gconfig['sched_alg']
         if self.sched_alg == 'irs':
             self.irs_epsilon = float(gconfig['irs_epsilon'])
+        
         self.job_db_portal = SC_job_db_portal(gconfig, logger)
         self.client_db_portal = SC_client_db_portal(gconfig, logger)
 

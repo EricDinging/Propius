@@ -4,13 +4,18 @@ use_docker: false
 # JOB MANAGER
 job_manager_ip: localhost
 job_manager_port: 50001
-job_manager_log_path: propius_controller/monitor/log/jm.log
+job_manager_log_path: monitor/log/jm.log
 
 # JOB DATABASE
 job_db_ip: localhost
 job_db_port: 6379
 
-# ---Addresses---
+# SCHEDULER
+scheduler_ip: localhost
+scheduler_port: 50000
+scheduler_log_path: monitor/log/sc.log
+
+# CLIENT MANAGER
 load_balancer_ip: localhost
 load_balancer_port: 50002
 
@@ -22,9 +27,6 @@ client_manager:
 - ip: localhost
   port: 50004
   client_db_port: 6381
-
-scheduler_ip: localhost
-scheduler_port: 50000
 
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']

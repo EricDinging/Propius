@@ -90,7 +90,7 @@ def encode_specs(**kargs) -> tuple[list, list]:
 class Propius_logger:
     def __init__(self, log_file:str=None, verbose:bool=True, use_logging:bool=True):
         self.verbose = verbose
-        self.use_logging = logging
+        self.use_logging = use_logging
         if self.use_logging:
             if not log_file:
                 raise ValueError("Empty log file")
