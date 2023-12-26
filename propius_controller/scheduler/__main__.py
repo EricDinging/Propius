@@ -1,7 +1,6 @@
 """Job scheduler."""
 
 from propius_controller.util import Msg_level, Propius_logger
-from propius_controller.scheduler.scheduler import Scheduler
 from propius_controller.channels import propius_pb2_grpc
 from propius_controller.config import PROPIUS_CONTROLLER_ROOT, GLOBAL_CONFIG_FILE
 import asyncio
@@ -26,6 +25,12 @@ async def serve(gconfig, logger):
         await server.stop(5)
 
     server = grpc.aio.server()
+
+    if gconfig["sched_alg"] == "fifo":
+        from propius_controller.scheduler.module.fifo_scheduler import FIFO_scheduler as Scheduler
+    else:
+        from propius_controller.scheduler.module.base_scheduler import Scheduler
+
     scheduler = Scheduler(gconfig, logger)
     propius_pb2_grpc.add_SchedulerServicer_to_server(scheduler, server)
     server.add_insecure_port(f"{scheduler.ip}:{scheduler.port}")
@@ -34,7 +39,7 @@ async def serve(gconfig, logger):
     plot_task = asyncio.create_task(scheduler.plot_routine())
 
     logger.print(
-        f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {scheduler.sched_alg}",
+        f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {gconfig['sched_alg']}",
         Msg_level.INFO,
     )
     _cleanup_coroutines.append(server_graceful_shutdown())

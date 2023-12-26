@@ -1,25 +1,26 @@
 from propius_controller.util import get_time, Propius_logger, Monitor
+from propius_controller.config import PROPIUS_CONTROLLER_ROOT
 import matplotlib.pyplot as plt
 import asyncio
 import os
 
 
 class SC_monitor(Monitor):
-    def __init__(self, sched_alg: str, logger: Propius_logger, plot: bool=False):
+    def __init__(self, logger: Propius_logger, path: str, plot: bool = False):
         super().__init__("Scheduler", logger, plot)
         # self.job_size_latency_map = {}
         # self.job_request_map = {}
-        self.sched_alg = sched_alg
         self.plot = plot
+        self.plot_path = path
 
     async def request(self, job_id: int):
         self._request()
-            # self.job_request_map[job_id] = time.time()
+        # self.job_request_map[job_id] = time.time()
 
     # async def request_end(self, job_id: int, job_size: int):
     #     async with self.lock:
     #         runtime = time.time() - self.job_request_map[job_id]
-            
+
     #         if job_size not in self.job_size_latency_map:
     #             self.job_size_latency_map[job_size] = 0
     #         self.job_size_latency_map[job_size] += runtime
@@ -57,6 +58,6 @@ class SC_monitor(Monitor):
             # plt.subplot(2, 1, 2)
             self._plot_request()
             # plt.tight_layout()
-            plot_file = f"./propius/monitor/plot/sc_{self.sched_alg}.jpg"
+            plot_file = PROPIUS_CONTROLLER_ROOT / self.plot_path
             os.makedirs(os.path.dirname(plot_file), exist_ok=True)
             fig.savefig(plot_file)
