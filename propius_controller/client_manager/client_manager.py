@@ -41,7 +41,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.client_db_portal = CM_client_db_portal(gconfig, self.cm_id, logger, True)
         self.temp_client_db_portal = CM_temp_client_db_portal(gconfig, self.cm_id, logger, False)
         self.job_db_portal = CM_job_db_portal(gconfig, logger)
-        self.cm_monitor = CM_monitor(self.sched_alg, logger, gconfig['plot'])
+        self.cm_monitor = CM_monitor(logger, gconfig['client_manager_plot_path'], gconfig['plot'])
         self.max_client_num = gconfig['client_manager_id_weight']
         self.lock = asyncio.Lock()
         self.client_num = 0

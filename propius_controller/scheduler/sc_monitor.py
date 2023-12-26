@@ -58,6 +58,6 @@ class SC_monitor(Monitor):
             # plt.subplot(2, 1, 2)
             self._plot_request()
             # plt.tight_layout()
-            plot_file = PROPIUS_CONTROLLER_ROOT / self.plot_path
+            plot_file = PROPIUS_CONTROLLER_ROOT / self.plot_path / "sc.jpg"
             os.makedirs(os.path.dirname(plot_file), exist_ok=True)
             fig.savefig(plot_file)
