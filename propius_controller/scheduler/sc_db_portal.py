@@ -228,10 +228,10 @@ class SC_job_db_portal(Job_db):
     #     except Exception as e:
     #         self.logger.print(e, Msg_level.ERROR)
 
-    def random_update_all_job_score(self):
-        """Do not assign score to jobs. Instead, client will recieved a randomly shuffled offer list
-        """
-        pass
+    # def random_update_all_job_score(self):
+    #     """Do not assign score to jobs. Instead, client will recieved a randomly shuffled offer list
+    #     """
+    #     pass
 
     def srsf_update_all_job_score(self):
         """Give every job a score of -remaining demand

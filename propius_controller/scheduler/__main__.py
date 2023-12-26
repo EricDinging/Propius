@@ -25,10 +25,16 @@ async def serve(gconfig, logger):
         await server.stop(5)
 
     server = grpc.aio.server()
+    
+    sched_alg = gconfig["sched_alg"]
 
-    if gconfig["sched_alg"] == "fifo":
+    if sched_alg == "fifo":
         from propius_controller.scheduler.module.fifo_scheduler import (
             FIFO_scheduler as Scheduler,
+        )
+    elif sched_alg == "random":
+        from propius_controller.scheduler.module.random_scheduler import (
+            Random_scheduler as Scheduler
         )
     else:
         from propius_controller.scheduler.module.base_scheduler import Scheduler
