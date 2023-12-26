@@ -93,7 +93,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         )
         if ack:
             await self.jm_monitor.job_register()
-            if self.sched_alg == "fifo":
+            if self.sched_alg in ["fifo", "random"]:
                 await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
         await self.jm_monitor.request()
