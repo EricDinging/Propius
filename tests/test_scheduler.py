@@ -69,20 +69,39 @@ def test_scheduler():
         sched_alg = gconfig["sched_alg"]
         if sched_alg == "fifo":
             fifo(gconfig, job_db)
+        elif sched_alg == "random":
+            random(gconfig, job_db)
+
 
 def fifo(gconfig, job_db):
     time.sleep(1)
     job_register(gconfig)
-    score1 = int(job_db.get_field(0, "score"))
+    time.sleep(0.1)
+    score1 = float(job_db.get_field(0, "score"))
 
     time.sleep(1)
     job_register(gconfig)
-    score2 = int(job_db.get_field(1, "score"))
+    time.sleep(0.1)
+    score2 = float(job_db.get_field(1, "score"))
 
     time.sleep(1)
     job_register(gconfig)
-    score3 = int(job_db.get_field(2, "score"))
+    time.sleep(0.1)
+    score3 = float(job_db.get_field(2, "score"))
 
     assert score1 > score2
     assert score2 > score3
 
+
+def random(gconfig, job_db):
+    time.sleep(1)
+    job_register(gconfig)
+    time.sleep(0.1)
+    score1 = float(job_db.get_field(0, "score"))
+    assert score1 != 0.0
+
+    time.sleep(1)
+    job_register(gconfig)
+    time.sleep(0.1)
+    score2 = float(job_db.get_field(1, "score"))
+    assert score1 != score2

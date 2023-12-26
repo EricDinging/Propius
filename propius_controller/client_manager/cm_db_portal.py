@@ -77,10 +77,10 @@ class CM_job_db_portal(Job_db):
                              for name in self.private_constraint_name])
                         open_private_constraint.append(job_private_constraint)
 
-            if self.sched_alg == 'random' and len(open_list) > 0:
-                paired_offer = list(zip(open_list, open_private_constraint))
-                random.shuffle(paired_offer)
-                open_list, open_private_constraint = map(list, zip(*paired_offer))
+            # if self.sched_alg == 'random' and len(open_list) > 0:
+            #     paired_offer = list(zip(open_list, open_private_constraint))
+            #     random.shuffle(paired_offer)
+            #     open_list, open_private_constraint = map(list, zip(*paired_offer))
 
             return open_list, open_private_constraint, size
 
