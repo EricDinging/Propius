@@ -22,6 +22,7 @@ dependencies = [
 [project.scripts]
 propius-controller-scheduler = "propius_controller.scheduler.__main__:main"
 propius-controller-job-manager = "propius_controller.job_manager.__main__:main"
+propius-controller-client-manager = "propius_controller.client_manager.__main__:main"
 
 [tool.setuptools]
 packages = ["propius_controller"]

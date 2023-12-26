@@ -1,4 +1,32 @@
-# Scheduler
+# Scheduling Layer
+## Overview
+Scheduling layer sits beneath the application layer. The scheduling logic is triggered by: (1) new job registeration, (2) existing jobs' new request, (3) a certain amount of time elapse. There are two forms of scheduling logic implemented: (1) online scheduling and (2) offline scheduling.
+
+## Online scheduling
+As the client resources are highly dynamic, it is difficult to keep track of every available client resources long-term, which involves constant state checking and updates. It is therefore more appropiate to remove any state for client resources, and assign tasks to clients whenever they are available in an online fashion.
+
+The online `scheduler` in `propius_controller` sets a score for every outstanding job based on its metadata (by interfacing with `job_db`). `client_manager` in `propius_controller` searches for an outstanding job with the highest score for every client check-in, and assign a job to an eligible client.
+
+The online scheduling logic is invoked by either new job registration or new job request.
+
+```python
+class FIFO_scheduler(Scheduler):
+    # class attributes initialization
+    
+    async def online(self, job_id: int):
+        """Give every job which doesn't have a score yet a score of -timestamp
+
+        Args:
+            job_id: job id
+        """
+        
+        job_timestamp = float(self.job_db_portal.get_field(job_id, "timestamp"))
+
+        score = - (job_timestamp - self.start_time)
+        self.job_db_portal.set_score(score, job_id)
+```
+
+
 ## Information
 Job Metadata:
 1. task_quota, task_budget, quota_budget
@@ -30,14 +58,3 @@ def fifo(active_task_list):
     return {query: actve_task_list}
 ```
 
-## Online
-Only support schedulers outputing strict one-level or two-level priority rank. Online version has less overhead.
-```python
-@propius.jm_online_scheduler(jm_id=0)
-def fifo(active_task_list):
-    def key(job_id):
-        return get_job_start_time(job_id)
-    active_task_list.sort(key=key)
-    # return a two-dim list
-    return [active_task_list]
-```

@@ -53,7 +53,7 @@ def main():
     with open(GLOBAL_CONFIG_FILE, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            log_file_path = PROPIUS_CONTROLLER_ROOT / gconfig["job_manager_log_path"]
+            log_file_path = PROPIUS_CONTROLLER_ROOT / gconfig["job_manager_log_path"] / "jm.log"
             os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
             logger = Propius_logger(
