@@ -233,27 +233,27 @@ class SC_job_db_portal(Job_db):
     #     """
     #     pass
 
-    def srsf_update_all_job_score(self):
-        """Give every job a score of -remaining demand
+    # def srsf_update_all_job_score(self):
+    #     """Give every job a score of -remaining demand
 
-            remaining demand = est total demand - attained demand
-            Prioritize job with the smallest remaining demand.
-        """
-        try:
-            q = Query('*').paging(0, 100)
-            result = self.r.ft('job').search(q)
-            if result.total == 0:
-                return
-            for doc in result.docs:
-                id = doc.id
-                job_dict = json.loads(doc.json)['job']
-                # remain_demand = max(job_dict['total_demand'] - job_dict['attained_service'], 0)
-                remain_demand = max(job_dict['demand'] - job_dict['amount'], 0)
-                score = -remain_demand
-                self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
-                self.r.execute_command('JSON.SET', id, "$.job.score", score)
-        except Exception as e:
-            self.logger.print(e, Msg_level.ERROR)
+    #         remaining demand = est total demand - attained demand
+    #         Prioritize job with the smallest remaining demand.
+    #     """
+    #     try:
+    #         q = Query('*').paging(0, 100)
+    #         result = self.r.ft('job').search(q)
+    #         if result.total == 0:
+    #             return
+    #         for doc in result.docs:
+    #             id = doc.id
+    #             job_dict = json.loads(doc.json)['job']
+    #             # remain_demand = max(job_dict['total_demand'] - job_dict['attained_service'], 0)
+    #             remain_demand = max(job_dict['demand'] - job_dict['amount'], 0)
+    #             score = -remain_demand
+    #             self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
+    #             self.r.execute_command('JSON.SET', id, "$.job.score", score)
+    #     except Exception as e:
+    #         self.logger.print(e, Msg_level.ERROR)
 
     def srtf_update_all_job_score(self, std_round_time: float):
         """Give every job a score of -remaining time
