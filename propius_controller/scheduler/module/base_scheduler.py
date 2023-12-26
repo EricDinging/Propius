@@ -110,11 +110,6 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         #     # Update every job score using IRS
         #     self.job_group_manager.update_job_group(job_id != -1, job_id)
 
-        # elif self.sched_alg == "random":
-        #     # Give every job which doesn't have a score yet a score of
-        #     # a random float ranging from 0 to 10.
-        #     self.job_db_portal.random_update_all_job_score()
-
         # elif self.sched_alg == "srsf":
         #     # Give every job a score of -remaining demand.
         #     # remaining demand = remaining round * current round demand
