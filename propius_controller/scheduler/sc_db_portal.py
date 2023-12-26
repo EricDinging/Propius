@@ -166,26 +166,66 @@ class SC_job_db_portal(Job_db):
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
 
-    def fifo_update_all_job_score(self):
-        """Give every job which doesn't have a score yet a score of -timestamp
-
+    def query(self, qstr: str, num: int = 100):
+        """Input query string, specifying max number of results
+        Args:
+            qstr: query string
+            num: max number of results
         Returns:
-            boolean indicating whether there is a score updated
+            A result of documents
         """
-        q = Query('@score: [0, 0]').paging(0, 100)
-        try:
-            result = self.r.ft('job').search(q)
+
+        q = Query(qstr).paging(0, num)
+        return self.r.ft('job').search(q)
+    
+    def get_field(self, job_id: int, field: str):
+        """Get field value
         
-            if result.total == 0:
-                return
-            for doc in result.docs:
-                id = doc.id
-                job_time = json.loads(doc.json)["job"]["timestamp"]
-                score  = -(job_time - self.start_time)
-                self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
-                self.r.execute_command('JSON.SET', id, "$.job.score", score)
+        Args:
+            job_id: job id
+            field: field name
+        Returns:
+            value for the field in db
+        """
+        try:
+            qid = f"job:{job_id}"
+            return self.r.json().get(qid, f"$.job.{field}")[0]
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
+    
+    def set_score(self, score: float, job_id: int):
+        """Set score for job
+        
+        Args:
+            score: a float
+            job_id: job id
+        """
+        try:
+            self.logger.print(f"set job score: {job_id} {score:.3f} ", Msg_level.INFO)
+            self.r.execute_command('JSON.SET', job_id, "$.job.score", score)
+        except Exception as e:
+            self.logger.print(e, Msg_level.ERROR)
+
+    # def fifo_update_all_job_score(self):
+    #     """Give every job which doesn't have a score yet a score of -timestamp
+
+    #     Returns:
+    #         boolean indicating whether there is a score updated
+    #     """
+    #     q = Query('@score: [0, 0]').paging(0, 100)
+    #     try:
+    #         result = self.r.ft('job').search(q)
+        
+    #         if result.total == 0:
+    #             return
+    #         for doc in result.docs:
+    #             id = doc.id
+    #             job_time = json.loads(doc.json)["job"]["timestamp"]
+    #             score  = -(job_time - self.start_time)
+    #             self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
+    #             self.r.execute_command('JSON.SET', id, "$.job.score", score)
+    #     except Exception as e:
+    #         self.logger.print(e, Msg_level.ERROR)
 
     def random_update_all_job_score(self):
         """Do not assign score to jobs. Instead, client will recieved a randomly shuffled offer list

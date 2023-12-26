@@ -33,7 +33,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.ip = gconfig["job_manager_ip"] if not gconfig["use_docker"] else "0.0.0.0"
         self.port = int(gconfig["job_manager_port"])
 
-        self.jm_monitor = JM_monitor(gconfig["sched_alg"], logger, gconfig["plot"])
+        self.jm_monitor = JM_monitor(logger, gconfig["job_manager_plot_path"], gconfig["plot"])
         self.logger = logger
 
         self.job_db_portal = JM_job_db_portal(gconfig, logger)
