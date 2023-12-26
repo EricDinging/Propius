@@ -27,7 +27,9 @@ async def serve(gconfig, logger):
     server = grpc.aio.server()
 
     if gconfig["sched_alg"] == "fifo":
-        from propius_controller.scheduler.module.fifo_scheduler import FIFO_scheduler as Scheduler
+        from propius_controller.scheduler.module.fifo_scheduler import (
+            FIFO_scheduler as Scheduler,
+        )
     else:
         from propius_controller.scheduler.module.base_scheduler import Scheduler
 
@@ -46,7 +48,7 @@ async def serve(gconfig, logger):
     await server.wait_for_termination()
 
 
-if __name__ == "__main__":
+def main():
     with open(GLOBAL_CONFIG_FILE, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
@@ -65,3 +67,6 @@ if __name__ == "__main__":
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()
+
+if __name__ == "__main__":
+    main()

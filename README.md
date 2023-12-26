@@ -160,8 +160,9 @@ chmod +x ./scripts/clean.sh
 ```
 
 ## Testing
-- Under construction
-
+```
+pytest propius_controller/tests
+```
 ## Error Handling
 - If there is an error saying that you cannot connect to docker daemon, try [this](https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue)
 - Check Redis server is running

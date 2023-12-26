@@ -202,7 +202,8 @@ class SC_job_db_portal(Job_db):
         """
         try:
             self.logger.print(f"set job score: {job_id} {score:.3f} ", Msg_level.INFO)
-            self.r.execute_command('JSON.SET', job_id, "$.job.score", score)
+            id = f"job:{job_id}"
+            self.r.execute_command('JSON.SET', id, "$.job.score", score)
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
 

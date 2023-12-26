@@ -83,7 +83,7 @@ class JM_monitor(Monitor):
             self._plot_job()
             plt.subplot(2, 1, 2)
             self._plot_request()
-            plt.tight_layout()
+            # plt.tight_layout()
 
             plot_file = PROPIUS_CONTROLLER_ROOT / self.plot_path
             os.makedirs(os.path.dirname(plot_file), exist_ok=True)
