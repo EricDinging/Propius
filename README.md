@@ -161,7 +161,7 @@ chmod +x ./scripts/clean.sh
 
 ## Testing
 ```
-pytest propius_controller/tests
+pytest tests
 ```
 ## Error Handling
 - If there is an error saying that you cannot connect to docker daemon, try [this](https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue)
