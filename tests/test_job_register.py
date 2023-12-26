@@ -61,7 +61,6 @@ def job_register(gconfig):
 def test_register():
     init()
     atexit.register(clean_up)
-    print("good")
     with open(GLOBAL_CONFIG_FILE, "r") as gconfig:
         gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
         logger = Propius_logger(log_file=None, verbose=True, use_logging=False)
