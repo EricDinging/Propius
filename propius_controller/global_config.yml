@@ -5,6 +5,7 @@ use_docker: false
 job_manager_ip: localhost
 job_manager_port: 50001
 job_manager_log_path: monitor/log/jm.log
+job_manager_plot_path: monitor/plot/jm.jpg
 
 # JOB DATABASE
 job_db_ip: localhost
@@ -14,6 +15,7 @@ job_db_port: 6379
 scheduler_ip: localhost
 scheduler_port: 50000
 scheduler_log_path: monitor/log/sc.log
+scheduler_plot_path: monitor/plot/sc.jpg
 
 # CLIENT MANAGER
 load_balancer_ip: localhost
@@ -30,7 +32,7 @@ client_manager:
 
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
-sched_alg: random
+sched_alg: fifo
 tier_num: 3
 max_task_offer_list_len: 20
 
