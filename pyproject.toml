@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "propius"
+description = "FL Resource Manager"
+version = "1.0.0"
+requires-python = ">=3.9"
+dependencies = [
+    "bs4",
+    "click",
+    "pycodestyle",
+    "pydocstyle",
+    "pylint",
+    "markdown",
+    "mypy",
+    "pytest",
+    "pytest-mock",
+]
+
+[project.scripts]
+propius-controller-scheduler = "propius_controller.scheduler.__main__:main"
+propius-controller-job-manager = "propius_controller.job_manager.__main__:main"
+
+[tool.setuptools]
+packages = ["propius_controller"]
+
+[tool.pylint.typecheck]
+# List of decorators that change the signature of a decorated function.
+# We need this because Click decorators mutate the main() function.
+signature-mutators = ["command", "option", "argument"]
+
+[tool.pylint.design]
+# Maximum number of arguments for function / method.
+max-args = 6
+# Minimum number of public methods for a class (see R0903).
+min-public-methods = 1
