@@ -112,7 +112,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         self.job_db_portal.update_total_demand_estimate(job_id, demand)
 
-        if self.sched_alg != "fifo":
+        if self.sched_alg in ["srsf"]:
             await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
 
         self.logger.print(

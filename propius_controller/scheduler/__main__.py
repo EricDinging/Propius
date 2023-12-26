@@ -36,6 +36,10 @@ async def serve(gconfig, logger):
         from propius_controller.scheduler.module.random_scheduler import (
             Random_scheduler as Scheduler
         )
+    elif sched_alg == "srsf":
+        from propius_controller.scheduler.module.srsf_scheduler import ( 
+            SRSF_scheduler as Scheduler
+        )
     else:
         from propius_controller.scheduler.module.base_scheduler import Scheduler
 

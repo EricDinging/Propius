@@ -11,7 +11,6 @@ import atexit
 
 process = []
 
-
 def init():
     try:
         p = subprocess.Popen(
@@ -57,6 +56,8 @@ def job_register(gconfig):
     if not propius_stub.register():
         print(f"Parameter server: register failed")
 
+    return propius_stub
+
 
 def test_scheduler():
     init()
@@ -71,6 +72,8 @@ def test_scheduler():
             fifo(gconfig, job_db)
         elif sched_alg == "random":
             random(gconfig, job_db)
+        elif sched_alg == "srsf":
+            srsf(gconfig, job_db)
 
 
 def fifo(gconfig, job_db):
@@ -105,3 +108,19 @@ def random(gconfig, job_db):
     time.sleep(0.1)
     score2 = float(job_db.get_field(1, "score"))
     assert score1 != score2
+
+
+def srsf(gconfig, job_db):
+    time.sleep(1)
+    propius_stub = job_register(gconfig)
+    propius_stub.start_request()
+    time.sleep(0.1)
+    score1 = float(job_db.get_field(0, "score"))
+    assert score1 == -5
+
+    time.sleep(1)
+    propius_stub = job_register(gconfig)
+    propius_stub.start_request(new_demand=True, demand=10)
+    time.sleep(0.1)
+    score2 = float(job_db.get_field(1, "score"))
+    assert score2 == -10
