@@ -20,6 +20,8 @@ scheduler_plot_path: monitor/plot
 # CLIENT MANAGER
 load_balancer_ip: localhost
 load_balancer_port: 50002
+load_balancer_log_path: monitor/log
+load_balancer_plot_path: monitor/plot
 
 client_manager_id_weight: 100000 # for client id assignment
 client_manager:
@@ -35,7 +37,7 @@ client_manager_plot_path: monitor/plot
 
 # ---Scheduling---
 # Scheduling algorithm ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
-sched_alg: srsf
+sched_alg: fifo
 tier_num: 3
 max_task_offer_list_len: 20
 
