@@ -25,31 +25,33 @@ class CM_job_db_portal(Job_db):
 
         super().__init__(gconfig, False, logger)
 
-    def client_assign(self, specification: tuple, sched_alg: str) -> tuple[list, list, int]:
+    def client_assign(
+        self, specification: tuple, sched_alg: str
+    ) -> tuple[list, list, int]:
         """Assign tasks to client with input specification
 
-        The client public specification would satisfy returned task public constraints, 
-        but client private specification might not satisfy the returned task private constraints. 
+        The client public specification would satisfy returned task public constraints,
+        but client private specification might not satisfy the returned task private constraints.
         The returned tasks' current allocation amount would be smaller than their respective demand.
 
         Args:
             specification: a tuple listing public spec values
             sched_alg: str
-        
+
         Returns:
             task_offer_list: list of job id, with size no greater than max_task_len
-            task_private_constraint_list: list of tuple of private constraint 
+            task_private_constraint_list: list of tuple of private constraint
                                             for client local task selection
             size: total number of jobs for analytics
         """
         result = None
         try:
-            if self.sched_alg == 'fifo':
-                q = Query('*').sort_by('timestamp', asc=True).paging(0, 100)
-                result = self.r.ft('job').search(q)
-            else:
-                q = Query('*').sort_by('score', asc=False).paging(0, 100)
-                result = self.r.ft('job').search(q)
+            # if self.sched_alg == 'fifo':
+            #     q = Query('*').sort_by('timestamp', asc=True).paging(0, 100)
+            #     result = self.r.ft('job').search(q)
+            # else:
+            q = Query('*').sort_by("score", asc=False).paging(0, 100)
+            result = self.r.ft("job").search(q)
         except Exception as e:
             self.logger.print(e, Msg_level.WARNING)
 
@@ -58,24 +60,28 @@ class CM_job_db_portal(Job_db):
             open_list = []
             open_private_constraint = []
 
-            max_task_len = self.gconfig['max_task_offer_list_len']
+            max_task_len = self.gconfig["max_task_offer_list_len"]
             for doc in result.docs:
                 if len(open_list) > max_task_len:
                     break
                 job = json.loads(doc.json)
-                job_id = int(doc.id.split(':')[1])
+                job_id = int(doc.id.split(":")[1])
                 job_public_constraint = tuple(
-                    [job['job']['public_constraint'][name]
-                        for name in self.public_constraint_name])
+                    [
+                        job["job"]["public_constraint"][name]
+                        for name in self.public_constraint_name
+                    ]
+                )
 
-                
-                if job['job']['amount'] < job['job']['demand']:
-                    if geq(specification, job_public_constraint):
-                        open_list.append(job_id)
-                        job_private_constraint = tuple(
-                            [job['job']['private_constraint'][name]
-                             for name in self.private_constraint_name])
-                        open_private_constraint.append(job_private_constraint)
+                if job["job"]["amount"] < job["job"]["demand"] and geq(specification, job_public_constraint):
+                    open_list.append(job_id)
+                    job_private_constraint = tuple(
+                        [
+                            job["job"]["private_constraint"][name]
+                            for name in self.private_constraint_name
+                        ]
+                    )
+                    open_private_constraint.append(job_private_constraint)
 
             # if self.sched_alg == 'random' and len(open_list) > 0:
             #     paired_offer = list(zip(open_list, open_private_constraint))
@@ -85,30 +91,30 @@ class CM_job_db_portal(Job_db):
             return open_list, open_private_constraint, size
 
         return [], [], 0
-    
+
     def get_job_private_constraint(self, job_list: list) -> tuple[list, list]:
         """Get job private constraint in task_offer_list
 
-        The client public specification would satisfy returned task public constraints, 
-        but client private specification might not satisfy the returned task private constraints. 
+        The client public specification would satisfy returned task public constraints,
+        but client private specification might not satisfy the returned task private constraints.
         The returned tasks' current allocation amount would be smaller than their respective demand.
 
         Args:
             job_list: list of job ids
-        
+
         Returns:
             task_offer_list: list of job id, with size no greater than max_task_len
-            task_private_constraint_list: list of tuple of private constraint 
+            task_private_constraint_list: list of tuple of private constraint
                                             for client local task selection
         """
         task_offer_list = []
         task_private_constraint = []
-        max_task_len = self.gconfig['max_task_offer_list_len']
+        max_task_len = self.gconfig["max_task_offer_list_len"]
         for job_id in job_list:
             if len(task_offer_list) > max_task_len:
                 break
             id = f"job:{job_id}"
-            
+
             try:
                 if self.r.json().get(id, "$.job.amount"):
                     amount = int(self.r.json().get(id, "$.job.amount")[0])
@@ -116,7 +122,9 @@ class CM_job_db_portal(Job_db):
                     if amount >= demand:
                         continue
                     private_constraint = tuple(
-                        float(self.r.json().get(id, f"$.job.private_constraint.{name}")[0])
+                        float(
+                            self.r.json().get(id, f"$.job.private_constraint.{name}")[0]
+                        )
                         for name in self.private_constraint_name
                     )
                     task_offer_list.append(job_id)
@@ -127,9 +135,8 @@ class CM_job_db_portal(Job_db):
 
         return task_offer_list, task_private_constraint
 
-
     def incr_amount(self, job_id: int) -> tuple[str, int]:
-        """Increase the job allocation amount if current allocation amount is less than demand, 
+        """Increase the job allocation amount if current allocation amount is less than demand,
         and returns job parameter server address. If current allocation amount is no less than demand,
         allocation amount will not be further increased, and address will not be returned (assign abort)
 
@@ -138,7 +145,7 @@ class CM_job_db_portal(Job_db):
 
         Returns:
             parameter_server_ip:
-            parameter_server_port 
+            parameter_server_port
         """
 
         with self.r.json().pipeline() as pipe:
@@ -153,24 +160,24 @@ class CM_job_db_portal(Job_db):
                     demand = int(self.r.json().get(id, "$.job.demand")[0])
                     ip = str(self.r.json().get(id, "$.job.ip")[0])
                     port = int(self.r.json().get(id, "$.job.port")[0])
-                    
+
                     if amount >= demand:
                         pipe.unwatch()
                         return None
 
                     pipe.multi()
                     if amount < demand:
-                        pipe.execute_command(
-                            'JSON.NUMINCRBY', id, "$.job.amount", 1)
+                        pipe.execute_command("JSON.NUMINCRBY", id, "$.job.amount", 1)
                     if amount == demand - 1:
                         start_sched = float(
-                            self.r.json().get(
-                                id, "$.job.start_sched")[0])
+                            self.r.json().get(id, "$.job.start_sched")[0]
+                        )
                         sched_time = time.time() - start_sched
                         pipe.execute_command(
-                            'JSON.NUMINCRBY', id, "$.job.total_sched", sched_time)
+                            "JSON.NUMINCRBY", id, "$.job.total_sched", sched_time
+                        )
                         pipe.execute_command(
-                            'JSON.NUMINCRBY', id, "$.job.attained_service", demand
+                            "JSON.NUMINCRBY", id, "$.job.attained_service", demand
                         )
                     pipe.execute()
                     return (ip, port)
@@ -182,7 +189,9 @@ class CM_job_db_portal(Job_db):
 
 
 class CM_client_db_portal(Client_db):
-    def __init__(self, gconfig, cm_id: int, logger: Propius_logger, flush: bool = False):
+    def __init__(
+        self, gconfig, cm_id: int, logger: Propius_logger, flush: bool = False
+    ):
         """Initialize client db portal
 
         Args:
@@ -210,14 +219,17 @@ class CM_client_db_portal(Client_db):
         """
 
         if len(specifications) != len(self.public_constraint_name):
-            self.logger.print("Specification length does not match required", Msg_level.ERROR)
+            self.logger.print(
+                "Specification length does not match required", Msg_level.ERROR
+            )
+
         client_dict = {"timestamp": int(time.time())}
-        spec_dict = {self.public_constraint_name[i]: specifications[i]
-                     for i in range(len(specifications))}
-        client_dict.update(spec_dict)
-        client = {
-            "client": client_dict
+        spec_dict = {
+            self.public_constraint_name[i]: specifications[i]
+            for i in range(len(specifications))
         }
+        client_dict.update(spec_dict)
+        client = {"client": client_dict}
         try:
             self.r.json().set(f"client:{id}", Path.root_path(), client)
             self.r.expire(f"client:{id}", self.client_exp_time)
