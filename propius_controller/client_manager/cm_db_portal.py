@@ -46,11 +46,11 @@ class CM_job_db_portal(Job_db):
         """
         result = None
         try:
-            # if self.sched_alg == 'fifo':
-            #     q = Query('*').sort_by('timestamp', asc=True).paging(0, 100)
-            #     result = self.r.ft('job').search(q)
-            # else:
-            q = Query('*').sort_by("score", asc=False).paging(0, 100)
+            qstr = ""
+            for idx, name in enumerate(self.public_constraint_name):
+                qstr += f"@{name}: [0 {specification[idx]}] "
+
+            q = Query(qstr).sort_by("score", asc=False).paging(0, 100)
             result = self.r.ft("job").search(q)
         except Exception as e:
             self.logger.print(e, Msg_level.WARNING)
@@ -73,7 +73,7 @@ class CM_job_db_portal(Job_db):
                     ]
                 )
 
-                if job["job"]["amount"] < job["job"]["demand"] and geq(specification, job_public_constraint):
+                if job["job"]["amount"] < job["job"]["demand"]:
                     open_list.append(job_id)
                     job_private_constraint = tuple(
                         [
