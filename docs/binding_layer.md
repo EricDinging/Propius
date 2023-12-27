@@ -17,7 +17,15 @@ This is the metadata for recent client. We use Redis JSON key-value store, where
 |--|--|--|
 |timestamp | numeric | job register time|
 |public_attribute.[x]| numeric | client attribute value for constraint x |
-```
+
+## Temporary Client Store
+If offline scheduling is used for better flexibility, we use a small client datastore to memorize state of most recently available clients, and task allocation information for every client in the datastore. The datastore is co-located with `client_database` in the same Redis server.
+### Schema
+This is the metadata for recent client. We use Redis JSON key-value store, where key is the `client_id`. Each client entry has a short expiration time of 25 seconds.
+|Field Name|Data Type|Description| 
+|--|--|--|
+|job_ids | Text | available jobs |
+|option| Numeric | an optional field for storing client metadata (eg. speed of last round) |
+|public_attribute.[x]| numeric | client attribute value for constraint x |
 
 
-- Client needs to re-check-in to Propius after failing to select a task locally from the ones Propius assigned initially, or recieving a reject from Propius for the selected task 

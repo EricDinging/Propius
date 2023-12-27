@@ -229,7 +229,7 @@ class Propius_client_aio():
         
         raise RuntimeError("Unable to connect to Propius at the moment")
 
-    async def auto_assign(self, ttl: int=1)->tuple[int, bool, int, str, int]:
+    async def auto_assign(self, ttl: int=3)->tuple[int, bool, int, str, int]:
         """Automate client register, client ping, and client task selection process
 
         Args:

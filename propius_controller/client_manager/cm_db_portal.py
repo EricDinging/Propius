@@ -25,9 +25,7 @@ class CM_job_db_portal(Job_db):
 
         super().__init__(gconfig, False, logger)
 
-    def client_assign(
-        self, specification: tuple, sched_alg: str
-    ) -> tuple[list, list, int]:
+    def client_assign(self, specification: tuple) -> tuple[list, list, int]:
         """Assign tasks to client with input specification
 
         The client public specification would satisfy returned task public constraints,
@@ -36,7 +34,6 @@ class CM_job_db_portal(Job_db):
 
         Args:
             specification: a tuple listing public spec values
-            sched_alg: str
 
         Returns:
             task_offer_list: list of job id, with size no greater than max_task_len
@@ -66,13 +63,6 @@ class CM_job_db_portal(Job_db):
                     break
                 job = json.loads(doc.json)
                 job_id = int(doc.id.split(":")[1])
-                job_public_constraint = tuple(
-                    [
-                        job["job"]["public_constraint"][name]
-                        for name in self.public_constraint_name
-                    ]
-                )
-
                 if job["job"]["amount"] < job["job"]["demand"]:
                     open_list.append(job_id)
                     job_private_constraint = tuple(
@@ -82,11 +72,6 @@ class CM_job_db_portal(Job_db):
                         ]
                     )
                     open_private_constraint.append(job_private_constraint)
-
-            # if self.sched_alg == 'random' and len(open_list) > 0:
-            #     paired_offer = list(zip(open_list, open_private_constraint))
-            #     random.shuffle(paired_offer)
-            #     open_list, open_private_constraint = map(list, zip(*paired_offer))
 
             return open_list, open_private_constraint, size
 

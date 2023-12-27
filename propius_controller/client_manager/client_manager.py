@@ -29,7 +29,6 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 job_public_constraint: name of public constraint
                 job_db_ip
                 job_db_port
-                sched_alg
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
 
@@ -45,14 +44,15 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         )
         self.port = gconfig["client_manager"][self.cm_id]["port"]
 
-        self.sched_alg = gconfig["sched_alg"]
+        self.sched_mode = gconfig["sched_mode"]
 
         self.client_db_portal = CM_client_db_portal(gconfig, self.cm_id, logger, True)
-        self.temp_client_db_portal = CM_temp_client_db_portal(
-            gconfig, self.cm_id, logger, False
-        )
 
         self.job_db_portal = CM_job_db_portal(gconfig, logger)
+
+        self.temp_client_db_portal = CM_temp_client_db_portal(
+            gconfig, self.cm_id, self.job_db_portal, logger, False
+        )
 
         self.cm_monitor = CM_monitor(
             logger, gconfig["client_manager_plot_path"], gconfig["plot"]
@@ -64,20 +64,21 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.client_num = 0
 
         self.gconfig = gconfig
-        # self.sched_channel = None
-        # self.sched_portal = None
-        # self._connect_sched(
-        #     gconfig['scheduler_ip'], int(
-        #         gconfig['scheduler_port']))
 
-    # def _connect_sched(self, sched_ip: str, sched_port: int) -> None:
-    #     if self.gconfig['use_docker']:
-    #         sched_ip = 'scheduler'
-    #     self.sched_channel = grpc.aio.insecure_channel(
-    #         f'{sched_ip}:{sched_port}')
-    #     self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
-    #     self.logger.print(
-    #         f"Client manager {self.cm_id}: connecting to scheduler at {sched_ip}:{sched_port}", Msg_level.INFO)
+        self.sched_channel = None
+        self.sched_portal = None
+        if self.sched_mode == "offline":
+            self._connect_sched(gconfig["scheduler_ip"], int(gconfig["scheduler_port"]))
+
+    def _connect_sched(self, sched_ip: str, sched_port: int) -> None:
+        if self.gconfig["use_docker"]:
+            sched_ip = "scheduler"
+        self.sched_channel = grpc.aio.insecure_channel(f"{sched_ip}:{sched_port}")
+        self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
+        self.logger.print(
+            f"Client manager {self.cm_id}: connecting to scheduler at {sched_ip}:{sched_port}",
+            Msg_level.INFO,
+        )
 
     async def CLIENT_CHECKIN(self, request, context):
         """Hanle client check in, store client meatadata to database, and
@@ -108,11 +109,14 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         task_offer_list, task_private_constraint, job_size = [], [], 0
 
-        # if self.sched_alg != "irs3":
-        task_offer_list, task_private_constraint, job_size = self.job_db_portal.client_assign(
-            public_specification, self.sched_alg)
-        # else:
-        #     self.temp_client_db_portal.insert(client_id, public_specification, option)
+        if self.sched_mode == "online":
+            (
+                task_offer_list,
+                task_private_constraint,
+                job_size,
+            ) = self.job_db_portal.client_assign(public_specification)
+        elif self.sched_mode == "offline":
+            self.temp_client_db_portal.insert(client_id, public_specification, option)
 
         await self.cm_monitor.client_checkin()
 
@@ -148,12 +152,12 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         task_offer_list, task_private_constraint, job_size = [], [], 0
 
-        # if self.sched_alg != "irs3":
-        (
-            task_offer_list,
-            task_private_constraint,
-            job_size,
-        ) = self.job_db_portal.client_assign(public_specification, self.sched_alg)
+        if self.sched_mode == "online":
+            (
+                task_offer_list,
+                task_private_constraint,
+                job_size,
+            ) = self.job_db_portal.client_assign(public_specification)
         # else:
         #     task_offer_list = self.temp_client_db_portal.get_task_id(
         #         request.id, public_specification
@@ -207,8 +211,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             )
             return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
 
-        # if self.sched_alg == "irs3":
-        #     self.temp_client_db_portal.remove_client(client_id)
+        if self.sched_mode == "irs3":
+            self.temp_client_db_portal.remove_client(client_id)
 
         self.logger.print(
             f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}",
@@ -219,7 +223,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         )
 
     async def client_assign_routine(self):
-        if self.sched_alg == "irs3":
+        if self.sched_mode == "offline":
             try:
                 while True:
                     try:
