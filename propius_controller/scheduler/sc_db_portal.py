@@ -74,25 +74,6 @@ class SC_job_db_portal(Job_db):
             self.logger.print(e, Msg_level.ERROR)
             return -1, -1
 
-    def get_job_constraints(self, job_id: int) -> tuple:
-        """Get job constraint values of the job in a tuple
-
-        Args:
-            job_id: id of job
-        """
-
-        id = f"job:{job_id}"
-        constraint_list = []
-        try:
-            for name in self.public_constraint_name:
-                constraint_list.append(
-                    float(self.r.json().get(id, f"$.job.public_constraint.{name}")[0])
-                )
-            return tuple(constraint_list)
-        except Exception as e:
-            self.logger.print(e, Msg_level.ERROR)
-            return None
-
     def get_job_list(
         self, public_constraint: tuple, constraints_job_list: list
     ) -> bool:
@@ -178,35 +159,6 @@ class SC_job_db_portal(Job_db):
 
         q = Query(qstr).paging(0, num)
         return self.r.ft("job").search(q)
-
-    def get_field(self, job_id: int, field: str):
-        """Get field value
-
-        Args:
-            job_id: job id
-            field: field name
-        Returns:
-            value for the field in db
-        """
-        try:
-            qid = f"job:{job_id}"
-            return self.r.json().get(qid, f"$.job.{field}")[0]
-        except Exception as e:
-            self.logger.print(e, Msg_level.ERROR)
-
-    def exist(self, job_id: int) -> bool:
-        """Check job status
-
-        Args:
-            job_id: job_id
-        Returns:
-            a boolean indicating whether the job exists
-        """
-        try:
-            qid = f"job:{job_id}"
-            return self.r.json().execute_command("JSON.GET", qid)
-        except Exception as e:
-            self.logger.print(e, Msg_level.ERROR)
 
     def set_score(self, score: float, job_id: int):
         """Set score for job

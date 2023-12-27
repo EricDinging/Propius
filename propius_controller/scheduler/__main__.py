@@ -25,7 +25,7 @@ async def serve(gconfig, logger):
         await server.stop(5)
 
     server = grpc.aio.server()
-    
+
     sched_alg = gconfig["sched_alg"]
     sched_mode = gconfig["sched_mode"]
 
@@ -36,14 +36,25 @@ async def serve(gconfig, logger):
             )
         elif sched_alg == "random":
             from propius_controller.scheduler.online_module.random_scheduler import (
-                Random_scheduler as Scheduler
+                Random_scheduler as Scheduler,
             )
         elif sched_alg == "srsf":
-            from propius_controller.scheduler.online_module.srsf_scheduler import ( 
-                SRSF_scheduler as Scheduler
+            from propius_controller.scheduler.online_module.srsf_scheduler import (
+                SRSF_scheduler as Scheduler,
             )
         else:
-            from propius_controller.scheduler.online_module.base_scheduler import Scheduler
+            from propius_controller.scheduler.online_module.base_scheduler import (
+                Scheduler,
+            )
+    elif sched_mode == "offline":
+        if sched_alg == "fifo":
+            from propius_controller.scheduler.offline_module.fifo_scheduler import (
+                FIFO_scheduler as Scheduler,
+            )
+        else:
+            from propius_controller.scheduler.offline_module.base_scheduler import (
+                Scheduler,
+            )
 
     scheduler = Scheduler(gconfig, logger)
     propius_pb2_grpc.add_SchedulerServicer_to_server(scheduler, server)
@@ -64,7 +75,9 @@ def main():
     with open(GLOBAL_CONFIG_FILE, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            log_file_path = PROPIUS_CONTROLLER_ROOT / gconfig["scheduler_log_path"] / "sc.log"
+            log_file_path = (
+                PROPIUS_CONTROLLER_ROOT / gconfig["scheduler_log_path"] / "sc.log"
+            )
             os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
             logger = Propius_logger(
                 log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
@@ -79,6 +92,7 @@ def main():
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()
+
 
 if __name__ == "__main__":
     main()
