@@ -217,7 +217,7 @@ class Propius_client_aio():
                 cm_ack = await self._lb_stub.CLIENT_ACCEPT(client_accept_msg)
                 
                 if cm_ack.ack:
-                    self._custom_print(f"Client {self.id}: client task selection is recieved")
+                    self._custom_print(f"Client {self.id}: client task selection is received")
                     return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
                 else:
                     self._custom_print(f"Client {self.id}: client task selection is rejected", Msg_level.WARNING)
@@ -229,7 +229,7 @@ class Propius_client_aio():
         
         raise RuntimeError("Unable to connect to Propius at the moment")
 
-    async def auto_assign(self, ttl: int=0)->tuple[int, bool, int, str, int]:
+    async def auto_assign(self, ttl: int=1)->tuple[int, bool, int, str, int]:
         """Automate client register, client ping, and client task selection process
 
         Args:
@@ -248,9 +248,6 @@ class Propius_client_aio():
 
         ttl = min(ttl, 10)
         task_ids, task_private_constraint = await self.client_check_in()
-
-        #TODO
-        # await asyncio.sleep(4)
         
         while ttl > 0:
             while ttl > 0:
@@ -264,7 +261,7 @@ class Propius_client_aio():
                 break
             
             self._custom_print(
-                f"Client {self.id}: recieve client manager offer: {task_ids}")
+                f"Client {self.id}: receive client manager offer: {task_ids}")
             
             task_id = await self.select_task(task_ids, task_private_constraint)
             self._custom_print(f"Client {self.id}: {task_id} selected", Msg_level.INFO)
