@@ -27,21 +27,23 @@ async def serve(gconfig, logger):
     server = grpc.aio.server()
     
     sched_alg = gconfig["sched_alg"]
+    sched_mode = gconfig["sched_mode"]
 
-    if sched_alg == "fifo":
-        from propius_controller.scheduler.module.fifo_scheduler import (
-            FIFO_scheduler as Scheduler,
-        )
-    elif sched_alg == "random":
-        from propius_controller.scheduler.module.random_scheduler import (
-            Random_scheduler as Scheduler
-        )
-    elif sched_alg == "srsf":
-        from propius_controller.scheduler.module.srsf_scheduler import ( 
-            SRSF_scheduler as Scheduler
-        )
-    else:
-        from propius_controller.scheduler.module.base_scheduler import Scheduler
+    if sched_mode == "online":
+        if sched_alg == "fifo":
+            from propius_controller.scheduler.online_module.fifo_scheduler import (
+                FIFO_scheduler as Scheduler,
+            )
+        elif sched_alg == "random":
+            from propius_controller.scheduler.online_module.random_scheduler import (
+                Random_scheduler as Scheduler
+            )
+        elif sched_alg == "srsf":
+            from propius_controller.scheduler.online_module.srsf_scheduler import ( 
+                SRSF_scheduler as Scheduler
+            )
+        else:
+            from propius_controller.scheduler.online_module.base_scheduler import Scheduler
 
     scheduler = Scheduler(gconfig, logger)
     propius_pb2_grpc.add_SchedulerServicer_to_server(scheduler, server)

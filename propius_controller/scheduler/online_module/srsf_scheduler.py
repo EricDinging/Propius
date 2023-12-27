@@ -1,6 +1,6 @@
 """SRSF scheduler."""
 
-from propius_controller.scheduler.module.base_scheduler import Scheduler
+from propius_controller.scheduler.online_module.base_scheduler import Scheduler
 from propius_controller.util import Msg_level, Propius_logger
 import random
 
