@@ -6,6 +6,9 @@
 If `propius_controller` uses online scheduling
 3. `client_manager` returns eligible tasks as well as their private constraints to the client in a task offer list. All the selected tasks should have a `demand` greater than `amount`, and constraint satisfied by the client attributes. The returned tasks are sorted according to the scheduling algorithm.
 
+4. If a client does not receive available tasks, it will continuously ping `client_manager` until a task is assigned and binded with the client, or the client becomes unavailable.
+5. The client performs local task selection based on its private attributes (eg. dataset size) and task constraints. When decisions are made, the client reports back the task selected. `client_manager` then increments the selected task allocation number in `job_db` if the selected task is still available, and returns the task network addresses to the client.
+
 ## Client Database
 Recent client metadata is stored in a database. The information, such as client attribute distribution, can be highly useful for schedulers.
 ### Schema

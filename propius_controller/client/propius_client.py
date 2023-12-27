@@ -216,7 +216,7 @@ class Propius_client():
             try:
                 cm_ack = self._lb_stub.CLIENT_ACCEPT(client_accept_msg)
                 if cm_ack.ack:
-                    self._custom_print(f"Client {self.id}: client task selection is recieved")
+                    self._custom_print(f"Client {self.id}: client task selection is received")
                     return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
                 else:
                     self._custom_print(f"Client {self.id}: client task selection is rejected", Msg_level.WARNING)
@@ -259,7 +259,7 @@ class Propius_client():
                 break
             
             self._custom_print(
-                f"Client {self.id}: recieve client manager offer: {task_ids}")
+                f"Client {self.id}: receive client manager offer: {task_ids}")
             
             task_id = self.select_task(task_ids, task_private_constraint)
             self._custom_print(f"Client {self.id}: {task_id} selected", Msg_level.INFO)

@@ -131,8 +131,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
     async def CLIENT_PING(self, request, context):
         """Hanle client check in, fetch client meatadata from database, and
-        return task offer list. This method should be called if previous client
-        task selection failed.
+        return task offer list. This method should be called if previous client task selection failed.
 
         Args:
             id
@@ -145,25 +144,25 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 total_job_num
         """
 
-        public_specification = self.client_db_portal.get(request.id)
+        public_specification = self.client_db_portal.get_public_spec(request.id)
 
         task_offer_list, task_private_constraint, job_size = [], [], 0
 
-        if self.sched_alg != "irs3":
-            (
-                task_offer_list,
-                task_private_constraint,
-                job_size,
-            ) = self.job_db_portal.client_assign(public_specification, self.sched_alg)
-        else:
-            task_offer_list = self.temp_client_db_portal.get_task_id(
-                request.id, public_specification
-            )
+        # if self.sched_alg != "irs3":
+        (
+            task_offer_list,
+            task_private_constraint,
+            job_size,
+        ) = self.job_db_portal.client_assign(public_specification, self.sched_alg)
+        # else:
+        #     task_offer_list = self.temp_client_db_portal.get_task_id(
+        #         request.id, public_specification
+        #     )
 
-            (
-                task_offer_list,
-                task_private_constraint,
-            ) = self.job_db_portal.get_job_private_constraint(task_offer_list)
+        #     (
+        #         task_offer_list,
+        #         task_private_constraint,
+        #     ) = self.job_db_portal.get_job_private_constraint(task_offer_list)
 
         await self.cm_monitor.client_ping()
 
@@ -208,8 +207,8 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             )
             return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
 
-        if self.sched_alg == "irs3":
-            self.temp_client_db_portal.remove_client(client_id)
+        # if self.sched_alg == "irs3":
+        #     self.temp_client_db_portal.remove_client(client_id)
 
         self.logger.print(
             f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}",
