@@ -22,13 +22,11 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
             gconfig global config dictionary
                 scheduler_ip
                 scheduler_port
-                sched_alg
                 irs_epsilon (apply to IRS algorithm)
                 standard_round_time: default round execution time for SRTF
                 job_public_constraint: name for constraint
                 job_db_ip
                 job_db_port
-                sched_alg
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
                 public_max: upper bound of the score
@@ -58,23 +56,42 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         self.start_time = time.time()
 
     @abstractmethod
-    async def online(self):
+    async def online(self, job_id: int, is_regist: bool):
         pass
 
-    async def JOB_SCORE_UPDATE(self, request, context) -> propius_pb2.ack:
-        """Service function that update scores of job in database for online scheduler
+    async def JOB_REGIST(self, request, context) -> propius_pb2.ack:
+        """Service function that handles job register for online scheduler
 
         Args:
             request: job manager request message: job_id.id
             context:
         """
         job_id = request.id
-
         await self.sc_monitor.request(job_id)
+        self.logger.print("Receive job register", Msg_level.INFO)
+        await self.online(job_id, True)
+        return propius_pb2.ack(ack=True)
 
-        self.logger.print("Receive update score request", Msg_level.INFO)
+    async def JOB_REQUEST(self, request, context) -> propius_pb2.ack:
+        """Service function that handles new job request for online scheduler
 
-        await self.online(job_id)
+        Args:
+            request: job manager request message: job_id.id
+            context:
+        """
+        job_id = request.id
+        await self.sc_monitor.request(job_id)
+        self.logger.print("Receive job request", Msg_level.INFO)
+        await self.online(job_id, False)
+        return propius_pb2.ack(ack=True)
+
+    async def HEART_BEAT(self, request, context):
+        return propius_pb2.ack(ack=True)
+
+    async def plot_routine(self):
+        while True:
+            self.sc_monitor.report()
+            await asyncio.sleep(60)
 
         # if self.sched_alg == "irs":
         #     # Update every job score using IRS
@@ -88,12 +105,6 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         #     # Update every job score using IRS
         #     self.job_group_manager.update_job_group(job_id != -1, job_id)
 
-        # elif self.sched_alg == "srsf":
-        #     # Give every job a score of -remaining demand.
-        #     # remaining demand = remaining round * current round demand
-        #     # Prioritize job with the smallest remaining demand
-        #     self.job_db_portal.srsf_update_all_job_score()
-
         # elif self.sched_alg == "srtf":
         #     # Give every job a score of -remaining time
         #     # remaining time = past avg round time * remaining round
@@ -103,13 +114,3 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         # elif self.sched_alg == "las":
         #     # Give every job a score of -attained service
         #     self.job_db_portal.las_update_all_job_score()
-
-        return propius_pb2.ack(ack=True)
-
-    async def HEART_BEAT(self, request, context):
-        return propius_pb2.ack(ack=True)
-
-    async def plot_routine(self):
-        while True:
-            self.sc_monitor.report()
-            await asyncio.sleep(60)

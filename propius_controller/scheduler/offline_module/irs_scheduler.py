@@ -9,7 +9,7 @@ class IRS_scheduler(Scheduler):
     def __init__(self, gconfig: dict, logger: Propius_logger):
         super().__init__(gconfig, logger)
 
-    async def new_job(self, job_id: int):
+    async def job_regist(self, job_id: int):
         # Get constraints
         constraints = self.job_db_portal.get_job_constraints(job_id)
         if not constraints:
@@ -18,6 +18,9 @@ class IRS_scheduler(Scheduler):
         self.job_group.insert_cst(constraints)
         self.logger.print(f"Insert new constraint group: {constraints}", Msg_level.INFO)
         return propius_pb2.ack(ack=True)
+
+    async def job_request(self, job_id: int):
+        pass
 
     async def offline(self) -> bool:
         try:
@@ -37,9 +40,7 @@ class IRS_scheduler(Scheduler):
 
                 for job_id in self.job_group.cst_job_group_map[cst]:
                     sched, resp = self.job_db_portal.get_sched_resp(job_id)
-                    job_time_ratio_map[job_id] = (
-                        resp / sched if sched > 0 else 1
-                    )
+                    job_time_ratio_map[job_id] = resp / sched if sched > 0 else 1
 
             self.logger.print(f"Finding eligible client size", Msg_level.INFO)
             # search elig client size for each group

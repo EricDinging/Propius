@@ -20,11 +20,9 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
                 job_manager_port
                 job_db_ip
                 job_db_port
-                sched_alg
                 job_public_constraint: name of public constraint
                 job_private_constraint: name of private constraint
                 job_expire_time
-                sched_alg
                 scheduler_ip
                 scheduler_port
                 logger
@@ -42,7 +40,6 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.sched_portal = None
 
         self._connect_sched(gconfig["scheduler_ip"], int(gconfig["scheduler_port"]))
-        self.sched_alg = gconfig["sched_alg"]
 
         self.lock = asyncio.Lock()
         self.job_total_num = 0
@@ -93,8 +90,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         )
         if ack:
             await self.jm_monitor.job_register()
-            if self.sched_alg in ["fifo", "random"]:
-                await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
+            await self.sched_portal.JOB_REGIST(propius_pb2.job_id(id=job_id))
 
         await self.jm_monitor.request()
         return propius_pb2.job_register_ack(id=job_id, ack=ack)
@@ -112,8 +108,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
 
         self.job_db_portal.update_total_demand_estimate(job_id, demand)
 
-        if self.sched_alg in ["srsf"]:
-            await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=job_id))
+        
+        await self.sched_portal.JOB_REQUEST(propius_pb2.job_id(id=job_id))
 
         self.logger.print(
             f"Job manager: ack job {job_id} round request: {ack}", Msg_level.INFO
@@ -135,9 +131,6 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.logger.print(
             f"Job manager: ack job {job_id} end round request: {ack}", Msg_level.INFO
         )
-
-        if self.sched_alg == "irs3":
-            await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=-1))
 
         await self.jm_monitor.request()
         return propius_pb2.ack(ack=ack)
@@ -163,9 +156,6 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             f"Job manager: job {job_id} completed" f", executed {total_round} rounds",
             Msg_level.INFO,
         )
-
-        if self.sched_alg == "irs3":
-            await self.sched_portal.JOB_SCORE_UPDATE(propius_pb2.job_id(id=-1))
 
         if runtime:
             await self.jm_monitor.job_finish(

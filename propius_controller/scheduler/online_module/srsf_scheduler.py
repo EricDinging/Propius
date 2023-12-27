@@ -9,7 +9,7 @@ class SRSF_scheduler(Scheduler):
     def __init__(self, gconfig: dict, logger: Propius_logger):
         super().__init__(gconfig, logger)
 
-    async def online(self, job_id: int):
+    async def online(self, job_id: int, is_regist: bool):
         """Give every job a score of -remaining demand
 
             remaining demand = demand - attained amount
@@ -17,10 +17,12 @@ class SRSF_scheduler(Scheduler):
 
         Args:
             job_id: job id
+            is_regist: boolean indicating whether this job just registers
         """
-        demand = int(self.job_db_portal.get_field(job_id, "demand"))
-        amount = int(self.job_db_portal.get_field(job_id, "amount"))
+        if not is_regist:
+            demand = int(self.job_db_portal.get_field(job_id, "demand"))
+            amount = int(self.job_db_portal.get_field(job_id, "amount"))
 
-        remain_demand = max(demand - amount, 0)
-        score = - remain_demand
-        self.job_db_portal.set_score(score, job_id)
+            remain_demand = max(demand - amount, 0)
+            score = -remain_demand
+            self.job_db_portal.set_score(score, job_id)

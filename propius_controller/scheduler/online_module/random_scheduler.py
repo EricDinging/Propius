@@ -9,11 +9,13 @@ class Random_scheduler(Scheduler):
     def __init__(self, gconfig: dict, logger: Propius_logger):
         super().__init__(gconfig, logger)
 
-    async def online(self, job_id: int):
+    async def online(self, job_id: int, is_regist: bool):
         """Give every job which doesn't have a score yet a random score
 
         Args:
             job_id: job id
+            is_regist: boolean indicating whether this job just registers
         """
-        score = random.uniform(0.0, 10.0)
-        self.job_db_portal.set_score(score, job_id)
+        if is_regist:
+            score = random.uniform(0.0, 10.0)
+            self.job_db_portal.set_score(score, job_id)
