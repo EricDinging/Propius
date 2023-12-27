@@ -236,7 +236,7 @@ class CM_client_db_portal(Client_db):
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
 
-    def get(self, id: int) -> tuple:
+    def get_public_spec(self, id: int) -> tuple:
         """Get client public spec values
 
         Args:
