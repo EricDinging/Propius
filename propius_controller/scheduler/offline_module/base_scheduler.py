@@ -64,21 +64,22 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         pass
 
     @abstractmethod
-    async def new_job(self, job_id: int):
+    async def job_regist(self, job_id: int):
         pass
 
-    async def schedule_routine(self):
-        while True:
-            async with self.lock:
-                await self.offline()
-            asyncio.sleep(5)
+    @abstractmethod
+    async def job_request(self, job_id: int):
+        pass
 
     async def GET_JOB_GROUP(self, request, context):
+        """Service function that handles job group fetch request from clietn manager.
+        """
         async with self.lock:
+            await self.offline()
             return propius_pb2.group_info(group=pickle.dumps(self.job_group))
 
-    async def JOB_SCORE_UPDATE(self, request, context) -> propius_pb2.ack:
-        """Service function that update metadata of job in database for offline scheduler
+    async def JOB_REGIST(self, request, context) -> propius_pb2.ack:
+        """Service function that handles job register for offline scheduler
 
         Args:
             request: job manager request message: job_id.id
@@ -86,8 +87,19 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         """
         job_id = request.id
         async with self.lock:
-            self.new_job(job_id)
-            
+            self.job_regist(job_id)
+        return propius_pb2.ack(ack=True)
+
+    async def JOB_REQUEST(self, request, context) -> propius_pb2.ack:
+        """Service function that handles job request for offline scheduler
+
+        Args:
+            request: job manager request message: job_id.id
+            context:
+        """
+        job_id = request.id
+        async with self.lock:
+            self.job_request(job_id)
         return propius_pb2.ack(ack=True)
 
     async def HEART_BEAT(self, request, context):
