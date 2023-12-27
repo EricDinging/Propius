@@ -3,10 +3,12 @@ from enum import Enum
 import logging
 import logging.handlers
 
+
 def get_time() -> str:
     current_time = datetime.now()
     format_time = current_time.strftime("%Y-%m-%d:%H:%M:%S:%f")[:-4]
     return format_time
+
 
 def geq(t1: tuple, t2: tuple) -> bool:
     """Compare two tuples. Return True only if every values in t1 is greater or equal than t2
@@ -20,6 +22,7 @@ def geq(t1: tuple, t2: tuple) -> bool:
         if t1[idx] < t2[idx]:
             return False
     return True
+
 
 def gt(t1: tuple, t2: tuple) -> bool:
     """Compare two tuples. Return True only if every values in t1 is greater than t2
@@ -36,6 +39,7 @@ def gt(t1: tuple, t2: tuple) -> bool:
         return False
     return True
 
+
 class Msg_level(Enum):
     PRINT = 0
     DEBUG = 1
@@ -43,11 +47,13 @@ class Msg_level(Enum):
     WARNING = 3
     ERROR = 4
 
+
 CPU_F = "cpu_f"
 RAM = "ram"
 FP16_MEM = "fp16_mem"
 ANDROID_OS = "android_os"
 DATASET_SIZE = "dataset_size"
+
 
 def encode_specs(**kargs) -> tuple[list, list]:
     """Encode client specs. Eg. encode_specs(CPU_F=18, RAM=8).
@@ -66,9 +72,7 @@ def encode_specs(**kargs) -> tuple[list, list]:
         ANDROID_OS: 0,
     }
 
-    private_spec_dict = {
-        DATASET_SIZE: 0
-    }
+    private_spec_dict = {DATASET_SIZE: 0}
 
     for key in public_spec_dict.keys():
         if key in kargs:
@@ -84,27 +88,31 @@ def encode_specs(**kargs) -> tuple[list, list]:
 
     # TODO encoding, value check
 
-    return (list(public_spec_dict.values()),
-            list(private_spec_dict.values()))
+    return (list(public_spec_dict.values()), list(private_spec_dict.values()))
+
 
 class Propius_logger:
-    def __init__(self, log_file:str=None, verbose:bool=True, use_logging:bool=True):
+    def __init__(
+        self, log_file: str = None, verbose: bool = True, use_logging: bool = True
+    ):
         self.verbose = verbose
         self.use_logging = use_logging
         if self.use_logging:
             if not log_file:
                 raise ValueError("Empty log file")
-        
-            handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=5000000, backupCount=5)
 
-            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            handler = logging.handlers.RotatingFileHandler(
+                log_file, maxBytes=5000000, backupCount=5
+            )
+
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
 
             self.logger = logging.getLogger("mylogger")
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
 
-    def print(self, message: str, level: int=Msg_level.PRINT):
+    def print(self, message: str, level: int = Msg_level.PRINT):
         if self.verbose:
             print(f"{get_time()} {message}")
         if self.use_logging:
@@ -117,16 +125,21 @@ class Propius_logger:
             elif level == Msg_level.ERROR:
                 self.logger.error(message)
 
+
 class Group_condition:
     def __init__(self):
         # a list of condition
         self.condition_list = ""
+
     def insert_condition_and(self, condition: str):
         self.condition_list += f" ({condition}) "
+
     def insert_condition_or(self, condition: str):
         self.condition_list += f" | ({condition}) "
-    def str(self)->str:
+
+    def str(self) -> str:
         return self.condition_list
+
     def clear(self):
         self.condition_list = ""
 
@@ -136,7 +149,6 @@ class Job_group:
         self.constraint_list = []
         self.cst_job_group_map = {}
         self.cst_group_condition_map = {}
-        self.job_time_ratio_map = {}
 
     def insert_cst(self, cst: tuple):
         if cst not in self.constraint_list:
@@ -155,7 +167,7 @@ class Job_group:
             self.cst_job_group_map[cst].clear()
             self.cst_group_condition_map[cst].clear()
 
-    def __getitem__(self, index: tuple)->Group_condition:
+    def __getitem__(self, index: tuple) -> Group_condition:
         return self.cst_group_condition_map.get(index)
 
     def __setitem__(self, index: tuple, value: Group_condition):
@@ -166,4 +178,3 @@ class Job_group:
     #         del self.cst_job_group_map[cst]
     #         del self.cst_group_condition_map[cst]
     #         self.constraint_list.remove(cst)
-    

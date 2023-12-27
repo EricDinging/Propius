@@ -1,39 +1,32 @@
-"""Scheduler job group manager"""
+"""IRS scheduler"""
 
-from propius_controller.util.commons import Job_group
-from propius_controller.scheduler.sc_db_portal import SC_job_db_portal, SC_client_db_portal
 from propius_controller.util import Propius_logger, Msg_level
+from propius_controller.scheduler.offline_module.base_scheduler import Scheduler
+from propius_controller.channels import propius_pb2
 
-class SC_job_group_manager:
-    def __init__(self, 
-                 job_db_portal: SC_job_db_portal, 
-                 client_db_portal: SC_client_db_portal,
-                 public_constraint_name: list,
-                 public_max: dict,
-                 logger: Propius_logger):
-        self.job_group = Job_group()
-        self.job_db_portal = job_db_portal
-        self.client_db_portal = client_db_portal
-        self.public_constraint_name = public_constraint_name
-        self.public_max = public_max
-        self.logger = logger
 
-    def update_job_group(self, is_new_job: bool, job_id: int = 0) -> bool:
+class IRS_scheduler(Scheduler):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
+        super().__init__(gconfig, logger)
+
+    async def new_job(self, job_id: int):
+        # Get constraints
+        constraints = self.job_db_portal.get_job_constraints(job_id)
+        if not constraints:
+            return False
+        # Insert cst to job group
+        self.job_group.insert_cst(constraints)
+        self.logger.print(f"Insert new constraint group: {constraints}", Msg_level.INFO)
+        return propius_pb2.ack(ack=True)
+
+    async def offline(self) -> bool:
         try:
             constraints_client_map = {}
             constraints_alloc_map = {}
             origin_group_condition = {}
+            job_time_ratio_map = {}
             # Clear past job group info
             self.job_group.clear_group_info()
-
-            if is_new_job:
-                # Get constraints
-                constraints = self.job_db_portal.get_job_constraints(job_id)
-                if not constraints:
-                    return False
-                # Insert cst to job group
-                self.job_group.insert_cst(constraints)
-                self.logger.print(f"Insert new constraint group: {constraints}", Msg_level.INFO)
 
             for cst in self.job_group.constraint_list:
                 # iterate over constraint, get updated and sorted job list
@@ -44,15 +37,17 @@ class SC_job_group_manager:
 
                 for job_id in self.job_group.cst_job_group_map[cst]:
                     sched, resp = self.job_db_portal.get_sched_resp(job_id)
-                    self.job_group.job_time_ratio_map[job_id] = \
+                    job_time_ratio_map[job_id] = (
                         resp / sched if sched > 0 else 1
-            
+                    )
+
             self.logger.print(f"Finding eligible client size", Msg_level.INFO)
             # search elig client size for each group
             for cst in self.job_group.constraint_list:
-                constraints_client_map[cst] = self.client_db_portal.\
-                    get_client_proportion(cst)
-            
+                constraints_client_map[
+                    cst
+                ] = self.client_db_portal.get_client_proportion(cst)
+
             # Update group query 1
             client_size = self.client_db_portal.get_client_size()
             self.job_group.constraint_list.sort(key=lambda x: constraints_client_map[x])
@@ -67,37 +62,41 @@ class SC_job_group_manager:
                 q = this_q + bq
                 self.job_group[cst].insert_condition_and(q)
                 constraints_alloc_map[cst] = self.client_db_portal.get_irs_denominator(
-                    client_size, q)
+                    client_size, q
+                )
                 bq = bq + f" -({this_q})"
 
             # Update group query 2
-            self.job_group.constraint_list.sort(key=lambda x: constraints_client_map[x], reverse=True)
+            self.job_group.constraint_list.sort(
+                key=lambda x: constraints_client_map[x], reverse=True
+            )
             for idx, cst in enumerate(self.job_group.constraint_list):
-                for h_cst in self.job_group.constraint_list[idx+1:]:
+                for h_cst in self.job_group.constraint_list[idx + 1 :]:
                     m = self.job_db_portal.get_affected_len(
                         self.job_group.cst_job_group_map[cst],
                         self.job_group.cst_job_group_map[h_cst],
                         constraints_client_map[cst],
-                        constraints_client_map[h_cst]
+                        constraints_client_map[h_cst],
                     )
                     m_h = len(self.job_group.cst_job_group_map[h_cst])
-                    if m / constraints_alloc_map[cst] > m_h / constraints_alloc_map[h_cst]:
-                        or_condition = origin_group_condition[cst] + origin_group_condition[h_cst]
+                    if (
+                        m / constraints_alloc_map[cst]
+                        > m_h / constraints_alloc_map[h_cst]
+                    ):
+                        or_condition = (
+                            origin_group_condition[cst] + origin_group_condition[h_cst]
+                        )
                         self.job_group[cst].insert_condition_or(or_condition)
-                        self.job_group[h_cst].insert_condition_and(f"-({self.job_group[cst].str()})")
+                        self.job_group[h_cst].insert_condition_and(
+                            f"-({self.job_group[cst].str()})"
+                        )
                     else:
                         break
-                self.logger.print(f"{cst} group, condition: {self.job_group[cst].str()}", Msg_level.INFO)
+                self.logger.print(
+                    f"{cst} group, condition: {self.job_group[cst].str()}",
+                    Msg_level.INFO,
+                )
             return True
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
             return False
-
-    def fetch_job_group(self) -> Job_group:
-        return self.job_group
-        
-
-
-
-
-    
