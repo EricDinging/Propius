@@ -23,7 +23,7 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
         self.cm_channel_dict = {}
         self.cm_stub_dict = {}
         self._connect_cm()
-        self.lb_monitor = LB_monitor(gconfig['sched_alg'], logger, gconfig['plot'])
+        self.lb_monitor = LB_monitor(logger, gconfig['load_balancer_plot_path'], gconfig['plot'])
 
     def _connect_cm(self):
         for cm_id, cm_addr in enumerate(self.cm_addr_list):
