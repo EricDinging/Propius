@@ -45,17 +45,17 @@ def clean_up():
             os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
 
-def job_request(gconfig):
+def job_request(gconfig, demand):
     jm_ip = gconfig["job_manager_ip"]
     jm_port = gconfig["job_manager_port"]
 
     job_config = {
-        "public_constraint": {"cpu_f": 0, "ram": 0, "fp16_mem": 0, "android_os": 0},
+        "public_constraint": {"cpu_f": 3, "ram": 3, "fp16_mem": 3, "android_os": 3},
         "private_constraint": {
             "dataset_size": 100,
         },
         "total_round": 10,
-        "demand": 5,
+        "demand": demand,
         "job_manager_ip": jm_ip,
         "job_manager_port": jm_port,
         "ip": "localhost",
@@ -71,11 +71,11 @@ def job_request(gconfig):
     return propius_stub
 
 
-def client_check_in(gconfig):
+def client_check_in(gconfig, public_spec):
     lb_ip = gconfig["load_balancer_ip"]
     lb_port = gconfig["load_balancer_port"]
     client_config = {
-        "public_specifications": {"cpu_f": 10, "ram": 10, "fp16_mem": 10, "android_os": 10},
+        "public_specifications": public_spec,
         "private_specifications": {
             "dataset_size": 1000,
         },
@@ -86,9 +86,7 @@ def client_check_in(gconfig):
 
     propius_client = Propius_client(client_config=client_config, verbose=True)
     propius_client.connect()
-    task_offer, constraints = propius_client.client_check_in()
-    assert task_offer == [0]
-    assert constraints == [(100,)]
+    return propius_client.client_check_in()
 
 
 def test_client_check_in():
@@ -100,8 +98,38 @@ def test_client_check_in():
         job_db = SC_job_db_portal(gconfig, logger)
 
         sched_alg = gconfig["sched_alg"]
-        
+
         time.sleep(1)
-        job_request(gconfig)
+        job_request(gconfig, 5)
         time.sleep(1)
-        client_check_in(gconfig)
+        task_offer, constraints = client_check_in(
+            gconfig, {"cpu_f": 4, "ram": 5, "fp16_mem": 6, "android_os": 7}
+        )
+        assert task_offer == [0]
+        assert constraints == [(100,)]
+
+        task_offer, constraints = client_check_in(
+            gconfig, {"cpu_f": 1, "ram": 5, "fp16_mem": 6, "android_os": 7}
+        )
+        assert task_offer == []
+        assert constraints == []
+
+        if sched_alg == "fifo":
+            job_request(gconfig, 5)
+            time.sleep(1)
+
+            task_offer, constraints = client_check_in(
+                gconfig, {"cpu_f": 4, "ram": 5, "fp16_mem": 6, "android_os": 7}
+            )
+            assert task_offer == [0, 1]
+            assert constraints == [(100,), (100,)]
+
+        elif sched_alg == "srsf":
+            job_request(gconfig, 3)
+            time.sleep(1)
+
+            task_offer, constraints = client_check_in(
+                gconfig, {"cpu_f": 4, "ram": 5, "fp16_mem": 6, "android_os": 7}
+            )
+            assert task_offer == [1, 0]
+            assert constraints == [(100,), (100,)]

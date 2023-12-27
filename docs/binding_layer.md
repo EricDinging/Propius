@@ -3,7 +3,7 @@
 ## Process
 1. Client check-in, reporting its public attributes
 2. `client_manager` insert the client into `client_db`
-If uses online scheduling
+If `propius_controller` uses online scheduling
 3. `client_manager` returns eligible tasks as well as their private constraints to the client in a task offer list. All the selected tasks should have a `demand` greater than `amount`, and constraint satisfied by the client attributes. The returned tasks are sorted according to the scheduling algorithm.
 
 ## Client Database
