@@ -146,35 +146,38 @@ class Group_condition:
 
 class Job_group:
     def __init__(self):
-        self.constraint_list = []
-        self.cst_job_group_map = {}
-        self.cst_group_condition_map = {}
+        self.key_list = []
+        self.key_job_group_map = {}
+        self.key_group_condition_map = {}
 
-    def insert_cst(self, cst: tuple):
-        if cst not in self.constraint_list:
-            self.constraint_list.append(cst)
-            self.cst_job_group_map[cst] = []
-            self.cst_group_condition_map[cst] = Group_condition()
+    def insert_key(self, key):
+        if key not in self.key_list:
+            self.key_list.append(key)
+            self.key_job_group_map[key] = []
+            self.key_group_condition_map[key] = Group_condition()
 
-    def remove_cst(self, cst: tuple):
-        if cst in self.constraint_list:
-            self.constraint_list.remove(cst)
-            del self.cst_job_group_map[cst]
-            del self.cst_group_condition_map[cst]
+    def remove_key(self, key):
+        if key in self.key_list:
+            self.key_list.remove(key)
+            del self.key_job_group_map[key]
+            del self.key_group_condition_map[key]
 
     def clear_group_info(self):
-        for cst in self.constraint_list:
-            self.cst_job_group_map[cst].clear()
-            self.cst_group_condition_map[cst].clear()
+        for key in self.key_list:
+            self.key_job_group_map[key].clear()
+            self.key_group_condition_map[key].clear()
 
-    def __getitem__(self, index: tuple) -> Group_condition:
-        return self.cst_group_condition_map.get(index)
+    def __getitem__(self, key) -> Group_condition:
+        return self.key_group_condition_map.get(key)
 
-    def __setitem__(self, index: tuple, value: Group_condition):
-        self.cst_group_condition_map[index] = value
+    def __setitem__(self, key, value: Group_condition):
+        self.key_group_condition_map[key] = value
 
-    # def remove(self, cst: tuple):
-    #     if cst in self.constraint_list:
-    #         del self.cst_job_group_map[cst]
-    #         del self.cst_group_condition_map[cst]
-    #         self.constraint_list.remove(cst)
+    def set_job_group(self, key, job_group: list):
+        if key in self.key_list:
+            self.key_job_group_map[key] = job_group
+
+    def get_job_group(self, key) -> list:
+        if key in self.key_list:
+            return self.key_job_group_map[key]
+    

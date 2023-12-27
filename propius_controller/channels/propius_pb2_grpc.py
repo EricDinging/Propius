@@ -207,8 +207,13 @@ class SchedulerStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.JOB_SCORE_UPDATE = channel.unary_unary(
-                '/propius.Scheduler/JOB_SCORE_UPDATE',
+        self.JOB_REGIST = channel.unary_unary(
+                '/propius.Scheduler/JOB_REGIST',
+                request_serializer=propius__pb2.job_id.SerializeToString,
+                response_deserializer=propius__pb2.ack.FromString,
+                )
+        self.JOB_REQUEST = channel.unary_unary(
+                '/propius.Scheduler/JOB_REQUEST',
                 request_serializer=propius__pb2.job_id.SerializeToString,
                 response_deserializer=propius__pb2.ack.FromString,
                 )
@@ -227,7 +232,13 @@ class SchedulerStub(object):
 class SchedulerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def JOB_SCORE_UPDATE(self, request, context):
+    def JOB_REGIST(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def JOB_REQUEST(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -248,8 +259,13 @@ class SchedulerServicer(object):
 
 def add_SchedulerServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'JOB_SCORE_UPDATE': grpc.unary_unary_rpc_method_handler(
-                    servicer.JOB_SCORE_UPDATE,
+            'JOB_REGIST': grpc.unary_unary_rpc_method_handler(
+                    servicer.JOB_REGIST,
+                    request_deserializer=propius__pb2.job_id.FromString,
+                    response_serializer=propius__pb2.ack.SerializeToString,
+            ),
+            'JOB_REQUEST': grpc.unary_unary_rpc_method_handler(
+                    servicer.JOB_REQUEST,
                     request_deserializer=propius__pb2.job_id.FromString,
                     response_serializer=propius__pb2.ack.SerializeToString,
             ),
@@ -274,7 +290,7 @@ class Scheduler(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def JOB_SCORE_UPDATE(request,
+    def JOB_REGIST(request,
             target,
             options=(),
             channel_credentials=None,
@@ -284,7 +300,24 @@ class Scheduler(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/propius.Scheduler/JOB_SCORE_UPDATE',
+        return grpc.experimental.unary_unary(request, target, '/propius.Scheduler/JOB_REGIST',
+            propius__pb2.job_id.SerializeToString,
+            propius__pb2.ack.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def JOB_REQUEST(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/propius.Scheduler/JOB_REQUEST',
             propius__pb2.job_id.SerializeToString,
             propius__pb2.ack.FromString,
             options, channel_credentials,
