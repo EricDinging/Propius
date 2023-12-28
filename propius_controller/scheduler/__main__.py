@@ -64,7 +64,7 @@ async def serve(gconfig, logger):
     plot_task = asyncio.create_task(scheduler.plot_routine())
 
     logger.print(
-        f"Scheduler: server started, listening on {scheduler.ip}:{scheduler.port}, running {gconfig['sched_alg']}",
+        f"server started, listening on {scheduler.ip}:{scheduler.port}, running {gconfig['sched_alg']}",
         Msg_level.INFO,
     )
     _cleanup_coroutines.append(server_graceful_shutdown())
@@ -80,9 +80,9 @@ def main():
             )
             os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
             logger = Propius_logger(
-                log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
+                "scheduler", log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
             )
-            logger.print(f"scheduler read config successfully")
+            logger.print(f"read config successfully")
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, logger))
         except KeyboardInterrupt:

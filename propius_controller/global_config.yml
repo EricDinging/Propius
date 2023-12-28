@@ -17,8 +17,8 @@ scheduler_port: 50000
 scheduler_log_path: monitor/log
 scheduler_plot_path: monitor/plot
 
-sched_mode: online # ['online', 'offline']
-sched_alg: srsf # ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
+sched_mode: offline # ['online', 'offline']
+sched_alg: fifo # ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
 
 # CLIENT MANAGER
 load_balancer_ip: localhost

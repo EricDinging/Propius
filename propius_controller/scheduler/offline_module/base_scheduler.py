@@ -87,7 +87,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         """
         job_id = request.id
         async with self.lock:
-            self.job_regist(job_id)
+            await self.job_regist(job_id)
         return propius_pb2.ack(ack=True)
 
     async def JOB_REQUEST(self, request, context) -> propius_pb2.ack:
@@ -99,7 +99,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         """
         job_id = request.id
         async with self.lock:
-            self.job_request(job_id)
+            await self.job_request(job_id)
         return propius_pb2.ack(ack=True)
 
     async def HEART_BEAT(self, request, context):

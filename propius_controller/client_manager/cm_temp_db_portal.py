@@ -55,12 +55,7 @@ class CM_temp_client_db_portal(Temp_client_db):
 
                 self.logger.print(f"binding job group: {job_list}", Msg_level.INFO)
 
-                def filter_key(job_id):
-                    amount = self.job_db_portal.get_field(job_id, "amount")
-                    demand = self.job_db_portal.get_field(job_id, "demand")
-                    return amount < demand
-
-                job_list = filter(filter_key, job_list)
+                job_list = filter(lambda x: self.job_db_portal.is_available(x), job_list)
 
                 for doc in result.docs:
                     try:
@@ -88,7 +83,9 @@ class CM_temp_client_db_portal(Temp_client_db):
                             f"bind client with job: {client_id} {assigned_job_str} ",
                             Msg_level.INFO,
                         )
-                        self.r.execute_command("JSON.SET", client_id, "$.temp.job_ids", assigned_job_str)
+                        self.r.execute_command(
+                            "JSON.SET", client_id, "$.temp.job_ids", assigned_job_str
+                        )
                     except:
                         pass
 
@@ -136,7 +133,7 @@ class CM_temp_client_db_portal(Temp_client_db):
 
                     if self.tier_num + gu * c < c + 1:
                         self.logger.print(
-                            f"Job {front_job_id} tier-matching, tier_num: {self.tier_num}"
+                            f"job {front_job_id} tier-matching, tier_num: {self.tier_num}"
                             f" u: {u}, gu: {gu}, c: {c}",
                             Msg_level.INFO,
                         )
@@ -157,7 +154,7 @@ class CM_temp_client_db_portal(Temp_client_db):
                                 pass
                     else:
                         self.logger.print(
-                            f"Job {front_job_id} not tier-matching,"
+                            f"job {front_job_id} not tier-matching,"
                             f"tier_num: {self.tier_num}"
                             f" u: {u}, gu: {gu}, c: {c}",
                             Msg_level.INFO,
@@ -182,7 +179,7 @@ class CM_temp_client_db_portal(Temp_client_db):
                             pass
 
                     self.logger.print(
-                        f"Insert job {job_list_str} to {len(result.docs)} clients",
+                        f"insert job {job_list_str} to {len(result.docs)} clients",
                         Msg_level.INFO,
                     )
 
@@ -200,7 +197,7 @@ class CM_temp_client_db_portal(Temp_client_db):
 
         if len(specifications) != len(self.public_constraint_name):
             self.logger.print(
-                "Specification length does not match required", Msg_level.ERROR
+                "specification length does not match required", Msg_level.ERROR
             )
         client_dict = {"job_ids": "[]", "option": option}
         spec_dict = {
@@ -251,7 +248,7 @@ class CM_temp_client_db_portal(Temp_client_db):
                     pipe.delete(id)
                     pipe.unwatch()
                     self.logger.print(
-                        f"Remove temp client:{client_id}", Msg_level.WARNING
+                        f"remove temp client:{client_id}", Msg_level.WARNING
                     )
                     return
                 except redis.WatchError:

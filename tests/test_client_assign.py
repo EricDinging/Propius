@@ -4,45 +4,20 @@ from propius_controller.config import GLOBAL_CONFIG_FILE
 from propius_controller.job.propius_job import Propius_job
 from propius_controller.util import Msg_level, Propius_logger
 from propius_controller.client.propius_client import Propius_client
+from tests.util import init, clean_up
 import yaml
 import time
 import os
-import signal
-import atexit
+import pytest
 
-process = []
-
-
-def init():
-    try:
-        p = subprocess.Popen(
-            ["docker", "compose", "-f", "compose_redis.yml", "up", "-d"]
-        )
-        process.append(p)
-
-        p = subprocess.Popen(["python", "-m", "propius_controller.job_manager"])
-        process.append(p)
-
-        p = subprocess.Popen(["python", "-m", "propius_controller.scheduler"])
-        process.append(p)
-
-        p = subprocess.Popen(["python", "-m", "propius_controller.client_manager", "0"])
-        process.append(p)
-
-        p = subprocess.Popen(["python", "-m", "propius_controller.client_manager", "1"])
-        process.append(p)
-
-        p = subprocess.Popen(["python", "-m", "propius_controller.load_balancer"])
-        process.append(p)
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error: {e}")
-
-
-def clean_up():
-    for p in process:
-        if p and p.poll() is None:
-            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+@pytest.fixture
+def setup_and_teardown_for_stuff():
+    process = []
+    print("\nsetting up")
+    init(process)
+    yield
+    print("\ntearing down")
+    clean_up(process)
 
 
 def job_request(gconfig, demand):
@@ -89,15 +64,11 @@ def client_assign(gconfig, public_spec):
     return propius_client.auto_assign()
 
 
-def test_client_check_in():
-    init()
-    atexit.register(clean_up)
+def test_client_assign(setup_and_teardown_for_stuff):
     with open(GLOBAL_CONFIG_FILE, "r") as gconfig:
         gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
-        logger = Propius_logger(log_file=None, verbose=True, use_logging=False)
+        logger = Propius_logger("test", log_file=None, verbose=True, use_logging=False)
         job_db = SC_job_db_portal(gconfig, logger)
-
-        sched_alg = gconfig["sched_alg"]
 
         time.sleep(1)
         propius_job = job_request(gconfig, 1)

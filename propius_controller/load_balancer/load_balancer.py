@@ -38,8 +38,6 @@ class Load_balancer(propius_pb2_grpc.Load_balancerServicer):
                 f'{cm_ip}:{cm_port}')
             self.cm_stub_dict[cm_id] = propius_pb2_grpc.Client_managerStub(
                 self.cm_channel_dict[cm_id])
-            # self.logger.print(
-            #     f"Load balancer: connecting to client manager {cm_id} at {cm_ip}:{cm_port}")
 
     async def _disconnect_cm(self):
         for cm_channel in self.cm_channel_dict.values():

@@ -65,7 +65,7 @@ class JM_monitor(Monitor):
 
     def report(self):
         self._gen_report()
-        self.logger.print(f"Job manager: total job: {self.total_job}", Msg_level.INFO)
+        self.logger.print(f"total job: {self.total_job}", Msg_level.INFO)
 
         for constraint, sum_jct in self.constraint_jct_dict.items():
             cnt = self.constraint_cnt[constraint]
@@ -74,7 +74,7 @@ class JM_monitor(Monitor):
             avg_sched = sum_sched / cnt
 
             self.logger.print(
-                f"Job group: {constraint}, num: {cnt}, avg JCT: {avg_jct:.3f}, avg sched latency: {avg_sched:.3f}\n"
+                f"job group: {constraint}, num: {cnt}, avg JCT: {avg_jct:.3f}, avg sched latency: {avg_sched:.3f}\n"
             )
 
         if self.plot:

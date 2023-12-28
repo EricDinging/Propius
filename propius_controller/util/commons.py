@@ -93,10 +93,11 @@ def encode_specs(**kargs) -> tuple[list, list]:
 
 class Propius_logger:
     def __init__(
-        self, log_file: str = None, verbose: bool = True, use_logging: bool = True
+        self, actor: str, log_file: str = None, verbose: bool = True, use_logging: bool = True
     ):
         self.verbose = verbose
         self.use_logging = use_logging
+        self.actor = actor
         if self.use_logging:
             if not log_file:
                 raise ValueError("Empty log file")
@@ -113,6 +114,7 @@ class Propius_logger:
             self.logger.setLevel(logging.INFO)
 
     def print(self, message: str, level: int = Msg_level.PRINT):
+        message = f"{self.actor}: {message}"
         if self.verbose:
             print(f"{get_time()} {message}")
         if self.use_logging:
