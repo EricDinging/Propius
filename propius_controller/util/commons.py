@@ -93,7 +93,11 @@ def encode_specs(**kargs) -> tuple[list, list]:
 
 class Propius_logger:
     def __init__(
-        self, actor: str, log_file: str = None, verbose: bool = True, use_logging: bool = True
+        self,
+        actor: str,
+        log_file: str = None,
+        verbose: bool = True,
+        use_logging: bool = True,
     ):
         self.verbose = verbose
         self.use_logging = use_logging
@@ -182,4 +186,10 @@ class Job_group:
     def get_job_group(self, key) -> list:
         if key in self.key_list:
             return self.key_job_group_map[key]
-    
+
+    def __repr__(self):
+        str = ""
+        for key in self.key_list:
+            str += f"{key} - {self.key_job_group_map[key]} - {self.key_group_condition_map[key]}\n"
+
+        return str
