@@ -1,6 +1,29 @@
 # Scheduling Layer
 ## Overview
-Scheduling layer sits beneath the application layer. The scheduling logic is triggered by: (1) new job registeration, (2) existing jobs' new request, (3) a certain amount of time elapse. There are two forms of scheduling logic implemented: (1) online scheduling and (2) offline scheduling.
+Scheduling layer sits beneath the application layer. The scheduling logic is triggered by: (1) new job registeration, (2) existing jobs' new request, (3) `client_manager` sends a periodic update request. There are two forms of scheduling logic implemented: (1) online scheduling and (2) offline scheduling.
+
+## Metadata for scheduling
+Job Metadata:
+- registration timestamp, time spent in being scheduled, last scheduling start time, current time elapse $t$
+- job IP
+- total allocation in past rounds $d_a$, current round number $r$, current demand $d$, current allocation amount
+- total demand estimated $d_{total}$, total round estimated $r_{total}$, remaining demand estimated $d_r$, remaining time estimated $t_r$ 
+    -  If job provides total round estimation $r_{total}$
+        - $d_{total} = d_a + (r_{total} - r) \times d$
+        - $d_r = d_{total} - d_a$
+        - $t_r = t / r \times (r_{total} - r)$
+    - If job does not provide total round estimation
+        - $r_{total} = 2 \times r$
+        - $d_{total} = 2 \times d_a$
+        - $d_r = d_{total} - d_a$
+        - $t_r = 2 \times t$
+- public constraints, private constraints
+
+Client Metadata:
+- public attributes
+- client IP
+- client performance in last rounds (eg. speed)
+
 
 ## Online scheduling
 As the client resources are highly dynamic, it is difficult to keep track of every available client resources long-term, which involves constant state checking and updates. It is therefore more appropiate to remove any state for client resources, and assign tasks to clients whenever they are available in an online fashion.
@@ -9,6 +32,7 @@ The online `scheduler` in `propius_controller` sets a score for every outstandin
 
 The online scheduling logic is invoked by either new job registration or new job request.
 
+This is an example of a FIFO scheduler.
 ```python
 class FIFO_scheduler(Scheduler):
     # class attributes initialization
@@ -26,35 +50,36 @@ class FIFO_scheduler(Scheduler):
         self.job_db_portal.set_score(score, job_id)
 ```
 
-
-## Information
-Job Metadata:
-1. task_quota, task_budget, quota_budget
-2. job_start_time, task_start_time, avg_ramp_up_time, avg_task_completion_time
-3. task_alloc, task_constraints
-4. task_id, job_id, type (FL|FA)
-
-Client Metadata:
-1. eligible client proportion: `get_client_proportion(constraint)`
-
-## Boolean predicate
-```python
-constraint = "@CPU:[0 10], @MEM:[300 500]"
-```
-## Process
-1. Scheduler define a mapping
-2. Propius enforce constraint
-
 ## Offline
-Semantics is more general
+Though online scheduling minizes state management for ephemeral resources over the network, it has several limitations, just to mention a few: (1) enforcing a uniform score calculation across every jobs, which may have different service requirements (2) making real-time binding decisions upon client check-in (3) difficult implementation of fair allocation. Therefore, we uses a temporary client database to cache active client resources (with a ttl), and batch-process client-to-job binding process.
+
+Offline `scheduler` maintains a `job_group` data structure, which comprises of several job groups, and their corresponding conditions, which specify a coarse client subset. `client_manager` will aynchronously ping `scheduler` for this `job_group` update, and `scheduler` should return this data structure back to `client_manager`. `client_manager` will then enforce the coarse group condition, pairing a job group to an active client subset, as well as ensuring end-to-end constraint satisfaction. Clients will asynchronously ping `client_manager`, looking up the `temp_client_db` for binded jobs (tasks).
+
+This is an example of an offline FIFO scheduler.
 ```python
-@propius.jmo_offline_scheduler(jm_id=0)
-def fifo(active_task_list):
-    query = "@CPU:[0 inf], @MEM:[0 inf]"
-    def key(job_id):
-        return get_job_start_time(job_id)
-    active_task_list.sort(key=key)
-    # return a key value pair, key is query, value is job group
-    return {query: actve_task_list}
+class FIFO_scheduler(Scheduler):
+    def __init__(self, gconfig: dict, logger: Propius_logger):
+        super().__init__(gconfig, logger)
+        # only one group
+        self.job_group.insert_key(0)
+        q = ""
+        for name in self.public_constraint_name:
+            q += f"@{name}: [-inf +inf] "
+        self.job_group[0].insert_condition_and(q)
+
+    async def job_regist(self, job_id: int):
+        job_list = self.job_group.get_job_group(0)
+        updated_job_list = list(filter(lambda x: self.job_db_portal.exist(x), job_list))
+        updated_job_list.append(job_id)
+        self.job_group.set_job_group(0, updated_job_list)
+
+    async def job_request(self, job_id: int):
+        pass
+
+```
+
+This is an example of a group condition.
+```python
+condition = "@CPU:[0 10], @MEM:[300 500]"
 ```
 
