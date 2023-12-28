@@ -36,4 +36,12 @@ This is the metadata for every job. We use Redis JSON key-value store, where key
 |score | numeric| priority score|
 |public_constraint.[x]| numeric | lower bound for client public attribute value for constraint x |
 |private_constraint.[y]| numeric | lower bound for client private attribute value for constraint y |
-```
+
+## Job lifetime
+- Job will be removed if runtime is greater than JOB_EXPIRE_TIME
+- Job will be removed if time intervals is greater than JOB_MAX_SILENT_TIME
+- If use policy that removes job after reaching the estimated round
+    - If job provides total round estimation $r_{total}$
+        - Job will be removed after $r_{total}$ 
+    - Job does not provide total round estimation
+        - Job will be removed after MAX_ROUND
