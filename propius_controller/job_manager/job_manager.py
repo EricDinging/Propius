@@ -50,7 +50,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         self.sched_channel = grpc.aio.insecure_channel(f"{sched_ip}:{sched_port}")
         self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
         self.logger.print(
-            f"Job manager: connecting to scheduler at {sched_ip}:{sched_port}",
+            f"connecting to scheduler at {sched_ip}:{sched_port}",
             Msg_level.INFO,
         )
 
@@ -67,9 +67,8 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         public_constraint = pickle.loads(request.public_constraint)
         private_constraint = pickle.loads(request.private_constraint)
 
-        async with self.lock:
-            job_id = self.job_total_num
-            self.job_total_num += 1
+        job_id = self.job_total_num
+        self.job_total_num += 1
 
         ack = self.job_db_portal.register(
             job_id=job_id,
@@ -84,7 +83,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         )
 
         self.logger.print(
-            f"Job manager: ack job {job_id} register: {ack}, public constraint: {public_constraint}"
+            f"ack job {job_id} register: {ack}, public constraint: {public_constraint}"
             f", private constraint: {private_constraint}, demand: {est_demand}",
             Msg_level.INFO,
         )
@@ -112,7 +111,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         await self.sched_portal.JOB_REQUEST(propius_pb2.job_id(id=job_id))
 
         self.logger.print(
-            f"Job manager: ack job {job_id} round request: {ack}", Msg_level.INFO
+            f"ack job {job_id} round request: {ack}", Msg_level.INFO
         )
 
         await self.jm_monitor.request()
@@ -129,7 +128,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         job_id = request.id
         ack = self.job_db_portal.end_request(job_id=job_id)
         self.logger.print(
-            f"Job manager: ack job {job_id} end round request: {ack}", Msg_level.INFO
+            f"ack job {job_id} end round request: {ack}", Msg_level.INFO
         )
 
         await self.jm_monitor.request()
@@ -153,7 +152,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
             sched_latency,
         ) = self.job_db_portal.finish(job_id)
         self.logger.print(
-            f"Job manager: job {job_id} completed" f", executed {total_round} rounds",
+            f"job {job_id} completed" f", executed {total_round} rounds",
             Msg_level.INFO,
         )
 

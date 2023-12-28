@@ -8,7 +8,7 @@ class FIFO_scheduler(Scheduler):
     def __init__(self, gconfig: dict, logger: Propius_logger):
         super().__init__(gconfig, logger)
         # only one group
-        self.job_group.insert_key[0]
+        self.job_group.insert_key(0)
         q = ""
         for name in self.public_constraint_name:
             q += f"@{name}: [-inf +inf] "

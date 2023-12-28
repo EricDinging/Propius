@@ -171,6 +171,22 @@ class CM_job_db_portal(Job_db):
                 except Exception as e:
                     self.logger.print(e, Msg_level.ERROR)
                     return None
+                
+    def is_available(self, job_id) -> bool:
+        """Check whether the job is still being allocated.
+        
+        Args:
+            job_id: job_id
+
+        Returns:
+            a boolean
+        """
+        try:
+            amount = int(self.get_field(job_id, "amount"))
+            demand = int(self.get_field(job_id, "demand"))
+            return amount < demand
+        except Exception:
+            return False
 
 
 class CM_client_db_portal(Client_db):
@@ -205,7 +221,7 @@ class CM_client_db_portal(Client_db):
 
         if len(specifications) != len(self.public_constraint_name):
             self.logger.print(
-                "Specification length does not match required", Msg_level.ERROR
+                "specification length does not match required", Msg_level.ERROR
             )
 
         client_dict = {"timestamp": int(time.time())}

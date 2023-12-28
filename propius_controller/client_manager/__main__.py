@@ -46,7 +46,7 @@ async def serve(gconfig, cm_id: int, logger: Propius_logger):
     client_assign_task = asyncio.create_task(client_manager.client_assign_routine())
     plot_task = asyncio.create_task(client_manager.plot_routine())
     logger.print(
-        f"Client manager {client_manager.cm_id}: server started, listening on {client_manager.ip}:{client_manager.port}",
+        f"server started, listening on {client_manager.ip}:{client_manager.port}",
         Msg_level.INFO,
     )
     await server.wait_for_termination()
@@ -66,10 +66,10 @@ def main(cm_id):
             )
             os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
             logger = Propius_logger(
-                log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
+                f"client manager {cm_id}",log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
             )
             logger.print(
-                f"Client manager {cm_id} read config successfully", Msg_level.INFO
+                f"read config successfully", Msg_level.INFO
             )
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, cm_id, logger))

@@ -169,7 +169,7 @@ class JM_job_db_portal(Job_db):
                     self.logger.print(e, Msg_level.ERROR)
 
         if job_finished:
-            self.logger.print(f"Job {job_id} reached final round", Msg_level.ERROR)
+            self.logger.print(f"job {job_id} reached final round", Msg_level.ERROR)
             self.remove_job(job_id)
         return False
     
