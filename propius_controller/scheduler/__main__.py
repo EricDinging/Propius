@@ -51,6 +51,10 @@ async def serve(gconfig, logger):
             from propius_controller.scheduler.offline_module.fifo_scheduler import (
                 FIFO_scheduler as Scheduler,
             )
+        elif sched_alg == "irs":
+            from propius_controller.scheduler.offline_module.irs_scheduler import (
+                IRS_scheduler as Scheduler,
+            )
         else:
             from propius_controller.scheduler.offline_module.base_scheduler import (
                 Scheduler,

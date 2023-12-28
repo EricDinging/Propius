@@ -76,6 +76,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         """
         async with self.lock:
             await self.offline()
+            self.logger.print(repr(self.job_group), Msg_level.INFO)
             return propius_pb2.group_info(group=pickle.dumps(self.job_group))
 
     async def JOB_REGIST(self, request, context) -> propius_pb2.ack:
