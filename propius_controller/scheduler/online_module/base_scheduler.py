@@ -68,7 +68,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         """
         job_id = request.id
         await self.sc_monitor.request(job_id)
-        self.logger.print("Receive job register", Msg_level.INFO)
+        self.logger.print("receive job register", Msg_level.INFO)
         await self.online(job_id, True)
         return propius_pb2.ack(ack=True)
 
@@ -81,7 +81,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         """
         job_id = request.id
         await self.sc_monitor.request(job_id)
-        self.logger.print("Receive job request", Msg_level.INFO)
+        self.logger.print("receive job request", Msg_level.INFO)
         await self.online(job_id, False)
         return propius_pb2.ack(ack=True)
 

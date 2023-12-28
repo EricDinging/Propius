@@ -76,7 +76,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.sched_channel = grpc.aio.insecure_channel(f"{sched_ip}:{sched_port}")
         self.sched_portal = propius_pb2_grpc.SchedulerStub(self.sched_channel)
         self.logger.print(
-            f"Client manager {self.cm_id}: connecting to scheduler at {sched_ip}:{sched_port}",
+            f"connecting to scheduler at {sched_ip}:{sched_port}",
             Msg_level.INFO,
         )
 
@@ -122,7 +122,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         if len(task_offer_list) > 0:
             self.logger.print(
-                f"Client manager {self.cm_id}: client {client_id} check in, offer: {task_offer_list}",
+                f"client {client_id} check in, offer: {task_offer_list}",
                 Msg_level.INFO,
             )
 
@@ -158,21 +158,21 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 task_private_constraint,
                 job_size,
             ) = self.job_db_portal.client_assign(public_specification)
-        # else:
-        #     task_offer_list = self.temp_client_db_portal.get_task_id(
-        #         request.id, public_specification
-        #     )
+        elif self.sched_mode == "offline":
+            task_offer_list = self.temp_client_db_portal.get_task_id(
+                request.id, public_specification
+            )
 
-        #     (
-        #         task_offer_list,
-        #         task_private_constraint,
-        #     ) = self.job_db_portal.get_job_private_constraint(task_offer_list)
+            (
+                task_offer_list,
+                task_private_constraint,
+            ) = self.job_db_portal.get_job_private_constraint(task_offer_list)
 
         await self.cm_monitor.client_ping()
 
         if task_offer_list:
             self.logger.print(
-                f"Client manager {self.cm_id}: client {request.id} ping, offer: {task_offer_list}",
+                f"client {request.id} ping, offer: {task_offer_list}",
                 Msg_level.INFO,
             )
 
@@ -206,16 +206,16 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
 
         if not result:
             self.logger.print(
-                f"Client manager {self.cm_id}: job {task_id} over-assign",
+                f"job {task_id} over-assign",
                 Msg_level.WARNING,
             )
             return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
 
-        if self.sched_mode == "irs3":
+        if self.sched_mode == "offline":
             self.temp_client_db_portal.remove_client(client_id)
 
         self.logger.print(
-            f"Client manager {self.cm_id}: ack client {client_id}, job addr {result}",
+            f"ack client {client_id}, job addr {result}",
             Msg_level.INFO,
         )
         return propius_pb2.cm_ack(
@@ -228,7 +228,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 while True:
                     try:
                         self.logger.print(
-                            f"Client manager: {self.cm_id}: Update job group",
+                            f"update job group",
                             Msg_level.INFO,
                         )
                         group_info = await self.sched_portal.GET_JOB_GROUP(

@@ -34,7 +34,7 @@ class CM_monitor(Monitor):
         self._gen_report()
 
         self.logger.print(
-            f"Client manager {id}: check in {self.client_check_in_num}, ping {self.client_ping_num}, "
+            f"check in {self.client_check_in_num}, ping {self.client_ping_num}, "
             f"accept {self.client_accept_num}, over-assign {self.client_over_assign_num}",
             Msg_level.INFO,
         )

@@ -3,37 +3,22 @@ from propius_controller.database.db import Job_db
 from propius_controller.config import GLOBAL_CONFIG_FILE
 from propius_controller.job.propius_job import Propius_job
 from propius_controller.util import Msg_level, Propius_logger
+from tests.util import clean_up, init
 import yaml
 import time
 import os
 import signal
 import atexit
+import pytest
 
-process = []
-
-
-def init():
-    try:
-        p = subprocess.Popen(
-            ["docker", "compose", "-f", "compose_redis.yml", "up", "-d"]
-        )
-        process.append(p)
-
-        p = subprocess.Popen(["python", "-m", "propius_controller.job_manager"])
-        process.append(p)
-
-        p = subprocess.Popen(["python", "-m", "propius_controller.scheduler"])
-
-        process.append(p)
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error: {e}")
-
-
-def clean_up():
-    for p in process:
-        if p and p.poll() is None:
-            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+@pytest.fixture
+def setup_and_teardown_for_stuff():
+    process = []
+    print("\nsetting up")
+    init(process)
+    yield
+    print("\ntearing down")
+    clean_up(process)
 
 
 def job_register(gconfig):
@@ -58,12 +43,10 @@ def job_register(gconfig):
         print(f"Parameter server: register failed")
 
 
-def test_register():
-    init()
-    atexit.register(clean_up)
+def test_register(setup_and_teardown_for_stuff):
     with open(GLOBAL_CONFIG_FILE, "r") as gconfig:
         gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
-        logger = Propius_logger(log_file=None, verbose=True, use_logging=False)
+        logger = Propius_logger("test", log_file=None, verbose=True, use_logging=False)
         job_db = Job_db(gconfig, False, logger)
 
         time.sleep(1)

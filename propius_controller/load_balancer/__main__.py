@@ -33,7 +33,7 @@ async def serve(gconfig, logger):
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.start()
     logger.print(
-        f"Load balancer: server started, listening on {load_balancer.ip}:{load_balancer.port}",
+        f"server started, listening on {load_balancer.ip}:{load_balancer.port}",
         Msg_level.INFO,
     )
     plot_task = asyncio.create_task(load_balancer.plot_routine())
@@ -48,9 +48,9 @@ def main():
             log_file_path = PROPIUS_CONTROLLER_ROOT / gconfig["load_balancer_log_path"] / "lb.log"
             os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
             logger = Propius_logger(
-                log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
+                "load balancer", log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
             )
-            logger.print(f"Load balancer read config successfully", Msg_level.INFO)
+            logger.print(f"read config successfully", Msg_level.INFO)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, logger))
         except KeyboardInterrupt:
