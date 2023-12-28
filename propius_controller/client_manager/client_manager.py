@@ -6,7 +6,6 @@ from propius_controller.client_manager.cm_db_portal import (
     CM_client_db_portal,
     CM_job_db_portal,
 )
-from propius_controller.client_manager.cm_temp_db_portal import CM_temp_client_db_portal
 from propius_controller.channels import propius_pb2_grpc
 from propius_controller.channels import propius_pb2
 import pickle
@@ -45,14 +44,25 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
         self.port = gconfig["client_manager"][self.cm_id]["port"]
 
         self.sched_mode = gconfig["sched_mode"]
+        self.sched_alg = gconfig["sched_alg"]
 
         self.client_db_portal = CM_client_db_portal(gconfig, self.cm_id, logger, True)
 
         self.job_db_portal = CM_job_db_portal(gconfig, logger)
 
-        self.temp_client_db_portal = CM_temp_client_db_portal(
-            gconfig, self.cm_id, self.job_db_portal, logger, False
-        )
+        if self.sched_mode == "offline":
+            if self.sched_alg == "irs":
+                from propius_controller.client_manager.offline_module.irs_temp_db_portal import (
+                    IRS_temp_client_db_portal as Temp_client_db_portal,
+                )
+            else:
+                from propius_controller.client_manager.offline_module.base_temp_db_portal import (
+                    CM_temp_client_db_portal as Temp_client_db_portal,
+                )
+
+            self.temp_client_db_portal = Temp_client_db_portal(
+                gconfig, self.cm_id, self.job_db_portal, logger, False
+            )
 
         self.cm_monitor = CM_monitor(
             logger, gconfig["client_manager_plot_path"], gconfig["plot"]

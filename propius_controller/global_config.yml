@@ -1,26 +1,28 @@
 # GLOBAL CONFIG
 use_docker: false
 
-# JOB MANAGER
+# APPLICATION LAYER
 job_manager_ip: localhost
 job_manager_port: 50001
 job_manager_log_path: monitor/log
 job_manager_plot_path: monitor/plot
 
-# JOB DATABASE
 job_db_ip: localhost
 job_db_port: 6379
 
-# SCHEDULER
+# SCHEDULING LAYER
 scheduler_ip: localhost
 scheduler_port: 50000
 scheduler_log_path: monitor/log
 scheduler_plot_path: monitor/plot
 
 sched_mode: offline # ['online', 'offline']
-sched_alg: fifo # ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
+sched_alg: irs # ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
 
-# CLIENT MANAGER
+## IRS parameter
+tier_num: 3
+
+# BINDING LAYER
 load_balancer_ip: localhost
 load_balancer_port: 50002
 load_balancer_log_path: monitor/log
@@ -38,7 +40,6 @@ client_manager:
 client_manager_log_path: monitor/log
 client_manager_plot_path: monitor/plot
 
-tier_num: 3
 max_task_offer_list_len: 20
 
 # Scheduling context
