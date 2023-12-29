@@ -17,7 +17,7 @@ scheduler_log_path: monitor/log
 scheduler_plot_path: monitor/plot
 
 sched_mode: offline # ['online', 'offline']
-sched_alg: irs # ['fifo', 'random', 'srtf', 'srsf', 'irs', 'irs2', 'irs3', 'las']
+sched_alg: irs # ['fifo', 'random', 'srsf', 'irs']
 
 ## IRS parameter
 tier_num: 3

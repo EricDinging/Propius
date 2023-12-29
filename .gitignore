@@ -48,7 +48,6 @@ coqa
 # Evaluation results
 evaluation_result*
 experiment/
-data*
 *.tar.gz
 *.jpg
 *.csv
