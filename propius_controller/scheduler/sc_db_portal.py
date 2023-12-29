@@ -118,35 +118,35 @@ class SC_job_db_portal(Job_db):
 
         return True
 
-    def irs_update_score(
-        self,
-        job_id: int,
-        groupsize: int,
-        idx: int,
-        denominator: float,
-        irs_epsilon: float = 0,
-        std_round_time: float = 0,
-    ):
-        """Calculate job score using IRS.
+    # def irs_update_score(
+    #     self,
+    #     job_id: int,
+    #     groupsize: int,
+    #     idx: int,
+    #     denominator: float,
+    #     irs_epsilon: float = 0,
+    #     std_round_time: float = 0,
+    # ):
+    #     """Calculate job score using IRS.
 
-        Args:
-            job: job id
-            groupsize: number of jobs in a group with the same constraints
-            idx: index of the job within the group list
-            denominator: IRS score denominator, eligible client group size for the job group
-            irs_epsilon: hyperparameter for fairness adjustment
-            std_round_time: default round execution time for jobs that don't have history round info
-        """
+    #     Args:
+    #         job: job id
+    #         groupsize: number of jobs in a group with the same constraints
+    #         idx: index of the job within the group list
+    #         denominator: IRS score denominator, eligible client group size for the job group
+    #         irs_epsilon: hyperparameter for fairness adjustment
+    #         std_round_time: default round execution time for jobs that don't have history round info
+    #     """
 
-        score = (groupsize - idx) / denominator
-        if irs_epsilon > 0:
-            sjct = self._get_est_JCT(job_id, std_round_time)
-            score = score * (self._get_job_time(job_id) / sjct) ** irs_epsilon
-        try:
-            self.r.execute_command("JSON.SET", f"job:{job_id}", "$.job.score", score)
-            self.logger.print(f"-------job:{job_id} {score:.3f} ", Msg_level.INFO)
-        except Exception as e:
-            self.logger.print(e, Msg_level.ERROR)
+    #     score = (groupsize - idx) / denominator
+    #     if irs_epsilon > 0:
+    #         sjct = self._get_est_JCT(job_id, std_round_time)
+    #         score = score * (self._get_job_time(job_id) / sjct) ** irs_epsilon
+    #     try:
+    #         self.r.execute_command("JSON.SET", f"job:{job_id}", "$.job.score", score)
+    #         self.logger.print(f"-------job:{job_id} {score:.3f} ", Msg_level.INFO)
+    #     except Exception as e:
+    #         self.logger.print(e, Msg_level.ERROR)
 
     def query(self, qstr: str, num: int = 100):
         """Input query string, specifying max number of results
@@ -174,101 +174,53 @@ class SC_job_db_portal(Job_db):
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
 
-    # def fifo_update_all_job_score(self):
-    #     """Give every job which doesn't have a score yet a score of -timestamp
-
-    #     Returns:
-    #         boolean indicating whether there is a score updated
+    # def srtf_update_all_job_score(self, std_round_time: float):
+    #     """Give every job a score of -remaining time
+    #     remaining time = past avg round time * remaining round
+    #     Prioritize job with the shortest remaining demand
     #     """
-    #     q = Query('@score: [0, 0]').paging(0, 100)
     #     try:
-    #         result = self.r.ft('job').search(q)
-
+    #         q = Query("*").paging(0, 100)
+    #         result = self.r.ft("job").search(q)
     #         if result.total == 0:
     #             return
     #         for doc in result.docs:
     #             id = doc.id
-    #             job_time = json.loads(doc.json)["job"]["timestamp"]
-    #             score  = -(job_time - self.start_time)
+    #             job_dict = json.loads(doc.json)["job"]
+    #             past_round = job_dict["round"]
+    #             runtime = time.time() - job_dict["timestamp"]
+    #             avg_round_time = (
+    #                 runtime / past_round if past_round > 0 else std_round_time
+    #             )
+
+    #             if job_dict["total_round"] > 0:
+    #                 remain_round = max(job_dict["total_round"] - job_dict["round"], 0)
+    #                 remain_time = remain_round * avg_round_time
+    #             else:
+    #                 remain_time = runtime
+
+    #             score = -remain_time
     #             self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
-    #             self.r.execute_command('JSON.SET', id, "$.job.score", score)
+    #             self.r.execute_command("JSON.SET", id, "$.job.score", score)
     #     except Exception as e:
     #         self.logger.print(e, Msg_level.ERROR)
 
-    # def random_update_all_job_score(self):
-    #     """Do not assign score to jobs. Instead, client will recieved a randomly shuffled offer list
-    #     """
-    #     pass
-
-    # def srsf_update_all_job_score(self):
-    #     """Give every job a score of -remaining demand
-
-    #         remaining demand = est total demand - attained demand
-    #         Prioritize job with the smallest remaining demand.
-    #     """
+    # def las_update_all_job_score(self):
+    #     """Give every job a score of -attained service."""
     #     try:
-    #         q = Query('*').paging(0, 100)
-    #         result = self.r.ft('job').search(q)
+    #         q = Query("*").paging(0, 100)
+    #         result = self.r.ft("job").search(q)
     #         if result.total == 0:
     #             return
     #         for doc in result.docs:
     #             id = doc.id
-    #             job_dict = json.loads(doc.json)['job']
-    #             # remain_demand = max(job_dict['total_demand'] - job_dict['attained_service'], 0)
-    #             remain_demand = max(job_dict['demand'] - job_dict['amount'], 0)
-    #             score = -remain_demand
+    #             job_dict = json.loads(doc.json)["job"]
+    #             attained_service = job_dict["attained_service"]
+    #             score = -attained_service
     #             self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
-    #             self.r.execute_command('JSON.SET', id, "$.job.score", score)
+    #             self.r.execute_command("JSON.SET", id, "$.job.score", score)
     #     except Exception as e:
     #         self.logger.print(e, Msg_level.ERROR)
-
-    def srtf_update_all_job_score(self, std_round_time: float):
-        """Give every job a score of -remaining time
-        remaining time = past avg round time * remaining round
-        Prioritize job with the shortest remaining demand
-        """
-        try:
-            q = Query("*").paging(0, 100)
-            result = self.r.ft("job").search(q)
-            if result.total == 0:
-                return
-            for doc in result.docs:
-                id = doc.id
-                job_dict = json.loads(doc.json)["job"]
-                past_round = job_dict["round"]
-                runtime = time.time() - job_dict["timestamp"]
-                avg_round_time = (
-                    runtime / past_round if past_round > 0 else std_round_time
-                )
-
-                if job_dict["total_round"] > 0:
-                    remain_round = max(job_dict["total_round"] - job_dict["round"], 0)
-                    remain_time = remain_round * avg_round_time
-                else:
-                    remain_time = runtime
-
-                score = -remain_time
-                self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
-                self.r.execute_command("JSON.SET", id, "$.job.score", score)
-        except Exception as e:
-            self.logger.print(e, Msg_level.ERROR)
-
-    def las_update_all_job_score(self):
-        """Give every job a score of -attained service."""
-        try:
-            q = Query("*").paging(0, 100)
-            result = self.r.ft("job").search(q)
-            if result.total == 0:
-                return
-            for doc in result.docs:
-                id = doc.id
-                job_dict = json.loads(doc.json)["job"]
-                attained_service = job_dict["attained_service"]
-                score = -attained_service
-                self.logger.print(f"-------{id} {score:.3f} ", Msg_level.INFO)
-                self.r.execute_command("JSON.SET", id, "$.job.score", score)
-        except Exception as e:
-            self.logger.print(e, Msg_level.ERROR)
 
     def _get_job_time(self, job_id: int) -> float:
         id = f"job:{job_id}"
@@ -362,23 +314,16 @@ class SC_client_db_portal(Client_db):
 
         return size / client_size
 
-    def get_irs_denominator(self, client_size: int, q: str) -> float:
-        """Get IRS denominator value using client subset size which is defined by input query
+    def get_client_subset_size(self, query: str) -> int:
+        """Get client subset size using input query
 
         Args:
-            client_size: total number of client
-            q: query which defines a client subset
+            query: query which defines a client subset
         """
-        if client_size == 0:
-            return 0.01
-        size = 0
-        q = Query(q).no_content().paging(0, 10000)
+        q = Query(query).no_content().paging(0, 10000)
         try:
             size = int(self.r.ft("client").search(q).total)
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
 
-        if size == 0:
-            return 0.01
-
-        return size / client_size
+        return size
