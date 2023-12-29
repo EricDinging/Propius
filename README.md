@@ -7,7 +7,7 @@ Under construction
 ## Repository Organization
 ```
 .
-├── propius/                        # Propius Python package
+├── propius_controller/                        # Propius Python package
 │   ├── client_manager/             #   - Edge device (client) interface
 │   ├── job_manager/                #   - FL job interface
 │   ├── load_balancer/              #   - Distributor of client traffics to client managers
@@ -85,20 +85,20 @@ docker compose -f compose_redis.yml up -d
 - Launch major components in Propius. You can use tools such as [tmux](https://github.com/tmux/tmux/wiki) to organize your terminal.
     - Scheduler:
     ```bash
-    python propius/scheduler/scheduler.py
+    propius-controller-scheduler
     ```
     - Job manager:
     ```bash
-    python propius/job_manager/job_manager.py
+    propius-controller-job-manager
     ```
     - Client manager:
     ```bash
-    python propius/client_manager/client_manager.py 0 # <id>
-    python propius/client_manager/client_manager.py 1 # <id>
+    propius-controller-client-manager 0 # <id>
+    propius-controller-client-manager 1 # <id>
     ```
     - Load balancer:
     ```bash
-    python propius/load_balancer/load_balancer.py
+    propius-controller-load-balancer
     ```
 - By default, Propius has two client managers and two client databases. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services `propius/global_config.yml` and `compose_redis.yml`. Make sure the setting is consistent. You also need to start the additional client manager services manually.
 - Monitoring
@@ -161,7 +161,7 @@ chmod +x ./scripts/clean.sh
 
 ## Testing
 ```
-pytest  -v test
+pytest -v tests
 ```
 ## Error Handling
 - If there is an error saying that you cannot connect to docker daemon, try [this](https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue)

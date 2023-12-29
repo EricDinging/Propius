@@ -61,8 +61,9 @@ class IRS_scheduler(Scheduler):
 
                 q = this_q + bq
                 self.job_group[cst].insert_condition_and(q)
-                constraints_alloc_map[cst] = self.client_db_portal.get_irs_denominator(
-                    client_size, q
+                client_subset_size = self.client_db_portal.get_client_subset_size(q)
+                constraints_alloc_map[cst] = (
+                    client_subset_size / client_size if client_size != 0 else 0.01
                 )
                 bq = bq + f" -({this_q})"
 
