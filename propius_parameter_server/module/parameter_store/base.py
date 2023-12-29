@@ -1,4 +1,4 @@
-"""Aggregation store base module"""
+"""Parameter store base module"""
 
 from propius_parameter_server.module.commons import Entry
 import copy
