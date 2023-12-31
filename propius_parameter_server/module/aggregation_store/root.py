@@ -1,17 +1,21 @@
-"""Parameter store base module"""
+"""Aggregation store root module."""
 
-from propius_parameter_server.module.commons import Entry
+from propius_parameter_server.module.aggregation_store.base import (
+    Aggregation_store_entry,
+    Aggregation_store,
+)
 import copy
 import asyncio
 
 
-class Parameter_store_entry(Entry):
+class Root_aggregation_store_entry(Aggregation_store_entry):
     def __init__(self):
         super().__init__()
-        self.ttl = 100
+        self.ttl = 2000
+        self.demand = 0
 
     def __str__(self):
-        return super().__str__() + f", ttl: {self.ttl}"
+        return super().__str__() + f", ttl: {self.ttl}, demand: {self.demand}"
 
     def set_ttl(self, ttl: int):
         self.ttl = copy.deepcopy(ttl)
@@ -23,25 +27,32 @@ class Parameter_store_entry(Entry):
     def get_ttl(self) -> int:
         return copy.deepcopy(self.ttl)
 
+    def get_demand(self) -> int:
+        return copy.deepcopy(self.demand)
 
-class Parameter_store:
+    def set_demand(self, demand: int):
+        self.demand = copy.deepcopy(demand)
+
+
+class Root_aggregation_store(Aggregation_store):
     def __init__(self):
-        self.store_dict = {}
-        self.lock = asyncio.Lock()
+        super().__init__()
 
-    async def set_entry(self, job_id: int, entry: Parameter_store_entry):
+    async def set_entry(self, job_id: int, entry: Root_aggregation_store_entry):
         async with self.lock:
             self.store_dict[job_id] = entry
 
     async def get_entry_ref(self, job_id: int):
-        async with self.lock:
-            return self.store_dict.get(job_id)
+        return super().get_entry_ref(job_id)
 
     async def clear_entry(self, job_id: int):
         async with self.lock:
-            entry: Parameter_store_entry = self.store_dict.pop(job_id, None)
+            entry: Root_aggregation_store_entry = self.store_dict.pop(job_id, None)
             if entry:
                 entry.clear()
+
+    def __str__(self):
+        return super().__str__()
 
     async def clock_evict_routine(self):
         while True:
@@ -52,11 +63,3 @@ class Parameter_store:
                         entry.clear()
                         self.store_dict.pop(key, None)
             await asyncio.sleep(1)
-
-    def __str__(self):
-        s = ""
-        for key, entry in self.store_dict:
-            s += f"job_id: {key}, " + entry.__str__() + "\n"
-        return s 
-
-
