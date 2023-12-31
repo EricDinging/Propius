@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16parameter_server.proto\x12\x18propius_parameter_server\"N\n\x03job\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0e\n\x06job_id\x18\x02 \x01(\x05\x12\r\n\x05round\x18\x03 \x01(\x05\x12\x0c\n\x04meta\x18\x04 \x01(\x0c\x12\x0c\n\x04\x64\x61ta\x18\x05 \x01(\x0c\"\x13\n\x03\x61\x63k\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x32\xa6\x01\n\x15Root_parameter_server\x12\x45\n\x03GET\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.job\"\x00\x12\x46\n\x04PUSH\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.ack\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16parameter_server.proto\x12\x18propius_parameter_server\"N\n\x03job\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0e\n\x06job_id\x18\x02 \x01(\x05\x12\r\n\x05round\x18\x03 \x01(\x05\x12\x0c\n\x04meta\x18\x04 \x01(\x0c\x12\x0c\n\x04\x64\x61ta\x18\x05 \x01(\x0c\"\x13\n\x03\x61\x63k\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x32\xa1\x01\n\x10Parameter_server\x12\x45\n\x03GET\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.job\"\x00\x12\x46\n\x04PUSH\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.ack\"\x00\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'parameter_server_pb2', globals())
@@ -24,6 +24,6 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _JOB._serialized_end=130
   _ACK._serialized_start=132
   _ACK._serialized_end=151
-  _ROOT_PARAMETER_SERVER._serialized_start=154
-  _ROOT_PARAMETER_SERVER._serialized_end=320
+  _PARAMETER_SERVER._serialized_start=154
+  _PARAMETER_SERVER._serialized_end=315
 # @@protoc_insertion_point(module_scope)

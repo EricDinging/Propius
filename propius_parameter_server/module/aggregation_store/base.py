@@ -41,6 +41,6 @@ class Aggregation_store:
 
     def __str__(self):
         s = ""
-        for key, entry in self.store_dict:
+        for key, entry in self.store_dict.items():
             s += f"job_id: {key}, " + entry.__str__() + "\n"
         return s

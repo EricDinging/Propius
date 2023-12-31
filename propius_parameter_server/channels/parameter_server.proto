@@ -5,7 +5,7 @@ syntax = "proto3";
 
 package propius_parameter_server;
 
-service Root_parameter_server {
+service Parameter_server {
     rpc GET (job) returns (job) {}
     rpc PUSH (job) returns (ack) {}
 }

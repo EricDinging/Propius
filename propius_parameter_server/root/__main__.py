@@ -15,7 +15,8 @@ async def serve(gconfig):
 
     server = grpc.aio.server()
     root_ps = Parameter_server()
-    parameter_server_pb2_grpc.add_Root_parameter_serverServicer_to_server(root_ps, server)
+    await root_ps.config()
+    parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(root_ps, server)
     server.add_insecure_port(f"{gconfig['root_ps_ip']}:{gconfig['root_ps_port']}")
     _cleanup_coroutines.append(server_graceful_shutdown())
 
@@ -36,11 +37,11 @@ def main():
         except KeyboardInterrupt:
             pass
 
-        except Exception as e:
-            #TODO logging
-            print(e)
-        finally:
-            loop.run_until_complete(*_cleanup_coroutines)
+        # except Exception as e:
+        #     #TODO logging
+        #     print(e)
+        # finally:
+        #     loop.run_until_complete(*_cleanup_coroutines)
 
 if __name__ == "__main__":
     main()

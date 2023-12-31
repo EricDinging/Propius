@@ -17,10 +17,12 @@ class Parameter_server:
         self.aggregation_store = Root_aggregation_store()
         self.parameter_store = Parameter_store()
 
+    async def config(self):
         # FIXTHIS
         e = Parameter_store_entry()
         e.set_param("HELLO WORLD")
-        self.parameter_store.set_entry(0, e)
+        await self.parameter_store.set_entry(0, e)
+        print(self.parameter_store)
 
     async def GET(self, request, context):
         job_id, round = request.job_id, request.round
