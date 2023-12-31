@@ -39,5 +39,8 @@ class Aggregation_store:
             if entry:
                 entry.clear()
 
-    async def clock_evict_routine(self):
-        pass
+    def __str__(self):
+        s = ""
+        for key, entry in self.store_dict:
+            s += f"job_id: {key}, " + entry.__str__() + "\n"
+        return s
