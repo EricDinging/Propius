@@ -46,7 +46,7 @@ class Parameter_store:
     async def clock_evict_routine(self):
         while True:
             async with self.lock:
-                for key, entry in self.store_dict:
+                for key, entry in self.store_dict.items():
                     ttl = entry.decrement_ttl()
                     if ttl <= 0:
                         entry.clear()
@@ -55,7 +55,7 @@ class Parameter_store:
 
     def __str__(self):
         s = ""
-        for key, entry in self.store_dict:
+        for key, entry in self.store_dict.items():
             s += f"job_id: {key}, " + entry.__str__() + "\n"
         return s 
 

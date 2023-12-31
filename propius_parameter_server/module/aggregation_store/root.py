@@ -57,7 +57,7 @@ class Root_aggregation_store(Aggregation_store):
     async def clock_evict_routine(self):
         while True:
             async with self.lock:
-                for key, entry in self.store_dict:
+                for key, entry in self.store_dict.items():
                     ttl = entry.decrement_ttl()
                     if ttl <= 0:
                         entry.clear()
