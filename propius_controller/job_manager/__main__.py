@@ -3,7 +3,11 @@
 from propius_controller.util import Msg_level, Propius_logger
 from propius_controller.job_manager.job_manager import Job_manager
 from propius_controller.channels import propius_pb2_grpc
-from propius_controller.config import PROPIUS_CONTROLLER_ROOT, GLOBAL_CONFIG_FILE
+from propius_controller.config import (
+    PROPIUS_ROOT,
+    PROPIUS_CONTROLLER_ROOT,
+    GLOBAL_CONFIG_FILE,
+)
 import asyncio
 import os
 import yaml
@@ -49,15 +53,21 @@ async def serve(gconfig, logger):
 
     await server.wait_for_termination()
 
+
 def main():
     with open(GLOBAL_CONFIG_FILE, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            log_file_path = PROPIUS_CONTROLLER_ROOT / gconfig["job_manager_log_path"] / "jm.log"
+            log_file_path = (
+                PROPIUS_ROOT / gconfig["log_path"] / "jm.log"
+            )
             os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
             logger = Propius_logger(
-                "job manager", log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
+                "job manager",
+                log_file=log_file_path,
+                verbose=gconfig["verbose"],
+                use_logging=True,
             )
 
             logger.print(f"read config successfully", Msg_level.INFO)
@@ -70,6 +80,7 @@ def main():
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()
+
 
 if __name__ == "__main__":
     main()

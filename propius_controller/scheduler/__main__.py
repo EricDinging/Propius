@@ -2,7 +2,11 @@
 
 from propius_controller.util import Msg_level, Propius_logger
 from propius_controller.channels import propius_pb2_grpc
-from propius_controller.config import PROPIUS_CONTROLLER_ROOT, GLOBAL_CONFIG_FILE
+from propius_controller.config import (
+    PROPIUS_ROOT,
+    PROPIUS_CONTROLLER_ROOT,
+    GLOBAL_CONFIG_FILE,
+)
 import asyncio
 import yaml
 import grpc
@@ -80,11 +84,14 @@ def main():
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
             log_file_path = (
-                PROPIUS_CONTROLLER_ROOT / gconfig["scheduler_log_path"] / "sc.log"
+                PROPIUS_ROOT / gconfig["log_path"] / "sc.log"
             )
             os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
             logger = Propius_logger(
-                "scheduler", log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
+                "scheduler",
+                log_file=log_file_path,
+                verbose=gconfig["verbose"],
+                use_logging=True,
             )
             logger.print(f"read config successfully")
             loop = asyncio.get_event_loop()
