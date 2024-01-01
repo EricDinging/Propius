@@ -7,17 +7,18 @@ package propius_parameter_server;
 
 service Parameter_server {
     rpc GET (job) returns (job) {}
+    rpc PUT (job) returns (ack) {}
     rpc PUSH (job) returns (ack) {}
 }
 
 message job {
-    int32 code = 1; // 0: query, 1: match, 2: stale, 3: miss, 4: fail
+    int32 code = 1; // 0: query, 1: sucess, 2: stale, 3: miss, 4: fail, 5: update
     int32 job_id = 2;
     int32 round = 3;
-    bytes meta = 4; // agg_cnt
+    bytes meta = 4; // agg_cnt | config
     bytes data = 5;
 }
 
 message ack {
-    int32 code = 1;
+    int32 code = 1; 
 }
