@@ -37,10 +37,17 @@ def init(process):
         print(f"Error: {e}")
 
 
+def init_ps(process):
+    try:
+        p = subprocess.Popen(["propius-parameter-server-root"])
+        process.append(p.pid)
+    except subprocess.CalledProcessError as e:
+        print(f"Error: {e}")
+
+
 def clean_up(process):
     for p in process:
         try:
             os.kill(p, signal.SIGTERM)
         except Exception as e:
             print(e)
-            
