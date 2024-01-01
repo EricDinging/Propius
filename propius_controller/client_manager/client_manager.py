@@ -65,7 +65,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             )
 
         self.cm_monitor = CM_monitor(
-            logger, gconfig["client_manager_plot_path"], gconfig["plot"]
+            logger, gconfig["plot_path"], gconfig["plot"]
         )
         self.max_client_num = gconfig["client_manager_id_weight"]
         self.logger = logger

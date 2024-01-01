@@ -3,7 +3,11 @@
 from propius_controller.util import Msg_level, Propius_logger
 from propius_controller.load_balancer.load_balancer import Load_balancer
 from propius_controller.channels import propius_pb2_grpc
-from propius_controller.config import PROPIUS_CONTROLLER_ROOT, GLOBAL_CONFIG_FILE
+from propius_controller.config import (
+    PROPIUS_ROOT,
+    PROPIUS_CONTROLLER_ROOT,
+    GLOBAL_CONFIG_FILE,
+)
 import yaml
 import grpc
 import asyncio
@@ -45,10 +49,15 @@ def main():
     with open(GLOBAL_CONFIG_FILE, "r") as gyamlfile:
         try:
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
-            log_file_path = PROPIUS_CONTROLLER_ROOT / gconfig["load_balancer_log_path"] / "lb.log"
+            log_file_path = (
+                PROPIUS_ROOT / gconfig["log_path"] / "lb.log"
+            )
             os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
             logger = Propius_logger(
-                "load balancer", log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
+                "load balancer",
+                log_file=log_file_path,
+                verbose=gconfig["verbose"],
+                use_logging=True,
             )
             logger.print(f"read config successfully", Msg_level.INFO)
             loop = asyncio.get_event_loop()
@@ -60,6 +69,7 @@ def main():
         finally:
             loop.run_until_complete(*_cleanup_coroutines)
             loop.close()
+
 
 if __name__ == "__main__":
     main()

@@ -50,7 +50,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         self.public_constraint_name = gconfig["job_public_constraint"]
 
         self.sc_monitor = SC_monitor(
-            logger, gconfig["scheduler_plot_path"], gconfig["plot"]
+            logger, gconfig["plot_path"], gconfig["plot"]
         )
         self.logger = logger
 

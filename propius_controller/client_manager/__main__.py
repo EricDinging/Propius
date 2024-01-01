@@ -5,7 +5,11 @@ import os
 from propius_controller.util import Msg_level, Propius_logger
 from propius_controller.client_manager.client_manager import Client_manager
 from propius_controller.channels import propius_pb2_grpc
-from propius_controller.config import PROPIUS_CONTROLLER_ROOT, GLOBAL_CONFIG_FILE
+from propius_controller.config import (
+    PROPIUS_ROOT,
+    PROPIUS_CONTROLLER_ROOT,
+    GLOBAL_CONFIG_FILE,
+)
 import yaml
 import grpc
 import asyncio
@@ -60,17 +64,18 @@ def main(cm_id):
             gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
 
             log_file_path = (
-                PROPIUS_CONTROLLER_ROOT
-                / gconfig["client_manager_log_path"]
+                PROPIUS_ROOT
+                / gconfig["log_path"]
                 / f"cm_{cm_id}.log"
             )
             os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
             logger = Propius_logger(
-                f"client manager {cm_id}",log_file=log_file_path, verbose=gconfig["verbose"], use_logging=True
+                f"client manager {cm_id}",
+                log_file=log_file_path,
+                verbose=gconfig["verbose"],
+                use_logging=True,
             )
-            logger.print(
-                f"read config successfully", Msg_level.INFO
-            )
+            logger.print(f"read config successfully", Msg_level.INFO)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(serve(gconfig, cm_id, logger))
         except KeyboardInterrupt:
