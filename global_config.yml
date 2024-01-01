@@ -1,11 +1,11 @@
 # GLOBAL CONFIG
 use_docker: false
+log_path: monitor/log
+plot_path: monitor/plot
 
 # APPLICATION LAYER
 job_manager_ip: localhost
 job_manager_port: 50001
-job_manager_log_path: monitor/log
-job_manager_plot_path: monitor/plot
 
 job_db_ip: localhost
 job_db_port: 6379
@@ -13,8 +13,6 @@ job_db_port: 6379
 # SCHEDULING LAYER
 scheduler_ip: localhost
 scheduler_port: 50000
-scheduler_log_path: monitor/log
-scheduler_plot_path: monitor/plot
 
 sched_mode: offline # ['online', 'offline']
 sched_alg: irs # ['fifo', 'random', 'srsf', 'irs']
@@ -25,8 +23,6 @@ tier_num: 3
 # BINDING LAYER
 load_balancer_ip: localhost
 load_balancer_port: 50002
-load_balancer_log_path: monitor/log
-load_balancer_plot_path: monitor/plot
 
 client_manager_id_weight: 100000 # for client id assignment
 client_manager:
@@ -37,10 +33,11 @@ client_manager:
   port: 50004
   client_db_port: 6381
 
-client_manager_log_path: monitor/log
-client_manager_plot_path: monitor/plot
-
 max_task_offer_list_len: 20
+
+# PARAMETER_SERVER
+root_ps_ip: localhost
+root_ps_port: 60000
 
 # Scheduling context
 standard_round_time: 300 # default round time for jobs that doesn't have history round
