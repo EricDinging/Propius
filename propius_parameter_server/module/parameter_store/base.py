@@ -25,12 +25,14 @@ class Parameter_store_entry(Entry):
 
 
 class Parameter_store:
-    def __init__(self):
+    def __init__(self, default_ttl=100):
         self.store_dict = {}
         self.lock = asyncio.Lock()
+        self.default_ttl = default_ttl
 
     async def set_entry(self, job_id: int, entry: Parameter_store_entry):
         async with self.lock:
+            entry.set_ttl(self.default_ttl)
             self.store_dict[job_id] = entry
 
     async def get_entry_ref(self, job_id: int):
@@ -44,14 +46,17 @@ class Parameter_store:
                 entry.clear()
 
     async def clock_evict_routine(self):
-        while True:
-            async with self.lock:
-                for key, entry in self.store_dict.items():
-                    ttl = entry.decrement_ttl()
-                    if ttl <= 0:
-                        entry.clear()
-                        self.store_dict.pop(key, None)
-            await asyncio.sleep(1)
+        try:
+            while True:
+                async with self.lock:
+                    for key, entry in self.store_dict.items():
+                        ttl = entry.decrement_ttl()
+                        if ttl <= 0:
+                            entry.clear()
+                            self.store_dict.pop(key, None)
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            pass
 
     def __str__(self):
         s = ""

@@ -22,15 +22,22 @@ _cleanup_coroutines = []
 async def serve(gconfig, logger):
     async def server_graceful_shutdown():
         await server.stop(5)
+        try:
+            clock_evict_routine.cancel()
+            await clock_evict_routine
+        except asyncio.exceptions.CancelledError:
+            pass
 
     server = grpc.aio.server()
     root_ps = Parameter_server(gconfig, logger)
-    await root_ps.config()
+
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(root_ps, server)
     server.add_insecure_port(f"{gconfig['root_ps_ip']}:{gconfig['root_ps_port']}")
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     await server.start()
+
+    clock_evict_routine = asyncio.create_task(root_ps.clock_evict_routine())
     logger.print(
         f"server started, listening on {gconfig['root_ps_ip']}:{gconfig['root_ps_port']}",
         Msg_level.INFO,

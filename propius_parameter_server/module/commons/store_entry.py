@@ -8,8 +8,8 @@ class Entry:
         self.config = None
         self.param = None
 
-    def increment_round(self):
-        self.round_num += 1
+    def set_round(self, round: int):
+        self.round_num = copy.deepcopy(round)
 
     def set_config(self, config):
         self.config = copy.deepcopy(config)

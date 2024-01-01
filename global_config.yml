@@ -38,6 +38,7 @@ max_task_offer_list_len: 20
 # PARAMETER_SERVER
 root_ps_ip: localhost
 root_ps_port: 60000
+root_parameter_store_ttl: 100
 
 # Scheduling context
 standard_round_time: 300 # default round time for jobs that doesn't have history round
