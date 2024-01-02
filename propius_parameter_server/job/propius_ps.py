@@ -45,10 +45,11 @@ class Propius_ps_job:
     def close(self):
         self._cleanup_routine()
 
-    def put(self, job_id: int, round: int, meta, data):
+    def put(self, round: int, demand: int, meta, data):
+        meta["demand"] = demand
         put_msg = parameter_server_pb2.job(
             code = 5,
-            job_id = job_id,
+            job_id = self.id,
             round = round,
             meta = pickle.dumps(meta),
             data = pickle.dumps(data)
@@ -56,3 +57,29 @@ class Propius_ps_job:
 
         return_msg = self._ps_stub.JOB_PUT(put_msg)
         return True if return_msg.code == 1 else False
+    
+    def get(self, round: int):
+        get_msg = parameter_server_pb2.job(
+            code = 0,
+            job_id = self.id,
+            round = round,
+            meta = pickle.dumps(""),
+            data = pickle.dumps("")
+        )
+
+        result = self._ps_stub.JOB_GET(get_msg)
+        return (
+            result.code,
+            pickle.loads(result.meta),
+            pickle.loads(result.data) 
+        )
+    
+    def delete(self):
+        delete_msg = parameter_server_pb2.job(
+            code = 0,
+            job_id = self.id,
+            round = -1,
+            meta = pickle.dumps(""),
+            data = pickle.dumps("")
+        )
+        self._ps_stub.JOB_DELETE(delete_msg)

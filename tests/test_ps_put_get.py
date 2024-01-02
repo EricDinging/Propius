@@ -26,20 +26,51 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
 
         time.sleep(1)
         job.connect()
-        job.put(0, 0, "", "HELLO WORLD")
+        client.connect()
+        code, _, _ = client.get(0, 0)
+        assert code == 3
+
+        job.put(0, 2, {}, "HELLO WORLD")
 
         time.sleep(3)
-        client.connect()
-        code, meta, data = client.get(0, 0)
+        code, _, data = client.get(0, 0)
         assert code == 1
         assert data == "HELLO WORLD"
 
-        time.sleep(1)
+        code = client.push(0, 1, "HELLO WORLD HELLO WOLRD")
+        assert code == 4
+        code = client.push(0, 0, "HELLO WORLD HELLO WOLRD")
+        assert code == 1
 
-        job.put(0, 1, "", "HELLO")
+        code, _, _ = job.get(0)
+        assert code == 6
+
+        code = client.push(0, 0, "HELLO WORLD HELLO WOLRD HELLO WOLRD")
+        assert code == 1
+
+        code, _, data = job.get(0)
+        assert code == 1
+        assert data == "HELLO WORLD HELLO WOLRD HELLO WOLRD"
+
+        code = client.push(0, 0, "HELLO WORLD HELLO WOLRD HELLO WOLRD HELLO WORLD")
+        assert code == 1
+
+        time.sleep(2)
+        code, _, data = job.get(0)
+        assert code == 1
+        assert data == "HELLO WORLD HELLO WOLRD HELLO WOLRD HELLO WORLD"
+
+        job.put(1, 1, {}, "HELLO")
         code, _, _ = client.get(0, 0)
         assert code == 3
 
         time.sleep(1)
         code, _, _ = client.get(0, 4)
         assert code == 2
+
+        code, _, _ = client.get(0, 1)
+        assert code == 1
+
+        job.delete()
+        code, _, _ = client.get(0, 1)
+        assert code == 3

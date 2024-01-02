@@ -103,7 +103,7 @@ class Parameter_server:
             Msg_level.INFO,
         )
 
-        result = self.aggregation_store.update(job_id, round, meta["agg_cnt"], data)
+        result = await self.aggregation_store.update(job_id, round, meta["agg_cnt"], data)
         if result:
             return parameter_server_pb2.ack(code=1)
         else:
@@ -161,8 +161,8 @@ class Parameter_server:
             f"receive job DELETE request, job_id: {job_id}",
             Msg_level.INFO,
         )
-        self.parameter_store.clear_entry(job_id)
-        self.aggregation_store.clear_entry(job_id)
+        await self.parameter_store.clear_entry(job_id)
+        await self.aggregation_store.clear_entry(job_id)
 
         return parameter_server_pb2.ack(
             code=1
