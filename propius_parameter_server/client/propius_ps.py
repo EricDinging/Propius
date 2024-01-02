@@ -61,7 +61,7 @@ class Propius_ps_client:
             pickle.loads(return_msg.data)
         )
     
-    def push(self, job_id: int, round: int, data) -> bool:
+    def push(self, job_id: int, round: int, data):
         push_msg = parameter_server_pb2.job(
             code = 0,
             job_id = job_id,
@@ -72,4 +72,4 @@ class Propius_ps_client:
 
         return_msg = self._ps_stub.CLIENT_PUSH(push_msg)
 
-        return return_msg.code == 1
+        return return_msg.code

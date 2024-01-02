@@ -45,7 +45,7 @@ class Root_aggregation_store(Aggregation_store):
             self.store_dict[job_id] = entry
 
     async def get_entry(self, job_id: int):
-        return super().get_entry(job_id)
+        return await super().get_entry(job_id)
 
     async def clear_entry(self, job_id: int):
         async with self.lock:
