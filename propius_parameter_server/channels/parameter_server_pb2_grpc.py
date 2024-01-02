@@ -14,18 +14,28 @@ class Parameter_serverStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.GET = channel.unary_unary(
-            "/propius_parameter_server.Parameter_server/GET",
+        self.CLIENT_GET = channel.unary_unary(
+            "/propius_parameter_server.Parameter_server/CLIENT_GET",
             request_serializer=parameter__server__pb2.job.SerializeToString,
             response_deserializer=parameter__server__pb2.job.FromString,
         )
-        self.PUT = channel.unary_unary(
-            "/propius_parameter_server.Parameter_server/PUT",
+        self.CLIENT_PUSH = channel.unary_unary(
+            "/propius_parameter_server.Parameter_server/CLIENT_PUSH",
             request_serializer=parameter__server__pb2.job.SerializeToString,
             response_deserializer=parameter__server__pb2.ack.FromString,
         )
-        self.PUSH = channel.unary_unary(
-            "/propius_parameter_server.Parameter_server/PUSH",
+        self.JOB_PUT = channel.unary_unary(
+            "/propius_parameter_server.Parameter_server/JOB_PUT",
+            request_serializer=parameter__server__pb2.job.SerializeToString,
+            response_deserializer=parameter__server__pb2.ack.FromString,
+        )
+        self.JOB_GET = channel.unary_unary(
+            "/propius_parameter_server.Parameter_server/JOB_GET",
+            request_serializer=parameter__server__pb2.job.SerializeToString,
+            response_deserializer=parameter__server__pb2.job.FromString,
+        )
+        self.JOB_DELETE = channel.unary_unary(
+            "/propius_parameter_server.Parameter_server/JOB_DELETE",
             request_serializer=parameter__server__pb2.job.SerializeToString,
             response_deserializer=parameter__server__pb2.ack.FromString,
         )
@@ -34,19 +44,31 @@ class Parameter_serverStub(object):
 class Parameter_serverServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def GET(self, request, context):
+    def CLIENT_GET(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
-    def PUT(self, request, context):
+    def CLIENT_PUSH(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
-    def PUSH(self, request, context):
+    def JOB_PUT(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def JOB_GET(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def JOB_DELETE(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
@@ -55,18 +77,28 @@ class Parameter_serverServicer(object):
 
 def add_Parameter_serverServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        "GET": grpc.unary_unary_rpc_method_handler(
-            servicer.GET,
+        "CLIENT_GET": grpc.unary_unary_rpc_method_handler(
+            servicer.CLIENT_GET,
             request_deserializer=parameter__server__pb2.job.FromString,
             response_serializer=parameter__server__pb2.job.SerializeToString,
         ),
-        "PUT": grpc.unary_unary_rpc_method_handler(
-            servicer.PUT,
+        "CLIENT_PUSH": grpc.unary_unary_rpc_method_handler(
+            servicer.CLIENT_PUSH,
             request_deserializer=parameter__server__pb2.job.FromString,
             response_serializer=parameter__server__pb2.ack.SerializeToString,
         ),
-        "PUSH": grpc.unary_unary_rpc_method_handler(
-            servicer.PUSH,
+        "JOB_PUT": grpc.unary_unary_rpc_method_handler(
+            servicer.JOB_PUT,
+            request_deserializer=parameter__server__pb2.job.FromString,
+            response_serializer=parameter__server__pb2.ack.SerializeToString,
+        ),
+        "JOB_GET": grpc.unary_unary_rpc_method_handler(
+            servicer.JOB_GET,
+            request_deserializer=parameter__server__pb2.job.FromString,
+            response_serializer=parameter__server__pb2.job.SerializeToString,
+        ),
+        "JOB_DELETE": grpc.unary_unary_rpc_method_handler(
+            servicer.JOB_DELETE,
             request_deserializer=parameter__server__pb2.job.FromString,
             response_serializer=parameter__server__pb2.ack.SerializeToString,
         ),
@@ -82,7 +114,7 @@ class Parameter_server(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def GET(
+    def CLIENT_GET(
         request,
         target,
         options=(),
@@ -97,7 +129,7 @@ class Parameter_server(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/propius_parameter_server.Parameter_server/GET",
+            "/propius_parameter_server.Parameter_server/CLIENT_GET",
             parameter__server__pb2.job.SerializeToString,
             parameter__server__pb2.job.FromString,
             options,
@@ -111,7 +143,7 @@ class Parameter_server(object):
         )
 
     @staticmethod
-    def PUT(
+    def CLIENT_PUSH(
         request,
         target,
         options=(),
@@ -126,7 +158,7 @@ class Parameter_server(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/propius_parameter_server.Parameter_server/PUT",
+            "/propius_parameter_server.Parameter_server/CLIENT_PUSH",
             parameter__server__pb2.job.SerializeToString,
             parameter__server__pb2.ack.FromString,
             options,
@@ -140,7 +172,7 @@ class Parameter_server(object):
         )
 
     @staticmethod
-    def PUSH(
+    def JOB_PUT(
         request,
         target,
         options=(),
@@ -155,7 +187,65 @@ class Parameter_server(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/propius_parameter_server.Parameter_server/PUSH",
+            "/propius_parameter_server.Parameter_server/JOB_PUT",
+            parameter__server__pb2.job.SerializeToString,
+            parameter__server__pb2.ack.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def JOB_GET(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/propius_parameter_server.Parameter_server/JOB_GET",
+            parameter__server__pb2.job.SerializeToString,
+            parameter__server__pb2.job.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def JOB_DELETE(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/propius_parameter_server.Parameter_server/JOB_DELETE",
             parameter__server__pb2.job.SerializeToString,
             parameter__server__pb2.ack.FromString,
             options,

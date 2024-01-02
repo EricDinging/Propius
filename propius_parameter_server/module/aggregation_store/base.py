@@ -13,8 +13,8 @@ class Aggregation_store_entry(Entry):
     def __str__(self):
         return super().__str__() + f", agg_cnt: {self.agg_cnt}"
 
-    def increment_agg_cnt(self):
-        self.agg_cnt += 1
+    def increment_agg_cnt(self, cnt: int):
+        self.agg_cnt += copy.deepcopy(cnt)
 
     def get_agg_cnt(self):
         return copy.deepcopy(self.agg_cnt)
@@ -29,9 +29,9 @@ class Aggregation_store:
         async with self.lock:
             self.store_dict[job_id] = entry
 
-    async def get_entry_ref(self, job_id: int):
+    async def get_entry(self, job_id: int):
         async with self.lock:
-            return self.store_dict.get(job_id)
+            return copy.deepcopy(self.store_dict.get(job_id))
 
     async def clear_entry(self, job_id: int):
         async with self.lock:

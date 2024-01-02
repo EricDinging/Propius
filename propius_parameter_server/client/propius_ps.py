@@ -53,10 +53,23 @@ class Propius_ps_client:
             meta = pickle.dumps(""),
             data = pickle.dumps("")
         )
-        return_msg = self._ps_stub.GET(get_msg)
+        return_msg = self._ps_stub.CLIENT_GET(get_msg)
 
         return (
             return_msg.code,
             pickle.loads(return_msg.meta),
             pickle.loads(return_msg.data)
         )
+    
+    def push(self, job_id: int, round: int, data) -> bool:
+        push_msg = parameter_server_pb2.job(
+            code = 0,
+            job_id = job_id,
+            round = round,
+            meta = pickle.dumps({"agg_cnt": 1}),
+            data = pickle.dumps(data)
+        )
+
+        return_msg = self._ps_stub.CLIENT_PUSH(push_msg)
+
+        return return_msg.code == 1
