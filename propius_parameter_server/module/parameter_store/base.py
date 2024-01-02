@@ -35,9 +35,9 @@ class Parameter_store:
             entry.set_ttl(self.default_ttl)
             self.store_dict[job_id] = entry
 
-    async def get_entry_ref(self, job_id: int):
+    async def get_entry(self, job_id: int):
         async with self.lock:
-            return self.store_dict.get(job_id)
+            return copy.deepcopy(self.store_dict.get(job_id))
 
     async def clear_entry(self, job_id: int):
         async with self.lock:
