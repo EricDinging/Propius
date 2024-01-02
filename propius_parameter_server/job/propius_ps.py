@@ -54,5 +54,5 @@ class Propius_ps_job:
             data = pickle.dumps(data)
         )
 
-        return_msg = self._ps_stub.PUT(put_msg)
+        return_msg = self._ps_stub.JOB_PUT(put_msg)
         return True if return_msg.code == 1 else False

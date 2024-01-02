@@ -44,14 +44,26 @@ class Root_aggregation_store(Aggregation_store):
             entry.set_ttl(self.default_ttl)
             self.store_dict[job_id] = entry
 
-    async def get_entry_ref(self, job_id: int):
-        return super().get_entry_ref(job_id)
+    async def get_entry(self, job_id: int):
+        return super().get_entry(job_id)
 
     async def clear_entry(self, job_id: int):
         async with self.lock:
             entry: Root_aggregation_store_entry = self.store_dict.pop(job_id, None)
             if entry:
                 entry.clear()
+
+    async def update(self, job_id: int, round: int, agg_cnt: int, data) -> bool:
+        async with self.lock:
+            entry: Root_aggregation_store_entry = self.store_dict[job_id]
+            if entry:
+                if entry.get_round() == round:
+                    entry.increment_agg_cnt(agg_cnt)
+                    #TODO
+                    entry.set_param(data)
+                    entry.set_ttl(self.default_ttl)
+                    return True
+            return False
 
     def __str__(self):
         return super().__str__()

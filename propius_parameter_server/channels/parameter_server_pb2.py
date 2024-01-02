@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16parameter_server.proto\x12\x18propius_parameter_server\"N\n\x03job\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0e\n\x06job_id\x18\x02 \x01(\x05\x12\r\n\x05round\x18\x03 \x01(\x05\x12\x0c\n\x04meta\x18\x04 \x01(\x0c\x12\x0c\n\x04\x64\x61ta\x18\x05 \x01(\x0c\"\x13\n\x03\x61\x63k\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x32\xe8\x01\n\x10Parameter_server\x12\x45\n\x03GET\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.job\"\x00\x12\x45\n\x03PUT\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.ack\"\x00\x12\x46\n\x04PUSH\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.ack\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16parameter_server.proto\x12\x18propius_parameter_server\"N\n\x03job\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0e\n\x06job_id\x18\x02 \x01(\x05\x12\r\n\x05round\x18\x03 \x01(\x05\x12\x0c\n\x04meta\x18\x04 \x01(\x0c\x12\x0c\n\x04\x64\x61ta\x18\x05 \x01(\x0c\"\x13\n\x03\x61\x63k\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x32\x93\x03\n\x10Parameter_server\x12L\n\nCLIENT_GET\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.job\"\x00\x12M\n\x0b\x43LIENT_PUSH\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.ack\"\x00\x12I\n\x07JOB_PUT\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.ack\"\x00\x12I\n\x07JOB_GET\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.job\"\x00\x12L\n\nJOB_DELETE\x12\x1d.propius_parameter_server.job\x1a\x1d.propius_parameter_server.ack\"\x00\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'parameter_server_pb2', globals())
@@ -25,5 +25,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _ACK._serialized_start=132
   _ACK._serialized_end=151
   _PARAMETER_SERVER._serialized_start=154
-  _PARAMETER_SERVER._serialized_end=386
+  _PARAMETER_SERVER._serialized_end=557
 # @@protoc_insertion_point(module_scope)
