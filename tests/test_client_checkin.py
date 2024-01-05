@@ -1,9 +1,9 @@
 import subprocess
-from propius_controller.scheduler.sc_db_portal import SC_job_db_portal
-from propius_controller.config import GLOBAL_CONFIG_FILE
-from propius_controller.job.propius_job import Propius_job
-from propius_controller.util import Msg_level, Propius_logger
-from propius_controller.client.propius_client import Propius_client
+from propius.controller.scheduler.sc_db_portal import SC_job_db_portal
+from propius.controller.config import GLOBAL_CONFIG_FILE
+from propius.controller.job.propius_job import Propius_job
+from propius.controller.util import Msg_level, Propius_logger
+from propius.controller.client.propius_client import Propius_client
 from tests.util import init, clean_up
 import yaml
 import time
