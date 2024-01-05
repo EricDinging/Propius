@@ -41,8 +41,8 @@ def job_request(gconfig, demand):
     if not propius_stub.register():
         print(f"Parameter server: register failed")
 
-    propius_stub.start_request()
-
+    round = propius_stub.start_request()
+    assert round == 0
     return propius_stub
 
 
@@ -80,6 +80,7 @@ def test_client_assign(setup_and_teardown_for_stuff):
         assert result[2] == 0
         assert result[3] == "localhost"
         assert result[4] == 6000
+        assert result[5] == 0
 
         amount = job_db.get_field(0, "amount")
         demand = job_db.get_field(0, "demand")
@@ -92,7 +93,8 @@ def test_client_assign(setup_and_teardown_for_stuff):
         assert not result[1]
         assert result[2] == -1
 
-        propius_job.start_request()
+        round = propius_job.start_request()
+        assert round == 1
         time.sleep(1)
         result = client_assign(
             gconfig, {"cpu_f": 4, "ram": 5, "fp16_mem": 6, "android_os": 7}
@@ -101,3 +103,4 @@ def test_client_assign(setup_and_teardown_for_stuff):
         assert result[2] == 0
         assert result[3] == "localhost"
         assert result[4] == 6000
+        assert result[5] == 1

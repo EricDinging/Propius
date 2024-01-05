@@ -194,7 +194,7 @@ class Propius_client():
         self._custom_print(f"Client {self.id}: not eligible")
         return -1
     
-    def client_accept(self, task_id: int, num_trial: int=1)->tuple[str, int]:
+    def client_accept(self, task_id: int, num_trial: int=1)->tuple[str, int, int]:
         """Client send task id of the selected task to Propius. Returns address of the selected job parameter server if successful, None otherwise
 
         Args:
@@ -205,6 +205,7 @@ class Propius_client():
             ack: a boolean indicating whether the task selected is available for the client.
             ps_ip: ip address of the selected job parameter server
             ps_port: port number of the selected job parameter server
+            round: current round number
         Raises: 
             RuntimeError: if can't establish connection after multiple trial
         """
@@ -217,7 +218,7 @@ class Propius_client():
                 cm_ack = self._lb_stub.CLIENT_ACCEPT(client_accept_msg)
                 if cm_ack.ack:
                     self._custom_print(f"Client {self.id}: client task selection is received")
-                    return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
+                    return (pickle.loads(cm_ack.job_ip), cm_ack.job_port, cm_ack.round)
                 else:
                     self._custom_print(f"Client {self.id}: client task selection is rejected", Msg_level.WARNING)
                     return None
@@ -228,7 +229,7 @@ class Propius_client():
         
         raise RuntimeError("Unable to connect to Propius at the moment")
 
-    def auto_assign(self, ttl:int=3)->tuple[int, bool, int, str, int]:
+    def auto_assign(self, ttl:int=3)->tuple[int, bool, int, str, int, int]:
         """Automate client register, client ping, and client task selection process
 
         Args:
@@ -240,7 +241,7 @@ class Propius_client():
             task_id: task id
             ps_ip: job parameter server ip address
             ps_port: job parameter server port address
-
+            round: current task round
         Raises:
             RuntimeError: if can't establish connection after multiple trial
         """
@@ -276,9 +277,9 @@ class Propius_client():
                 continue
             else:
                 self._custom_print(f"Client {self.id}: scheduled with {task_id}", Msg_level.INFO)
-                return (self.id, True, task_id, result[0], result[1])
+                return (self.id, True, task_id, result[0], result[1], result[2])
             
-        return (self.id, False, -1, None, None)
+        return (self.id, False, -1, None, -1, -1)
     
 
 

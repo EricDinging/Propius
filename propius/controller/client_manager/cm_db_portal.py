@@ -130,6 +130,7 @@ class CM_job_db_portal(Job_db):
         Returns:
             parameter_server_ip:
             parameter_server_port
+            round
         """
 
         with self.r.json().pipeline() as pipe:
@@ -144,6 +145,7 @@ class CM_job_db_portal(Job_db):
                     demand = int(self.r.json().get(id, "$.job.demand")[0])
                     ip = str(self.r.json().get(id, "$.job.ip")[0])
                     port = int(self.r.json().get(id, "$.job.port")[0])
+                    round = int(self.r.json().get(id, "$.job.round")[0])
 
                     if amount >= demand:
                         pipe.unwatch()
@@ -164,7 +166,7 @@ class CM_job_db_portal(Job_db):
                             "JSON.NUMINCRBY", id, "$.job.attained_service", demand
                         )
                     pipe.execute()
-                    return (ip, port)
+                    return (ip, port, round)
                 except redis.WatchError:
                     pass
                 except Exception as e:
