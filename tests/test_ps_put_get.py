@@ -26,7 +26,7 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         client = Propius_ps_client(gconfig, 0)
 
         time.sleep(1)
-        job.connect()
+        
         client.connect()
         code, _, _ = client.get(0, 0)
         assert code == 3
