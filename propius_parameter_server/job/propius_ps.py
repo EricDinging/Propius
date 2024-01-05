@@ -92,6 +92,7 @@ class Propius_ps_job:
         aggregation store, and set new ones for dispatch and aggregation. The demand should be
         consistent with the scheduled demand. The dispatch entry in parameter store might
         timeout if client resource is scarce.
+        Both job entry in parameter store and aggregation store will have a new ttl.
 
         Args:
             round: current round number
