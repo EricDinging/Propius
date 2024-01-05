@@ -1,9 +1,9 @@
 import subprocess
-from propius_controller.scheduler.sc_db_portal import SC_job_db_portal
-from propius_controller.config import GLOBAL_CONFIG_FILE
-from propius_controller.job.propius_job import Propius_job
-from propius_controller.util import Msg_level, Propius_logger
-from propius_controller.client.propius_client import Propius_client
+from propius.controller.scheduler.sc_db_portal import SC_job_db_portal
+from propius.controller.config import GLOBAL_CONFIG_FILE
+from propius.controller.job.propius_job import Propius_job
+from propius.controller.util import Msg_level, Propius_logger
+from propius.controller.client.propius_client import Propius_client
 import yaml
 import time
 import os
@@ -18,19 +18,19 @@ def init(process):
         )
         process.append(p.pid)
 
-        p = subprocess.Popen(["python", "-m", "propius_controller.job_manager"])
+        p = subprocess.Popen(["python", "-m", "propius.controller.job_manager"])
         process.append(p.pid)
 
-        p = subprocess.Popen(["python", "-m", "propius_controller.scheduler"])
+        p = subprocess.Popen(["python", "-m", "propius.controller.scheduler"])
         process.append(p.pid)
 
-        p = subprocess.Popen(["python", "-m", "propius_controller.client_manager", "0"])
+        p = subprocess.Popen(["python", "-m", "propius.controller.client_manager", "0"])
         process.append(p.pid)
 
-        p = subprocess.Popen(["python", "-m", "propius_controller.client_manager", "1"])
+        p = subprocess.Popen(["python", "-m", "propius.controller.client_manager", "1"])
         process.append(p.pid)
 
-        p = subprocess.Popen(["python", "-m", "propius_controller.load_balancer"])
+        p = subprocess.Popen(["python", "-m", "propius.controller.load_balancer"])
         process.append(p.pid)
 
     except subprocess.CalledProcessError as e:
