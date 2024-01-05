@@ -5,6 +5,7 @@ from tests.util import init_ps, clean_up
 import yaml
 import pytest
 import time
+import torch
 
 
 @pytest.fixture
@@ -30,37 +31,51 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         code, _, _ = client.get(0, 0)
         assert code == 3
 
-        job.put(0, 2, {}, "HELLO WORLD")
+        job.put(0, 2, {}, [torch.zeros(2), torch.zeros(2, 3)])
 
         time.sleep(3)
         code, _, data = client.get(0, 0)
         assert code == 1
-        assert data == "HELLO WORLD"
 
-        code = client.push(0, 1, "HELLO WORLD HELLO WOLRD")
+        assert torch.equal(data[0], torch.zeros(2))
+        assert torch.equal(data[1], torch.zeros(2, 3))
+
+        data[0] += 1
+        data[1] += 1
+        code = client.push(0, 1, data)
         assert code == 4
-        code = client.push(0, 0, "HELLO WORLD HELLO WOLRD")
+        code = client.push(0, 0, data)
         assert code == 1
 
         code, _, _ = job.get(0)
         assert code == 6
 
-        code = client.push(0, 0, "HELLO WORLD HELLO WOLRD HELLO WOLRD")
+        code, _, data = client.get(0, 0)
+        data[0] += 2
+        data[1] += 2
+        code = client.push(0, 0, data)
         assert code == 1
 
         code, _, data = job.get(0)
         assert code == 1
-        assert data == "HELLO WORLD HELLO WOLRD HELLO WOLRD"
+        assert torch.equal(data[0], torch.zeros(2) + 3)
+        assert torch.equal(data[1], torch.zeros(2, 3) + 3)
 
-        code = client.push(0, 0, "HELLO WORLD HELLO WOLRD HELLO WOLRD HELLO WORLD")
+        code, _, data = client.get(0, 0)
+        data[0] += 1
+        data[1] += 1
+        code = client.push(0, 0, data)
         assert code == 1
 
         time.sleep(2)
         code, _, data = job.get(0)
         assert code == 1
-        assert data == "HELLO WORLD HELLO WOLRD HELLO WOLRD HELLO WORLD"
+        assert torch.equal(data[0], torch.zeros(2) + 4)
+        assert torch.equal(data[1], torch.zeros(2, 3) + 4)
 
-        job.put(1, 1, {}, "HELLO")
+        data[0] /= 2
+        data[1] /= 2
+        job.put(1, 1, {}, data)
         code, _, _ = client.get(0, 0)
         assert code == 3
 
@@ -68,8 +83,10 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         code, _, _ = client.get(0, 4)
         assert code == 2
 
-        code, _, _ = client.get(0, 1)
+        code, _, new_data = client.get(0, 1)
         assert code == 1
+        assert torch.equal(data[0], new_data[0])
+        assert torch.equal(data[1], new_data[1])
 
         job.delete()
         code, _, _ = client.get(0, 1)
