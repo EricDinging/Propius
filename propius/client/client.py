@@ -14,10 +14,12 @@ class Client:
         self.logging = logging
 
         self.task_id = -1
+        self.round = -1
 
-    def fetch(self, timeout=60):
+    def get(self, timeout=60):
         start_time = time.time()
-
+        
+        self.task_id, self.round = -1, -1
         while True:
             task_ids, task_private_constraint = [], []
             task_ids, task_private_constraint = self.client_controller.client_check_in()
@@ -30,7 +32,6 @@ class Client:
             while not task_ids:
                 if time.time() - start_time > timeout or ttl <= 0:
                     break
-
                 time.sleep(2)
                 ttl -= 1
                 task_ids, task_private_constraint = self.client_controller.client_ping()
@@ -47,10 +48,22 @@ class Client:
                         code, meta, data = self.client_ps.get(task_id, round)
 
                         if code == 1:
+                            self.task_id = task_id
+                            self.round = round
                             return (meta, data)
-
-            time.sleep(2)
+                        
             if time.time() - start_time > timeout:
                 break
+            time.sleep(2)
         return None
-            
+    
+    def push(self, data) -> bool:
+        if self.task_id == -1 or self.round == -1:
+            return False
+        
+        code = self.client_ps.push(self.task_id, self.round, data)
+        self.task_id, self.round = -1, -1
+        return code == 1
+        
+
+
