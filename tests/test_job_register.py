@@ -1,8 +1,8 @@
 import subprocess
-from propius_controller.database.db import Job_db
-from propius_controller.config import GLOBAL_CONFIG_FILE
-from propius_controller.job.propius_job import Propius_job
-from propius_controller.util import Msg_level, Propius_logger
+from propius.controller.database.db import Job_db
+from propius.controller.config import GLOBAL_CONFIG_FILE
+from propius.controller.job.propius_job import Propius_job
+from propius.controller.util import Msg_level, Propius_logger
 from tests.util import clean_up, init
 import yaml
 import time

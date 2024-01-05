@@ -6,7 +6,7 @@ import pickle
 import grpc
 from evaluation.job.channels import parameter_server_pb2_grpc
 from evaluation.job.channels import parameter_server_pb2
-from propius_controller.client.propius_client_aio import Propius_client_aio
+from propius.controller.client.propius_client_aio import Propius_client_aio
 from evaluation.commons import *
 from collections import deque
 import time
