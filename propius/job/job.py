@@ -13,9 +13,10 @@ class Job():
         self.verbose = verbose
         self.logging = logging
 
-        self.round = 0
         self.total_round = config["total_round"]
         self.demand = config["demand"]
+
+        self.round = 0
 
     def register(self) -> bool:
         if self.job_controller.register():
@@ -28,13 +29,13 @@ class Job():
         
     def request(self, meta: dict, data: list, demand: int = -1) -> bool:
 
-        if self.round >= self.total_round:
-            return False
         new_demand = (demand > 0)
         this_round_demand = self.demand if not new_demand else demand
 
-        if self.job_controller.start_request(new_demand, this_round_demand):
-            if self.job_ps.put(self.round, this_round_demand, meta, data) == 1:
+        this_round = self.job_controller.start_request(new_demand, this_round_demand)
+        if this_round != -1:
+            self.round = this_round
+            if self.job_ps.put(this_round, this_round_demand, meta, data) == 1:
                 return True
         return False
     
@@ -46,7 +47,6 @@ class Job():
             if code == 1:
                 self.job_controller.end_request()
 
-                self.round += 1
                 return (meta, data)
             
             elif code == 3:

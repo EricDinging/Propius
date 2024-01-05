@@ -100,10 +100,14 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         Args:
             request:
                 job_round_info
+        Returns:
+            jm_ack:
+                ack
+                round
         """
 
         job_id, demand = request.id, request.demand
-        ack = self.job_db_portal.request(job_id=job_id, demand=demand)
+        ack, round = self.job_db_portal.request(job_id=job_id, demand=demand)
 
         self.job_db_portal.update_total_demand_estimate(job_id, demand)
 
@@ -114,7 +118,7 @@ class Job_manager(propius_pb2_grpc.Job_managerServicer):
         )
 
         await self.jm_monitor.request()
-        return propius_pb2.ack(ack=ack)
+        return propius_pb2.jm_ack(ack=ack, round=round)
 
     async def JOB_END_REQUEST(self, request, context):
         """Update job metadata based on job round end request. Returns ack

@@ -207,6 +207,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 ack
                 job_ip
                 job_port
+                round
         """
 
         client_id, task_id = request.client_id, request.task_id
@@ -219,7 +220,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
                 f"job {task_id} over-assign",
                 Msg_level.WARNING,
             )
-            return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1)
+            return propius_pb2.cm_ack(ack=False, job_ip=pickle.dumps(""), job_port=-1, round=-1)
 
         if self.sched_mode == "offline":
             self.temp_client_db_portal.remove_client(client_id)
@@ -229,7 +230,7 @@ class Client_manager(propius_pb2_grpc.Client_managerServicer):
             Msg_level.INFO,
         )
         return propius_pb2.cm_ack(
-            ack=True, job_ip=pickle.dumps(result[0]), job_port=result[1]
+            ack=True, job_ip=pickle.dumps(result[0]), job_port=result[1], round=result[2]
         )
 
     async def client_assign_routine(self):

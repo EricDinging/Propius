@@ -41,8 +41,9 @@ def job_request(gconfig, demand):
 
     if not propius_stub.register():
         print(f"Parameter server: register failed")
+        return None
 
-    propius_stub.start_request()
+    assert propius_stub.start_request() == 0
 
     return propius_stub
 
