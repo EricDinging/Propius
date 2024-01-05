@@ -59,6 +59,7 @@ message cm_ack {
     bool ack = 1;
     bytes job_ip = 2;
     int32 job_port = 3;
+    int32 round = 4;
 }
 
 message client_id {

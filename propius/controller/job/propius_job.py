@@ -31,8 +31,6 @@ class Propius_job():
             ValueError: missing config args
         """
         try:
-            # TODO arguments check
-            # TODO add state flow check
             public, private = encode_specs(**job_config['public_constraint'], **job_config['private_constraint'])
             self.public_constraint = tuple(public)
             self.private_constraint = tuple(private)
