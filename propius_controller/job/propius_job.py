@@ -30,7 +30,6 @@ class Propius_job():
         Raises:
             ValueError: missing config args
         """
-        self.id = -1
         try:
             # TODO arguments check
             # TODO add state flow check
@@ -134,16 +133,13 @@ class Propius_job():
                 ack = ack_msg.ack
                 self._cleanup_routine()
                 if not ack:
-                    if self.verbose:
-                        self._custom_print(f"Job {self.id}: register failed", Msg_level.WARNING)
+                    self._custom_print(f"Job {self.id}: register failed", Msg_level.WARNING)
                     return False
                 else:
-                    if self.verbose:
-                        self._custom_print(f"Job {self.id}: register success", Msg_level.INFO)
+                    self._custom_print(f"Job {self.id}: register success", Msg_level.INFO)
                     return True
             except Exception as e:
-                if self.verbose:
-                    self._custom_print(e, Msg_level.ERROR)
+                self._custom_print(e, Msg_level.ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
                 
