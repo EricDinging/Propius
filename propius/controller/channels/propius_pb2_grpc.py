@@ -4,7 +4,6 @@ import grpc
 
 import propius.controller.channels.propius_pb2 as propius__pb2
 
-
 class Job_managerStub(object):
     """Missing associated documentation comment in .proto file."""
 
