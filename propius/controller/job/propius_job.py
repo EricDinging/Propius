@@ -144,7 +144,7 @@ class Propius_job():
         raise RuntimeError(
             "Unable to register to Propius job manager at the moment")
 
-    def start_request(self, new_demand: bool = False, demand: int = 0) -> bool:
+    def start_request(self, new_demand: bool = False, demand: int = 0) -> int:
         """Send start request to Propius job manager
         
         Client will be routed to parameter server after this call
@@ -157,6 +157,9 @@ class Propius_job():
             new_demand: boolean indicating whether to use a new demand number for this round (only)
             demand: positive integer indicating number of demand in this round.
                     If not specified, will use the default demand which is specified in the initial configuration
+
+        Returns:
+            round: an integer indicating current round, -1 for failure
 
         Raise:
             RuntimeError: if can't send request after multiple trial
@@ -184,10 +187,10 @@ class Propius_job():
                 self._cleanup_routine()
                 if not ack_msg.ack:
                     self._custom_print(f"Job {self.id}: round request failed", Msg_level.WARNING)
-                    return False
+                    return -1
                 else:
                     self._custom_print(f"Job {self.id}: round request succeeded", Msg_level.INFO)
-                    return True
+                    return ack_msg.round
             except Exception as e:
                 self._custom_print(e, Msg_level.ERROR)
                 self._cleanup_routine()

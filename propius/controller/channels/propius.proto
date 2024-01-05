@@ -7,7 +7,7 @@ package propius;
 
 service Job_manager {
     rpc JOB_REGIST (job_info) returns (job_register_ack) {}
-    rpc JOB_REQUEST (job_round_info) returns (ack) {}
+    rpc JOB_REQUEST (job_round_info) returns (jm_ack) {}
     rpc JOB_END_REQUEST (job_id) returns (ack) {}
     rpc JOB_FINISH (job_id) returns (empty) {}
     rpc HEART_BEAT (empty) returns (ack) {}
@@ -60,6 +60,11 @@ message cm_ack {
     bytes job_ip = 2;
     int32 job_port = 3;
     int32 round = 4;
+}
+
+message jm_ack {
+    bool ack = 1;
+    int32 round = 2;
 }
 
 message client_id {

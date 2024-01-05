@@ -42,10 +42,8 @@ class Client:
 
                 if task_id >= 0:
                     result = self.client_controller.client_accept(task_id)
-
                     if result:
-                        #TODO 
-                        round = 0
+                        round = result[2]
                         code, meta, data = self.client_ps.get(task_id, round)
 
                         if code == 1:

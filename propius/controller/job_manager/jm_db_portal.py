@@ -61,7 +61,7 @@ class JM_job_db_portal(Job_db):
             "total_demand": total_demand,
             "total_round": total_round,
             "attained_service": 0,
-            "round": 0,
+            "round": -1,
             "demand": 0,
             "amount": 0,
             "score": 0,
@@ -122,7 +122,7 @@ class JM_job_db_portal(Job_db):
 
                     self.remove_job(job_id)
 
-    def request(self, job_id: int, demand: int) -> bool:
+    def request(self, job_id: int, demand: int) -> tuple:
         """Update job metadata based on request
 
         Return False if the job_id is not in the database. 
@@ -132,6 +132,10 @@ class JM_job_db_portal(Job_db):
         Args:
             job_id
             demand
+
+        Returns:
+            ack: boolean for request status
+            round: current round
         """
         job_finished = False
 
@@ -143,7 +147,7 @@ class JM_job_db_portal(Job_db):
                     if not pipe.get(id):
                         pipe.unwatch()
                         break
-                    cur_round = int(self.r.json().get(id, "$.job.round")[0])
+                    cur_round = int(self.r.json().get(id, "$.job.round")[0]) + 1
                     total_round = int(
                         self.r.json().get(
                             id, "$.job.total_round")[0])
@@ -162,7 +166,7 @@ class JM_job_db_portal(Job_db):
                     pipe.execute_command(
                         'JSON.SET', id, "$.job.start_sched", time.time())
                     pipe.execute()
-                    return True
+                    return (True, cur_round)
                 except redis.WatchError:
                     pass
                 except Exception as e:
@@ -171,7 +175,7 @@ class JM_job_db_portal(Job_db):
         if job_finished:
             self.logger.print(f"job {job_id} reached final round", Msg_level.ERROR)
             self.remove_job(job_id)
-        return False
+        return (False, -1)
     
     def update_total_demand_estimate(self, job_id: int, demand: int):
         """Update total demand estimate.

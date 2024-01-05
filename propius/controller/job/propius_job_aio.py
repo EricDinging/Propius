@@ -11,8 +11,8 @@ from propius.controller.util.commons import *
 from propius.controller.job.propius_job import Propius_job
 import gc
 
-class Propius_job_aio(Propius_job):
 
+class Propius_job_aio(Propius_job):
     async def _cleanup_routine(self):
         try:
             await self._jm_channel.close()
@@ -27,10 +27,13 @@ class Propius_job_aio(Propius_job):
         except Exception as e:
             self._custom_print(e, Msg_level.ERROR)
 
-        self._jm_channel = grpc.aio.insecure_channel(f'{self._jm_ip}:{self._jm_port}')
+        self._jm_channel = grpc.aio.insecure_channel(f"{self._jm_ip}:{self._jm_port}")
         self._jm_stub = propius_pb2_grpc.Job_managerStub(self._jm_channel)
 
-        self._custom_print(f"Job: connecting to job manager at {self._jm_ip}:{self._jm_port}", Msg_level.INFO)
+        self._custom_print(
+            f"Job: connecting to job manager at {self._jm_ip}:{self._jm_port}",
+            Msg_level.INFO,
+        )
 
     async def connect(self):
         """Connect to Propius job manager
@@ -46,15 +49,15 @@ class Propius_job_aio(Propius_job):
                 self._custom_print(e, Msg_level.ERROR)
                 await asyncio.sleep(5)
 
-        raise RuntimeError(
-            "Unable to connect to Propius job manager at the moment")
-    
+        raise RuntimeError("Unable to connect to Propius job manager at the moment")
+
     async def close(self) -> None:
-        """Clean up allocation, close connection to Propius job manager
-        """
-        
+        """Clean up allocation, close connection to Propius job manager"""
+
         await self._cleanup_routine()
-        self._custom_print(f"Job {self.id}: closing connection to Propius", Msg_level.INFO)
+        self._custom_print(
+            f"Job {self.id}: closing connection to Propius", Msg_level.INFO
+        )
 
     async def register(self) -> bool:
         """Register job. Send job config to Propius job manager. This configuration will expire
@@ -84,24 +87,27 @@ class Propius_job_aio(Propius_job):
                 await self._cleanup_routine()
                 if not ack:
                     if self.verbose:
-                        self._custom_print(f"Job {self.id}: register failed", Msg_level.WARNING)
+                        self._custom_print(
+                            f"Job {self.id}: register failed", Msg_level.WARNING
+                        )
                     return False
                 else:
                     if self.verbose:
-                        self._custom_print(f"Job {self.id}: register success", Msg_level.INFO)
+                        self._custom_print(
+                            f"Job {self.id}: register success", Msg_level.INFO
+                        )
                     return True
             except Exception as e:
                 if self.verbose:
                     self._custom_print(e, Msg_level.ERROR)
                 await self._cleanup_routine()
                 await asyncio.sleep(5)
-                
-        raise RuntimeError(
-            "Unable to register to Propius job manager at the moment")
-    
-    async def start_request(self, new_demand: bool = False, demand: int = 0) -> bool:
+
+        raise RuntimeError("Unable to register to Propius job manager at the moment")
+
+    async def start_request(self, new_demand: bool = False, demand: int = 0) -> int:
         """Send start request to Propius job manager
-        
+
         Client will be routed to parameter server after this call
         until the number of clients has reached specified demand, or end_request is called.
         Note that though Propius provide the guarantee that the requested demand will be satisfied,
@@ -113,6 +119,8 @@ class Propius_job_aio(Propius_job):
             demand: positive integer indicating number of demand in this round.
                     If not specified, will use the default demand which is specified in the initial configuration
 
+        Returns:
+            round: an integer indicating current round, -1 for failure
         Raise:
             RuntimeError: if can't send request after multiple trial
             ValueError: if input demand is not a positive integer
@@ -122,15 +130,11 @@ class Propius_job_aio(Propius_job):
             this_round_demand = self.demand
         else:
             if demand <= 0:
-                raise ValueError(
-                    "Input demand number is not a positive integer")
+                raise ValueError("Input demand number is not a positive integer")
             else:
                 this_round_demand = demand
 
-        request_msg = propius_pb2.job_round_info(
-            id=self.id,
-            demand=this_round_demand
-        )
+        request_msg = propius_pb2.job_round_info(id=self.id, demand=this_round_demand)
 
         for _ in range(3):
             await self.connect()
@@ -138,18 +142,23 @@ class Propius_job_aio(Propius_job):
                 ack_msg = await self._jm_stub.JOB_REQUEST(request_msg)
                 await self._cleanup_routine()
                 if not ack_msg.ack:
-                    self._custom_print(f"Job {self.id}: round request failed", Msg_level.WARNING)
-                    return False
+                    self._custom_print(
+                        f"Job {self.id}: round request failed", Msg_level.WARNING
+                    )
+                    return -1
                 else:
-                    self._custom_print(f"Job {self.id}: round request succeeded", Msg_level.INFO)
-                    return True
+                    self._custom_print(
+                        f"Job {self.id}: round request succeeded", Msg_level.INFO
+                    )
+                    return ack_msg.round
             except Exception as e:
                 self._custom_print(e, Msg_level.ERROR)
                 await self._cleanup_routine()
                 await asyncio.sleep(5)
 
         raise RuntimeError(
-            "Unable to send start request to Propius job manager at the moment")
+            "Unable to send start request to Propius job manager at the moment"
+        )
 
     async def end_request(self) -> bool:
         """Send end request to Propius job manager. Client won't be routed to parameter server after this call,
@@ -167,10 +176,14 @@ class Propius_job_aio(Propius_job):
                 ack_msg = await self._jm_stub.JOB_END_REQUEST(request_msg)
                 await self._cleanup_routine()
                 if not ack_msg.ack:
-                    self._custom_print(f"Job {self.id}: end request failed", Msg_level.WARNING)
+                    self._custom_print(
+                        f"Job {self.id}: end request failed", Msg_level.WARNING
+                    )
                     return False
                 else:
-                    self._custom_print(f"Job {self.id}: end request succeeded", Msg_level.INFO)
+                    self._custom_print(
+                        f"Job {self.id}: end request succeeded", Msg_level.INFO
+                    )
                     return True
             except Exception as e:
                 self._custom_print(e, Msg_level.ERROR)
@@ -178,7 +191,8 @@ class Propius_job_aio(Propius_job):
                 await asyncio.sleep(5)
 
         raise RuntimeError(
-            "Unable to send end request to Propius job manager at this moment")
+            "Unable to send end request to Propius job manager at this moment"
+        )
 
     async def complete_job(self):
         """Send complete job request to Propius job manager. Job configuration will be removed from Propius.
@@ -202,9 +216,9 @@ class Propius_job_aio(Propius_job):
                 await asyncio.sleep(5)
 
         raise RuntimeError(
-            "Unable to send complete job request to Propius job manager at this moment")
-    
+            "Unable to send complete job request to Propius job manager at this moment"
+        )
+
     async def heartbeat(self):
-        """Keep connection alive for long intervals during request
-        """
+        """Keep connection alive for long intervals during request"""
         await self._jm_stub.HEART_BEAT(propius_pb2.empty())

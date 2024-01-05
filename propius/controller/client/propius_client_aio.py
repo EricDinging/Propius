@@ -194,7 +194,7 @@ class Propius_client_aio():
         self._custom_print(f"Client {self.id}: not eligible")
         return -1
     
-    async def client_accept(self, task_id: int, num_trial: int=1)->tuple[str, int]:
+    async def client_accept(self, task_id: int, num_trial: int=1)->tuple[str, int, int]:
         """Client send task id of the selected task to Propius. Returns address of the selected job parameter server if successful, None otherwise
 
         Args:
@@ -205,6 +205,7 @@ class Propius_client_aio():
             ack: a boolean indicating whether the task selected is available for the client.
             ps_ip: ip address of the selected job parameter server
             ps_port: port number of the selected job parameter server
+            round: current round
         Raises: 
             RuntimeError: if can't establish connection after multiple trial
         """
@@ -218,7 +219,7 @@ class Propius_client_aio():
                 
                 if cm_ack.ack:
                     self._custom_print(f"Client {self.id}: client task selection is received")
-                    return (pickle.loads(cm_ack.job_ip), cm_ack.job_port)
+                    return (pickle.loads(cm_ack.job_ip), cm_ack.job_port, cm_ack.round)
                 else:
                     self._custom_print(f"Client {self.id}: client task selection is rejected", Msg_level.WARNING)
                     return None
@@ -241,7 +242,7 @@ class Propius_client_aio():
             task_id: task id
             ps_ip: job parameter server ip address
             ps_port: job parameter server port address
-
+            round: current task round
         Raises:
             RuntimeError: if can't establish connection after multiple trial
         """
@@ -278,9 +279,9 @@ class Propius_client_aio():
                 continue
             else:
                 self._custom_print(f"Client {self.id}: scheduled with {task_id}", Msg_level.INFO)
-                return (self.id, True, task_id, result[0], result[1])
+                return (self.id, True, task_id, result[0], result[1], result[2])
             
-        return (self.id, False, -1, None, None)
+        return (self.id, False, -1, None, -1, -1)
     
 
 
