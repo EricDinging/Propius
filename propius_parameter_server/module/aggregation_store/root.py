@@ -4,8 +4,10 @@ from propius_parameter_server.module.aggregation_store.base import (
     Aggregation_store_entry,
     Aggregation_store,
 )
+from propius_parameter_server.module.reduce import base_reduce
 import copy
 import asyncio
+import torch
 
 
 class Root_aggregation_store_entry(Aggregation_store_entry):
@@ -59,8 +61,7 @@ class Root_aggregation_store(Aggregation_store):
             if entry:
                 if entry.get_round() == round:
                     entry.increment_agg_cnt(agg_cnt)
-                    #TODO
-                    entry.set_param(data)
+                    base_reduce(entry.param, data, torch.Tensor.add_)
                     entry.set_ttl(self.default_ttl)
                     return True
             return False
