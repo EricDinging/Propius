@@ -15,8 +15,8 @@ class Propius_ps_client:
 
         Args:
             config:
-                root_ps_ip
-                root_ps_port
+                ps_ip
+                ps_port
             id: client_id received from client_manager
             verbose: whether to print or not
             logging: whether to log or not
@@ -25,8 +25,8 @@ class Propius_ps_client:
         """
         try:
             self.id = id
-            self._ps_ip = config["root_ps_ip"]
-            self._ps_port = config["root_ps_port"]
+            self._ps_ip = config["ps_ip"]
+            self._ps_port = config["ps_port"]
             self._ps_channel = None
             self._ps_stub = None
 
