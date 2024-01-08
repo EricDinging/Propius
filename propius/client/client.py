@@ -11,11 +11,11 @@ class Client:
             config:
                 public_specifications: dict
                 private_specifications: dict
-                load_balancer_ip
-                load_balancer_port
+                load_balancer_ip: load balancer IP
+                load_balancer_port: load balancer port
                 option: float
-                ps_ip
-                ps_port
+                ps_ip: parameter server IP
+                ps_port: parameter server port
             verbose: whether to print or not
             logging: whether to log or not
 
@@ -35,7 +35,9 @@ class Client:
         self.round = -1
 
     def get(self, timeout: float = 60):
-        """Get task parameters and config. This is a blocking call.
+        """Get task parameters and config. 
+        
+        This is a blocking call, and could be called multiple times
 
         Args:
             timeout: default to 60 seconds
@@ -48,6 +50,8 @@ class Client:
         start_time = time.time()
 
         self.task_id, self.round = -1, -1
+
+        self.client_controller.connect()
         while True:
             task_ids, task_private_constraint = [], []
             task_ids, task_private_constraint = self.client_controller.client_check_in()
@@ -87,7 +91,8 @@ class Client:
 
     def push(self, data: list) -> bool:
         """Push local execution result to parameter server.
-        This call should follow a get call.
+        This call should be called after a get call, and should be
+        only called once before the next get call.
 
         Args:
             data: list of tensor
@@ -101,4 +106,5 @@ class Client:
 
         code = self.client_ps.push(self.task_id, self.round, data)
         self.task_id, self.round = -1, -1
+        self.client_controller.close()
         return code == 1
