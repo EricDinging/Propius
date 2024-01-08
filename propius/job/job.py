@@ -13,12 +13,12 @@ class Job:
                 private_constraint: dict
                 total_round: optional
                 demand: estimated demand per round
-                job_manager_ip
-                job_manager_port
+                job_manager_ip: job manager IP
+                job_manager_port: job manager port
                 ip: ip of the job server
                 port: port number of the job server
-                root_ps_ip
-                root_ps_port
+                root_ps_ip: root parameter server IP
+                root_ps_port: root parameter server port
             verbose: whether to print or not
             logging: whether to log or not
 

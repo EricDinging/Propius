@@ -38,8 +38,8 @@ class Parameter_server:
             code=3,
             job_id=-1,
             round=-1,
-            meta=pickle.dumps(""),
-            data=pickle.dumps(""),
+            meta=pickle.dumps({}),
+            data=pickle.dumps([]),
         )
         if entry:
             entry_round = entry.get_round()
@@ -49,7 +49,7 @@ class Parameter_server:
                     code=1,
                     job_id=job_id,
                     round=entry_round,
-                    meta=pickle.dumps(""),
+                    meta=pickle.dumps({}),
                     data=pickle.dumps(entry.get_param()),
                 )
             elif entry_round < round:
@@ -60,8 +60,8 @@ class Parameter_server:
                     code=2,
                     job_id=job_id,
                     round=entry_round,
-                    meta=pickle.dumps(""),
-                    data=pickle.dumps(""),
+                    meta=pickle.dumps({}),
+                    data=pickle.dumps([]),
                 )
         return return_msg
 
@@ -78,13 +78,13 @@ class Parameter_server:
         await self.parameter_store.clear_entry(job_id)
 
         new_entry = Parameter_store_entry()
-        new_entry.set_config("")
+        new_entry.set_config({})
         new_entry.set_param(data)
         new_entry.set_round(round)
         await self.parameter_store.set_entry(job_id, new_entry)
 
         new_agg_entry = Root_aggregation_store_entry()
-        new_agg_entry.set_config("")
+        new_agg_entry.set_config({})
         new_agg_entry.set_demand(meta["demand"])
         new_agg_entry.set_round(round)
         new_agg_entry.set_param(data)
@@ -127,8 +127,8 @@ class Parameter_server:
             code=3,
             job_id=-1,
             round=-1,
-            meta=pickle.dumps(""),
-            data=pickle.dumps(""),
+            meta=pickle.dumps({}),
+            data=pickle.dumps([]),
         )
         if entry and round == entry.get_round():
             if entry.get_demand() <= entry.get_agg_cnt():
@@ -137,7 +137,7 @@ class Parameter_server:
                     code=1,
                     job_id=job_id,
                     round=round,
-                    meta=pickle.dumps(""),
+                    meta=pickle.dumps({}),
                     data=pickle.dumps(entry.get_param()),
                 )
             else:
@@ -149,7 +149,7 @@ class Parameter_server:
                     code=6,
                     job_id=job_id,
                     round=round,
-                    meta=pickle.dumps(""),
+                    meta=pickle.dumps({}),
                     data=pickle.dumps(""),
                 )
         return return_msg
