@@ -23,6 +23,7 @@ Client Metadata:
 - public attributes
 - client IP
 - client performance in last rounds (eg. speed)
+- past client attribute distribution
 
 
 ## Online scheduling
@@ -51,7 +52,7 @@ class FIFO_scheduler(Scheduler):
 ```
 
 ## Offline
-Though online scheduling minizes state management for ephemeral resources over the network, it has several limitations, just to mention a few: (1) enforcing a uniform score calculation across every jobs, which may have different service requirements (2) making real-time binding decisions upon client check-in (3) difficult implementation of fair allocation. Therefore, we uses a temporary client database to cache active client resources (with a ttl), and batch-process client-to-job binding process.
+Though online scheduling minizes state management for ephemeral resources over the network, it has several limitations, just to mention a few: (1) enforcing a priority for every job under the same scale, which is difficult to calculate for complex scheduling policy (2) making quick selection decisions under a local view upon client check-in (3) difficult to coordinate between clients. Therefore, we uses a temporary client database to cache active client resources (with a ttl), and batch-process client-to-job binding process.
 
 Offline `scheduler` maintains a `job_group` data structure, which comprises of several job groups, and their corresponding conditions, which specify a coarse client subset. `client_manager` will aynchronously ping `scheduler` for this `job_group` update, and `scheduler` should return this data structure back to `client_manager`. `client_manager` will then enforce the coarse group condition, pairing a job group to an active client subset, as well as ensuring end-to-end constraint satisfaction. Clients will asynchronously ping `client_manager`, looking up the `temp_client_db` for binded jobs (tasks).
 
