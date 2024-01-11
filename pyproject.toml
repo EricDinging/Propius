@@ -20,13 +20,14 @@ dependencies = [
 ]
 
 [project.scripts]
-propius-controller-scheduler = "propius_controller.scheduler.__main__:main"
-propius-controller-job-manager = "propius_controller.job_manager.__main__:main"
-propius-controller-client-manager = "propius_controller.client_manager.__main__:main"
-propius-controller-load-balancer = "propius_controller.load_balancer.__main__:main"
+propius-controller-scheduler = "propius.controller.scheduler.__main__:main"
+propius-controller-job-manager = "propius.controller.job_manager.__main__:main"
+propius-controller-client-manager = "propius.controller.client_manager.__main__:main"
+propius-controller-load-balancer = "propius.controller.load_balancer.__main__:main"
+propius-parameter-server-root = "propius.parameter_server.root.__main__:main"
 
 [tool.setuptools]
-packages = ["propius_controller"]
+packages = ["propius"]
 
 [tool.pylint.typecheck]
 # List of decorators that change the signature of a decorated function.

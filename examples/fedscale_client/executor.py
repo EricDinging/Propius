@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from fedscale.cloud.execution.data_processor import collate  # TODO voice collate fn
-from propius_controller.util.db import geq
+from propius.controller.util.db import geq
 import yaml
-from propius_controller.channels import propius_pb2_grpc
-from propius_controller.channels import propius_pb2
+from propius.controller.channels import propius_pb2_grpc
+from propius.controller.channels import propius_pb2
 from fedscale.dataloaders.divide_data import DataPartitioner
 from fedscale.cloud.fllibs import *
 from fedscale.cloud.execution.torch_client import TorchClient
