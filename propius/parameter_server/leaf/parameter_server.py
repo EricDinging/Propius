@@ -59,11 +59,7 @@ class Parameter_server:
             self.logger.print(e, Msg_level.ERROR)
 
     async def _new_param(self, job_id: int, round: int, root_return_msg):
-        # FIXTHIS should just upload
-        await self.aggregation_store.clear_entry(job_id)
-
         await self.parameter_store.clear_entry(job_id)
-
         data = pickle.loads(root_return_msg.data)
         meta = pickle.loads(root_return_msg.meta)
         new_entry = Parameter_store_entry()
@@ -72,13 +68,8 @@ class Parameter_server:
         new_entry.set_round(round)
         await self.parameter_store.set_entry(job_id, new_entry)
 
-        new_agg_entry = Aggregation_store_entry()
-        new_agg_entry.set_config(meta)
-        new_agg_entry.set_round(round)
-        new_agg_entry.set_param(data)
-        await self.aggregation_store.set_entry(job_id, new_agg_entry)
-
     async def CLIENT_GET(self, request, context):
+        """Handler for client get request."""
         job_id, round = request.job_id, request.round
         self.logger.print(
             f"receive client GET request, job_id: {job_id}, round: {round}",
@@ -138,12 +129,36 @@ class Parameter_server:
 
         return return_msg
 
-    async def JOB_PUT(self, request, context):
-        # depreciated
+    async def CLIENT_PUSH(self, request, context):
+        """Handler for client updates, only accept when aggregation store has corresponding entry."""
+
+        job_id, round = request.job_id, request.round
+        meta = pickle.loads(request.meta)
+        data = pickle.loads(request.data)
+        self.logger.print(
+            f"receive client PUSH request, job_id: {job_id}, round: {round}",
+            Msg_level.INFO,
+        )
+
+        # aggregate, create a new entry if necessary
+        result = await self.aggregation_store.update(
+            job_id, round, meta["agg_cnt"], data
+        )
+        if result:
+            return parameter_server_pb2.ack(code=1)
+        else:
+            return parameter_server_pb2.ack(code=4)
+
+    async def _leaf_job_push_one(self, job_id):
+        """Send one aggregation entry to root, clear entry"""
         pass
 
-    async def CLIENT_PUSH(self, request, context):
-        # TODO
+    async def _leaf_push(self):
+        """Send all aggregation entry to root"""
+        pass
+
+    async def JOB_PUT(self, request, context):
+        # depreciated
         pass
 
     async def JOB_GET(self, request, context):

@@ -26,6 +26,7 @@ class Parameter_server:
         self.logger: Propius_logger = logger
 
     async def CLIENT_GET(self, request, context):
+        """Handler for client get request."""
         job_id, round = request.job_id, request.round
         self.logger.print(
             f"receive client GET request, job_id: {job_id}, round: {round}",

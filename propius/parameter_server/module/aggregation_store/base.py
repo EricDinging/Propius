@@ -41,16 +41,27 @@ class Aggregation_store:
             if entry:
                 entry.clear()
 
-    async def update(self, job_id: int, round: int, agg_cnt: int, data) -> bool:
+    async def update(self, job_id: int, round: int, agg_cnt: int, data, meta={}) -> bool:
         async with self.lock:
             entry: Aggregation_store_entry = self.store_dict[job_id]
             if entry:
                 if entry.get_round() == round:
                     entry.increment_agg_cnt(agg_cnt)
-                    base_reduce(entry.param, data, torch.Tensor.add_)
+                    if entry.param:
+                        base_reduce(entry.param, data, torch.Tensor.add_)
+                    else:
+                        entry.set_param(data)
                     return True
-            return False
-        
+                elif entry.get_round() > round:
+                    return False
+
+            new_agg_entry = Aggregation_store_entry()
+            new_agg_entry.set_config(meta)
+            new_agg_entry.set_round(round)
+            new_agg_entry.set_param(data)
+            self.store_dict[job_id] = new_agg_entry
+            return True
+
     async def fetch(self) -> dict:
         async with self.lock:
             result = self.store_dict
