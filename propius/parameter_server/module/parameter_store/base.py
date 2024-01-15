@@ -14,14 +14,14 @@ class Parameter_store_entry(Entry):
         return super().__str__() + f", ttl: {self.ttl}"
 
     def set_ttl(self, ttl: int):
-        self.ttl = copy.deepcopy(ttl)
+        self.ttl = ttl
 
     def decrement_ttl(self) -> int:
         self.ttl -= 1
         return self.get_ttl()
 
     def get_ttl(self) -> int:
-        return copy.deepcopy(self.ttl)
+        return self.ttl
 
 
 class Parameter_store:

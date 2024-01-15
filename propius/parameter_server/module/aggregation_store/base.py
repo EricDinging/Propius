@@ -1,8 +1,10 @@
 """Aggregation store base module."""
 
 from propius.parameter_server.module.commons import Entry
+from propius.parameter_server.module.reduce import base_reduce
 import copy
 import asyncio
+import torch
 
 
 class Aggregation_store_entry(Entry):
@@ -14,10 +16,10 @@ class Aggregation_store_entry(Entry):
         return super().__str__() + f", agg_cnt: {self.agg_cnt}"
 
     def increment_agg_cnt(self, cnt: int):
-        self.agg_cnt += copy.deepcopy(cnt)
+        self.agg_cnt += cnt
 
     def get_agg_cnt(self):
-        return copy.deepcopy(self.agg_cnt)
+        return self.agg_cnt
 
 
 class Aggregation_store:
@@ -38,6 +40,22 @@ class Aggregation_store:
             entry: Aggregation_store_entry = self.store_dict.pop(job_id, None)
             if entry:
                 entry.clear()
+
+    async def update(self, job_id: int, round: int, agg_cnt: int, data) -> bool:
+        async with self.lock:
+            entry: Aggregation_store_entry = self.store_dict[job_id]
+            if entry:
+                if entry.get_round() == round:
+                    entry.increment_agg_cnt(agg_cnt)
+                    base_reduce(entry.param, data, torch.Tensor.add_)
+                    return True
+            return False
+        
+    async def fetch(self) -> dict:
+        async with self.lock:
+            result = self.store_dict
+            self.store_dict = {}
+            return result
 
     def __str__(self):
         s = ""

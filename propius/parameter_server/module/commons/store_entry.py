@@ -9,22 +9,22 @@ class Entry:
         self.param = None
 
     def set_round(self, round: int):
-        self.round_num = copy.deepcopy(round)
+        self.round_num = round
 
     def set_config(self, config):
-        self.config = copy.deepcopy(config)
+        self.config = config
 
     def set_param(self, param):
-        self.param = copy.deepcopy(param)
+        self.param = param
 
     def get_round(self) -> int:
-        return copy.deepcopy(self.round_num)
+        return self.round_num
     
     def get_config(self):
-        return copy.deepcopy(self.config)
+        return self.config
     
     def get_param(self):
-        return copy.deepcopy(self.param)
+        return self.param
     
     def clear(self):
         self.config = None
