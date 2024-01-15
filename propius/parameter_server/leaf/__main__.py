@@ -23,8 +23,8 @@ async def serve(gconfig, logger):
     async def server_graceful_shutdown():
         await server.stop(5)
         try:
-            # clock_evict_routine.cancel()
-            # await clock_evict_routine
+            clock_evict_routine.cancel()
+            await clock_evict_routine
             pass
         except asyncio.exceptions.CancelledError:
             pass
@@ -38,7 +38,7 @@ async def serve(gconfig, logger):
 
     await server.start()
 
-    # clock_evict_routine = asyncio.create_task(root_ps.clock_evict_routine())
+    clock_evict_routine = asyncio.create_task(root_ps.clock_evict_routine())
     logger.print(
         f"server started, listening on {gconfig['leaf_ps_ip']}:{gconfig['leaf_ps_port']}",
         Msg_level.INFO,

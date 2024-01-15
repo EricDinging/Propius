@@ -41,6 +41,9 @@ def init_ps(process):
     try:
         p = subprocess.Popen(["propius-parameter-server-root"])
         process.append(p.pid)
+        
+        p = subprocess.Popen(["propius-parameter-server-leaf"])
+        process.append(p.pid)
     except subprocess.CalledProcessError as e:
         print(f"Error: {e}")
 

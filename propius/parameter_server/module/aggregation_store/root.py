@@ -20,7 +20,7 @@ class Root_aggregation_store_entry(Aggregation_store_entry):
         return super().__str__() + f", ttl: {self.ttl}, demand: {self.demand}"
 
     def set_ttl(self, ttl: int):
-        self.ttl = ttl
+        self.ttl = copy.deepcopy(ttl)
 
     def decrement_ttl(self) -> int:
         self.ttl -= 1
@@ -33,7 +33,7 @@ class Root_aggregation_store_entry(Aggregation_store_entry):
         return self.demand
 
     def set_demand(self, demand: int):
-        self.demand = demand
+        self.demand = copy.deepcopy(demand)
 
 
 class Root_aggregation_store(Aggregation_store):

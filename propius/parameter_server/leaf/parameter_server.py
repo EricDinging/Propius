@@ -57,11 +57,11 @@ class Parameter_server:
             )
         except Exception as e:
             self.logger.print(e, Msg_level.ERROR)
-    
+
     async def _new_param(self, job_id: int, round: int, root_return_msg):
-        #FIXTHIS should just upload
+        # FIXTHIS should just upload
         await self.aggregation_store.clear_entry(job_id)
-        
+
         await self.parameter_store.clear_entry(job_id)
 
         data = pickle.loads(root_return_msg.data)
@@ -122,11 +122,11 @@ class Parameter_server:
             data=pickle.dumps([]),
         )
         try:
-            root_return_msg = self._root_ps_stub.CLIENT_GET(get_msg)
             self.logger.print(
                 f"cache miss, fetch from root for job {job_id} round {round}",
                 Msg_level.INFO,
             )
+            root_return_msg = self._root_ps_stub.CLIENT_GET(get_msg)
             return_msg = root_return_msg
 
             if root_return_msg.code == 1:
@@ -137,3 +137,28 @@ class Parameter_server:
             self.logger.print(e, Msg_level.ERROR)
 
         return return_msg
+
+    async def JOB_PUT(self, request, context):
+        # depreciated
+        pass
+
+    async def CLIENT_PUSH(self, request, context):
+        # TODO
+        pass
+
+    async def JOB_GET(self, request, context):
+        # depreciated
+        pass
+
+    async def JOB_DELETE(self, request, context):
+        # depreciated
+        pass
+
+    async def clock_evict_routine(self):
+        ps_routine = asyncio.create_task(self.parameter_store.clock_evict_routine())
+        # agg_routine = asyncio.create_task(self.aggregation_store.clock_evict_routine())
+
+        try:
+            await ps_routine
+        except asyncio.CancelledError:
+            pass

@@ -16,7 +16,7 @@ class Aggregation_store_entry(Entry):
         return super().__str__() + f", agg_cnt: {self.agg_cnt}"
 
     def increment_agg_cnt(self, cnt: int):
-        self.agg_cnt += cnt
+        self.agg_cnt += copy.deepcopy(cnt)
 
     def get_agg_cnt(self):
         return self.agg_cnt

@@ -9,13 +9,13 @@ class Entry:
         self.param = None
 
     def set_round(self, round: int):
-        self.round_num = round
+        self.round_num = copy.deepcopy(round)
 
     def set_config(self, config):
-        self.config = config
+        self.config = copy.deepcopy(config)
 
     def set_param(self, param):
-        self.param = param
+        self.param = copy.deepcopy(param)
 
     def get_round(self) -> int:
         return self.round_num

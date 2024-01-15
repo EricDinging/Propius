@@ -23,10 +23,14 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
 
         job = Propius_ps_job(gconfig, 0)
-        client = Propius_ps_client(gconfig, 0)
+        client_config = {
+            "leaf_ps_ip": gconfig["root_ps_ip"],
+            "leaf_ps_port": gconfig["root_ps_port"],
+        }
+        client = Propius_ps_client(client_config, 0)
 
         time.sleep(1)
-        
+
         client.connect()
         code, _, _ = client.get(0, 0)
         assert code == 3
@@ -40,6 +44,7 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         assert torch.equal(data[0], torch.zeros(2))
         assert torch.equal(data[1], torch.zeros(2, 3))
 
+        print(data[0])
         data[0] += 1
         data[1] += 1
         code = client.push(0, 1, data)
@@ -53,6 +58,8 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         code, _, data = client.get(0, 0)
         data[0] += 2
         data[1] += 2
+        print(data[0])
+
         code = client.push(0, 0, data)
         assert code == 1
 
