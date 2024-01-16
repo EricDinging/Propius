@@ -41,8 +41,9 @@ root_ps_port: 60000
 leaf_ps_ip: localhost
 leaf_ps_port: 60001
 root_parameter_store_ttl: 1000
-leaf_parameter_store_ttl: 3
 root_aggregation_store_ttl: 2000
+leaf_parameter_store_ttl: 3
+leaf_parameter_store_push_interval: 3
 
 # Scheduling context
 standard_round_time: 300 # default round time for jobs that doesn't have history round

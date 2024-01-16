@@ -90,7 +90,7 @@ class Parameter_server:
         new_agg_entry.set_config({})
         new_agg_entry.set_demand(meta["demand"])
         new_agg_entry.set_round(round)
-        new_agg_entry.set_param(data)
+        # new_agg_entry.set_param(data)
         await self.aggregation_store.set_entry(job_id, new_agg_entry)
 
         return_msg = parameter_server_pb2.ack(code=1)

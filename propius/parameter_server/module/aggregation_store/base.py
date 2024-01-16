@@ -27,6 +27,10 @@ class Aggregation_store:
         self.store_dict = {}
         self.lock = asyncio.Lock()
 
+    async def get_key(self):
+        async with self.lock:
+            return copy.deepcopy(self.store_dict.keys())
+
     async def set_entry(self, job_id: int, entry: Aggregation_store_entry):
         async with self.lock:
             self.store_dict[job_id] = entry
@@ -43,7 +47,7 @@ class Aggregation_store:
 
     async def update(self, job_id: int, round: int, agg_cnt: int, data, meta={}) -> bool:
         async with self.lock:
-            entry: Aggregation_store_entry = self.store_dict[job_id]
+            entry: Aggregation_store_entry = self.store_dict.get(job_id)
             if entry:
                 if entry.get_round() == round:
                     entry.increment_agg_cnt(agg_cnt)

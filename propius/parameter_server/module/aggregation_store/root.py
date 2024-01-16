@@ -57,11 +57,14 @@ class Root_aggregation_store(Aggregation_store):
 
     async def update(self, job_id: int, round: int, agg_cnt: int, data) -> bool:
         async with self.lock:
-            entry: Root_aggregation_store_entry = self.store_dict[job_id]
+            entry: Root_aggregation_store_entry = self.store_dict.get(job_id)
             if entry:
                 if entry.get_round() == round:
                     entry.increment_agg_cnt(agg_cnt)
-                    base_reduce(entry.param, data, torch.Tensor.add_)
+                    if entry.get_param():
+                        base_reduce(entry.param, data, torch.Tensor.add_)
+                    else:
+                        entry.set_param(data)
                     entry.set_ttl(self.default_ttl)
                     return True
             return False

@@ -23,7 +23,7 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
 
         job = Propius_ps_job(gconfig, 0)
-        client = Propius_ps_client(gconfig, 0)
+        client = Propius_ps_client(gconfig, 0, verbose=True)
 
         time.sleep(1)
 
@@ -60,3 +60,26 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
 
         code, _, data = client.get(0, 0)
         assert code == 3
+
+        # push
+        job.put(2, 2, {}, [torch.ones(2), torch.ones(2, 3)])
+        code, _, data = client.get(0, 2)
+        update1 = [data[0] * 0.5, data[1] * 0.5]
+        update2 = [data[0] * 2, data[1] * 2]
+
+        client.push(0, 2, update1)
+        client.push(0, 2, update2)
+
+        code, _, data = job.get(2)
+        assert code == 6
+        time.sleep(gconfig["leaf_parameter_store_push_interval"] + 1)
+        code, _, data = job.get(2)
+        assert code == 1
+        assert torch.equal(data[0], torch.ones(2) * 2.5)
+        assert torch.equal(data[1], torch.ones(2, 3) * 2.5)
+
+        job.delete()
+        time.sleep(gconfig["leaf_parameter_store_ttl"])
+        code, _, data = client.get(0, 2)
+        assert code == 3
+

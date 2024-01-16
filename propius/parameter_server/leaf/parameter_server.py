@@ -31,6 +31,8 @@ class Parameter_server:
         self._root_ps_channel = None
         self._root_ps_stub = None
 
+        self.push_interval = gconfig["leaf_parameter_store_push_interval"]
+
         self._connect_root_ps()
 
     def _cleanup_routine(self):
@@ -149,13 +151,44 @@ class Parameter_server:
         else:
             return parameter_server_pb2.ack(code=4)
 
-    async def _leaf_job_push_one(self, job_id):
-        """Send one aggregation entry to root, clear entry"""
-        pass
-
-    async def _leaf_push(self):
+    async def _leaf_push_routine(self):
         """Send all aggregation entry to root"""
-        pass
+        try:
+            while True:
+                self.logger.print("push iteration", Msg_level.INFO)
+                jobs = await self.aggregation_store.get_key()
+
+                self.logger.print("good", Msg_level.INFO)
+                self.logger.print(jobs, Msg_level.INFO)
+                
+                # for job_id in jobs:
+                #     entry: Aggregation_store_entry = (
+                #         await self.aggregation_store.get_entry(job_id)
+                #     )
+
+                #     if entry:
+                #         self.logger.print(
+                #             f"push {job_id} agg to root, cnt: {entry.get_param()}",
+                #             Msg_level.INFO,
+                #         )
+                #         try:
+                #             push_msg = parameter_server_pb2.job(
+                #                 code=0,
+                #                 job_id=job_id,
+                #                 round=entry.get_round(),
+                #                 meta=pickle.dumps({"agg_cnt": entry.get_agg_cnt()}),
+                #                 data=pickle.dumps(entry.get_param()),
+                #             )
+                #             self._root_ps_stub.CLIENT_PUSH(push_msg)
+                #         except Exception as e:
+                #             self.logger.print(e, Msg_level.ERROR)
+
+                #     await self.aggregation_store.clear_entry(job_id)
+
+                # await asyncio.sleep(self.push_interval)
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            pass
 
     async def JOB_PUT(self, request, context):
         # depreciated
@@ -170,10 +203,11 @@ class Parameter_server:
         pass
 
     async def clock_evict_routine(self):
+        self.logger.print("evict routine started", Msg_level.INFO)
         ps_routine = asyncio.create_task(self.parameter_store.clock_evict_routine())
-        # agg_routine = asyncio.create_task(self.aggregation_store.clock_evict_routine())
+        push_routine = asyncio.create_task(self._leaf_push_routine())
 
         try:
-            await ps_routine
+            await asyncio.gather(ps_routine, push_routine)
         except asyncio.CancelledError:
             pass

@@ -14,8 +14,8 @@ class Client:
                 load_balancer_ip: load balancer IP
                 load_balancer_port: load balancer port
                 option: float
-                ps_ip: parameter server IP
-                ps_port: parameter server port
+                leaf_ps_ip: parameter server IP
+                leaf_ps_port: parameter server port
             verbose: whether to print or not
             logging: whether to log or not
 

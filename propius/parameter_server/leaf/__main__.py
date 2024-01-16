@@ -30,15 +30,15 @@ async def serve(gconfig, logger):
             pass
 
     server = grpc.aio.server()
-    root_ps = Parameter_server(gconfig, logger)
+    leaf_ps = Parameter_server(gconfig, logger)
 
-    parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(root_ps, server)
+    parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(leaf_ps, server)
     server.add_insecure_port(f"{gconfig['leaf_ps_ip']}:{gconfig['leaf_ps_port']}")
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     await server.start()
 
-    clock_evict_routine = asyncio.create_task(root_ps.clock_evict_routine())
+    clock_evict_routine = asyncio.create_task(leaf_ps.clock_evict_routine())
     logger.print(
         f"server started, listening on {gconfig['leaf_ps_ip']}:{gconfig['leaf_ps_port']}",
         Msg_level.INFO,
