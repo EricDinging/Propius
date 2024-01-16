@@ -158,35 +158,34 @@ class Parameter_server:
                 self.logger.print("push iteration", Msg_level.INFO)
                 jobs = await self.aggregation_store.get_key()
 
-                self.logger.print("good", Msg_level.INFO)
+                # self.logger.print("good", Msg_level.INFO)
                 self.logger.print(jobs, Msg_level.INFO)
                 
-                # for job_id in jobs:
-                #     entry: Aggregation_store_entry = (
-                #         await self.aggregation_store.get_entry(job_id)
-                #     )
+                for job_id in jobs:
+                    entry: Aggregation_store_entry = (
+                        await self.aggregation_store.get_entry(job_id)
+                    )
 
-                #     if entry:
-                #         self.logger.print(
-                #             f"push {job_id} agg to root, cnt: {entry.get_param()}",
-                #             Msg_level.INFO,
-                #         )
-                #         try:
-                #             push_msg = parameter_server_pb2.job(
-                #                 code=0,
-                #                 job_id=job_id,
-                #                 round=entry.get_round(),
-                #                 meta=pickle.dumps({"agg_cnt": entry.get_agg_cnt()}),
-                #                 data=pickle.dumps(entry.get_param()),
-                #             )
-                #             self._root_ps_stub.CLIENT_PUSH(push_msg)
-                #         except Exception as e:
-                #             self.logger.print(e, Msg_level.ERROR)
+                    if entry:
+                        self.logger.print(
+                            f"push {job_id} agg to root, cnt: {entry.get_agg_cnt()}",
+                            Msg_level.INFO,
+                        )
+                        try:
+                            push_msg = parameter_server_pb2.job(
+                                code=0,
+                                job_id=job_id,
+                                round=entry.get_round(),
+                                meta=pickle.dumps({"agg_cnt": entry.get_agg_cnt()}),
+                                data=pickle.dumps(entry.get_param()),
+                            )
+                            self._root_ps_stub.CLIENT_PUSH(push_msg)
+                        except Exception as e:
+                            self.logger.print(e, Msg_level.ERROR)
 
-                #     await self.aggregation_store.clear_entry(job_id)
+                    await self.aggregation_store.clear_entry(job_id)
 
-                # await asyncio.sleep(self.push_interval)
-                await asyncio.sleep(1)
+                await asyncio.sleep(self.push_interval)
         except asyncio.CancelledError:
             pass
 
@@ -203,7 +202,6 @@ class Parameter_server:
         pass
 
     async def clock_evict_routine(self):
-        self.logger.print("evict routine started", Msg_level.INFO)
         ps_routine = asyncio.create_task(self.parameter_store.clock_evict_routine())
         push_routine = asyncio.create_task(self._leaf_push_routine())
 

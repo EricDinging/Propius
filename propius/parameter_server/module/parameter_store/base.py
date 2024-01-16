@@ -49,7 +49,8 @@ class Parameter_store:
         try:
             while True:
                 async with self.lock:
-                    for key, entry in self.store_dict.items():
+                    for key in list(self.store_dict.keys()):
+                        entry = self.store_dict[key]
                         ttl = entry.decrement_ttl()
                         if ttl <= 0:
                             entry.clear()

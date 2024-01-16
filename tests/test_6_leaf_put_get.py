@@ -50,9 +50,13 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         assert torch.equal(data[0], torch.ones(2))
         assert torch.equal(data[1], torch.ones(2, 3))
 
-        # cache eviction test
-        time.sleep(4)
+        time.sleep(1)
+        code, _, data = client.get(0, 1)
+        assert code == 1
 
+        # cache eviction test
+        time.sleep(gconfig["leaf_parameter_store_ttl"])
+        print("Cache eviction test")
         code, _, data = client.get(0, 1)
         assert code == 1
         assert torch.equal(data[0], torch.ones(2))
@@ -79,7 +83,7 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         assert torch.equal(data[1], torch.ones(2, 3) * 2.5)
 
         job.delete()
-        time.sleep(gconfig["leaf_parameter_store_ttl"])
+        time.sleep(gconfig["leaf_parameter_store_ttl"] + 1)
         code, _, data = client.get(0, 2)
         assert code == 3
 

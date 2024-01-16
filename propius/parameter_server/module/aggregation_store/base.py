@@ -29,7 +29,7 @@ class Aggregation_store:
 
     async def get_key(self):
         async with self.lock:
-            return copy.deepcopy(self.store_dict.keys())
+            return list(self.store_dict.keys())
 
     async def set_entry(self, job_id: int, entry: Aggregation_store_entry):
         async with self.lock:
@@ -63,6 +63,7 @@ class Aggregation_store:
             new_agg_entry.set_config(meta)
             new_agg_entry.set_round(round)
             new_agg_entry.set_param(data)
+            new_agg_entry.increment_agg_cnt(agg_cnt)
             self.store_dict[job_id] = new_agg_entry
             return True
 
