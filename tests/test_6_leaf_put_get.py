@@ -76,7 +76,7 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
 
         code, _, data = job.get(2)
         assert code == 6
-        time.sleep(gconfig["leaf_parameter_store_push_interval"] + 1)
+        time.sleep(gconfig["leaf_aggregation_store_ttl"] + 1)
         code, _, data = job.get(2)
         assert code == 1
         assert torch.equal(data[0], torch.ones(2) * 2.5)

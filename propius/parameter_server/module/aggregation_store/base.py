@@ -11,15 +11,26 @@ class Aggregation_store_entry(Entry):
     def __init__(self):
         super().__init__()
         self.agg_cnt = 0
+        self.ttl = 1000
 
     def __str__(self):
-        return super().__str__() + f", agg_cnt: {self.agg_cnt}"
+        return super().__str__() + f", agg_cnt: {self.agg_cnt}, ttl: {self.ttl}"
 
     def increment_agg_cnt(self, cnt: int):
         self.agg_cnt += copy.deepcopy(cnt)
 
     def get_agg_cnt(self):
         return self.agg_cnt
+
+    def set_ttl(self, ttl: int):
+        self.ttl = copy.deepcopy(ttl)
+
+    def decrement_ttl(self) -> int:
+        self.ttl -= 1
+        return self.get_ttl()
+
+    def get_ttl(self) -> int:
+        return self.ttl
 
 
 class Aggregation_store:
@@ -45,33 +56,10 @@ class Aggregation_store:
             if entry:
                 entry.clear()
 
-    async def update(self, job_id: int, round: int, agg_cnt: int, data, meta={}) -> bool:
-        async with self.lock:
-            entry: Aggregation_store_entry = self.store_dict.get(job_id)
-            if entry:
-                if entry.get_round() == round:
-                    entry.increment_agg_cnt(agg_cnt)
-                    if entry.param:
-                        base_reduce(entry.param, data, torch.Tensor.add_)
-                    else:
-                        entry.set_param(data)
-                    return True
-                elif entry.get_round() > round:
-                    return False
-
-            new_agg_entry = Aggregation_store_entry()
-            new_agg_entry.set_config(meta)
-            new_agg_entry.set_round(round)
-            new_agg_entry.set_param(data)
-            new_agg_entry.increment_agg_cnt(agg_cnt)
-            self.store_dict[job_id] = new_agg_entry
-            return True
-
-    async def fetch(self) -> dict:
-        async with self.lock:
-            result = self.store_dict
-            self.store_dict = {}
-            return result
+    async def update(
+        self, job_id: int, round: int, agg_cnt: int, data, meta={}
+    ) -> bool:
+        pass
 
     def __str__(self):
         s = ""

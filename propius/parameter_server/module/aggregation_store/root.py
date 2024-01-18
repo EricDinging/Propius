@@ -13,21 +13,10 @@ import torch
 class Root_aggregation_store_entry(Aggregation_store_entry):
     def __init__(self):
         super().__init__()
-        self.ttl = 2000
         self.demand = 0
 
     def __str__(self):
-        return super().__str__() + f", ttl: {self.ttl}, demand: {self.demand}"
-
-    def set_ttl(self, ttl: int):
-        self.ttl = copy.deepcopy(ttl)
-
-    def decrement_ttl(self) -> int:
-        self.ttl -= 1
-        return self.get_ttl()
-
-    def get_ttl(self) -> int:
-        return self.ttl
+        return super().__str__() + f", demand: {self.demand}"
 
     def get_demand(self) -> int:
         return self.demand
