@@ -27,8 +27,8 @@ def test_integrate(setup_and_teardown_for_stuff):
         jm_port = gconfig["job_manager_port"]
         root_ps_ip = gconfig["root_ps_ip"]
         root_ps_port = gconfig["root_ps_port"]
-        ps_ip = gconfig["ps_ip"]
-        ps_port = gconfig["ps_port"]
+        ps_ip = gconfig["root_ps_ip"]
+        ps_port = gconfig["root_ps_port"]
 
         job_config = {
             "public_constraint": {"cpu_f": 3, "ram": 3, "fp16_mem": 3, "android_os": 3},
@@ -60,8 +60,8 @@ def test_integrate(setup_and_teardown_for_stuff):
             "load_balancer_ip": lb_ip,
             "load_balancer_port": lb_port,
             "option": 0.0,
-            "ps_ip": ps_ip,
-            "ps_port": ps_port,
+            "leaf_ps_ip": ps_ip,
+            "leaf_ps_port": ps_port,
         }
         job = Job(job_config, True, False)
         client1 = Client(client_config, True, False)
@@ -96,5 +96,21 @@ def test_integrate(setup_and_teardown_for_stuff):
 
         assert torch.equal(aggregation[0], torch.ones(2, 2) * 3)
 
-        job.complete()
+        assert job.request({}, [torch.ones(2, 2)])
+        result = client1.get()
+        result2 = client2.get()
+        assert torch.equal(result[1][0], torch.ones(2, 2))
+        assert torch.equal(result2[1][0], torch.ones(2, 2))
 
+        result[1][0] *= 0.5
+        result2[1][0] *= 0.5
+        client1.push(result[1])
+        client2.push(result2[1])
+
+        job_result = job.reduce()
+        assert job_result
+        _, aggregation = job_result
+
+        assert torch.equal(aggregation[0], torch.ones(2, 2))
+
+        job.complete()

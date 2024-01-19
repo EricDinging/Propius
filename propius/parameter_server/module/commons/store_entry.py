@@ -18,13 +18,13 @@ class Entry:
         self.param = copy.deepcopy(param)
 
     def get_round(self) -> int:
-        return copy.deepcopy(self.round_num)
+        return self.round_num
     
     def get_config(self):
-        return copy.deepcopy(self.config)
+        return self.config
     
     def get_param(self):
-        return copy.deepcopy(self.param)
+        return self.param
     
     def clear(self):
         self.config = None

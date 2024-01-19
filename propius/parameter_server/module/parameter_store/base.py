@@ -21,7 +21,7 @@ class Parameter_store_entry(Entry):
         return self.get_ttl()
 
     def get_ttl(self) -> int:
-        return copy.deepcopy(self.ttl)
+        return self.ttl
 
 
 class Parameter_store:
@@ -49,7 +49,8 @@ class Parameter_store:
         try:
             while True:
                 async with self.lock:
-                    for key, entry in self.store_dict.items():
+                    for key in list(self.store_dict.keys()):
+                        entry = self.store_dict[key]
                         ttl = entry.decrement_ttl()
                         if ttl <= 0:
                             entry.clear()

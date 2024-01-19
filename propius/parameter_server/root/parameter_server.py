@@ -26,6 +26,7 @@ class Parameter_server:
         self.logger: Propius_logger = logger
 
     async def CLIENT_GET(self, request, context):
+        """Handler for client get request."""
         job_id, round = request.job_id, request.round
         self.logger.print(
             f"receive client GET request, job_id: {job_id}, round: {round}",
@@ -45,6 +46,8 @@ class Parameter_server:
             entry_round = entry.get_round()
             if entry_round == round:
                 self.logger.print(entry, Msg_level.INFO)
+                # self.logger.print(entry.get_param(), Msg_level.INFO)
+
                 return_msg = parameter_server_pb2.job(
                     code=1,
                     job_id=job_id,
@@ -87,7 +90,7 @@ class Parameter_server:
         new_agg_entry.set_config({})
         new_agg_entry.set_demand(meta["demand"])
         new_agg_entry.set_round(round)
-        new_agg_entry.set_param(data)
+        # new_agg_entry.set_param(data)
         await self.aggregation_store.set_entry(job_id, new_agg_entry)
 
         return_msg = parameter_server_pb2.ack(code=1)
@@ -104,7 +107,9 @@ class Parameter_server:
             Msg_level.INFO,
         )
 
-        result = await self.aggregation_store.update(job_id, round, meta["agg_cnt"], data)
+        result = await self.aggregation_store.update(
+            job_id, round, meta["agg_cnt"], data
+        )
         if result:
             return parameter_server_pb2.ack(code=1)
         else:
@@ -165,9 +170,7 @@ class Parameter_server:
         await self.parameter_store.clear_entry(job_id)
         await self.aggregation_store.clear_entry(job_id)
 
-        return parameter_server_pb2.ack(
-            code=1
-        )
+        return parameter_server_pb2.ack(code=1)
 
     async def clock_evict_routine(self):
         ps_routine = asyncio.create_task(self.parameter_store.clock_evict_routine())

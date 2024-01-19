@@ -15,8 +15,8 @@ class Propius_ps_client:
 
         Args:
             config:
-                ps_ip
-                ps_port
+                leaf_ps_ip
+                leaf_ps_port
             id: client_id received from client_manager
             verbose: whether to print or not
             logging: whether to log or not
@@ -25,8 +25,8 @@ class Propius_ps_client:
         """
         try:
             self.id = id
-            self._ps_ip = config["ps_ip"]
-            self._ps_port = config["ps_port"]
+            self._ps_ip = config["leaf_ps_ip"]
+            self._ps_port = config["leaf_ps_port"]
             self._ps_channel = None
             self._ps_stub = None
 
@@ -107,8 +107,8 @@ class Propius_ps_client:
             code=0,
             job_id=job_id,
             round=round,
-            meta=pickle.dumps(""),
-            data=pickle.dumps(""),
+            meta=pickle.dumps({}),
+            data=pickle.dumps([]),
         )
         for _ in range(3):
             self.connect()

@@ -38,10 +38,12 @@ max_task_offer_list_len: 20
 # PARAMETER_SERVER
 root_ps_ip: localhost
 root_ps_port: 60000
-ps_ip: localhost
-ps_port: 60000 #TODO
-root_parameter_store_ttl: 100
+leaf_ps_ip: localhost
+leaf_ps_port: 60001
+root_parameter_store_ttl: 1000
 root_aggregation_store_ttl: 2000
+leaf_parameter_store_ttl: 3
+leaf_aggregation_store_ttl: 3
 
 # Scheduling context
 standard_round_time: 300 # default round time for jobs that doesn't have history round

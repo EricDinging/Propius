@@ -25,6 +25,7 @@ propius-controller-job-manager = "propius.controller.job_manager.__main__:main"
 propius-controller-client-manager = "propius.controller.client_manager.__main__:main"
 propius-controller-load-balancer = "propius.controller.load_balancer.__main__:main"
 propius-parameter-server-root = "propius.parameter_server.root.__main__:main"
+propius-parameter-server-leaf = "propius.parameter_server.leaf.__main__:main"
 
 [tool.setuptools]
 packages = ["propius"]
