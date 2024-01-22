@@ -46,8 +46,14 @@ class Parameter_server:
 
     def _connect_root_ps(self):
         try:
+            channel_options = [
+                ("grpc.max_receive_message_length", self.gconfig["max_message_length"]),
+                ("grpc.max_send_message_length", self.gconfig["max_message_length"]),
+            ]
+
             self._root_ps_channel = grpc.insecure_channel(
-                f"{self._root_ps_ip}:{self._root_ps_port}"
+                f"{self._root_ps_ip}:{self._root_ps_port}",
+                options=channel_options
             )
             self._root_ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(
                 self._root_ps_channel

@@ -29,7 +29,12 @@ async def serve(gconfig, logger):
         except asyncio.exceptions.CancelledError:
             pass
 
-    server = grpc.aio.server()
+    channel_options = [
+        ("grpc.max_receive_message_length", gconfig["max_message_length"]),
+        ("grpc.max_send_message_length", gconfig["max_message_length"]),
+    ]
+
+    server = grpc.aio.server(options=channel_options)
     leaf_ps = Parameter_server(gconfig, logger)
 
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(leaf_ps, server)

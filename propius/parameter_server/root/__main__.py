@@ -28,7 +28,12 @@ async def serve(gconfig, logger):
         except asyncio.exceptions.CancelledError:
             pass
 
-    server = grpc.aio.server()
+    channel_options = [
+        ("grpc.max_receive_message_length", gconfig["max_message_length"]),
+        ("grpc.max_send_message_length", gconfig["max_message_length"]),
+    ]
+
+    server = grpc.aio.server(options=channel_options)
     root_ps = Parameter_server(gconfig, logger)
 
     parameter_server_pb2_grpc.add_Parameter_serverServicer_to_server(root_ps, server)
@@ -43,6 +48,7 @@ async def serve(gconfig, logger):
         Msg_level.INFO,
     )
     await server.wait_for_termination()
+
 
 def main():
     with open(GLOBAL_CONFIG_FILE, "r") as gyamlfile:

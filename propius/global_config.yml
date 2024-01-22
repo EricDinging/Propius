@@ -45,6 +45,8 @@ root_aggregation_store_ttl: 2000
 leaf_parameter_store_ttl: 3
 leaf_aggregation_store_ttl: 3
 
+max_message_length: 1073741824  # 1GB
+
 # Scheduling context
 standard_round_time: 300 # default round time for jobs that doesn't have history round
 irs_epsilon: 0

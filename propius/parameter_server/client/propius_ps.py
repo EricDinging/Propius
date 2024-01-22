@@ -17,6 +17,7 @@ class Propius_ps_client:
             config:
                 leaf_ps_ip
                 leaf_ps_port
+                max_message_length
             id: client_id received from client_manager
             verbose: whether to print or not
             logging: whether to log or not
@@ -29,6 +30,8 @@ class Propius_ps_client:
             self._ps_port = config["leaf_ps_port"]
             self._ps_channel = None
             self._ps_stub = None
+
+            self.max_message_length = config["max_message_length"]
 
             self.verbose = verbose
             self.logging = logging
@@ -58,7 +61,11 @@ class Propius_ps_client:
         self._cleanup_routine()
 
     def _connect_ps(self) -> None:
-        self._ps_channel = grpc.insecure_channel(f"{self._ps_ip}:{self._ps_port}")
+        channel_options = [
+            ("grpc.max_receive_message_length", self.max_message_length),
+            ("grpc.max_send_message_length", self.max_message_length),
+        ]
+        self._ps_channel = grpc.insecure_channel(f"{self._ps_ip}:{self._ps_port}", options=channel_options)
         self._ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(self._ps_channel)
 
         self._custom_print(

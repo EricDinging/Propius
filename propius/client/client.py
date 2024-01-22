@@ -16,6 +16,7 @@ class Client:
                 option: float
                 leaf_ps_ip: parameter server IP
                 leaf_ps_port: parameter server port
+                max_message_length: maximum upload and download size
             verbose: whether to print or not
             logging: whether to log or not
 
@@ -35,8 +36,8 @@ class Client:
         self.round = -1
 
     def get(self, timeout: float = 60):
-        """Get task parameters and config. 
-        
+        """Get task parameters and config.
+
         This is a blocking call, and could be called multiple times
 
         Args:
