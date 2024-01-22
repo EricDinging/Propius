@@ -42,7 +42,7 @@ class Leaf_aggregation_store(Aggregation_store):
                     entry.increment_agg_cnt(agg_cnt)
                     entry.set_ttl(self.default_ttl)
                     if entry.param:
-                        base_reduce(entry.param, data, torch.Tensor.add_)
+                        base_reduce(entry.get_param(), data, torch.Tensor.add_)
                     else:
                         entry.set_param(data)
                     return True

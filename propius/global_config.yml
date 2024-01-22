@@ -42,8 +42,8 @@ leaf_ps_ip: localhost
 leaf_ps_port: 60001
 root_parameter_store_ttl: 1000
 root_aggregation_store_ttl: 2000
-leaf_parameter_store_ttl: 3
-leaf_aggregation_store_ttl: 3
+leaf_parameter_store_ttl: 10
+leaf_aggregation_store_ttl: 10
 
 max_message_length: 1073741824  # 1GB
 
