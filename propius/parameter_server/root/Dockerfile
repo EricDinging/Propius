@@ -8,14 +8,15 @@ RUN apt-get update && \
     apt-get install iperf &&\
     apt-get clean
 
-WORKDIR /propius
+WORKDIR /
+RUN mkdir propius
 
 COPY ./requirements.txt ./requirements.txt
 COPY ./pyproject.toml ./pyproject.toml
 
 RUN python3.9 -m venv env
-ENV PATH="/propius/env/bin:$PATH"
-ENV PROPIUS_HOME="/propius"
+ENV PATH="/env/bin:$PATH"
+# ENV PROPIUS_HOME="/propius"
 
 RUN python -m pip install --upgrade pip
 RUN pip3 install -r ./requirements.txt
