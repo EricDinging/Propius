@@ -22,6 +22,7 @@ RUN python -m pip install --upgrade pip
 RUN pip3 install -r ./requirements.txt
 
 RUN pip install -e .
+EXPOSE 60000
 # RUN pip install torch==2.1.2
 
 CMD ["/bin/bash"]
