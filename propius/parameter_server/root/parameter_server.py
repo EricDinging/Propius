@@ -90,7 +90,6 @@ class Parameter_server:
         new_agg_entry.set_config({})
         new_agg_entry.set_demand(meta["demand"])
         new_agg_entry.set_round(round)
-        # new_agg_entry.set_param(data)
         await self.aggregation_store.set_entry(job_id, new_agg_entry)
 
         return_msg = parameter_server_pb2.ack(code=1)
@@ -143,7 +142,7 @@ class Parameter_server:
                     job_id=job_id,
                     round=round,
                     meta=pickle.dumps({}),
-                    data=pickle.dumps(entry.get_param()),
+                    data=entry.get_param(),
                 )
             else:
                 self.logger.print(
@@ -155,7 +154,7 @@ class Parameter_server:
                     job_id=job_id,
                     round=round,
                     meta=pickle.dumps({}),
-                    data=pickle.dumps(""),
+                    data=pickle.dumps([]),
                 )
         return return_msg
 

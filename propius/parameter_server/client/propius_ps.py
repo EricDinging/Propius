@@ -35,7 +35,8 @@ class Propius_ps_client:
 
             self.verbose = verbose
             self.logging = logging
-        except Exception:
+        except Exception as e:
+            
             raise ValueError("Missing config arguments")
 
     def _cleanup_routine(self):

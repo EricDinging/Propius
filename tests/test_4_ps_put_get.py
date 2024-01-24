@@ -26,8 +26,9 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         client_config = {
             "leaf_ps_ip": gconfig["root_ps_ip"],
             "leaf_ps_port": gconfig["root_ps_port"],
+            "max_message_length": gconfig["max_message_length"]
         }
-        client = Propius_ps_client(client_config, 0)
+        client = Propius_ps_client(client_config, 0, True)
 
         time.sleep(1)
 
