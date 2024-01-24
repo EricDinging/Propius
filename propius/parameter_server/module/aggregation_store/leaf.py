@@ -17,7 +17,7 @@ from propius.parameter_server.channels import (
 
 
 class Leaf_aggregation_store(Aggregation_store):
-    def __init__(self, default_ttl=5):
+    def __init__(self, default_ttl: int = 5):
         super().__init__()
         self.default_ttl = default_ttl
 

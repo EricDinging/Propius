@@ -49,11 +49,13 @@ class Parameter_server:
             channel_options = [
                 ("grpc.max_receive_message_length", self.gconfig["max_message_length"]),
                 ("grpc.max_send_message_length", self.gconfig["max_message_length"]),
+                ("grpc.keepalive_time_ms", 8000),
+                ("grpc.keepalive_timeout_ms", 5000),
+                ("grpc.keepalive_permit_without_calls", 1),
             ]
 
             self._root_ps_channel = grpc.insecure_channel(
-                f"{self._root_ps_ip}:{self._root_ps_port}",
-                options=channel_options
+                f"{self._root_ps_ip}:{self._root_ps_port}", options=channel_options
             )
             self._root_ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(
                 self._root_ps_channel

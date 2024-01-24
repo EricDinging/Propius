@@ -11,8 +11,8 @@ import torch
 
 
 class Root_aggregation_store_entry(Aggregation_store_entry):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, in_memory: bool = True):
+        super().__init__(in_memory)
         self.demand = 0
 
     def __str__(self):

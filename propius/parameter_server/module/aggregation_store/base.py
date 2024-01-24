@@ -8,8 +8,8 @@ import torch
 
 
 class Aggregation_store_entry(Entry):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, in_memory: bool = True):
+        super().__init__(in_memory)
         self.agg_cnt = 0
         self.ttl = 1000
 

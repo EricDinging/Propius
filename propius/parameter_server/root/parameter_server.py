@@ -80,13 +80,13 @@ class Parameter_server:
         await self.aggregation_store.clear_entry(job_id)
         await self.parameter_store.clear_entry(job_id)
 
-        new_entry = Parameter_store_entry()
+        new_entry = Parameter_store_entry(in_memory=True)
         new_entry.set_config({})
         new_entry.set_param(data)
         new_entry.set_round(round)
         await self.parameter_store.set_entry(job_id, new_entry)
 
-        new_agg_entry = Root_aggregation_store_entry()
+        new_agg_entry = Root_aggregation_store_entry(in_memory=True)
         new_agg_entry.set_config({})
         new_agg_entry.set_demand(meta["demand"])
         new_agg_entry.set_round(round)

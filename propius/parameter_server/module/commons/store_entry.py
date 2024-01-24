@@ -6,7 +6,6 @@ from propius.parameter_server.config import (
     OBJECT_STORE_DIR
 )
 import pathlib
-import os
 
 class Entry:
     def __init__(self, in_memory: bool = True):
