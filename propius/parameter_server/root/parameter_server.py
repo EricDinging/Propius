@@ -53,7 +53,7 @@ class Parameter_server:
                     job_id=job_id,
                     round=entry_round,
                     meta=pickle.dumps({}),
-                    data=pickle.dumps(entry.get_param()),
+                    data=entry.get_param(),
                 )
             elif entry_round < round:
                 self.logger.print(
@@ -73,7 +73,7 @@ class Parameter_server:
 
         job_id, round = request.job_id, request.round
         meta: dict = pickle.loads(request.meta)
-        data = pickle.loads(request.data)
+        data = request.data
         self.logger.print(
             f"receive job PUT request, job_id: {job_id}, round: {round}", Msg_level.INFO
         )
@@ -101,7 +101,7 @@ class Parameter_server:
 
         job_id, round = request.job_id, request.round
         meta = pickle.loads(request.meta)
-        data = pickle.loads(request.data)
+        data = request.data
         self.logger.print(
             f"receive client PUSH request, job_id: {job_id}, round: {round}",
             Msg_level.INFO,

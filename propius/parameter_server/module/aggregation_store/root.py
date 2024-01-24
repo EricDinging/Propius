@@ -50,10 +50,8 @@ class Root_aggregation_store(Aggregation_store):
             if entry:
                 if entry.get_round() == round:
                     entry.increment_agg_cnt(agg_cnt)
-                    if entry.get_param():
-                        base_reduce(entry.get_param(), data, torch.Tensor.add_)
-                    else:
-                        entry.set_param(data)
+                    result = base_reduce(entry.get_param(), data, torch.Tensor.add)
+                    entry.set_param(result)
                     entry.set_ttl(self.default_ttl)
                     return True
             return False
