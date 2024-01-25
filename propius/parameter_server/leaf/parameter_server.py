@@ -70,9 +70,9 @@ class Parameter_server:
 
     async def _new_param(self, job_id: int, round: int, root_return_msg):
         await self.parameter_store.clear_entry(job_id)
-        data = pickle.loads(root_return_msg.data)
+        data = root_return_msg.data
         meta = pickle.loads(root_return_msg.meta)
-        new_entry = Parameter_store_entry()
+        new_entry = Parameter_store_entry(in_memory=self.gconfig["in_memory"])
         new_entry.set_config(meta)
         new_entry.set_param(data)
         new_entry.set_round(round)
@@ -106,7 +106,7 @@ class Parameter_server:
                     job_id=job_id,
                     round=entry_round,
                     meta=pickle.dumps({}),
-                    data=pickle.dumps(entry.get_param()),
+                    data=entry.get_param(),
                 )
                 return return_msg
             elif entry_round > round:
@@ -144,7 +144,7 @@ class Parameter_server:
 
         job_id, round = request.job_id, request.round
         meta = pickle.loads(request.meta)
-        data = pickle.loads(request.data)
+        data = request.data
         self.logger.print(
             f"receive client PUSH request, job_id: {job_id}, round: {round}",
             Msg_level.INFO,
@@ -152,7 +152,7 @@ class Parameter_server:
 
         # aggregate, create a new entry if necessary
         result = await self.aggregation_store.update(
-            job_id, round, meta["agg_cnt"], data
+            job_id, round, meta["agg_cnt"], data, in_memory=self.gconfig["in_memory"]
         )
         if result:
             return parameter_server_pb2.ack(code=1)

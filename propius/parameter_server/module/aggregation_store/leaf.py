@@ -33,7 +33,7 @@ class Leaf_aggregation_store(Aggregation_store):
         return await super().clear_entry(job_id)
 
     async def update(
-        self, job_id: int, round: int, agg_cnt: int, data, meta={}
+        self, job_id: int, round: int, agg_cnt: int, data, meta={}, in_memory: bool = True
     ) -> bool:
         async with self.lock:
             entry: Aggregation_store_entry = self.store_dict.get(job_id)
@@ -41,15 +41,13 @@ class Leaf_aggregation_store(Aggregation_store):
                 if entry.get_round() == round:
                     entry.increment_agg_cnt(agg_cnt)
                     entry.set_ttl(self.default_ttl)
-                    if entry.param:
-                        base_reduce(entry.get_param(), data, torch.Tensor.add_)
-                    else:
-                        entry.set_param(data)
+                    result = base_reduce(entry.get_param(), data, torch.Tensor.add)
+                    entry.set_param(result)
                     return True
                 elif entry.get_round() > round:
                     return False
 
-            new_agg_entry = Aggregation_store_entry()
+            new_agg_entry = Aggregation_store_entry(in_memory=in_memory)
             new_agg_entry.set_config(meta)
             new_agg_entry.set_round(round)
             new_agg_entry.set_param(data)
@@ -74,7 +72,7 @@ class Leaf_aggregation_store(Aggregation_store):
                                     job_id=key,
                                     round=entry.get_round(),
                                     meta=pickle.dumps({"agg_cnt": entry.get_agg_cnt()}),
-                                    data=pickle.dumps(entry.get_param()),
+                                    data=entry.get_param(),
                                 )
                                 stub.CLIENT_PUSH(push_msg)
                             except Exception:
