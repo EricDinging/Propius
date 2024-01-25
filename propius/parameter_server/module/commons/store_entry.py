@@ -24,7 +24,8 @@ class Entry:
         if self.in_memory:
             self.param = copy.deepcopy(param)
         else:
-            self.param: pathlib.Path = OBJECT_STORE_DIR / str(uuid.uuid4()) + '.bin'
+            if not self.param:
+                self.param: pathlib.Path = OBJECT_STORE_DIR / (str(uuid.uuid4()) + '.bin')
             with open(self.param, 'wb') as file:
                 file.write(param)
 
@@ -38,12 +39,15 @@ class Entry:
         if self.in_memory:
             return copy.deepcopy(self.param)
         else:
-            with open(self.param, 'rb') as file:
-                return file.read()
+            if self.param:
+                with open(self.param, 'rb') as file:
+                    return file.read()
+            else:
+                return None
     
     def clear(self):
-        if not self.in_memory and self.param.exists():
-            self.param.unlink()
+        if not self.in_memory and self.param:
+            self.param.unlink(missing_ok=True)
         self.config = None
         self.param = None
 

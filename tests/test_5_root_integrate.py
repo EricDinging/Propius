@@ -43,6 +43,7 @@ def test_integrate(setup_and_teardown_for_stuff):
             "port": 6000,
             "root_ps_ip": root_ps_ip,
             "root_ps_port": root_ps_port,
+            "max_message_length": gconfig["max_message_length"],
         }
 
         lb_ip = gconfig["load_balancer_ip"]
@@ -62,6 +63,7 @@ def test_integrate(setup_and_teardown_for_stuff):
             "option": 0.0,
             "leaf_ps_ip": ps_ip,
             "leaf_ps_port": ps_port,
+            "max_message_length": gconfig["max_message_length"],
         }
         job = Job(job_config, True, False)
         client1 = Client(client_config, True, False)

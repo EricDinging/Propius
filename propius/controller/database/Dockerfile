@@ -22,7 +22,7 @@ RUN apt-get update
 # Install Redis server
 RUN apt-get install -y redis-stack-server
 
-COPY ./propius/database/entrypoint.sh /entrypoint.sh
+COPY ./propius/controller/database/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh 
 
 # Start the Redis server when the container starts

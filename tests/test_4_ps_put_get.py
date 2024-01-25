@@ -22,7 +22,7 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
     with open(GLOBAL_CONFIG_FILE, "r") as gconfig:
         gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
 
-        job = Propius_ps_job(gconfig, 0)
+        job = Propius_ps_job(gconfig, 0, True)
         client_config = {
             "leaf_ps_ip": gconfig["root_ps_ip"],
             "leaf_ps_port": gconfig["root_ps_port"],
@@ -96,6 +96,6 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
         assert torch.equal(data[0], new_data[0])
         assert torch.equal(data[1], new_data[1])
 
-        # job.delete()
-        # code, _, _ = client.get(0, 1)
-        # assert code == 3
+        job.delete()
+        code, _, _ = client.get(0, 1)
+        assert code == 3
