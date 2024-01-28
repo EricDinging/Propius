@@ -24,4 +24,4 @@ RUN pip3 install -r ./requirements.txt
 RUN pip install -e .
 RUN pip install torch==2.1.2
 
-CMD ["propius-parameter-server-root"]
+CMD ["propius-parameter-server-leaf"]
