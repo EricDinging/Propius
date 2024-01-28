@@ -17,6 +17,7 @@ from propius.parameter_server.channels import (
 )
 import asyncio
 import grpc
+import sys
 
 
 class Parameter_server:
@@ -127,11 +128,17 @@ class Parameter_server:
                 f"cache miss, fetch from root for job {job_id} round {round}",
                 Msg_level.INFO,
             )
+
+            self.logger.clock_send()
             root_return_msg = self._root_ps_stub.CLIENT_GET(get_msg)
+            rtt = self.logger.clock_receive()
+            message_size = sys.getsizeof(root_return_msg)
+
             return_msg = root_return_msg
 
             if root_return_msg.code == 1:
                 # new parameter data
+                self.logger.print(f"rtt: {rtt}, message_size: {message_size}", Msg_level.INFO)
                 await self._new_param(job_id, round, root_return_msg)
 
         except Exception as e:

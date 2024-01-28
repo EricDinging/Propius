@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 import logging
 import logging.handlers
+import time
 
 
 def get_time() -> str:
@@ -29,6 +30,8 @@ class Propius_logger:
         self.verbose = verbose
         self.use_logging = use_logging
         self.actor = actor
+        self.time = None
+
         if self.use_logging:
             if not log_file:
                 raise ValueError("Empty log file")
@@ -57,3 +60,14 @@ class Propius_logger:
                 self.logger.warning(message)
             elif level == Msg_level.ERROR:
                 self.logger.error(message)
+
+    def clock_send(self):
+        self.time = time.time()
+
+    def clock_receive(self):
+        if self.time:
+            rtt = time.time() - self.time()
+            return rtt
+        self.time = None
+        return 0
+
