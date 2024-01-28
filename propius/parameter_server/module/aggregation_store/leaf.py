@@ -5,21 +5,23 @@ from propius.parameter_server.module.aggregation_store.base import (
     Aggregation_store,
 )
 from propius.parameter_server.module.reduce import base_reduce
+from propius.parameter_server.util import Msg_level, Propius_logger
 import copy
 import asyncio
 import torch
-
 import pickle
 from propius.parameter_server.channels import (
     parameter_server_pb2,
     parameter_server_pb2_grpc,
 )
+import sys
 
 
 class Leaf_aggregation_store(Aggregation_store):
-    def __init__(self, default_ttl: int = 5):
+    def __init__(self, logger: Propius_logger, default_ttl: int = 5):
         super().__init__()
         self.default_ttl = default_ttl
+        self.logger = logger
 
     async def set_entry(self, job_id: int, entry: Aggregation_store_entry):
         async with self.lock:
@@ -33,7 +35,13 @@ class Leaf_aggregation_store(Aggregation_store):
         return await super().clear_entry(job_id)
 
     async def update(
-        self, job_id: int, round: int, agg_cnt: int, data, meta={}, in_memory: bool = True
+        self,
+        job_id: int,
+        round: int,
+        agg_cnt: int,
+        data,
+        meta={},
+        in_memory: bool = True,
     ) -> bool:
         async with self.lock:
             entry: Aggregation_store_entry = self.store_dict.get(job_id)
@@ -67,6 +75,7 @@ class Leaf_aggregation_store(Aggregation_store):
                         ttl = entry.decrement_ttl()
                         if ttl <= 0:
                             try:
+                                self.logger.clock_send()
                                 push_msg = parameter_server_pb2.job(
                                     code=0,
                                     job_id=key,
@@ -75,6 +84,12 @@ class Leaf_aggregation_store(Aggregation_store):
                                     data=entry.get_param(),
                                 )
                                 stub.CLIENT_PUSH(push_msg)
+                                rtt = self.logger.clock_receive()
+                                message_size = self.logger.get_message_size(push_msg)
+                                self.logger.print(
+                                    f"CLIENT_PUSH, rtt: {rtt}, message_size: {message_size}, tp: {message_size * 8 / (rtt * 2**20)} Mbps",
+                                    Msg_level.INFO,
+                                )
                             except Exception:
                                 pass
                             entry.clear()

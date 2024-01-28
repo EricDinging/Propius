@@ -1,4 +1,5 @@
 from datetime import datetime
+from google.protobuf.message import Message
 from enum import Enum
 import logging
 import logging.handlers
@@ -66,8 +67,10 @@ class Propius_logger:
 
     def clock_receive(self):
         if self.time:
-            rtt = time.time() - self.time()
+            rtt = time.time() - self.time
             return rtt
         self.time = None
         return 0
 
+    def get_message_size(self, message: Message):
+        return message.ByteSize()
