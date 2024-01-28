@@ -83,7 +83,7 @@ class Leaf_aggregation_store(Aggregation_store):
                                     meta=pickle.dumps({"agg_cnt": entry.get_agg_cnt()}),
                                     data=entry.get_param(),
                                 )
-                                stub.CLIENT_PUSH(push_msg)
+                                await stub.CLIENT_PUSH(push_msg)
                                 rtt = self.logger.clock_receive()
                                 message_size = self.logger.get_message_size(push_msg)
                                 self.logger.print(
