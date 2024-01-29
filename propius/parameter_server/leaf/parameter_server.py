@@ -51,9 +51,6 @@ class Parameter_server:
             channel_options = [
                 ("grpc.max_receive_message_length", self.gconfig["max_message_length"]),
                 ("grpc.max_send_message_length", self.gconfig["max_message_length"]),
-                ("grpc.keepalive_time_ms", 8000),
-                ("grpc.keepalive_timeout_ms", 5000),
-                ("grpc.keepalive_permit_without_calls", 1),
             ]
 
             self._root_ps_channel = grpc.aio.insecure_channel(

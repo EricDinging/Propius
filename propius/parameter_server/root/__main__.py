@@ -31,9 +31,6 @@ async def serve(gconfig, logger):
     channel_options = [
         ("grpc.max_receive_message_length", gconfig["max_message_length"]),
         ("grpc.max_send_message_length", gconfig["max_message_length"]),
-        ("grpc.keepalive_time_ms", 20000),
-        ("grpc.keepalive_timeout_ms", 10000),
-        ("grpc.keepalive_permit_without_calls", 1),
     ]
 
     server = grpc.aio.server(options=channel_options)

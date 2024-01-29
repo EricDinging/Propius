@@ -14,7 +14,7 @@ def test_measurement():
     with open(GLOBAL_CONFIG_FILE, "r") as gconfig:
         gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
 
-        job = Propius_ps_job(gconfig, 0)
+        job = Propius_ps_job(gconfig, 0, verbose=True)
         client = Propius_ps_client(gconfig, 0, verbose=True)
 
         time.sleep(1)
