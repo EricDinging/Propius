@@ -23,6 +23,7 @@ def test_measurement():
         model_weights = []
         for param in model.parameters():
             model_weights.append(param)
+        # model_weights = [torch.ones(50, 50), torch.ones(100, 50)]
 
         job.put(0, 4, {}, model_weights)
         time.sleep(3)

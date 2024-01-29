@@ -36,17 +36,17 @@ client_manager:
 max_task_offer_list_len: 20
 
 # PARAMETER_SERVER
-root_ps_ip: 141.211.141.44
+root_ps_ip: 128.110.219.80
 root_ps_port: 60000
 leaf_ps_ip: 141.211.141.44
 leaf_ps_port: 60001
 root_parameter_store_ttl: 1000
 root_aggregation_store_ttl: 2000
-leaf_parameter_store_ttl: 10 # min 10
-leaf_aggregation_store_ttl: 10 # min 10
+leaf_parameter_store_ttl: 300 # min 10
+leaf_aggregation_store_ttl: 300 # min 10
 
 max_message_length: 1073741824  # 1GB
-in_memory: false
+in_memory: true
 
 # Scheduling context
 standard_round_time: 300 # default round time for jobs that doesn't have history round
