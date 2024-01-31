@@ -17,12 +17,13 @@ from propius.parameter_server.channels import (
 )
 import asyncio
 import grpc
+import sys
 
 
 class Parameter_server:
     def __init__(self, gconfig, logger):
         self.aggregation_store = Leaf_aggregation_store(
-            gconfig["leaf_aggregation_store_ttl"]
+            logger, gconfig["leaf_aggregation_store_ttl"]
         )
         self.parameter_store = Parameter_store(gconfig["leaf_parameter_store_ttl"])
         self.gconfig = gconfig
@@ -34,6 +35,7 @@ class Parameter_server:
         self._root_ps_stub = None
 
         self._connect_root_ps()
+        self.lock = asyncio.Lock()
 
     def _cleanup_routine(self):
         try:
@@ -46,8 +48,13 @@ class Parameter_server:
 
     def _connect_root_ps(self):
         try:
-            self._root_ps_channel = grpc.insecure_channel(
-                f"{self._root_ps_ip}:{self._root_ps_port}"
+            channel_options = [
+                ("grpc.max_receive_message_length", self.gconfig["max_message_length"]),
+                ("grpc.max_send_message_length", self.gconfig["max_message_length"]),
+            ]
+
+            self._root_ps_channel = grpc.aio.insecure_channel(
+                f"{self._root_ps_ip}:{self._root_ps_port}", options=channel_options
             )
             self._root_ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(
                 self._root_ps_channel
@@ -62,9 +69,9 @@ class Parameter_server:
 
     async def _new_param(self, job_id: int, round: int, root_return_msg):
         await self.parameter_store.clear_entry(job_id)
-        data = pickle.loads(root_return_msg.data)
+        data = root_return_msg.data
         meta = pickle.loads(root_return_msg.meta)
-        new_entry = Parameter_store_entry()
+        new_entry = Parameter_store_entry(in_memory=self.gconfig["in_memory"])
         new_entry.set_config(meta)
         new_entry.set_param(data)
         new_entry.set_round(round)
@@ -98,7 +105,7 @@ class Parameter_server:
                     job_id=job_id,
                     round=entry_round,
                     meta=pickle.dumps({}),
-                    data=pickle.dumps(entry.get_param()),
+                    data=entry.get_param(),
                 )
                 return return_msg
             elif entry_round > round:
@@ -119,11 +126,20 @@ class Parameter_server:
                 f"cache miss, fetch from root for job {job_id} round {round}",
                 Msg_level.INFO,
             )
-            root_return_msg = self._root_ps_stub.CLIENT_GET(get_msg)
+
+            self.logger.clock_send()
+            root_return_msg = await self._root_ps_stub.CLIENT_GET(get_msg)
+            rtt = self.logger.clock_receive()
+            message_size = self.logger.get_message_size(root_return_msg)
+
             return_msg = root_return_msg
 
             if root_return_msg.code == 1:
                 # new parameter data
+                self.logger.print(
+                    f"CLIENT_GET, rtt: {rtt}, message_size: {message_size}, tp: {message_size * 8 / (rtt * 2**20)} Mbps",
+                    Msg_level.INFO,
+                )
                 await self._new_param(job_id, round, root_return_msg)
 
         except Exception as e:
@@ -136,7 +152,7 @@ class Parameter_server:
 
         job_id, round = request.job_id, request.round
         meta = pickle.loads(request.meta)
-        data = pickle.loads(request.data)
+        data = request.data
         self.logger.print(
             f"receive client PUSH request, job_id: {job_id}, round: {round}",
             Msg_level.INFO,
@@ -144,50 +160,12 @@ class Parameter_server:
 
         # aggregate, create a new entry if necessary
         result = await self.aggregation_store.update(
-            job_id, round, meta["agg_cnt"], data
+            job_id, round, meta["agg_cnt"], data, in_memory=self.gconfig["in_memory"]
         )
         if result:
             return parameter_server_pb2.ack(code=1)
         else:
             return parameter_server_pb2.ack(code=4)
-
-    # async def _leaf_push_routine(self):
-    #     """Send all aggregation entry to root"""
-    #     try:
-    #         while True:
-    #             self.logger.print("push iteration", Msg_level.INFO)
-    #             jobs = await self.aggregation_store.get_key()
-
-    #             # self.logger.print("good", Msg_level.INFO)
-    #             self.logger.print(jobs, Msg_level.INFO)
-
-    #             for job_id in jobs:
-    #                 entry: Aggregation_store_entry = (
-    #                     await self.aggregation_store.get_entry(job_id)
-    #                 )
-
-    #                 if entry:
-    #                     self.logger.print(
-    #                         f"push {job_id} agg to root, cnt: {entry.get_agg_cnt()}",
-    #                         Msg_level.INFO,
-    #                     )
-    #                     try:
-    #                         push_msg = parameter_server_pb2.job(
-    #                             code=0,
-    #                             job_id=job_id,
-    #                             round=entry.get_round(),
-    #                             meta=pickle.dumps({"agg_cnt": entry.get_agg_cnt()}),
-    #                             data=pickle.dumps(entry.get_param()),
-    #                         )
-    #                         self._root_ps_stub.CLIENT_PUSH(push_msg)
-    #                     except Exception as e:
-    #                         self.logger.print(e, Msg_level.ERROR)
-
-    #                 await self.aggregation_store.clear_entry(job_id)
-
-    #             await asyncio.sleep(self.push_interval)
-    #     except asyncio.CancelledError:
-    #         pass
 
     async def JOB_PUT(self, request, context):
         # depreciated

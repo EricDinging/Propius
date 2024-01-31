@@ -22,12 +22,13 @@ def test_ps_put_get(setup_and_teardown_for_stuff):
     with open(GLOBAL_CONFIG_FILE, "r") as gconfig:
         gconfig = yaml.load(gconfig, Loader=yaml.FullLoader)
 
-        job = Propius_ps_job(gconfig, 0)
+        job = Propius_ps_job(gconfig, 0, True)
         client_config = {
             "leaf_ps_ip": gconfig["root_ps_ip"],
             "leaf_ps_port": gconfig["root_ps_port"],
+            "max_message_length": gconfig["max_message_length"]
         }
-        client = Propius_ps_client(client_config, 0)
+        client = Propius_ps_client(client_config, 0, True)
 
         time.sleep(1)
 

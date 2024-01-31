@@ -53,7 +53,7 @@ class Parameter_server:
                     job_id=job_id,
                     round=entry_round,
                     meta=pickle.dumps({}),
-                    data=pickle.dumps(entry.get_param()),
+                    data=entry.get_param(),
                 )
             elif entry_round < round:
                 self.logger.print(
@@ -73,24 +73,23 @@ class Parameter_server:
 
         job_id, round = request.job_id, request.round
         meta: dict = pickle.loads(request.meta)
-        data = pickle.loads(request.data)
+        data = request.data
         self.logger.print(
             f"receive job PUT request, job_id: {job_id}, round: {round}", Msg_level.INFO
         )
         await self.aggregation_store.clear_entry(job_id)
         await self.parameter_store.clear_entry(job_id)
 
-        new_entry = Parameter_store_entry()
+        new_entry = Parameter_store_entry(in_memory=self.gconfig["in_memory"])
         new_entry.set_config({})
         new_entry.set_param(data)
         new_entry.set_round(round)
         await self.parameter_store.set_entry(job_id, new_entry)
 
-        new_agg_entry = Root_aggregation_store_entry()
+        new_agg_entry = Root_aggregation_store_entry(in_memory=self.gconfig["in_memory"])
         new_agg_entry.set_config({})
         new_agg_entry.set_demand(meta["demand"])
         new_agg_entry.set_round(round)
-        # new_agg_entry.set_param(data)
         await self.aggregation_store.set_entry(job_id, new_agg_entry)
 
         return_msg = parameter_server_pb2.ack(code=1)
@@ -101,7 +100,7 @@ class Parameter_server:
 
         job_id, round = request.job_id, request.round
         meta = pickle.loads(request.meta)
-        data = pickle.loads(request.data)
+        data = request.data
         self.logger.print(
             f"receive client PUSH request, job_id: {job_id}, round: {round}",
             Msg_level.INFO,
@@ -143,7 +142,7 @@ class Parameter_server:
                     job_id=job_id,
                     round=round,
                     meta=pickle.dumps({}),
-                    data=pickle.dumps(entry.get_param()),
+                    data=entry.get_param(),
                 )
             else:
                 self.logger.print(
@@ -155,7 +154,7 @@ class Parameter_server:
                     job_id=job_id,
                     round=round,
                     meta=pickle.dumps({}),
-                    data=pickle.dumps(""),
+                    data=pickle.dumps([]),
                 )
         return return_msg
 

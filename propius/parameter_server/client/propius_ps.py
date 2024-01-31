@@ -2,7 +2,7 @@ from propius.parameter_server.channels import (
     parameter_server_pb2,
     parameter_server_pb2_grpc,
 )
-from propius.parameter_server.util.commons import Msg_level, get_time
+from propius.parameter_server.util.commons import Msg_level, Propius_logger
 import pickle
 import grpc
 import time
@@ -17,6 +17,7 @@ class Propius_ps_client:
             config:
                 leaf_ps_ip
                 leaf_ps_port
+                max_message_length
             id: client_id received from client_manager
             verbose: whether to print or not
             logging: whether to log or not
@@ -30,9 +31,10 @@ class Propius_ps_client:
             self._ps_channel = None
             self._ps_stub = None
 
-            self.verbose = verbose
-            self.logging = logging
-        except Exception:
+            self.max_message_length = config["max_message_length"]
+
+            self.logger = Propius_logger("client", None, verbose, logging)
+        except Exception as e:
             raise ValueError("Missing config arguments")
 
     def _cleanup_routine(self):
@@ -41,28 +43,21 @@ class Propius_ps_client:
         except Exception:
             pass
 
-    def _custom_print(self, message: str, level: int = Msg_level.PRINT):
-        if self.verbose:
-            print(f"{get_time()} {message}")
-        if self.logging:
-            if level == Msg_level.DEBUG:
-                logging.debug(message)
-            elif level == Msg_level.INFO:
-                logging.info(message)
-            elif level == Msg_level.WARNING:
-                logging.warning(message)
-            elif level == Msg_level.ERROR:
-                logging.error(message)
-
     def __del__(self):
         self._cleanup_routine()
 
     def _connect_ps(self) -> None:
-        self._ps_channel = grpc.insecure_channel(f"{self._ps_ip}:{self._ps_port}")
+        channel_options = [
+            ("grpc.max_receive_message_length", self.max_message_length),
+            ("grpc.max_send_message_length", self.max_message_length),
+        ]
+        self._ps_channel = grpc.insecure_channel(
+            f"{self._ps_ip}:{self._ps_port}", options=channel_options
+        )
         self._ps_stub = parameter_server_pb2_grpc.Parameter_serverStub(self._ps_channel)
 
-        self._custom_print(
-            f"Client: {self.id}: connecting to parameter_server at {self._ps_ip}:{self._ps_port}",
+        self.logger.print(
+            f"connecting to parameter_server at {self._ps_ip}:{self._ps_port}",
             Msg_level.INFO,
         )
 
@@ -77,7 +72,7 @@ class Propius_ps_client:
                 self._connect_ps()
                 return
             except Exception as e:
-                self._custom_print(e, Msg_level.ERROR)
+                self.logger.print(e, Msg_level.ERROR)
                 time.sleep(5)
 
         raise RuntimeError("Unable to connect to Propius PS at the moment")
@@ -113,19 +108,27 @@ class Propius_ps_client:
         for _ in range(3):
             self.connect()
             try:
-                return_msg = self._ps_stub.CLIENT_GET(get_msg)
-                self._cleanup_routine()
-                self._custom_print(
-                    f"Client {self.id}: send GET request for job: {job_id} round: {round}",
+                self.logger.print(
+                    f"send GET request for job: {job_id} round: {round}",
                     Msg_level.INFO,
                 )
+                self.logger.clock_send()
+                return_msg = self._ps_stub.CLIENT_GET(get_msg)
+                rtt = self.logger.clock_receive()
+                message_size = self.logger.get_message_size(return_msg)
+                if return_msg.code == 1:
+                    self.logger.print(
+                        f"CLIENT_GET, rtt: {rtt}, message_size: {message_size}, tp: {message_size * 8 / (rtt * 2**20)} Mbps",
+                        Msg_level.INFO,
+                    )
+                self._cleanup_routine()
                 return (
                     return_msg.code,
                     pickle.loads(return_msg.meta),
                     pickle.loads(return_msg.data),
                 )
             except Exception as e:
-                self._custom_print(e, Msg_level.ERROR)
+                self.logger.print(e, Msg_level.ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
         raise RuntimeError("Unable to send get request to Propius PS at the moment")
@@ -157,14 +160,19 @@ class Propius_ps_client:
         for _ in range(3):
             self.connect()
             try:
+                self.logger.print(f"send PUSH request for job: {job_id} round: {round}")
+                self.logger.clock_send()
                 return_msg = self._ps_stub.CLIENT_PUSH(push_msg)
-                self._custom_print(
-                    f"Client {self.id}: send PUSH request for job: {job_id} round: {round}"
+                rtt = self.logger.clock_receive()
+                message_size = self.logger.get_message_size(push_msg)
+                self.logger.print(
+                    f"CLIENT_PUSH, rtt: {rtt}, message_size: {message_size}, tp: {message_size * 8 / (rtt * 2**20)} Mbps",
+                    Msg_level.INFO,
                 )
                 self._cleanup_routine()
                 return return_msg.code
             except Exception as e:
-                self._custom_print(e, Msg_level.ERROR)
+                self.logger.print(e, Msg_level.ERROR)
                 self._cleanup_routine()
                 time.sleep(5)
         raise RuntimeError("Unable to send push request to Propius PS at the moment")

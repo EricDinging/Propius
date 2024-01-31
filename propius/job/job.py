@@ -19,6 +19,7 @@ class Job:
                 port: port number of the job server
                 root_ps_ip: root parameter server IP
                 root_ps_port: root parameter server port
+                max_message_length: maximum upload and download size
             verbose: whether to print or not
             logging: whether to log or not
 
