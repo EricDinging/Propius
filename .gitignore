@@ -48,6 +48,7 @@ common_voice
 puffer
 landmark
 coqa
+house_price
 
 # Evaluation results
 evaluation_result*
