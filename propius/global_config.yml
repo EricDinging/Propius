@@ -71,6 +71,7 @@ job_public_constraint:
 - fp16_mem
 - android_os
 job_private_constraint:
+- dataset_hash
 - dataset_size
 
 public_max:
@@ -82,3 +83,7 @@ public_max:
 # ---General---
 verbose: true
 plot: true
+
+# ---evaluation
+dataset_hash:
+  house_price: -1680012827595101728

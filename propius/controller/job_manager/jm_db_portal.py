@@ -40,7 +40,7 @@ class JM_job_db_portal(Job_db):
         Args:
             job_id
             public_constraint: a tuple of values of constraints
-            private_constraint: a tuple of values of constraints
+            private_constraint: a tuple of values of constraints, first is the dataset name
             job_ip
             job_port
             total_demand
