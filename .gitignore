@@ -1,5 +1,5 @@
 # general things to ignore
-*.egg-info/
+*.egg-info
 *.egg
 *.py[cod]
 __pycache__/
