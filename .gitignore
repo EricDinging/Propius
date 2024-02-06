@@ -49,6 +49,7 @@ puffer
 landmark
 coqa
 house_price
+insurance
 
 # Evaluation results
 evaluation_result*
