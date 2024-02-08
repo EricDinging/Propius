@@ -33,7 +33,7 @@ def test_integrate(setup_and_teardown_for_stuff):
         job_config = {
             "public_constraint": {"cpu_f": 3, "ram": 3, "fp16_mem": 3, "android_os": 3},
             "private_constraint": {
-                "dataset_size": 100,
+                "dataset_size_dummy": 100,
             },
             "total_round": 2,
             "demand": 2,
@@ -56,7 +56,7 @@ def test_integrate(setup_and_teardown_for_stuff):
                 "android_os": 3,
             },
             "private_specifications": {
-                "dataset_size": 1000,
+                "dataset_size_dummy": 1000,
             },
             "load_balancer_ip": lb_ip,
             "load_balancer_port": lb_port,

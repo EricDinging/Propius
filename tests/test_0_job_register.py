@@ -28,7 +28,7 @@ def job_register(gconfig):
     job_config = {
         "public_constraint": {"cpu_f": 0, "ram": 0, "fp16_mem": 0, "android_os": 0},
         "private_constraint": {
-            "dataset_size": 100,
+            "dataset_size_dummy": 100,
         },
         "total_round": 10,
         "demand": 5,

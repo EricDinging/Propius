@@ -2,7 +2,8 @@ from datetime import datetime
 from enum import Enum
 import logging
 import logging.handlers
-
+from propius.controller.config import GLOBAL_CONFIG_FILE
+import yaml
 
 def get_time() -> str:
     current_time = datetime.now()
@@ -65,25 +66,28 @@ def encode_specs(**kargs) -> tuple[list, list]:
         ValueError: if input key is not recognized
     """
 
-    public_spec_dict = {
-        CPU_F: 0,
-        RAM: 0,
-        FP16_MEM: 0,
-        ANDROID_OS: 0,
-    }
+    with open(GLOBAL_CONFIG_FILE, "r") as gyamlfile:
+        gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
+        public_spec = gconfig["job_public_constraint"]
+        private_spec = gconfig["job_private_constraint"]
 
-    private_spec_dict = {DATASET_SIZE: 0}
+    public_spec_dict = {}
+    private_spec_dict = {}
 
-    for key in public_spec_dict.keys():
+    for key in public_spec:
         if key in kargs:
             public_spec_dict[key] = kargs[key]
+        else:
+            public_spec_dict[key] = 0
 
-    for key in private_spec_dict.keys():
+    for key in private_spec:
         if key in kargs:
             private_spec_dict[key] = kargs[key]
+        else:
+            private_spec_dict[key] = 0
 
     for key in kargs.keys():
-        if key not in public_spec_dict and key not in private_spec_dict:
+        if key not in public_spec and key not in private_spec:
             raise ValueError(f"{key} spec is not supported")
 
     # TODO encoding, value check

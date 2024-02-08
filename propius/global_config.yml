@@ -36,9 +36,9 @@ client_manager:
 max_task_offer_list_len: 20
 
 # PARAMETER_SERVER
-root_ps_ip: 128.110.219.80
+root_ps_ip: localhost #128.110.219.80
 root_ps_port: 60000
-leaf_ps_ip: 141.211.141.44
+leaf_ps_ip: localhost #141.211.141.44
 leaf_ps_port: 60001
 root_parameter_store_ttl: 1000
 root_aggregation_store_ttl: 2000
@@ -71,8 +71,8 @@ job_public_constraint:
 - fp16_mem
 - android_os
 job_private_constraint:
-- dataset_hash
-- dataset_size
+- dataset_size_dummy
+- dataset_size_house_prize
 
 public_max:
   cpu_f: 24.8
@@ -83,7 +83,3 @@ public_max:
 # ---General---
 verbose: true
 plot: true
-
-# ---evaluation
-dataset_hash:
-  house_price: -1680012827595101728
