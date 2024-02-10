@@ -4,7 +4,7 @@ from propius.controller.config import GLOBAL_CONFIG_FILE
 from propius.controller.job.propius_job import Propius_job
 from propius.controller.util import Msg_level, Propius_logger
 from propius.controller.client.propius_client import Propius_client
-from tests.util import init, clean_up
+from propius.util import init, clean_up
 import yaml
 import time
 import os

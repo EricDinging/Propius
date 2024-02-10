@@ -1,7 +1,7 @@
 from propius.parameter_server.config import GLOBAL_CONFIG_FILE
 from propius.job import Job
 from propius.client import Client
-from tests.util import init, init_ps, clean_up
+from propius.util import init, init_ps, clean_up
 import yaml
 import pytest
 import time
