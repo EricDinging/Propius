@@ -25,27 +25,24 @@ class Propius_client():
             logging: whether to log or not
 
         Raises:
-            ValueError: missing config args
+            ValueError: input key not recognized | missing key
         """
 
         self.id = -1
-        try:
-            # TODO arguments check
-            # TODO add state flow check
-            public, private = encode_specs(**client_config['public_specifications'], **client_config['private_specifications'])
-            self.public_specifications = tuple(public)
-            self.private_specifications = tuple(private)
-            self.option = client_config['option'] if 'option' in client_config else 0
+        # TODO arguments check
+        # TODO add state flow check
+        public, private = encode_specs(**client_config['public_specifications'], **client_config['private_specifications'])
+        self.public_specifications = tuple(public)
+        self.private_specifications = tuple(private)
+        self.option = client_config['option'] if 'option' in client_config else 0
 
-            self._lb_ip = client_config['load_balancer_ip']
-            self._lb_port = client_config['load_balancer_port']
-            self._lb_channel = None
-            self._lb_stub = None
+        self._lb_ip = client_config['load_balancer_ip']
+        self._lb_port = client_config['load_balancer_port']
+        self._lb_channel = None
+        self._lb_stub = None
 
-            self.verbose = verbose
-            self.logging = logging
-        except Exception:
-            raise ValueError("Missing config arguments")
+        self.verbose = verbose
+        self.logging = logging
         
     def _cleanup_routine(self):
         try:

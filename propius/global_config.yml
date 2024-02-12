@@ -43,7 +43,7 @@ leaf_ps_port: 60001
 root_parameter_store_ttl: 1000
 root_aggregation_store_ttl: 2000
 leaf_parameter_store_ttl: 300 # min 10
-leaf_aggregation_store_ttl: 300 # min 10
+leaf_aggregation_store_ttl: 10 # min 10
 
 max_message_length: 1073741824  # 1GB
 in_memory: true
@@ -72,7 +72,7 @@ job_public_constraint:
 - android_os
 job_private_constraint:
 - dataset_size_dummy
-- dataset_size_house_prize
+- dataset_size_house_price
 
 public_max:
   cpu_f: 24.8

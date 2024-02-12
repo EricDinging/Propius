@@ -1,5 +1,6 @@
 from propius.client import Client as client_portal
 import torch
+import copy
 
 class Client:
     def __init__(self, data, config):
@@ -11,11 +12,11 @@ class Client:
         self.x = self.data[:, :-1]
         self.y = self.data[:, -1]
 
-        self.weigths = None
-        self.new_weights = None
+        self.weigths = []
+        self.new_weights = []
 
         self.config = config
-        self.client_portal = client_portal(config, True, True)
+        self.client_portal = client_portal(config, True, False)
 
     def _normalize(self):
         for i in range(0, self.data.shape[1] - 1):
@@ -46,16 +47,19 @@ class Client:
     
     def get(self):
         result = self.client_portal.get()
-        meta, self.weigths = result
+        meta, data = result
+        self.weigths = data
+        self.new_weights = []
 
     def execute(self):
         num_epochs = 10
         learning_rate = 0.1
-        self.new_weights, _ = self._gradient_descent(self.x, self.y, self.weights, learning_rate, num_epochs)
+        new_weights, _ = self._gradient_descent(self.x, self.y, copy.deepcopy(self.weigths[0]), learning_rate, num_epochs)
 
+        self.new_weights = [new_weights]
     def push(self):
         if self.new_weights:
             self.client_portal.push(self.new_weights)
-            self.new_weights = None
+            self.new_weights = []
 
     
