@@ -3,7 +3,7 @@ from propius.controller.database.db import Job_db
 from propius.controller.config import GLOBAL_CONFIG_FILE
 from propius.controller.job.propius_job import Propius_job
 from propius.controller.util import Msg_level, Propius_logger
-from tests.util import clean_up, init
+from propius.util import clean_up, init
 import yaml
 import time
 import os
@@ -28,7 +28,7 @@ def job_register(gconfig):
     job_config = {
         "public_constraint": {"cpu_f": 0, "ram": 0, "fp16_mem": 0, "android_os": 0},
         "private_constraint": {
-            "dataset_size": 100,
+            "dataset_size_dummy": 100,
         },
         "total_round": 10,
         "demand": 5,

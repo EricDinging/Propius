@@ -4,7 +4,7 @@ from propius.controller.config import GLOBAL_CONFIG_FILE
 from propius.controller.job.propius_job import Propius_job
 from propius.controller.util import Msg_level, Propius_logger
 from propius.controller.client.propius_client import Propius_client
-from tests.util import init, clean_up
+from propius.util import init, clean_up
 import yaml
 import time
 import os
@@ -31,7 +31,7 @@ def job_register(gconfig, cst_dict=None):
         if cst_dict is None
         else cst_dict,
         "private_constraint": {
-            "dataset_size": 100,
+            "dataset_size_dummy": 100,
         },
         "total_round": 10,
         "demand": 5,
@@ -54,7 +54,7 @@ def client_ping(gconfig, public_spec):
     client_config = {
         "public_specifications": public_spec,
         "private_specifications": {
-            "dataset_size": 1000,
+            "dataset_size_dummy": 1000,
         },
         "load_balancer_ip": lb_ip,
         "load_balancer_port": lb_port,

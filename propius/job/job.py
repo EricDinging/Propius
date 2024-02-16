@@ -9,8 +9,8 @@ class Job:
 
         Args:
             job_config:
-                public_constraint: dict
-                private_constraint: dict
+                public_constraint: dict, a tuple of scalars
+                private_constraint: dict, specifying desired dataset and its size
                 total_round: optional
                 demand: estimated demand per round
                 job_manager_ip: job manager IP
