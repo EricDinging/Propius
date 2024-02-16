@@ -8,13 +8,15 @@ import time
 import torch
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 
-client_num = 3
+client_num = 4
 clients = []
 job = None
-train_prop = 4/5
+train_prop = 4 / 5
 
-total_round = 10
+total_round = 5
+
 
 def plot_cost(J_all, num_epochs):
     plt.xlabel("Epochs")
@@ -36,7 +38,10 @@ def load_data(filename):
         "price",
     ]
     extracted_data = df[columns_of_interest]
-    return torch.tensor(extracted_data.values, dtype=torch.float32)
+    data = torch.tensor(extracted_data.values, dtype=torch.float32)
+    data = torch.hstack((torch.ones((data.shape[0], 1), dtype=torch.float32), data))
+    # data = torch.hstack((torch.ones((data.shape[0], 1)), data))
+    return data
 
 
 def main():
@@ -64,17 +69,17 @@ def main():
 
         print(f"Client dataset size: {per_client_size}")
 
-        data = load_data(
-            "/home/eric/Documents/Academic/Propius/datasets/house_price/portland_housing.csv"
-        )
+        data = load_data("./datasets/house_price/portland_housing.csv")
         indices = torch.randperm(data.size(0))
         data = data[indices]
 
         train_size = int(data.shape[0] * train_prop)
-        data_train = data[:train_size,:]
-        data_test = data[train_size:,:]
+        data_train = data[:train_size, :]
+        data_test = data[train_size:, :]
 
-        per_client_idx = [torch.randperm(train_size)[:per_client_size[i]] for i in range(client_num)]
+        per_client_idx = [
+            torch.randperm(train_size)[: per_client_size[i]] for i in range(client_num)
+        ]
 
         for i in range(client_num):
             client_config = {
@@ -112,12 +117,14 @@ def main():
             "max_message_length": gconfig["max_message_length"],
         }
 
-        weights = torch.zeros((data.shape[1]-1, 1))
-        model = {"weights" : weights}
-        job = Job(model, job_config)
+        weights = torch.zeros((data.shape[1] - 1, 1), dtype=torch.float32)
+        model = {"weights": weights}
+        job = Job(data_test, model, job_config)
 
         # Begin
         job.register()
+
+        test_cost_list = []
 
         for i in range(total_round):
             job.request()
@@ -130,6 +137,11 @@ def main():
             job.update()
             print(f"Round {i} #######")
             print(job.model["weights"])
+
+            test_cost = job.test()
+            print(f"test_cost: {test_cost}")
+            test_cost_list.append(test_cost)
+
         job.complete()
 
     except Exception as e:
@@ -137,6 +149,8 @@ def main():
     finally:
         print("\ntearing down")
         clean_up(process)
+        if test_cost_list:
+            plot_cost(test_cost_list, range(total_round))
 
 
 if __name__ == "__main__":
