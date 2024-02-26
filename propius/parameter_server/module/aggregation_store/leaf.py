@@ -10,6 +10,7 @@ import copy
 import asyncio
 import torch
 import pickle
+import time
 from propius.parameter_server.channels import (
     parameter_server_pb2,
     parameter_server_pb2_grpc,
@@ -49,7 +50,10 @@ class Leaf_aggregation_store(Aggregation_store):
                 if entry.get_round() == round:
                     entry.increment_agg_cnt(agg_cnt)
                     entry.set_ttl(self.default_ttl)
+                    t1 = time.time()
                     result = base_reduce(entry.get_param(), data, torch.Tensor.add)
+                    t2 = time.time()
+                    self.logger.print(f"Reduce duration: {t2-t1}", Msg_level.INFO)
                     entry.set_param(result)
                     return True
                 elif entry.get_round() > round:
