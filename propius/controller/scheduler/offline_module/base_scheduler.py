@@ -72,7 +72,7 @@ class Scheduler(propius_pb2_grpc.SchedulerServicer):
         pass
 
     async def GET_JOB_GROUP(self, request, context):
-        """Service function that handles job group fetch request from clietn manager.
+        """Service function that handles job group fetch request from client manager.
         """
         async with self.lock:
             await self.offline()
