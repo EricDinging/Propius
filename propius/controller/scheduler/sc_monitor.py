@@ -1,5 +1,5 @@
 from propius.controller.util import get_time, Propius_logger, Monitor
-from propius.controller.config import PROPIUS_CONTROLLER_ROOT
+from propius.controller.config import PROPIUS_ROOT
 import matplotlib.pyplot as plt
 import asyncio
 import os
@@ -58,6 +58,6 @@ class SC_monitor(Monitor):
             # plt.subplot(2, 1, 2)
             self._plot_request()
             # plt.tight_layout()
-            plot_file = PROPIUS_CONTROLLER_ROOT / self.plot_path / "sc.jpg"
+            plot_file = PROPIUS_ROOT / self.plot_path / "sc.jpg"
             os.makedirs(os.path.dirname(plot_file), exist_ok=True)
             fig.savefig(plot_file)
