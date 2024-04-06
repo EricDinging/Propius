@@ -185,7 +185,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             event=SHUT_DOWN,
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
-            )
+        )
 
         async with self.lock:
             if not self.execution_start and \
@@ -218,7 +218,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             event=SHUT_DOWN,
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
-            )
+        )
         async with self.lock:
             if self.execution_start and client_id in self.client_event_dict:
                 event_dict = self.client_event_dict[client_id].popleft()
@@ -251,7 +251,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             event=SHUT_DOWN,
             meta=pickle.dumps(DUMMY_RESPONSE),
             data=pickle.dumps(DUMMY_RESPONSE)
-            )
+        )
         async with self.lock:
             if self.execution_start and \
                 meta["round"] == self.cur_round and \

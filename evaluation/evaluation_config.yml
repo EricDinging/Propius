@@ -11,7 +11,8 @@ job_public_constraint:
 - fp16_mem
 - android_os
 job_private_constraint:
-- dataset_size
+- dataset_size_dummy
+- dataset_size_house_price
 
 sched_alg: random
 

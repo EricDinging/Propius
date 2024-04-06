@@ -114,8 +114,6 @@ class Client:
                 self.local_steps = max(min(self.local_steps, int((remain_time - self.upload_model_comm_time) / one_step_exe_time)), 1)
 
             exe_time = one_step_exe_time * self.local_steps
-            #TODO
-            # exe_time += 3
 
             if meta["gradient_policy"] != 'fed-prox':
                 if exe_time + self.upload_model_comm_time > remain_time:
