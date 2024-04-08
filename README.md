@@ -40,13 +40,16 @@ Under construction
 ```
 
 ## Getting Started
-- Quick installation (Linux / MacOS)
+- [Install packages in a virtual environment using pip and venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
+    - Preferred, light-weight solution
+    - Use `python -m pip install .` once the env is activated
+    - `python -m pip install -r requirements.txt`
+- Quick installation (Linux / MacOS) with Anaconda/miniconda
 ```bash
 source install.sh # add `--cuda` if you want CUDA
 pip install -e .
 ```
-- [Step-by-step installation](./docs/getting_started/getting_started.md)
-
+- [Step-by-step installation](./docs/getting_started/getting_started.md) with Anaconda/miniconda
 ## Usage
 ### Quick Launch
 We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network.
