@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "propius"
-description = "FL Resource Manager"
+description = "Collaborative ML Platform"
 version = "1.0.0"
 requires-python = ">=3.9"
 dependencies = [
@@ -19,8 +19,8 @@ dependencies = [
     "pytest-mock",
 ]
 
-[tool.setuptools]
-packages = ["propius"]
+[tool.setuptools.packages]
+find = {}
 
 [project.scripts]
 propius-controller-scheduler = "propius.controller.scheduler.__main__:main"

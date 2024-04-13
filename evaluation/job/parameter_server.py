@@ -1,21 +1,20 @@
-import sys
-[sys.path.append(i) for i in ['.', '..', '...']]
-import asyncio
-import yaml
-import grpc
-from propius.controller.job.propius_job_aio import Propius_job_aio
+from propius.controller import Propius_job_aio
 from channels import parameter_server_pb2
 from channels import parameter_server_pb2_grpc
 from evaluation.commons import *
 from collections import deque
 from evaluation.executor.channels import executor_pb2
 from evaluation.executor.channels import executor_pb2_grpc
+import sys
 import os
 import csv
 import logging
 import logging.handlers
 import time
 import pickle
+import asyncio
+import yaml
+import grpc
 
 _cleanup_coroutines = []
 
@@ -467,7 +466,7 @@ async def run(config):
     
 if __name__ == '__main__':
     if len(sys.argv) != 4:
-        custom_print("Usage: python evaluation/job/parameter_server/parameter_server.py <config> <ip> <port>", ERROR)
+        custom_print("Usage: python evaluation/job/parameter_server.py <config> <ip> <port>", ERROR)
         exit(1)
         
     config_file = sys.argv[1]
