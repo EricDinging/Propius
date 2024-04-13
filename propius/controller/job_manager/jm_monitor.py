@@ -2,7 +2,7 @@ import asyncio
 import time
 import matplotlib.pyplot as plt
 from propius.controller.util import Msg_level, Propius_logger, get_time, Monitor
-from propius.controller.config import PROPIUS_CONTROLLER_ROOT
+from propius.controller.config import PROPIUS_ROOT, PROPIUS_CONTROLLER_ROOT
 import os
 
 
@@ -83,8 +83,8 @@ class JM_monitor(Monitor):
             self._plot_job()
             plt.subplot(2, 1, 2)
             self._plot_request()
-            # plt.tight_layout()
+            plt.tight_layout()
 
-            plot_file = PROPIUS_CONTROLLER_ROOT / self.plot_path / "jm.jpg"
+            plot_file = PROPIUS_ROOT / self.plot_path / "jm.jpg"
             os.makedirs(os.path.dirname(plot_file), exist_ok=True)
             fig.savefig(plot_file)
