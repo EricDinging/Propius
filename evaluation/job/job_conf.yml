@@ -33,4 +33,4 @@ public_constraint:
     fp16_mem: 0
     android_os: 0
 private_constraint:
-    dataset_size: 100
+    dataset_size_dummy: 100
