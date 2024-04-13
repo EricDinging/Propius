@@ -1,5 +1,5 @@
 from propius.controller.util import get_time, Propius_logger, Monitor
-from propius.controller.config import PROPIUS_CONTROLLER_ROOT, PROPIUS_ROOT
+from propius.controller.config import PROPIUS_ROOT, PROPIUS_CONTROLLER_ROOT
 import matplotlib.pyplot as plt
 import asyncio
 import os

@@ -2,7 +2,7 @@ import asyncio
 import time
 import matplotlib.pyplot as plt
 from propius.controller.util import Msg_level, Propius_logger, get_time, Monitor
-from propius.controller.config import PROPIUS_CONTROLLER_ROOT, PROPIUS_ROOT
+from propius.controller.config import PROPIUS_ROOT, PROPIUS_CONTROLLER_ROOT
 import os
 
 
