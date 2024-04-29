@@ -424,7 +424,8 @@ async def run(config):
             ps.round_result_cnt = 0
             ps.sched_time = time.time()
 
-            if not await ps.propius_stub.start_request(new_demand=False):
+            jm_ack_round = await ps.propius_stub.start_request(new_demand=False)
+            if jm_ack_round == -1:
                 if not await ps.re_register():
                     return
                 await asyncio.sleep(3)

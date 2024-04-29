@@ -6,7 +6,7 @@ public_specifications:
     fp16_mem: 1500
     android_os: 12
 private_specifications:
-    dataset_size: 170
+    dataset_size_dummy: 170
 
 # TODO
 task: cv

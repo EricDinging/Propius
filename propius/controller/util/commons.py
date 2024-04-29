@@ -65,7 +65,6 @@ def encode_specs(**kargs) -> tuple[list, list]:
     Raises:
         ValueError: if input key is not recognized
     """
-
     with open(GLOBAL_CONFIG_FILE, "r") as gyamlfile:
         gconfig = yaml.load(gyamlfile, Loader=yaml.FullLoader)
         public_spec = gconfig["job_public_constraint"]
