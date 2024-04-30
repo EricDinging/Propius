@@ -24,7 +24,7 @@ eval_interval: 10
 
 #TODO
 client_test_num: 20
-ideal_client: true
+ideal_client: false
 
 # Job
 total_job: 1
