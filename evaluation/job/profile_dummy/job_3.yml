@@ -1,7 +1,7 @@
 # Training and testing aggregator setting
-demand: 2
-total_round: 3
-over_selection: 1
+demand: 400
+total_round: 100
+over_selection: 1.2
 
 sched_timeout: 100
 exec_timeout: 500
@@ -28,9 +28,9 @@ gradient_policy: fed-avg
 
 # Client constraints
 public_constraint:
-    cpu_f: 0
-    ram: 0
-    fp16_mem: 0
-    android_os: 0
+    cpu_f: 6
+    ram: 4
+    fp16_mem: 800
+    android_os: 6
 private_constraint:
     dataset_size_dummy: 100
