@@ -1,10 +1,10 @@
 # Training and testing aggregator setting
-demand: 5
-total_round: 10
-over_selection: 2
+demand: 2
+total_round: 3
+over_selection: 1
 
 sched_timeout: 100
-exec_timeout: 600
+exec_timeout: 500
 
 # Training and testing client setting
 engine: pytorch

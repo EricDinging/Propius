@@ -221,7 +221,7 @@ class Client:
 
                 result = await self.propius_client_stub.auto_assign(ttl=5)
 
-                _, status, self.task_id, ps_ip, ps_port = result
+                _, status, self.task_id, ps_ip, ps_port, _ = result
 
                 await self.propius_client_stub.close()
                 

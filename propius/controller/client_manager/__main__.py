@@ -23,7 +23,7 @@ async def serve(gconfig, cm_id: int, logger: Propius_logger):
         logger.print(f"=====Client manager shutting down=====", Msg_level.WARNING)
         client_manager.cm_monitor.report(client_manager.cm_id)
         client_manager.client_db_portal.flushdb()
-        if client_manager.sched_mode == "online":
+        if client_manager.sched_mode == "offline":
             client_manager.temp_client_db_portal.flushdb()
         try:
             client_assign_task.cancel()
@@ -33,7 +33,8 @@ async def serve(gconfig, cm_id: int, logger: Propius_logger):
             pass
 
         try:
-            await client_manager.sched_channel.close()
+            if client_manager.sched_mode == "offline":
+                await client_manager.sched_channel.close()
         except Exception as e:
             logger.print(e, Msg_level.WARNING)
 

@@ -39,15 +39,15 @@ async def run(config):
     total_client_num = len(client_avail_dict)
 
     await asyncio.sleep(10)
+
     try:
-        for i in range(client_num):
+        for _ in range(client_num):
             client_idx = random.randint(0, total_client_num - 1)
-            # client_idx = i
             public_specs = {
                 name: client_spec_dict[client_idx % len(client_spec_dict)][name]
                 for name in public_constraint_name}
             private_specs = {
-                "dataset_size": client_size_dict[client_idx % len(client_size_dict)]}
+                "dataset_size_dummy": client_size_dict[client_idx % len(client_size_dict)]}
             
             if ideal_client:
                 active_time = [0]

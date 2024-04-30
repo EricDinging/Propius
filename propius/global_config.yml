@@ -15,7 +15,7 @@ scheduler_ip: localhost
 scheduler_port: 50000
 
 sched_mode: online # ['online', 'offline']
-sched_alg: random # ['fifo', 'random', 'srsf', 'irs']
+sched_alg: random # ['irs'] for online, ['fifo', 'random', 'srsf'] for offline
 
 ## IRS parameter
 tier_num: 3
