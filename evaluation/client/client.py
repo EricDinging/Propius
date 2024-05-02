@@ -239,15 +239,23 @@ class Client:
                 await self.event_monitor()
                 if self.verbose:
                     custom_print(f"c-{self.id}: disconnect from {ps_ip}:{ps_port}")
-            
-            except asyncio.CancelledError:
-                #TODO
-                custom_print(f"c-{self.id}: utilize_time/idle_time: {self.utilize_time}/{0}")
-                raise
+
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
                 custom_print(f"c-{self.id}: {e}", ERROR)
+            finally:
+                total_time = 0
+                for i in range(0, min(self.cur_period, len(self.active_time))):
+                    total_time += (self.inactive_time[i] - self.active_time[i]) * self.speedup_factor
+                if self.cur_period < len(self.active_time):
+                    cur_time = time.time() - self.eval_start_time
+                    if cur_time >= self.active_time[self.cur_period]:
+                        total_time += (cur_time - self.active_time[self.cur_period]) * self.speedup_factor
+
+                custom_print(f"c-{self.id}: utilize_time/total_time: {self.utilize_time}/{total_time}")
+                #TODO write to file
+
             
         await self.cleanup_routines(True)
         
