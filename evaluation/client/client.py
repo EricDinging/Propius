@@ -42,6 +42,7 @@ class Client:
         self.eval_start_time = client_config["eval_start_time"] if "eval_start_time" in client_config else time.time()
         self.active_time = client_config["active"]
         self.inactive_time = client_config["inactive"]
+        self.utilize_time = 0
         self.cur_period = 0
         self.speedup_factor = client_config["speedup_factor"]
         self.is_FA = client_config["is_FA"]
@@ -139,6 +140,7 @@ class Client:
         custom_print(f"c-{self.id}: Recieve {event} event, executing for {exe_time} seconds", INFO)
         await asyncio.sleep(exe_time)
 
+        self.utilize_time += exe_time * self.speedup_factor
         compl_event = event
         status = True
         compl_meta = {"round": self.round, "exec_id": self.id, "local_steps": self.local_steps}
@@ -237,7 +239,11 @@ class Client:
                 await self.event_monitor()
                 if self.verbose:
                     custom_print(f"c-{self.id}: disconnect from {ps_ip}:{ps_port}")
-
+            
+            except asyncio.CancelledError:
+                #TODO
+                custom_print(f"c-{self.id}: utilize_time/idle_time: {self.utilize_time}/{0}")
+                raise
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
