@@ -9,6 +9,7 @@ import logging
 import logging.handlers
 import pickle
 import os
+import csv
 from evaluation.client.client import *
 
 async def run(config):
@@ -38,7 +39,7 @@ async def run(config):
     task_list = []
     total_client_num = len(client_avail_dict)
 
-    await asyncio.sleep(10)
+    # await asyncio.sleep(10)
 
     try:
         for _ in range(client_num):
@@ -69,7 +70,8 @@ async def run(config):
                 "dispatcher_use_docker": config["dispatcher_use_docker"],
                 "speedup_factor": config["speedup_factor"],
                 "is_FA": config["is_FA"],
-                "verbose": False
+                "verbose": False,
+                "client_result_path": config["client_result_path"]
             }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)
@@ -107,6 +109,15 @@ if __name__ == '__main__':
         try:
             config = yaml.load(yamlfile, Loader=yaml.FullLoader)
             config["client_num"] = client_num
+
+            # init result report
+            csv_file_name = config["client_result_path"]
+            os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
+            fieldnames = ["utilize_time", "active_time"]
+            with open(csv_file_name, "w", newline="") as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(fieldnames)
+
             asyncio.run(run(config))
         except KeyboardInterrupt:
             pass

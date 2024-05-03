@@ -14,6 +14,8 @@ job_private_constraint:
 - dataset_size_dummy
 - dataset_size_house_price
 
+client_result_path: "./evaluation/monitor/client/client_result.csv"
+
 sched_alg: random
 
 # ---Evaluation setting---

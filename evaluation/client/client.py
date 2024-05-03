@@ -10,6 +10,8 @@ from propius.controller.client.propius_client_aio import Propius_client_aio
 from evaluation.commons import *
 from collections import deque
 import time
+import os
+import csv
 
 class Client:
     def __init__(self, client_config: dict):
@@ -52,6 +54,8 @@ class Client:
 
         self.update_model_comm_time = 0
         self.upload_model_comm_time = 0
+
+        self.client_result_path = client_config["client_result_path"]
 
     def _deallocate(self):
         self.event_queue.clear()
@@ -250,9 +254,14 @@ class Client:
                 cur_time = time.time() - self.eval_start_time
                 if cur_time >= self.active_time[self.cur_period]:
                     total_time += (cur_time - self.active_time[self.cur_period]) * self.speedup_factor
+            
+            csv_file_name = self.client_result_path
+            os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
+            with open(csv_file_name, mode="a", newline="") as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow([self.utilize_time, total_time])
 
-            custom_print(f"c-{self.id}: utilize_time/total_time: {self.utilize_time}/{total_time}")
-            #TODO write to file
+            custom_print(f"c-{self.id}: utilize_time/active_time: {self.utilize_time}/{total_time}")
             
             await self.cleanup_routines(True)
         
@@ -275,6 +284,7 @@ if __name__ == '__main__':
             config["speedup_factor"] = 1
             config["is_FA"] = False
             config["verbose"] = True
+            config["client_result_path"] = eval_config["client_result_path"]
             client = Client(config)
             asyncio.run(client.run())
      
