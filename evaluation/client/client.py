@@ -187,77 +187,74 @@ class Client:
             pass
 
     async def run(self):
-        while True:
-            try:
-                if self.cur_period >= len(self.active_time) or \
-                    self.cur_period >= len(self.inactive_time):
-                    custom_print(f"Period: {self.cur_period}", ERROR)
-                    custom_print(f"Active time: {self.active_time[-1]}", ERROR)
-                    custom_print(f"Inactive time: {self.inactive_time[-1]}", ERROR)
-                    custom_print(f"c-{self.id}: ==shutting down==", WARNING)
-                    break
-                cur_time = time.time() - self.eval_start_time
-
-                if self.active_time[self.cur_period] > self.inactive_time[self.cur_period]:
-                    custom_print(f"Period: {self.cur_period}", ERROR)
-                    custom_print(f"Active time: {self.active_time}", ERROR)
-                    custom_print(f"Inactive time: {self.inactive_time}", ERROR)
-                    break
-                
-                if cur_time < self.active_time[self.cur_period]:
-                    sleep_time = self.active_time[self.cur_period] - cur_time
-                    # custom_print(f"c-{self.id}: sleep for {sleep_time}")
-                    await asyncio.sleep(sleep_time)
-                    continue
-                elif cur_time >= self.inactive_time[self.cur_period]:
-                    self.cur_period += 1
-                    continue
-
-                
-                # remain_time = self.remain_time()
-                # if remain_time <= 600 / self.speedup_factor:
-                #     await asyncio.sleep(remain_time)
-                #     continue
-                
-                await self.propius_client_stub.connect()
-
-                result = await self.propius_client_stub.auto_assign(ttl=5)
-
-                _, status, self.task_id, ps_ip, ps_port, _ = result
-
-                await self.propius_client_stub.close()
-                
-                if not status:
-                    sleep_time = 20
-                    sleep_time /= self.speedup_factor
-                    await asyncio.sleep(sleep_time)
-                    continue
-                
-                await self._connect_to_ps(ps_ip, ps_port)
-                if self.verbose:
-                    custom_print(f"c-{self.id}: connecting to {ps_ip}:{ps_port}")
-                await self.event_monitor()
-                if self.verbose:
-                    custom_print(f"c-{self.id}: disconnect from {ps_ip}:{ps_port}")
-
-            except KeyboardInterrupt:
-                raise KeyboardInterrupt
-            except Exception as e:
-                custom_print(f"c-{self.id}: {e}", ERROR)
-            finally:
-                total_time = 0
-                for i in range(0, min(self.cur_period, len(self.active_time))):
-                    total_time += (self.inactive_time[i] - self.active_time[i]) * self.speedup_factor
-                if self.cur_period < len(self.active_time):
+        try:
+            while True:
+                try:
+                    if self.cur_period >= len(self.active_time) or \
+                        self.cur_period >= len(self.inactive_time):
+                        custom_print(f"Period: {self.cur_period}", ERROR)
+                        custom_print(f"Active time: {self.active_time[-1]}", ERROR)
+                        custom_print(f"Inactive time: {self.inactive_time[-1]}", ERROR)
+                        custom_print(f"c-{self.id}: ==shutting down==", WARNING)
+                        break
                     cur_time = time.time() - self.eval_start_time
-                    if cur_time >= self.active_time[self.cur_period]:
-                        total_time += (cur_time - self.active_time[self.cur_period]) * self.speedup_factor
 
-                custom_print(f"c-{self.id}: utilize_time/total_time: {self.utilize_time}/{total_time}")
-                #TODO write to file
+                    if self.active_time[self.cur_period] > self.inactive_time[self.cur_period]:
+                        custom_print(f"Period: {self.cur_period}", ERROR)
+                        custom_print(f"Active time: {self.active_time}", ERROR)
+                        custom_print(f"Inactive time: {self.inactive_time}", ERROR)
+                        break
+                    
+                    if cur_time < self.active_time[self.cur_period]:
+                        sleep_time = self.active_time[self.cur_period] - cur_time
+                        # custom_print(f"c-{self.id}: sleep for {sleep_time}")
+                        await asyncio.sleep(sleep_time)
+                        continue
+                    elif cur_time >= self.inactive_time[self.cur_period]:
+                        self.cur_period += 1
+                        continue
 
+                    
+                    # remain_time = self.remain_time()
+                    # if remain_time <= 600 / self.speedup_factor:
+                    #     await asyncio.sleep(remain_time)
+                    #     continue
+                    
+                    await self.propius_client_stub.connect()
+
+                    result = await self.propius_client_stub.auto_assign(ttl=5)
+
+                    _, status, self.task_id, ps_ip, ps_port, _ = result
+
+                    await self.propius_client_stub.close()
+                    
+                    if not status:
+                        sleep_time = 20
+                        sleep_time /= self.speedup_factor
+                        await asyncio.sleep(sleep_time)
+                        continue
+                    
+                    await self._connect_to_ps(ps_ip, ps_port)
+                    if self.verbose:
+                        custom_print(f"c-{self.id}: connecting to {ps_ip}:{ps_port}")
+                    await self.event_monitor()
+                    if self.verbose:
+                        custom_print(f"c-{self.id}: disconnect from {ps_ip}:{ps_port}")
+                except Exception as e:
+                    custom_print(f"c-{self.id}: {e}", ERROR)
+        finally:
+            total_time = 0
+            for i in range(0, min(self.cur_period, len(self.active_time))):
+                total_time += (self.inactive_time[i] - self.active_time[i]) * self.speedup_factor
+            if self.cur_period < len(self.active_time):
+                cur_time = time.time() - self.eval_start_time
+                if cur_time >= self.active_time[self.cur_period]:
+                    total_time += (cur_time - self.active_time[self.cur_period]) * self.speedup_factor
+
+            custom_print(f"c-{self.id}: utilize_time/total_time: {self.utilize_time}/{total_time}")
+            #TODO write to file
             
-        await self.cleanup_routines(True)
+            await self.cleanup_routines(True)
         
 if __name__ == '__main__':
     config_file = './evaluation/client/test_client_conf.yml'
@@ -279,8 +276,6 @@ if __name__ == '__main__':
             config["is_FA"] = False
             config["verbose"] = True
             client = Client(config)
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(client.run())
-            loop.close()
+            asyncio.run(client.run())
      
 

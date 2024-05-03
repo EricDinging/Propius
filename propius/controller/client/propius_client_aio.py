@@ -52,8 +52,8 @@ class Propius_client_aio():
         except Exception:
             pass
 
-    async def __del__(self):
-        await self._cleanup_routine()
+    # async def __del__(self):
+    #     await self._cleanup_routine()
 
     def _custom_print(self, message: str, level: int=Msg_level.PRINT):
         if self.verbose:

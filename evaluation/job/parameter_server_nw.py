@@ -505,14 +505,9 @@ if __name__ == '__main__':
                 config['do_compute'] = eval_config['do_compute']
                 config['speedup_factor'] = eval_config['speedup_factor']
                 # config['model_size'] = 10
-
-                loop = asyncio.get_event_loop()
-                loop.run_until_complete(run(config))
+                asyncio.run(run(config))
                 
-        except KeyboardInterrupt:
-            pass
         except Exception as e:
             custom_print(e, ERROR)
         finally:
-            loop.run_until_complete(*_cleanup_coroutines)
-            loop.close()
+            asyncio.run(*_cleanup_coroutines)

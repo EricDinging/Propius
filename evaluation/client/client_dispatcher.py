@@ -77,6 +77,7 @@ async def run(config):
         while True:
             await asyncio.sleep(10)
     except KeyboardInterrupt:
+        print("Cancelled")
         for task in task_list:
             task.cancel()
 
@@ -106,8 +107,7 @@ if __name__ == '__main__':
         try:
             config = yaml.load(yamlfile, Loader=yaml.FullLoader)
             config["client_num"] = client_num
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(run(config))
+            asyncio.run(run(config))
         except KeyboardInterrupt:
             pass
         except Exception as e:

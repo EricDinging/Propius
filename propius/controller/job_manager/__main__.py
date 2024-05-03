@@ -71,16 +71,13 @@ def main():
             )
 
             logger.print(f"read config successfully", Msg_level.INFO)
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(serve(gconfig, logger))
+            asyncio.run(serve(gconfig, logger))
         except KeyboardInterrupt:
             pass
         except Exception as e:
             logger.print(e, Msg_level.ERROR)
         finally:
-            loop.run_until_complete(*_cleanup_coroutines)
-            loop.close()
-
+            asyncio.run(*_cleanup_coroutines)
 
 if __name__ == "__main__":
     main()
