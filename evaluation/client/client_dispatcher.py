@@ -39,7 +39,7 @@ async def run(config):
     task_list = []
     total_client_num = len(client_avail_dict)
 
-    # await asyncio.sleep(10)
+    await asyncio.sleep(10)
 
     try:
         for _ in range(client_num):
@@ -111,12 +111,12 @@ if __name__ == '__main__':
             config["client_num"] = client_num
 
             # init result report
-            csv_file_name = config["client_result_path"]
-            os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
-            fieldnames = ["utilize_time", "active_time"]
-            with open(csv_file_name, "w", newline="") as csv_file:
-                writer = csv.writer(csv_file)
-                writer.writerow(fieldnames)
+            # csv_file_name = config["client_result_path"]
+            # os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
+            # fieldnames = ["utilize_time", "active_time"]
+            # with open(csv_file_name, "w", newline="") as csv_file:
+            #     writer = csv.writer(csv_file)
+            #     writer.writerow(fieldnames)
 
             asyncio.run(run(config))
         except KeyboardInterrupt:
