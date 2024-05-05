@@ -1,4 +1,6 @@
 # ---Propius setting---
+use_propius: false
+
 load_balancer_ip: 130.127.133.180
 load_balancer_port: 50002
 

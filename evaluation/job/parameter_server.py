@@ -27,6 +27,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             int(config["over_selection"] * config["demand"])
         
         self.do_compute = config["do_compute"]
+        self.use_propius = config["use_propius"]
 
         if config["dispatcher_use_docker"]:
             config["executor_ip"] = "executor"
@@ -90,7 +91,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     async def round_exec_start(self):
         custom_print(f"PS {self.id}-{self.cur_round}: start execution", INFO)
-        await self.propius_stub.end_request()
+        if self.use_propius:
+            await self.propius_stub.end_request()
         self.execution_start = True
         self.sched_time = time.time() - self.sched_time
 
@@ -360,7 +362,8 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 async def run(config):
     async def server_graceful_shutdown():
         ps.gen_report()
-        await ps.propius_stub.complete_job()
+        if ps.use_propius:
+            await ps.propius_stub.complete_job()
         
         if ps.do_compute:
             task_meta = {}
@@ -384,9 +387,10 @@ async def run(config):
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     # Register
-    if not await ps.propius_stub.register():
-        custom_print(f"Parameter server: register failed", ERROR)
-        return
+    if ps.use_propius:
+        if not await ps.propius_stub.register():
+            custom_print(f"Parameter server: register failed", ERROR)
+            return
     
     grad_policy = config["gradient_policy"]
     job_meta = {
@@ -424,12 +428,13 @@ async def run(config):
             ps.round_result_cnt = 0
             ps.sched_time = time.time()
 
-            jm_ack_round = await ps.propius_stub.start_request(new_demand=False)
-            if jm_ack_round == -1:
-                if not await ps.re_register():
-                    return
-                await asyncio.sleep(3)
-                continue
+            if ps.use_propius:
+                jm_ack_round = await ps.propius_stub.start_request(new_demand=False)
+                if jm_ack_round == -1:
+                    if not await ps.re_register():
+                        return
+                    await asyncio.sleep(3)
+                    continue
             
             try:
                 timeout = config['sched_timeout'] / config['speedup_factor']
@@ -437,6 +442,7 @@ async def run(config):
                 await asyncio.wait_for(ps.cv.wait(), timeout=timeout)
             except asyncio.TimeoutError:
                 custom_print(f"PS {ps.id}-{ps.cur_round}: schedule timeout", WARNING)
+
                 await ps.close_failed_round()
                 ps.total_sched_delay += config['sched_timeout']
                 ps.num_sched_timeover += 1
@@ -505,6 +511,7 @@ if __name__ == '__main__':
                 config['sched_alg'] = eval_config['sched_alg']
                 config['do_compute'] = eval_config['do_compute']
                 config['speedup_factor'] = eval_config['speedup_factor']
+                config["use_propius"] = eval_config["use_propius"]
                 # config['model_size'] = 10
 
                 asyncio.run(run(config))
