@@ -261,7 +261,7 @@ class Client:
                 writer = csv.writer(csv_file)
                 writer.writerow([self.utilize_time, total_time])
 
-            custom_print(f"c-{self.id}: utilize_time/active_time: {self.utilize_time}/{total_time}")
+            custom_print(f"c-{self.id}: utilize_time/active_time: {self.utilize_time}/{total_time}", WARNING)
             
             await self.cleanup_routines(True)
         
