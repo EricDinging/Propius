@@ -39,7 +39,7 @@ async def run(config):
     task_list = []
     total_client_num = len(client_avail_dict)
 
-    # await asyncio.sleep(10)
+    await asyncio.sleep(10)
 
     try:
         for _ in range(client_num):
@@ -71,7 +71,12 @@ async def run(config):
                 "speedup_factor": config["speedup_factor"],
                 "is_FA": config["is_FA"],
                 "verbose": False,
-                "client_result_path": config["client_result_path"]
+                "client_result_path": config["client_result_path"],
+                "use_propius": config["use_propius"],
+                "total_job": config["total_job"],
+                "job_profile_folder": config["profile_folder"],
+                "job_driver_ip": config["job_driver_ip"],
+                "job_driver_starting_port": config["job_driver_starting_port"]
             }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)

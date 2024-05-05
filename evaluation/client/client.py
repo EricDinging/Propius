@@ -8,14 +8,18 @@ from evaluation.job.channels import parameter_server_pb2_grpc
 from evaluation.job.channels import parameter_server_pb2
 from propius.controller.client.propius_client_aio import Propius_client_aio
 from evaluation.commons import *
+from propius.controller.util.commons import *
 from collections import deque
 import time
 import os
 import csv
+import random
 
 class Client:
     def __init__(self, client_config: dict):
         self.id = client_config["id"]
+        self.use_propius = client_config["use_propius"]
+
         self.task_id = -1
         self.dispatcher_use_docker = client_config["dispatcher_use_docker"]
 
@@ -57,6 +61,13 @@ class Client:
 
         self.client_result_path = client_config["client_result_path"]
 
+        self.total_job = client_config["total_job"]
+        self.job_driver_ip = client_config["job_driver_ip"]
+        self.job_driver_starting_port = client_config["job_driver_starting_port"]
+        self.job_profile_folder = client_config["job_profile_folder"]
+        self.public_spec = client_config["public_specifications"]
+        self.private_spec = client_config["private_specifications"]
+
     def _deallocate(self):
         self.event_queue.clear()
         self.meta_queue.clear()
@@ -68,6 +79,22 @@ class Client:
         custom_print(
             f"c-{self.id}: connecting to parameter server on {ps_ip}:{ps_port}")
         
+    def _determine_eligiblity(self, job_id):
+        profile_path = os.path.join(self.job_profile_folder, f"job_{job_id}.yml")
+        with open(str(profile_path), 'r') as job_config_yaml:
+            job_config = yaml.load(job_config_yaml, Loader=yaml.FullLoader)
+            job_public_constraint = job_config["public_constraint"]
+            job_private_constraint = job_config["private_constraint"]
+
+        encoded_public_job, encoded_private_job = encode_specs(
+            **job_public_constraint, **job_private_constraint
+        )
+        encoded_public_client, encoded_private_client = encode_specs(
+            **self.public_spec, **self.private_spec
+        )
+        
+        return geq(encoded_public_client, encoded_public_job) and geq(encoded_private_client, encoded_private_job)
+
     async def handle_server_response(self, server_response: parameter_server_pb2.server_response):
         event = server_response.event
         meta = pickle.loads(server_response.meta)
@@ -77,12 +104,15 @@ class Client:
         self.data_queue.append(data)
 
     async def client_checkin(self)->bool:
-        client_id_msg = parameter_server_pb2.client_id(id=self.propius_client_stub.id)
+        client_id_msg = parameter_server_pb2.client_id(
+            id=self.propius_client_stub.id if self.use_propius else self.id
+        )
         server_response = await self.ps_stub.CLIENT_CHECKIN(client_id_msg)
         return server_response.event == DUMMY_EVENT
         
     async def client_ping(self)->bool:
-        client_id_msg = parameter_server_pb2.client_id(id=self.propius_client_stub.id)
+        client_id_msg = parameter_server_pb2.client_id(
+           id=self.propius_client_stub.id if self.use_propius else self.id)
         server_response = await self.ps_stub.CLIENT_PING(client_id_msg)
         if server_response.event == DUMMY_EVENT:
             return True
@@ -91,7 +121,7 @@ class Client:
     
     async def client_execute_complete(self, compl_event: str, status: bool, meta: str, data: str):
         client_complete_msg = parameter_server_pb2.client_complete(
-            id=self.propius_client_stub.id,
+            id=self.propius_client_stub.id if self.use_propius else self.id,
             event=compl_event,
             status=status,
             meta=pickle.dumps(meta),
@@ -160,6 +190,7 @@ class Client:
 
     async def event_monitor(self):
         if not await self.client_checkin():
+            await asyncio.sleep(3)
             return
         
         await asyncio.sleep(3)
@@ -223,14 +254,19 @@ class Client:
                     # if remain_time <= 600 / self.speedup_factor:
                     #     await asyncio.sleep(remain_time)
                     #     continue
-                    
-                    await self.propius_client_stub.connect()
 
-                    result = await self.propius_client_stub.auto_assign(ttl=5)
+                    status = False
 
-                    _, status, self.task_id, ps_ip, ps_port, _ = result
-
-                    await self.propius_client_stub.close()
+                    if self.use_propius:
+                        await self.propius_client_stub.connect()
+                        result = await self.propius_client_stub.auto_assign(ttl=5)
+                        _, status, self.task_id, ps_ip, ps_port, _ = result
+                        await self.propius_client_stub.close()
+                    else:
+                        ps_ip = self.job_driver_ip
+                        job_id = random.randint(0, self.total_job - 1)
+                        ps_port = self.job_driver_starting_port + job_id
+                        status = self._determine_eligiblity(job_id)
                     
                     if not status:
                         sleep_time = 20
@@ -241,11 +277,14 @@ class Client:
                     await self._connect_to_ps(ps_ip, ps_port)
                     if self.verbose:
                         custom_print(f"c-{self.id}: connecting to {ps_ip}:{ps_port}")
+
                     await self.event_monitor()
+
                     if self.verbose:
                         custom_print(f"c-{self.id}: disconnect from {ps_ip}:{ps_port}")
                 except Exception as e:
                     custom_print(f"c-{self.id}: {e}", ERROR)
+                    await asyncio.sleep(1)
         finally:
             total_time = 0
             for i in range(0, min(self.cur_period, len(self.active_time))):
@@ -263,7 +302,7 @@ class Client:
 
             custom_print(f"c-{self.id}: utilize_time/active_time: {self.utilize_time}/{total_time}", WARNING)
             
-            await self.cleanup_routines(True)
+            await self.cleanup_routines(propius=self.use_propius)
         
 if __name__ == '__main__':
     config_file = './evaluation/client/test_client_conf.yml'
@@ -285,6 +324,12 @@ if __name__ == '__main__':
             config["is_FA"] = False
             config["verbose"] = True
             config["client_result_path"] = eval_config["client_result_path"]
+
+            config["use_propius"] = eval_config["use_propius"]
+            config["total_job"] = eval_config["total_job"]
+            config["job_profile_folder"] = eval_config["profile_folder"]
+            config["job_driver_ip"] = eval_config["job_driver_ip"]
+            config["job_driver_starting_port"] = eval_config["job_driver_starting_port"]
             client = Client(config)
             asyncio.run(client.run())
      
