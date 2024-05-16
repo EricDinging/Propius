@@ -76,7 +76,9 @@ async def run(config):
                 "total_job": config["total_job"],
                 "job_profile_folder": config["profile_folder"],
                 "job_driver_ip": config["job_driver_ip"],
-                "job_driver_starting_port": config["job_driver_starting_port"]
+                "job_driver_starting_port": config["job_driver_starting_port"],
+                "dispatcher_id": config["dispatcher_id"],
+                "dispatcher_cnt": client_num,
             }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)
@@ -114,6 +116,7 @@ if __name__ == '__main__':
         try:
             config = yaml.load(yamlfile, Loader=yaml.FullLoader)
             config["client_num"] = client_num
+            config["dispatcher_id"] = dispatcher_id
 
             # init result report
             # csv_file_name = config["client_result_path"]

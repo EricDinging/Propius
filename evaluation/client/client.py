@@ -17,7 +17,7 @@ import random
 
 class Client:
     def __init__(self, client_config: dict):
-        self.id = client_config["id"]
+        self.id = client_config["id"] + client_config["dispatcher_id"] * client_config["dispatcher_cnt"]
         self.use_propius = client_config["use_propius"]
 
         self.task_id = -1
@@ -319,7 +319,6 @@ if __name__ == '__main__':
             config["load_balancer_port"] = eval_config["load_balancer_port"]
             config["dispatcher_use_docker"] = eval_config["dispatcher_use_docker"]
             config["eval_start_time"] = time.time()
-            config["dispatcher_use_docker"] = False
             config["speedup_factor"] = 1
             config["is_FA"] = False
             config["verbose"] = True
@@ -330,6 +329,8 @@ if __name__ == '__main__':
             config["job_profile_folder"] = eval_config["profile_folder"]
             config["job_driver_ip"] = eval_config["job_driver_ip"]
             config["job_driver_starting_port"] = eval_config["job_driver_starting_port"]
+            config["dispatcher_id"] = 0
+            config["dispatcher_cnt"] = 0
             client = Client(config)
             asyncio.run(client.run())
      
