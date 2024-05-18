@@ -18,7 +18,7 @@ import random
 class Client:
     def __init__(self, client_config: dict):
         self.id = client_config["id"] + client_config["dispatcher_id"] * client_config["dispatcher_cnt"]
-        self.use_propius = client_config["use_propius"]
+        self.selection_method = client_config["selection_method"]
 
         self.task_id = -1
         self.dispatcher_use_docker = client_config["dispatcher_use_docker"]
@@ -95,6 +95,12 @@ class Client:
         
         return geq(encoded_public_client, encoded_public_job) and geq(encoded_private_client, encoded_private_job)
 
+    def _get_demand(self, job_id):
+        profile_path = os.path.join(self.job_profile_folder, f"job_{job_id}.yml")
+        with open(str(profile_path), 'r') as job_config_yaml:
+            job_config = yaml.load(job_config_yaml, Loader=yaml.FullLoader)
+            return job_config["demand"]
+
     async def handle_server_response(self, server_response: parameter_server_pb2.server_response):
         event = server_response.event
         meta = pickle.loads(server_response.meta)
@@ -105,14 +111,14 @@ class Client:
 
     async def client_checkin(self)->bool:
         client_id_msg = parameter_server_pb2.client_id(
-            id=self.propius_client_stub.id if self.use_propius else self.id
+            id=self.propius_client_stub.id if self.selection_method == "propius" else self.id
         )
         server_response = await self.ps_stub.CLIENT_CHECKIN(client_id_msg)
         return server_response.event == DUMMY_EVENT
         
     async def client_ping(self)->bool:
         client_id_msg = parameter_server_pb2.client_id(
-           id=self.propius_client_stub.id if self.use_propius else self.id)
+           id=self.propius_client_stub.id if self.selection_method == "propius" else self.id)
         server_response = await self.ps_stub.CLIENT_PING(client_id_msg)
         if server_response.event == DUMMY_EVENT:
             return True
@@ -121,7 +127,7 @@ class Client:
     
     async def client_execute_complete(self, compl_event: str, status: bool, meta: str, data: str):
         client_complete_msg = parameter_server_pb2.client_complete(
-            id=self.propius_client_stub.id if self.use_propius else self.id,
+            id=self.propius_client_stub.id if self.selection_method == "propius" else self.id,
             event=compl_event,
             status=status,
             meta=pickle.dumps(meta),
@@ -223,6 +229,25 @@ class Client:
 
     async def run(self):
         try:
+            status = False
+            if self.selection_method == "static_partition":
+                elig_job = []
+                for job_id in range(0, self.total_job):
+                    if self._determine_eligiblity(job_id):
+                        elig_job.append(job_id)
+
+                if elig_job:
+                    status = True
+                    ps_ip = self.job_driver_ip
+                    weights, demands = [], []
+                    for job_id in elig_job:
+                        demands.append(self._get_demand(job_id))
+                    for demand in demands:
+                        weights.append(demand / sum(demands))
+                    
+                    job_id = random.choices(population=elig_job, weights=weights, k=1)[0]
+                    ps_port = self.job_driver_starting_port + job_id                
+
             while True:
                 try:
                     if self.cur_period >= len(self.active_time) or \
@@ -255,14 +280,12 @@ class Client:
                     #     await asyncio.sleep(remain_time)
                     #     continue
 
-                    status = False
-
-                    if self.use_propius:
+                    if self.selection_method == "propius":
                         await self.propius_client_stub.connect()
                         result = await self.propius_client_stub.auto_assign(ttl=5)
                         _, status, self.task_id, ps_ip, ps_port, _ = result
                         await self.propius_client_stub.close()
-                    else:
+                    elif self.selection_method == "random":
                         ps_ip = self.job_driver_ip
                         job_id = random.randint(0, self.total_job - 1)
                         ps_port = self.job_driver_starting_port + job_id
@@ -302,7 +325,7 @@ class Client:
 
             custom_print(f"c-{self.id}: utilize_time/active_time: {self.utilize_time}/{total_time}", WARNING)
             
-            await self.cleanup_routines(propius=self.use_propius)
+            await self.cleanup_routines(propius=(self.selection_method == "propius"))
         
 if __name__ == '__main__':
     config_file = './evaluation/client/test_client_conf.yml'
@@ -324,7 +347,7 @@ if __name__ == '__main__':
             config["verbose"] = True
             config["client_result_path"] = eval_config["client_result_path"]
 
-            config["use_propius"] = eval_config["use_propius"]
+            config["selection_method"] = eval_config["selection_method"]
             config["total_job"] = eval_config["total_job"]
             config["job_profile_folder"] = eval_config["profile_folder"]
             config["job_driver_ip"] = eval_config["job_driver_ip"]

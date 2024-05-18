@@ -1,10 +1,10 @@
 # ---Propius setting---
-use_propius: false
+selection_method: "static_partition" # "random", "static_partition"
 
-load_balancer_ip: 130.127.133.180
+load_balancer_ip: localhost
 load_balancer_port: 50002
 
-job_manager_ip: 130.127.133.180
+job_manager_ip: localhost
 job_manager_port: 50001
 
 job_public_constraint:
@@ -36,7 +36,7 @@ profile_folder: ./evaluation/job/profile_dummy
 job_trace: ./evaluation/job/trace/job_trace_10_dry.txt
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
-job_driver_ip: 130.127.133.169
+job_driver_ip: localhost
 job_driver_starting_port: 60000
 
 # ---Data path---

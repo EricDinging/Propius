@@ -27,7 +27,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
             int(config["over_selection"] * config["demand"])
         
         self.do_compute = config["do_compute"]
-        self.use_propius = config["use_propius"]
+        self.selection_method = config["selection_method"]
 
         if config["dispatcher_use_docker"]:
             config["executor_ip"] = "executor"
@@ -91,7 +91,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 
     async def round_exec_start(self):
         custom_print(f"PS {self.id}-{self.cur_round}: start execution", INFO)
-        if self.use_propius:
+        if self.selection_method == "propius":
             await self.propius_stub.end_request()
         self.execution_start = True
         self.sched_time = time.time() - self.sched_time
@@ -362,7 +362,7 @@ class Parameter_server(parameter_server_pb2_grpc.Parameter_serverServicer):
 async def run(config):
     async def server_graceful_shutdown():
         ps.gen_report()
-        if ps.use_propius:
+        if ps.selection_method == "propius":
             await ps.propius_stub.complete_job()
         
         if ps.do_compute:
@@ -387,7 +387,7 @@ async def run(config):
     _cleanup_coroutines.append(server_graceful_shutdown())
 
     # Register
-    if ps.use_propius:
+    if ps.selection_method == "propius":
         if not await ps.propius_stub.register():
             custom_print(f"Parameter server: register failed", ERROR)
             return
@@ -428,7 +428,7 @@ async def run(config):
             ps.round_result_cnt = 0
             ps.sched_time = time.time()
 
-            if ps.use_propius:
+            if ps.selection_method == "propius":
                 jm_ack_round = await ps.propius_stub.start_request(new_demand=False)
                 if jm_ack_round == -1:
                     if not await ps.re_register():
@@ -511,7 +511,7 @@ if __name__ == '__main__':
                 config['sched_alg'] = eval_config['sched_alg']
                 config['do_compute'] = eval_config['do_compute']
                 config['speedup_factor'] = eval_config['speedup_factor']
-                config["use_propius"] = eval_config["use_propius"]
+                config["selection_method"] = eval_config["selection_method"]
                 # config['model_size'] = 10
 
                 asyncio.run(run(config))

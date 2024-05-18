@@ -72,7 +72,7 @@ async def run(config):
                 "is_FA": config["is_FA"],
                 "verbose": False,
                 "client_result_path": config["client_result_path"],
-                "use_propius": config["use_propius"],
+                "selection_method": config["selection_method"],
                 "total_job": config["total_job"],
                 "job_profile_folder": config["profile_folder"],
                 "job_driver_ip": config["job_driver_ip"],
