@@ -11,6 +11,28 @@ import pickle
 import os
 import csv
 from evaluation.client.client import *
+from propius.controller.util.commons import *
+
+# static_partitioning
+alloc = [20, 40, 40, 80, 160]
+alloc_cnt = [0, 0, 0, 0, 0]
+
+def _determine_eligiblity(job_profile_folder, job_id, public_spec, private_spec):
+        profile_path = os.path.join(job_profile_folder, f"job_{job_id}.yml")
+        with open(str(profile_path), 'r') as job_config_yaml:
+            job_config = yaml.load(job_config_yaml, Loader=yaml.FullLoader)
+            job_public_constraint = job_config["public_constraint"]
+            job_private_constraint = job_config["private_constraint"]
+
+        encoded_public_job, encoded_private_job = encode_specs(
+            **job_public_constraint, **job_private_constraint
+        )
+        encoded_public_client, encoded_private_client = encode_specs(
+            **public_spec, **private_spec
+        )
+        
+        return geq(encoded_public_client, encoded_public_job) and geq(encoded_private_client, encoded_private_job)
+
 
 async def run(config):
     public_constraint_name = config['job_public_constraint']
@@ -42,7 +64,7 @@ async def run(config):
     await asyncio.sleep(10)
 
     try:
-        for _ in range(client_num):
+        for id in range(client_num):
             client_idx = random.randint(0, total_client_num - 1)
             public_specs = {
                 name: client_spec_dict[client_idx % len(client_spec_dict)][name]
@@ -50,6 +72,35 @@ async def run(config):
             private_specs = {
                 "dataset_size_dummy": client_size_dict[client_idx % len(client_size_dict)]}
             
+            # static partition
+            partition_config = {
+                "status": False,
+                "ps_ip": config["job_driver_ip"],
+                "ps_port": config["job_driver_starting_port"],
+            }
+
+            if config["selection_method"] == "static_partition":
+                elig_job = []
+                for job_id in range(0, config["total_job"]):
+                    if _determine_eligiblity(config["profile_folder"], job_id, public_specs, private_specs):
+                        elig_job.append(job_id)
+
+                if elig_job:
+                    elig_job.reverse()
+                    job_id = random.choice(elig_job)
+
+                    for i in elig_job:
+                        if alloc_cnt[i] < alloc[i]:
+                            alloc_cnt[i] += 1
+                            job_id = i
+                            break
+
+                    partition_config = {
+                        "status": True,
+                        "ps_ip": config["job_driver_ip"],
+                        "ps_port":config["job_driver_starting_port"] + job_id,
+                    }
+
             if ideal_client:
                 active_time = [0]
                 inactive_time = [3600 * 24 * 7]
@@ -57,7 +108,7 @@ async def run(config):
                 active_time = [ x/config['speedup_factor'] for x in client_avail_dict[client_idx + 1]['active']]
                 inactive_time = [ x/config['speedup_factor'] for x in client_avail_dict[client_idx + 1]['inactive']] 
             client_config = {
-                "id": client_idx,
+                "id": id,
                 "public_specifications": public_specs,
                 "private_specifications": private_specs,
                 "load_balancer_ip": config['load_balancer_ip'],
@@ -79,10 +130,11 @@ async def run(config):
                 "job_driver_starting_port": config["job_driver_starting_port"],
                 "dispatcher_id": config["dispatcher_id"],
                 "dispatcher_cnt": client_num,
+                "partition_config": partition_config
             }
             task = asyncio.create_task(Client(client_config).run())
             task_list.append(task)
-
+        print(alloc_cnt)
         while True:
             await asyncio.sleep(10)
     except KeyboardInterrupt:

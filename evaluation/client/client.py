@@ -20,6 +20,9 @@ class Client:
         self.id = client_config["id"] + client_config["dispatcher_id"] * client_config["dispatcher_cnt"]
         self.selection_method = client_config["selection_method"]
 
+        if self.selection_method == "static_partition":
+            self.partition_config = client_config["partition_config"]
+
         self.task_id = -1
         self.dispatcher_use_docker = client_config["dispatcher_use_docker"]
 
@@ -231,22 +234,8 @@ class Client:
         try:
             status = False
             if self.selection_method == "static_partition":
-                elig_job = []
-                for job_id in range(0, self.total_job):
-                    if self._determine_eligiblity(job_id):
-                        elig_job.append(job_id)
-
-                if elig_job:
-                    status = True
-                    ps_ip = self.job_driver_ip
-                    weights, demands = [], []
-                    for job_id in elig_job:
-                        demands.append(self._get_demand(job_id))
-                    for demand in demands:
-                        weights.append(demand / sum(demands))
-                    
-                    job_id = random.choices(population=elig_job, weights=weights, k=1)[0]
-                    ps_port = self.job_driver_starting_port + job_id                
+                status = self.partition_config["status"]
+                ps_ip, ps_port = self.partition_config["ps_ip"], self.partition_config["ps_port"]       
 
             while True:
                 try:
@@ -354,6 +343,11 @@ if __name__ == '__main__':
             config["job_driver_starting_port"] = eval_config["job_driver_starting_port"]
             config["dispatcher_id"] = 0
             config["dispatcher_cnt"] = 0
+            config["partition_config"] = {
+                "status": False,
+                "ps_ip": eval_config["job_driver_ip"],
+                "ps_port": eval_config["job_driver_starting_port"]
+            }
             client = Client(config)
             asyncio.run(client.run())
      
