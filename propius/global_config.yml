@@ -14,8 +14,8 @@ job_db_port: 6379
 scheduler_ip: localhost
 scheduler_port: 50000
 
-sched_mode: online # ['online', 'offline']
-sched_alg: random # ['irs'] for online, ['fifo', 'random', 'srsf'] for offline
+sched_mode: offline # ['online', 'offline']
+sched_alg: irs # ['irs'] for online, ['fifo', 'random', 'srsf'] for offline
 
 ## IRS parameter
 tier_num: 3

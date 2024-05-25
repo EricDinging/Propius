@@ -53,7 +53,7 @@ def client_assign(gconfig, public_spec):
         "public_specifications": public_spec,
         "private_specifications": {
             "dataset_size_dummy": 1000,
-            "dataset_size_house_prize": 50
+            # "dataset_size_house_prize": 50
         },
         "load_balancer_ip": lb_ip,
         "load_balancer_port": lb_port,

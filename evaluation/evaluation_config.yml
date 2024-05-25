@@ -1,5 +1,5 @@
 # ---Propius setting---
-selection_method: "static_partition" # "random", "static_partition"
+selection_method: "propius" # "random", "static_partition", "propius"
 
 load_balancer_ip: localhost
 load_balancer_port: 50002
@@ -18,7 +18,7 @@ job_private_constraint:
 
 client_result_path: "./evaluation/monitor/client/client_result.csv"
 
-sched_alg: random
+sched_alg: propius
 
 # ---Evaluation setting---
 speedup_factor: 1
