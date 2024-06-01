@@ -18,7 +18,7 @@ sched_mode: offline # ['online', 'offline']
 sched_alg: irs # ['irs'] for online, ['fifo', 'random', 'srsf'] for offline
 
 ## IRS parameter
-tier_num: 3
+tier_num: 1
 
 # BINDING LAYER
 load_balancer_ip: localhost

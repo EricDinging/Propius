@@ -295,7 +295,7 @@ class Temp_client_db:
         self.logger = logger
         self.r = redis.Redis(host=host, port=port)
         self.start_time = int(time.time())
-        self.client_exp_time = 25
+        self.client_exp_time = 30
 
         self.public_constraint_name = gconfig["job_public_constraint"]
         self.public_max = gconfig["public_max"]

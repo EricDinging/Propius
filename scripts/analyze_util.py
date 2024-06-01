@@ -32,7 +32,7 @@
 import csv
 
 total_time = 15075.212
-csv_file_path = './experiment/job_5_client_1200_random/client/client_result.csv'
+csv_file_path = './experiment/job_5_client_1800_srsf_propius/client/client_result.csv'
 utilize_times = []
 
 # Open the CSV file for reading

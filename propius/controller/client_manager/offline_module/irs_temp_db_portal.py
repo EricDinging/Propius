@@ -58,8 +58,11 @@ class IRS_temp_client_db_portal(CM_temp_client_db_portal):
                     option_list = []
                     rem_job_list_str = str(job_list[1:])
                     for doc in result.docs:
-                        temp_client = json.loads(doc.json)
-                        option_list.append(temp_client["temp"]["option"])
+                        try:
+                            temp_client = json.loads(doc.json)
+                            option_list.append(temp_client["temp"]["option"])
+                        except:
+                            pass
 
                     option_list.sort()
                     tier_len = int(len(option_list) / self.tier_num)
@@ -94,28 +97,31 @@ class IRS_temp_client_db_portal(CM_temp_client_db_portal):
                             Msg_level.INFO,
                         )
                         for doc in result.docs:
-                            temp_client = json.loads(doc.json)
-                            client_id = doc.id
-                            option = temp_client["temp"]["option"]
-                            if (
-                                option >= tier_lower_bound[u]
-                                and option < tier_lower_bound[u + 1]
-                            ):
-                                self.logger.print(
-                                    f"bind client with job: {client_id} {job_list_str}",
-                                    Msg_level.INFO,
-                                )
-                                self.r.execute_command(
-                                    "JSON.SET", client_id, "$.temp.job_ids", job_list_str
-                                )
-                            else:
-                                self.logger.print(
-                                    f"bind client with job: {client_id} {rem_job_list_str}",
-                                    Msg_level.INFO,
-                                )
-                                self.r.execute_command(
-                                    "JSON.SET", client_id, "$.temp.job_ids", rem_job_list_str
-                                )
+                            try:
+                                temp_client = json.loads(doc.json)
+                                client_id = doc.id
+                                option = temp_client["temp"]["option"]
+                                if (
+                                    option >= tier_lower_bound[u]
+                                    and option < tier_lower_bound[u + 1]
+                                ):
+                                    self.r.execute_command(
+                                        "JSON.SET", client_id, "$.temp.job_ids", job_list_str
+                                    )
+                                    self.logger.print(
+                                        f"bind client with job: {client_id} {job_list_str}",
+                                        Msg_level.INFO,
+                                    )
+                                else:
+                                    self.r.execute_command(
+                                        "JSON.SET", client_id, "$.temp.job_ids", rem_job_list_str
+                                    )
+                                    self.logger.print(
+                                        f"bind client with job: {client_id} {rem_job_list_str}",
+                                        Msg_level.INFO,
+                                    )
+                            except:
+                                pass
 
                     else:
                         self.logger.print(
@@ -124,26 +130,43 @@ class IRS_temp_client_db_portal(CM_temp_client_db_portal):
                             f" u: {u}, gu: {gu}, c: {c}",
                             Msg_level.INFO,
                         )
+                        
+                        # self.logger.print(
+                        #     f"binding {len(result.docs)} clients with job: {job_list_str} ",
+                        #     Msg_level.INFO,
+                        # )
                         for doc in result.docs:
                             client_id = doc.id
-                            self.logger.print(
-                                f"bind client with job: {client_id} {job_list_str} ",
-                                Msg_level.INFO,
-                            )
+                            try:
+                                self.r.execute_command(
+                                    "JSON.SET", client_id, "$.temp.job_ids", job_list_str
+                                )
+                                self.logger.print(
+                                    f"bind client with job: {client_id} {job_list_str}",
+                                    Msg_level.INFO,
+                                )
+                            except:
+                                # self.logger.print(f"temp client {client_id} not found", Msg_level.WARNING)
+                                continue
+
+                elif self.tier_num <= 1:
+                    # self.logger.print(
+                    #     f"binding {len(result.docs)} clients with job: {job_list_str} ",
+                    #     Msg_level.INFO,
+                    # )
+                    for doc in result.docs:
+                        client_id = doc.id
+                        try:
                             self.r.execute_command(
                                 "JSON.SET", client_id, "$.temp.job_ids", job_list_str
                             )
-
-                elif self.tier_num <= 1:
-                    for doc in result.docs:
-                        client_id = doc.id
-                        self.logger.print(
-                            f"bind client with job: {client_id} {job_list_str} ",
-                            Msg_level.INFO,
-                        )
-                        self.r.execute_command(
-                            "JSON.SET", client_id, "$.temp.job_ids", job_list_str
-                        )
+                            self.logger.print(
+                                f"bind client with job: {client_id} {job_list_str}",
+                                Msg_level.INFO,
+                            )
+                        except:
+                            # self.logger.print(f"temp client {client_id} not found", Msg_level.WARNING)
+                            continue
 
             except Exception as e:
                 self.logger.print(e, Msg_level.ERROR)
