@@ -4,7 +4,7 @@ Propius is a collaborative machine learning (or federated learning) resource man
 ## Repository Organization
 ```
 .
-├── propius_controller/                        # Propius Python package
+├── propius_controller/             # Propius Python package
 │   ├── client_manager/             #   - Edge device (client) interface
 │   ├── job_manager/                #   - FL job interface
 │   ├── load_balancer/              #   - Distributor of client traffics to client managers
