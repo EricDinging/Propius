@@ -1,8 +1,5 @@
 # Propius
-Propius is a Federated Computation (FC) resource manager, capable of efficiently scheduling devices in a multi-job setting.
-
-## Interface
-Under construction
+Propius is a collaborative machine learning (or federated learning) resource manager, capable of efficiently scheduling devices in a multi-job setting.
 
 ## Repository Organization
 ```
