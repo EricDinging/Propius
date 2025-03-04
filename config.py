@@ -14,7 +14,7 @@ PROPIUS_EVAL = 2
 # PROPIUS_SYS: Run Propius system
 # PROPIUS_POLICY: Run Propius policy evaluation
 # PROPIUS_EVAL: Run Propius evaluation with ML workloads using GPU
-option = PROPIUS_SYS
+option = PROPIUS_POLICY
 
 propius_config_file = './propius/global_config.yml'
 evaluation_config_file = './evaluation/evaluation_config.yml'
@@ -31,12 +31,14 @@ speedup_factor = 3
 sched_alg = 'irs'
 
 profile_folder = './evaluation/job/profile_mobilenet_large'
-job_trace = './evaluation/job/trace/job_trace_20.txt'
+
+# Select job trace. The first column is the arrival time, the second column is the job id.
+job_trace = './evaluation/job/trace/job_trace_4.txt'
 allow_exceed_total_round = True
 
 dataset = "femnist"
 
-dispatcher_use_docker = False
+dispatcher_use_docker = True
 
 ### STOP EDITING HERE!
 if option == PROPIUS_SYS:

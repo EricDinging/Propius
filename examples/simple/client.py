@@ -1,22 +1,23 @@
-from propius_controller.client import Propius_client
- 
-# make some system calls to get device specs
+"""python examples/simple/client.py"""
 
-public_specifications = {
+from propius.controller.client import Propius_client
+
+public_spec = {
     "cpu_f": 8,
     "ram": 6,
     "fp16_mem": 800,
     "android_os": 8
 }
 
-private_specifications = {
-    "femnist_dataset_size": 150
-}
 
 client_config = {
-    "public_specifications": public_specifications,
-    "load_balancer_ip": "172.17.0.3",
-    "load_balancer_port": 50001
+    "public_specifications": public_spec,
+    "private_specifications": {
+        "dataset_size_dummy": 1000,
+    },
+    "load_balancer_ip": "localhost",
+    "load_balancer_port": 50002,
+    "option": 0.0,
 }
 
 propius = Propius_client(client_config)
@@ -39,11 +40,15 @@ while True:
 
         task_id = select_task(task_ids, task_private_constraints)
 
-        job_ip, job_port = propius.client_accept(task_id)
+        result = propius.client_accept(task_id)
+        if result:
+            job_ip, job_port = result[0], result[1]
+        else:
+            break
 
         propius.close()
 
         # check-in to job
         # receive task
         # perform task
-        # report to job 
+        # report to job

@@ -1,26 +1,19 @@
-from propius_controller.job import Propius_job
+"""python examples/simple/job.py"""
 
-public_constraint = {
-    "cpu_f": 8,
-    "ram": 6,
-    "fp16_mem": 800,
-    "android_os": 8
-}
-private_constraint = {
-    "femnist_dataset_size": 150
-}
+from propius.controller.job import Propius_job
 
 job_config = {
-    "public_constraint": public_constraint,
-    "private_constraint": private_constraint,
-    "total_round": 1000,
-    "demand": 100,
-    "job_manager_ip": "172.17.0.2",
-    "job_manager_port": 5000,
-    "ip": "172.17.0.1",
+    "public_constraint": {"cpu_f": 0, "ram": 0, "fp16_mem": 0, "android_os": 0},
+    "private_constraint": {
+        "dataset_size_dummy": 100,
+    },
+    "total_round": 1,
+    "demand": 2,
+    "job_manager_ip": "localhost",
+    "job_manager_port": "50001",
+    "ip": "localhost",
     "port": 6000,
 }
-
 propius = Propius_job(job_config)
 
 propius.connect()
@@ -37,4 +30,3 @@ for round in range(job_config["total_round"]):
 
 propius.complete_job()
 propius.close()
-

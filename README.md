@@ -54,7 +54,7 @@ We use docker compose to containerize components (job manager, scheduler, client
 ```bash
 chmod +x propius/controller/client_manager/entrypoint.sh
 ```
-- Based on whether running ML workloads on GPU is conducted or not, edit and run `config.py` script for configuring docker compose files and Propius config file. You can choose from `PROPIUS_SYS` (just running the Propius system), `PROPIUS_SYS` (running system + generating client loads), and `PROPIUS_EVAL` (running system + generating client loads + run workloads on GPU).
+- Based on whether running ML workloads on GPU is conducted or not, edit and run `config.py` script for configuring docker compose files and Propius config file. You can choose from `PROPIUS_SYS` (just running the Propius system), `PROPIUS_SYS` (running system + generating client loads), and `PROPIUS_EVAL` (running system + generating client loads + run workloads on GPU). Set `propius_use_docker = False`.
 ```bash
 python config.py
 ```
@@ -77,7 +77,8 @@ docker compose -f compose_propius.yml down
 ```
 ### Manual Lanuch
 Propius can be started without docker. However, for the ease of deployment, the Redis database is containerized.
-- Edit `propius/global_config.yml` and `compose_redis.yml`. Make sure these two files are consistent
+- Edit `config.py` file, set `propius_use_docker = False` and run
+<!-- - Edit `propius/global_config.yml` and `compose_redis.yml`. Make sure these two files are consistent -->
 - Launch Redis Database in background
 ```bash
 docker compose -f compose_redis.yml up -d
@@ -160,6 +161,7 @@ chmod +x ./scripts/clean.sh
 ```
 
 ## Testing
+- Edit `config.py` file, set `propius_use_docker = False` and run
 ```
 pytest -v tests
 ```
