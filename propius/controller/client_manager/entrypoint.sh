@@ -1,2 +1,2 @@
 #! /bin/bash
-python -m propius.client_manager "$@"
+python -m propius.controller.client_manager "$@"

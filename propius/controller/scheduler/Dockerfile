@@ -3,14 +3,15 @@ FROM python:3.9
 WORKDIR /
 RUN mkdir propius
 
-COPY ./propius/requirements.txt propius/requirements.txt
-COPY ./setup.py /setup.py
+COPY ./propius/controller/requirements.txt propius/controller/requirements.txt
+COPY ./pyproject-sys.toml /pyproject.toml
 
-RUN pip3 install -r propius/requirements.txt
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir -e .
+RUN pip3 install -r propius/controller/requirements.txt
 
 RUN PROPIUS_HOME=$(pwd)
 RUN echo export PROPIUS_HOME=$(pwd) >> ~/.bashrc
 RUN . ~/.bashrc
-RUN pip install -e .
 
-CMD ["python", "-m", "propius.scheduler"]
+CMD ["python", "-m", "propius.controller.scheduler"]

@@ -7,3 +7,4 @@ pyyaml
 matplotlib
 google-api-python-client
 pytest
+ruamel_yaml

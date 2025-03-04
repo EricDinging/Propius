@@ -4,7 +4,7 @@ services:
   scheduler:
     build:
       context: .
-      dockerfile: ./propius/scheduler/Dockerfile
+      dockerfile: ./propius/controller/scheduler/Dockerfile
     volumes:
     - ./propius:/propius
     depends_on:
@@ -18,7 +18,7 @@ services:
   job_manager:
     build:
       context: .
-      dockerfile: ./propius/job_manager/Dockerfile
+      dockerfile: ./propius/controller/job_manager/Dockerfile
     ports:
     - 50001:50001
     volumes:
@@ -33,7 +33,7 @@ services:
   load_balancer:
     build:
       context: .
-      dockerfile: ./propius/load_balancer/Dockerfile
+      dockerfile: ./propius/controller/load_balancer/Dockerfile
     ports:
     - 50002:50002
     volumes:
@@ -48,7 +48,7 @@ services:
   job_db:
     build:
       context: .
-      dockerfile: ./propius/database/Dockerfile
+      dockerfile: ./propius/controller/database/Dockerfile
     command: ['6379']
     environment:
     - TZ=America/Detroit
@@ -56,7 +56,7 @@ services:
   client_manager_0:
     build:
       context: .
-      dockerfile: ./propius/client_manager/Dockerfile
+      dockerfile: ./propius/controller/client_manager/Dockerfile
     volumes:
     - ./propius:/propius
     depends_on:
@@ -71,7 +71,7 @@ services:
   client_db_0:
     build:
       context: .
-      dockerfile: ./propius/database/Dockerfile
+      dockerfile: ./propius/controller/database/Dockerfile
     command:
     - '6380'
     environment:
@@ -79,7 +79,7 @@ services:
   client_manager_1:
     build:
       context: .
-      dockerfile: ./propius/client_manager/Dockerfile
+      dockerfile: ./propius/controller/client_manager/Dockerfile
     volumes:
     - ./propius:/propius
     depends_on:
@@ -94,7 +94,7 @@ services:
   client_db_1:
     build:
       context: .
-      dockerfile: ./propius/database/Dockerfile
+      dockerfile: ./propius/controller/database/Dockerfile
     command:
     - '6381'
     environment:

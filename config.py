@@ -10,6 +10,10 @@ PROPIUS_EVAL = 2
 
 ### EDIT HERE!
 
+# Option can be PROPIUS_SYS, PROPIUS_POLICY, PROPIUS_EVAL
+# PROPIUS_SYS: Run Propius system
+# PROPIUS_POLICY: Run Propius policy evaluation
+# PROPIUS_EVAL: Run Propius evaluation with ML workloads using GPU
 option = PROPIUS_SYS
 
 propius_config_file = './propius/global_config.yml'
@@ -24,7 +28,7 @@ ideal_client = False
 is_FA = False
 
 speedup_factor = 3
-sched_alg = 'random'
+sched_alg = 'irs'
 
 profile_folder = './evaluation/job/profile_mobilenet_large'
 job_trace = './evaluation/job/trace/job_trace_20.txt'
@@ -103,7 +107,7 @@ def config_client_manager_db():
             f"client_db_{i}": {
                 'build': {
                 'context': '.',
-                'dockerfile': './propius/database/Dockerfile'
+                'dockerfile': './propius/controller/database/Dockerfile'
                 },
                 'command': [f'{client_db_port_start + i}'],
                 'environment': ['TZ=America/Detroit']
@@ -114,7 +118,7 @@ def config_client_manager_db():
             f"client_manager_{i}": {
                 'build': {
                 'context': '.',
-                'dockerfile': './propius/client_manager/Dockerfile'
+                'dockerfile': './propius/controller/client_manager/Dockerfile'
                 },
                 'volumes': [
                     './propius:/propius'

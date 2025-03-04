@@ -52,16 +52,16 @@ pip install -e .
 We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network.
 - Run:
 ```bash
-chmod +x propius/client_manager/entrypoint.sh
+chmod +x propius/controller/client_manager/entrypoint.sh
 ```
-- Edit and run `config.py` for configuring docker compose files and Propius config file
+- Based on whether running ML workloads on GPU is conducted or not, edit and run `config.py` script for configuring docker compose files and Propius config file. You can choose from `PROPIUS_SYS` (just running the Propius system), `PROPIUS_SYS` (running system + generating client loads), and `PROPIUS_EVAL` (running system + generating client loads + run workloads on GPU).
 ```bash
 python config.py
 ```
-    - Alternatively:
+    <!-- - Alternatively:
         - Edit `compose_propius.yml` and `propius/global_config.yml`. By default, the network address of load balancer (client interface) is `localhost:50002`, and the address of job manager (job interface) is `localhost:50001`
         - Make sure the setup is consistent across two config files
-        - By default, Propius has two client managers and two client databases. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services in `compose_propius.yml`, and edit `propius/global_config.yml` accordingly
+        - By default, Propius has two client managers and two client databases. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services in `compose_propius.yml`, and edit `propius/global_config.yml` accordingly -->
 - Run docker compose
 ```bash
 docker compose -f compose_propius.yml up --build # -d if want to run Propius in background
@@ -113,8 +113,8 @@ docker compose -f compose_redis.yml down
 ```
 
 ## Interface
-- Propius' job interface is defined in `propius_job/propius_job.py`
-- Propius' client interface is defined in `propius_client/propius_client.py`
+- Propius' job interface is defined in `propius/controller/job/propius_job.py`
+- Propius' client interface is defined in `propius/controller/client/propius_client.py`
 - Refer to `examples/` to get an idea how your FL job and FL client can utilize Propius
 
 ## Evaluation
