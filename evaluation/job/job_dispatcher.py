@@ -12,7 +12,7 @@ with open('./evaluation/evaluation_config.yml', 'r') as gyamlfile:
     config = yaml.load(gyamlfile, Loader=yaml.FullLoader)
     ip = config['job_driver_ip'] if not config["dispatcher_use_docker"] else f"jobs_{driver_id}"
     port = int(config['job_driver_starting_port'])
-    num = config['total_job']
+    # num = config['total_job']
     trace_file = config['job_trace']
 
     with open(trace_file, "r") as file:

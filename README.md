@@ -54,7 +54,7 @@ We use docker compose to containerize components (job manager, scheduler, client
 ```bash
 chmod +x propius/controller/client_manager/entrypoint.sh
 ```
-- Based on whether running ML workloads on GPU is conducted or not, edit and run `config.py` script for configuring docker compose files and Propius config file. You can choose from `PROPIUS_SYS` (just running the Propius system), `PROPIUS_SYS` (running system + generating client loads), and `PROPIUS_EVAL` (running system + generating client loads + run workloads on GPU). Set `propius_use_docker = False`.
+- Based on whether running ML workloads on GPU is conducted or not, edit and run `config.py` script for configuring docker compose files and Propius config file. You can choose from `PROPIUS_SYS` (just running the Propius system) and `PROPIUS_EVAL` (running system + generating client loads + run workloads on GPU). Set `propius_use_docker = False`.
 ```bash
 python config.py
 ```
@@ -119,7 +119,7 @@ docker compose -f compose_redis.yml down
 - Refer to `examples/` to get an idea how your FL job and FL client can utilize Propius
 
 ## Evaluation
-For the ease of evaluation, we containerize Propius and essential peripherals for evaluation in one docker network using docker compose.
+For the ease of evaluation, we containerize Propius and essential peripherals for evaluation in one docker network using docker compose. You should change `compose_eval_gpu.yml` file based on the number of available GPU servers.
 - Download Dataset
 ```bash
 source ./datasets/download.sh

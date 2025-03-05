@@ -30,7 +30,7 @@ is_FA = False
 speedup_factor = 3
 sched_alg = 'irs'
 
-profile_folder = './evaluation/job/profile_mobilenet_large'
+profile_folder = './evaluation/job/profile_dummy'
 
 # Select job trace. The first column is the arrival time, the second column is the job id.
 job_trace = './evaluation/job/trace/job_trace_4.txt'

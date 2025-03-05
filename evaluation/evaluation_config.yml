@@ -26,14 +26,13 @@ test_bsz: 20
 test_ratio: 1
 eval_interval: 10
 
-#TODO
 client_test_num: 20
 ideal_client: false
 
 # Job
-total_job: 20
-profile_folder: ./evaluation/job/profile_mobilenet_large
-job_trace: ./evaluation/job/trace/job_trace_20.txt
+total_job: 5
+profile_folder: ./evaluation/job/profile_dummy
+job_trace: ./evaluation/job/trace/job_trace_4.txt
 
 # If job number is 20, there will be 20 job addresses, starting from the defined port number
 job_driver_ip: localhost
@@ -88,4 +87,4 @@ worker:
 - ip: localhost
   port: 49991
   device: 3
-client_num: 15000
+client_num: 1000

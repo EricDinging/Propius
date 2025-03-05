@@ -30,23 +30,23 @@ class Propius_job():
         Raises:
             ValueError: missing config args
         """
-        try:
-            public, private = encode_specs(**job_config['public_constraint'], **job_config['private_constraint'])
-            self.public_constraint = tuple(public)
-            self.private_constraint = tuple(private)
-            self.est_total_round = job_config['total_round'] if 'total_round' in job_config else 0
-            self.demand = job_config['demand']
-            self._jm_ip = job_config['job_manager_ip']
-            self._jm_port = job_config['job_manager_port']
-            self._jm_channel = None
-            self._jm_stub = None
-            self.ip = job_config['ip']
-            self.port = job_config['port']
-            self.verbose = verbose
-            self.logging = logging
-            self.id = -1
-        except Exception:
-            raise ValueError("Missing config arguments")
+        # try:
+        public, private = encode_specs(**job_config['public_constraint'], **job_config['private_constraint'])
+        self.public_constraint = tuple(public)
+        self.private_constraint = tuple(private)
+        self.est_total_round = job_config['total_round'] if 'total_round' in job_config else 0
+        self.demand = job_config['demand']
+        self._jm_ip = job_config['job_manager_ip']
+        self._jm_port = job_config['job_manager_port']
+        self._jm_channel = None
+        self._jm_stub = None
+        self.ip = job_config['ip']
+        self.port = job_config['port']
+        self.verbose = verbose
+        self.logging = logging
+        self.id = -1
+        # except Exception:
+        #     raise ValueError("Missing config arguments")
 
     def _cleanup_routine(self):
         try:
