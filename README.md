@@ -1,67 +1,39 @@
 # Propius
-Propius is a collaborative machine learning (or federated learning) resource manager, capable of efficiently scheduling devices in a multi-job setting.
+Propius is a resource manager and scheduler for Federated Learning Training workloads.
 
-## Repository Organization
+## Installation
+1. Install docker and docker-compose
+    - [docker installation guide (step 1)](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04)
+    - [docker compose](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)
+2. Install packages in a virtual environment using pip and venv
+```bash
+python -m venv env
+source env/bin/activate
+pip install --upgrade pip
+pip install -e .
+pip install -r requirements.txt
 ```
-.
-├── propius_controller/             # Propius Python package
-│   ├── client_manager/             #   - Edge device (client) interface
-│   ├── job_manager/                #   - FL job interface
-│   ├── load_balancer/              #   - Distributor of client traffics to client managers
-│   ├── scheduler/                  #   - FL job scheduler, capable of executing various policies
-│   ├── util/                       #   - Utility functions and classes
-│   ├── channels/                   #   - gRPC channel source code and definitions
-│   ├── database/                   #   - Redis database base interface
-│   ├── propius_job/                #   - Propius job interface library
-│   │   └── propius_job.py          #       - Class for Propius-job interface
-│   ├── propius_client/             #   - Propius client interface library
-│   │   ├── propius_client.py       #       - Class for Propius-client interface
-│   │   └── propius_client_aio.py   #       - asyncio-based class for Propius-client interface
-│   └── global_config.yml           #   - Configuration for Propius system
-│
-├── evaluation/                     # Framework for evaluating scheduling policies
-│   ├── executor/                   #   - Executor for FL training and testing tasks using multiple GPU processes
-│   ├── client/                     #   - Dispatcher of simulated clients
-│   ├── job/                        #   - Dispatcher of simulated jobs
-│   └── evaluation_config.yml       #   - Configuration for evaluation
-│
-├── docs/                           # Documentation
-│
-├── scripts/                        # Helpful scripts that make lives easier
-│
-├── tests/                          # Test suites
-│ 
-├── examples/                       # Examples of integrating Propius
-│ 
-└── datasets/                       # FL datasets and client device traces
-```
-
-## Getting Started
-- [Install packages in a virtual environment using pip and venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
-    - Preferred, light-weight solution
-    - Use `python -m pip install .` once the env is activated
-    - `python -m pip install -r requirements.txt`
-- Quick installation (Linux / MacOS) with Anaconda/miniconda
+3. [Optional] If you want to run training workloads, we recommend setting up docker containers which we will provide instructions in `Usage`. Alternatively, you can install the required environment using the following script and run the training workload emulator directly. [Step-by-step installation](./docs/getting_started/getting_started.md) with Anaconda/miniconda is also provided.
 ```bash
 source install.sh # add `--cuda` if you want CUDA
 pip install -e .
 ```
-- [Step-by-step installation](./docs/getting_started/getting_started.md) with Anaconda/miniconda
 ## Usage
+For reproducing Figures from Venn paper, please refer to `Evaluation`.
+
+You need to first edit and run `config.py` script to set config files. Set `option = PROPIUS_SYS`. Set `propius_use_docker = True`. Set `dispatcher_use_docker = False`
+```bash
+python config.py
+```
+
 ### Quick Launch
 We use docker compose to containerize components (job manager, scheduler, client manager, load balancer and Redis DB) in a docker network.
 - Run:
 ```bash
 chmod +x propius/controller/client_manager/entrypoint.sh
 ```
-- Based on whether running ML workloads on GPU is conducted or not, edit and run `config.py` script for configuring docker compose files and Propius config file. You can choose from `PROPIUS_SYS` (just running the Propius system) and `PROPIUS_EVAL` (running system + generating client loads + run workloads on GPU). Set `propius_use_docker = False`.
-```bash
-python config.py
-```
-    <!-- - Alternatively:
-        - Edit `compose_propius.yml` and `propius/global_config.yml`. By default, the network address of load balancer (client interface) is `localhost:50002`, and the address of job manager (job interface) is `localhost:50001`
-        - Make sure the setup is consistent across two config files
-        - By default, Propius has two client managers and two client databases. For handling large amount of clients, we support horizontal scaling of client manager and client database. To achieve this, you need to add more client manager and database services in `compose_propius.yml`, and edit `propius/global_config.yml` accordingly -->
+
+
 - Run docker compose
 ```bash
 docker compose -f compose_propius.yml up --build # -d if want to run Propius in background
@@ -119,7 +91,42 @@ docker compose -f compose_redis.yml down
 - Refer to `examples/` to get an idea how your FL job and FL client can utilize Propius
 
 ## Evaluation
-For the ease of evaluation, we containerize Propius and essential peripherals for evaluation in one docker network using docker compose. You should change `compose_eval_gpu.yml` file based on the number of available GPU servers.
+For the ease of evaluation, we containerize Propius and essential peripherals for evaluation in one docker network using docker compose. 
+### The following instructions can be used to reproduce Figure 5 in Venn paper. 
+- Edit and run `config.py` script for configuring docker compose files and Propius config file. Set `option = PROPIUS_POLICY`. Set `propius_use_docker = True`. Set `dispatcher_use_docker = True`. Set `sched_alg` to be one of `irs, fifo, random, and srsf`. (`irs` is Venn's policy).
+```bash
+python config.py
+```
+- Start docker network
+```bash
+chmod +x propius/client_manager/entrypoint.sh
+chmod +x evaluation/job/entrypoint.sh
+chmod +x evaluation/client/entrypoint.sh
+docker compose -f compose_eval.yml up --build -d
+```
+- Monitoring
+```bash
+chmod +x ./scripts/monitor_propius.sh
+./scripts/monitor_propius.sh
+
+chmod +x ./scripts/monitor_jobs.sh
+./scripts/monitor_jobs.sh
+```
+- Analyze
+```bash
+python ./scripts/analyze_roundtime.py # Give you insight on round time, sched latency etc.
+```
+- Shutdown & Clean up
+```bash
+docker compose -f compose_eval.yml down
+chmod +x ./scripts/clean.sh
+./scripts/clean.sh
+```
+### The following instructions can be used to reproduce Figure 4 and 9 in Venn paper (requires GPU)
+
+
+
+
 - Download Dataset
 ```bash
 source ./datasets/download.sh
@@ -129,6 +136,7 @@ source ./datasets/download.sh
 ```bash
 python config.py
 ```
+- Edit `compose_eval_gpu.yml` file based on the number of available GPU servers.
 - Start docker network
 ```bash
 chmod +x evaluation/executor/entrypoint.sh
@@ -174,8 +182,41 @@ pytest -v tests
     redis-cli -h localhost -p 6380 ping
     ```
 
-## RoadMap
-- Please refer to [Project](https://github.com/users/EricDinging/projects/1) page for more information
+## Repository Organization
+```
+.
+├── propius_controller/             # Propius Python package
+│   ├── client_manager/             #   - Edge device (client) interface
+│   ├── job_manager/                #   - FL job interface
+│   ├── load_balancer/              #   - Distributor of client traffics to client managers
+│   ├── scheduler/                  #   - FL job scheduler, capable of executing various policies
+│   ├── util/                       #   - Utility functions and classes
+│   ├── channels/                   #   - gRPC channel source code and definitions
+│   ├── database/                   #   - Redis database base interface
+│   ├── propius_job/                #   - Propius job interface library
+│   │   └── propius_job.py          #       - Class for Propius-job interface
+│   ├── propius_client/             #   - Propius client interface library
+│   │   ├── propius_client.py       #       - Class for Propius-client interface
+│   │   └── propius_client_aio.py   #       - asyncio-based class for Propius-client interface
+│   └── global_config.yml           #   - Configuration for Propius system
+│
+├── evaluation/                     # Framework for evaluating scheduling policies
+│   ├── executor/                   #   - Executor for FL training and testing tasks using multiple GPU processes
+│   ├── client/                     #   - Dispatcher of simulated clients
+│   ├── job/                        #   - Dispatcher of simulated jobs
+│   └── evaluation_config.yml       #   - Configuration for evaluation
+│
+├── docs/                           # Documentation
+│
+├── scripts/                        # Helpful scripts that make lives easier
+│
+├── tests/                          # Test suites
+│ 
+├── examples/                       # Examples of integrating Propius
+│ 
+└── datasets/                       # FL datasets and client device traces
+```
+
 
 
 
